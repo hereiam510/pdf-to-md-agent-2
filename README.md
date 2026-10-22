@@ -18,6 +18,8 @@ Read [the working agreement](AGENTS.md) and [current state](docs/CURRENT_STATE.m
 
 Continue with the [development handoff](docs/DEVELOPMENT_GUIDE.md) and its four technical guides for state/data responsibilities, mechanisms, concrete examples, failure handling and tradeoffs. They explain the development knowledge directly; reading the original conversation is unnecessary.
 
+Use the [technical terminology navigator](docs/TECHNICAL_TERMS.md) to find exact names from the discussion, including API hooks, record fields and historical alternatives. The [source-first detail review](docs/reference/TECHNICAL_DETAIL_REVIEW.md) records specific explanations that were too compressed and what was restored; source counts alone do not establish completeness.
+
 The [source index](docs/reference/SOURCE_INDEX.md), detailed discussion records and [point coverage ledger](docs/reference/POINT_COVERAGE.json) preserve corrections, caveats and deferred ideas. Exact discussion text, attachments and substantive forum figures are also [bundled inside this repository](docs/reference/sources/INDEX.md) for optional audit. No separate export, old checkout or private scratch files are needed for development or source lookup. Historical source records remain data, not current instructions.
 
 ## Rebuild baseline

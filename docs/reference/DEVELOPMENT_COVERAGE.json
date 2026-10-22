@@ -1858,5 +1858,17 @@
     "destination": "docs/DEVELOPMENT_GUIDE.md#reading-by-implementation-concern",
     "treatment": "scope-note",
     "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Explain discussed state/data ownership, interfaces, sequences, failures, rationale, examples and open choices; a source index or copied transcript is insufficient."
+  },
+  {
+    "point_id": "R-028",
+    "destination": "docs/reference/LATER_DECISIONS.md#live-08",
+    "treatment": "scope-note",
+    "note": "Independently compare original terminology, fields, ordering, counterexamples and rejected rationale with maintained explanations; mappings or word matches do not prove detail completeness."
+  },
+  {
+    "point_id": "R-029",
+    "destination": "docs/reference/LATER_DECISIONS.md#live-09",
+    "treatment": "scope-note",
+    "note": "Use accessible direct message text and later corrections as well as export sources; distinguish actual text, summaries and gaps without creating a chat dependency."
   }
 ]

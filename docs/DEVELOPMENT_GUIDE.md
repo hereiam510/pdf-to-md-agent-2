@@ -20,6 +20,8 @@ The owner documents state effective requirements and boundaries. The technical g
 
 Read the guide relevant to the work and its owner. There is no requirement to load every guide, historical alternative or raw message into an agent prompt. Routine conversion needs its task, source, necessary tool guidance and current working state.
 
+If the original technical spelling is easier to remember than a topic heading, use [TECHNICAL_TERMS](TECHNICAL_TERMS.md). It connects names such as `AgentState`, `Pre-Admission Gate`, `BaseTool._parse_input`, `completed_seq` and `token.map` to their explanations and status. The [detail review](reference/TECHNICAL_DETAIL_REVIEW.md) distinguishes an adequate paraphrase from a missing mechanism, rather than treating a source-to-topic mapping as proof of preservation.
+
 ## Shared vocabulary
 
 | Term | Meaning | Important distinction |

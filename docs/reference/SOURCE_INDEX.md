@@ -11,7 +11,7 @@ The development knowledge is explained in [DEVELOPMENT_GUIDE](../DEVELOPMENT_GUI
 | 28 pasted-text attachments | Exact original text bytes | Complete supplied proposals and critiques, not adopted wholesale as requirements |
 | Two supplied forum pages | Exact HTML as inert text, extracted article text and offline image readers | All 24 substantive embedded figures are local and byte-preserved; forum claims retain their credibility limits |
 | SUP-01/02 continuing requirements | Explicit verbatim excerpt ranges with original/full-source hashes | Preserve the relevant product/platform and guidance rules without importing whole old development documents |
-| Seven later human decisions | [LATER_DECISIONS](LATER_DECISIONS.md) | Includes self-containment and complete technical explanation requirements |
+| Nine later human decisions | [LATER_DECISIONS](LATER_DECISIONS.md) | Includes self-containment, technical-detail preservation and direct-conversation review requirements |
 | Point-to-detail mapping | [DEVELOPMENT_COVERAGE](DEVELOPMENT_COVERAGE.json) | Explains where each preserved point is developed or retained as historical rationale |
 
 [source-inventory.json](source-inventory.json) records both original provenance and repo-local paths/hashes. [POINT_COVERAGE](POINT_COVERAGE.json) retains source relationships and decision status. [SOURCE_COVERAGE](SOURCE_COVERAGE.json) records each required source's disposition. The [bundle manifest](sources/bundle-manifest.json) covers copied/extracted files and figures. The two supporting excerpts are intentionally described as excerpts, not exact copies of the full old documents.
@@ -38,7 +38,9 @@ The supplied package was named `pdf-to-md-agent - 整體進度與方向審閱`, 
 
 The initial repository preparation independently hashed all 5,222 files in that supplied manifest, with no size/hash mismatch. This checked integrity against the manifest, not the historical truth of each statement. The original export PDF/ZIP verification was not rerun or rewritten. The export itself remains untouched and outside this repository; the selected discussion sources needed here are now copied locally.
 
-The visible messages comprise 47 user, 48 final assistant and 112 assistant commentary records. Detailed references preserve their substantive discussion, not private chain of thought. Later LIVE-01 through LIVE-07 requests are supplemental current-conversation records, not silently represented as part of the earlier export snapshot.
+The visible messages comprise 47 user, 48 final assistant and 112 assistant commentary records. Detailed references preserve their substantive discussion, not private chain of thought. Later LIVE-01 through LIVE-09 requests are supplemental current-conversation records, not silently represented as part of the earlier export snapshot.
+
+The 2026-10-23 technical-detail review also read actual messages directly from the current chat, including inherited earlier turns. All 205 discussion messages shared with the supplied snapshot matched their stored text exactly; the two administrative export messages belong to the separate export branch and were not returned by this chat. The empty EVT-0258 body is empty in the direct view too. Later repository instructions were read directly. This confirms which text was reviewed; it does not make the existing synthesis semantically complete. See the [specific detail review](TECHNICAL_DETAIL_REVIEW.md).
 
 ## Discussion records
 

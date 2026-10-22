@@ -12,10 +12,10 @@ Updated 2026-10-23, Asia/Hong_Kong. This records documentation scope, technical-
 | Attachments | All 30 exact attachments bundled: 28 pasted-text files and two forum HTML files stored as inert text |
 | Forum figures | All 14 research illustrations in ATT-01 and all 10 substantive image pages in ATT-02 included as original decoded WebP bytes; offline readers are local |
 | Continuing requirements | SUP-01/02 relevant verbatim excerpt ranges included, with source and excerpt hashes; old active documents/defaults/permissions are not imported |
-| Later requests | LIVE-01 through LIVE-07 preserved locally, including self-containment and detailed technical explanation |
-| Point ledger | 310 entries: 102 foundations, 116 context/state, 65 delivery/recovery, 27 effective-owner/scope mappings |
-| Source dispositions | 247 sources: 244 mapped to retained points, one empty saved final message, two administrative export messages; no unresolved classification |
-| Development-detail map | All 310 point IDs mapped: 247 explained, 47 historical references, 16 scope notes |
+| Later requests | LIVE-01 through LIVE-09 preserved locally, including self-containment, technical detail and direct-conversation review |
+| Point ledger | 312 entries: 102 foundations, 116 context/state, 65 delivery/recovery, 29 effective-owner/scope mappings |
+| Source dispositions | 249 sources: 246 mapped to retained points, one empty saved final message, two administrative export messages; no unresolved classification |
+| Development-detail map | All 312 point IDs mapped: 247 explained, 47 historical references, 18 scope notes |
 | Bundled-file integrity | 477 included files verified against local hashes, with a separate versioned bundle manifest |
 
 The [point ledger](POINT_COVERAGE.json), [detail map](DEVELOPMENT_COVERAGE.json), [source dispositions](SOURCE_COVERAGE.json) and [source index](SOURCE_INDEX.md) serve different purposes. Counts are not independent feature counts: some owner mappings overlap the detailed records, and a point can contain several connected nuances. A source ID alone is not an adequate technical explanation.
@@ -49,7 +49,9 @@ Material corrections and additions included:
 - A model-input projection is assembled input, not proof that a send occurred. Attempt records establish dispatch.
 - The retained small Graph State policy/single settlement writer, original operation receipts and external durable budgets remain consistent across all guides; superseded external policy-version/activation machinery is clearly historical.
 
-These reviews found and corrected specific issues rather than treating matching source counts as proof of semantic completeness. No known material cross-guide contradiction or unexplained development dependency remained in the reviewed scope. This is a bounded review result, not a mathematical guarantee that every interpretation is identical.
+These reviews found and corrected specific issues. However, the later source-first review of `e243431` showed that some mechanisms still lost technical names, field relationships, call ordering and original counterexamples when condensed into broad points. The earlier absence of a reported gap was not proof that every detail was explained. [TECHNICAL_DETAIL_REVIEW](TECHNICAL_DETAIL_REVIEW.md) records those concrete deficiencies and their repairs. The core architecture and Q1–Q3 did not change.
+
+That later review also used the actual conversation directly: 205 overlapping discussion messages matched the preserved source text exactly. Two administrative export messages were on the export branch rather than the current chat, and EVT-0258 remained empty. Reviewers rotated source ranges and derived candidate details from originals rather than accepting the existing point list as exhaustive. A lexical scan helped locate lost names, but its sample IDs, old paths and aliases were not counted as missing mechanisms. [TECHNICAL_TERMS](../TECHNICAL_TERMS.md) now provides navigation by original terminology.
 
 ## Repository-only verification
 
@@ -57,7 +59,7 @@ A clean copy was made from the Git index, containing only intended versioned fil
 
 The copy passed:
 
-- Documentation and image links, anchors, source IDs, all 310 point/detail mappings and all 247 source dispositions.
+- Documentation and image links, anchors, source IDs, all retained point/detail mappings and source dispositions.
 - Hash/size verification of all 477 bundled files, including exact event/attachment identity checks and the 24 figures.
 - Local lookup for inherited/empty/final messages, text/forum attachments, both supporting excerpts and a later human request.
 - Exact event-JSON reading, offline forum-reader routing and local later-request reading.

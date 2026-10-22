@@ -70,3 +70,18 @@ The initial repository's external source-lookup dependency was insufficient. The
 > so i need the docs record or explain everything related to the development in detail
 
 Source counts, point mappings and a local transcript are not sufficient. Maintained development documents must explain the discussed mechanisms, data/state ownership, interface semantics, sequences, failure handling, rationale, concrete examples and unresolved choices in detail. Original messages are optional audit material. The work elaborates and preserves the existing discussion; it does not invent final schemas or reopen unrelated architecture decisions. Settled requirements, recommendations, historical alternatives and the three genuinely open contracts remain distinguishable.
+
+<a id="live-08"></a>
+## LIVE-08: Check the loss of technical terminology and detail
+
+> my doubt is that, our previous conversation involves so many technical terms and details
+> and it seems that there are, comparatively, so few in the docs
+
+Reassess the synthesis against the original discussion, independently of its existing point inventory. A broad topic mapping or the presence of a term is insufficient when the explanation omits the field's meaning, an ordering rule, a failure example or the reason an alternative was rejected. Preserve exact technical spellings where they make the discussion searchable and precise. Distinguish an adequate paraphrase from a substantive omission. Restoring detail must not promote a historical proposal, example constant or forum claim into an agreed implementation requirement.
+
+<a id="live-09"></a>
+## LIVE-09: Use the direct conversation as well
+
+> ypu can also read our direct conversation, rather than export
+
+The direct conversation is an additional review source, including later corrections and scope requirements. Retrieve actual message text where available and distinguish it from summaries or unavailable content. The new repository must still explain the development knowledge on its own; access to this chat is not a dependency of development or documentation lookup.

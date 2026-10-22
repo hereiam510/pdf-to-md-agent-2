@@ -46,6 +46,13 @@ One ID cannot safely represent all of the following:
 
 Likewise `(job_id, checkpoint_ns, model_turn_seq)` describes a straight-line proposal, not all new judgments. A checkpoint namespace is not necessarily a branch identity. A no-tool answer can reach END without incrementing the proposed counter; later user input can then collide. Deliberate regeneration can use byte-identical prompts but still be a new decision. A hash of the input identifies content equality, not intent or operation identity. Exact app entry rules must decide when the existing prepared step continues and when a new one is created.
 
+<a id="request-record-names-and-entry-rules"></a>
+### Request records and explicit entry intentions
+
+The source sketches used `model_step_id` for the durable intended decision, `request_ref` for an immutable request location, and `request_fingerprint` or `request_sha256` for its fixed-content check. A proposed `requests/<model_step_id>.json` layout illustrated external payload storage while Graph State kept compact references. Those spellings and paths are examples; the fingerprint boundary must include selected route/protocol/model, generation settings, tool schemas, and actual selected content, rather than hashing text alone or mutable filenames. `input_view_id` identifies the assembled view and remains related to, rather than interchangeable with, step/attempt/accepted-reply identities.
+
+ATT-27 made the entry intentions explicit through names such as `resume_interrupted_job()`, `branch_or_regenerate()`, and `append_user_input()`. A resume finds the same prepared step, reuses an accepted complete reply if present, or reconciles attempts and remaining allowance before any permitted resend. New user input or deliberate regeneration calls for a new judgment and therefore a new durable step identity even when the fingerprint is unchanged. The proposed `step_intent="new_judgment_required"` expresses that decision; it does not prove a resumed graph will pass through `prepare_step`. A display `branch_seq`, UUID choice, or counter cannot replace the entry rule, and generalized branching remains deferred.
+
 The prepared request fixes more than text messages. It includes the selected route/model/protocol configuration, generation parameters, tool definitions, required native items, selected content and exact image/artifact versions. Large request content can live in immutable files while graph state retains small references, fingerprints, and compact policy. Re-resolving `latest`, swapping a newer crop, or applying a fresh policy after preparation changes the request. The input assembler selects evidence; encoding obeys that selection instead of scanning all old artifacts and restoring released images.
 
 Before sending, look up a complete accepted reply for the same logical step/request. If present, reuse it and continue its batch instead of generating again. Storing `accepted_reply_id` only in graph message metadata misses the interval where the service saved the reply but the graph did not checkpoint. The lookup needs a durable app step identity that survives that gap.
@@ -94,6 +101,8 @@ Stable message IDs are useful but limited. A reducer can replace an existing sam
 
 Progress also needs a defined causal boundary. An operation created with sequence 10 can finish after sequence 11; `max(event_seq)` or the latest timestamp is not a safe substitute for per-call completion and processed-effect identity. Record which accepted calls/effects remain outstanding. This can be a small batch cursor plus explicit records under sequential execution; it does not require a general event-sourcing system.
 
+The earlier controller's `next_call` and pending-operation identity illustrated this cursor responsibility. It means “which declaration still needs an accounted outcome,” not “the first absent display message.” Recovery needs the accepted call list and each call's durable result, error, unfinished state, or stop reason; a cursor alone cannot prove that an externally committed operation did not happen. Conversely, a framework pending write may already contain a result that need not be executed again.
+
 **Source basis:** EVT-0878, EVT-0914, EVT-0942, EVT-1005, EVT-1068, EVT-1107, EVT-1147, EVT-1166; ATT-21–ATT-30.
 
 <a id="operation-replay"></a>
@@ -102,6 +111,8 @@ Progress also needs a defined causal boundary. An operation created with sequenc
 Persist resolved defaults at the operation's declared start boundary, after any required earlier batch dependency: an omitted version resolved to V10, selected source/region/render parameters, output location, and attempt directory stay bound to that operation on recovery. A later new operation may resolve defaults again. This prevents a retry of “preview current” from quietly previewing a different version.
 
 For `save(...)` followed by `preview(version omitted)`, resolving both calls at batch acceptance could bind preview to the pre-save version. Under the sequential-start option from the discussion, preview resolves the current version once after the preceding save has settled, then records that exact version before doing its own work. Explicit version arguments remain preferable when already known. The final contract must state the resolution point; “remove the word latest” does not remove a dynamic default. It must also distinguish the originally accepted arguments from the effective arguments with recorded defaults, so recovery can check both without resolving them anew.
+
+The proposed record names `resolved_version_id`, `output_dir`, and `attempt_dir` make this binding concrete: they record the values actually chosen for execution, not defaults to evaluate again after restart. The suggested operation tuple `(task_id, model_step_id, call_index, tool_call_id)` also tried to give a provider call task/parent/order context. It is an illustrative key, not a finalized uniqueness rule; the accepted parent reply and fixed effective input still need an unambiguous relationship, and declaration index does not itself serialize effects.
 
 Same operation identity with the same complete effective input reuses its original result. Same identity with changed parameters, tool, target, or fixed references is rejected. A new accepted operation with similar content is not automatically the old operation. Optional content deduplication needs the full scope/base/target/content, and does not infer semantic intention.
 
@@ -223,6 +234,13 @@ Use separate dimensions rather than one terminal label that mixes them:
 | Content claim | Which scope/version the agent considers complete; known gaps/errors; draft/partial status; source-review observations where performed. |
 | Package consistency | Which version/scope was selected; which output files/archive were built; actual consistency checks and publication outcome. |
 
+<a id="stop-label-meanings"></a>
+### Why the historical terminal labels were split
+
+ATT-28 proposed `completed_verified_delivery`, `exported_honest_draft`, `waiting_for_user_clarification`, `stopped_operational_limit`, and `stopped_unreconciled_effect` as five mutually exclusive terminal states. They mix facts that can coexist: a canceled or budget-limited execution may have exported an honest draft. The later `execution_status`, `content_status`, and `delivery_status` names express separate dimensions, not a frozen three-field schema. In particular, `completed_verified_delivery` must not imply source acceptance merely because package bytes match a version. A label such as `exported_package_verified_against_version` describes that narrower consistency check.
+
+The waiting aliases `awaiting_user`, `waiting_for_user_input`, and `waiting_for_user_clarification` are meaningful only with a concrete question to answer; `clarification_prompt` was a suggested place to retain it. A generic technical fault or repeated no-tool reply can instead be `stopped_incomplete` with its actual reason. `stopped_unreconciled_effect` also needs to distinguish local effect uncertainty from an unknown remote model outcome, because the latter can permit configured bounded replay. Exact state names remain Q3 work; the distinctions prevent a UI from asking the user to resolve a question that was never posed.
+
 A canceled run can contain a useful exported draft. A consistent ZIP can contain incomplete content. A valid schema or no-tool final answer cannot establish source fidelity. A selected good V10 can coexist with experimental V11 and an unused candidate; those do not automatically block delivery. Only known necessary unfinished work affects the completion claim.
 
 A no-tool answer may ask a real question, explain a blocker, merely narrate a planned tool action, prematurely claim completion, or actually finish. Assess its declared intent and durable work. A concrete clarification request enters waiting; it must not cycle through prepare without new information.
@@ -257,6 +275,8 @@ The historical direction was asynchronous JSON over standard input/output, with 
 
 A bounded queue cannot guarantee unlimited non-droppable replies, producers that never wait, and indefinite receiver failure simultaneously. If the UI stops reading, a pipe eventually fills. Keep ordinary progress off the conversion core's critical path; coalesce outdated progress, persist important results for request-ID lookup, and use a snapshot/sequence or revision on reconnect. Declare queue/storage limits and how new work is limited or rejected. Both protocol and diagnostics pipes need appropriate consumption. Dropping obsolete “page 5” progress after “page 6” is different from dropping the only receipt for a committed version.
 
+The proposed `state_seq` / `state_watermark` event would tell the UI that newer committed state is available, with `dropped_intermediate_events` reporting coalesced notifications. It would not reconstruct lost authoritative results. Similarly, `evidence_extracted` and `version_committed` distinguish OCR evidence from a saved draft, and a proposed `diff(V11, V12)` reads those two actual versions. A ring buffer, watermark, or separate async sender can support this notification design, but none removes finite pipe/storage limits or permits an unbounded stream of lossless control replies while the receiver is absent. These names are explanatory event sketches; final IPC framing and schema remain open.
+
 The [integration guide](INTEGRATION_AND_MODEL_BOUNDARY.md#desktop-process-boundary) covers the desktop/native protocol ownership. This guide supplies the durability and finite-failure limits.
 
 **Source basis:** EVT-0855, EVT-0878, EVT-1040, EVT-1068, EVT-1107, EVT-1147; ATT-21/22/27–ATT-30.
@@ -269,6 +289,8 @@ Export operates on a specified saved version and effective scope. The conceptual
 Delivery intent belongs to the current task, rather than one unqualified global selection on the source document. The document core owns committed versions and their provenance; the task owns which version and scope it chooses to deliver. Choosing an existing V10 must be expressible without creating a dummy edited V12. Selecting the just-created version can remain a convenience of a commit, but it does not replace direct existing-version selection. General branch UI or merge support is unnecessary to preserve this ownership distinction.
 
 The host/CLI/UI can export existing saved content without another model call. The old `Workspace.export(document, version)` and CLI dispatch already demonstrated that responsibility; the rebuild should preserve the capability, not their exact API. Exhausted model tokens do not make saved content inaccessible. Export still consumes time/disk and has its own cancellation/publication behavior.
+
+The proposed `export_package(version_id, destination, delivery_label)` named the same host-callable responsibility more explicitly: choose immutable content, an output destination, and an honest label without asking a model to regenerate or approve it. `finalize_run_node` named a possible caller inside the graph, not the sole owner or a guarantee that a finalizer always runs. Persisted intent and results let a host action perform or reconcile export after the inference loop has stopped.
 
 The selected version determines Markdown, JSON, HTML, source-derived images/assets, and ZIP. Keep the relevant body/maps/assets consistent across representations. A draft remains labeled draft/partial with known gaps; selecting/exporting it must not gain a hidden “full task complete” precondition. Likewise export success must not upgrade the content claim.
 

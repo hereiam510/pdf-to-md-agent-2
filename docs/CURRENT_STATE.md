@@ -10,6 +10,8 @@ An independent local Git repository holds newly written rebuild requirements, re
 
 The detailed reference records preserve the discussion's narrower alternatives and findings. [DEVELOPMENT_COVERAGE](reference/DEVELOPMENT_COVERAGE.json) maps every retained point to its technical explanation or explicitly historical/scope reference. The source/point ledgers retain provenance and decision status; mappings are navigation aids, not a substitute for substantive explanations.
 
+The user's subsequent technical-detail concern led to a source-first review of the synthesis at `e243431`, using direct conversation text and attachments independently of the existing point inventory. It found that some correct high-level explanations had dropped exact technical vocabulary, framework call ordering, field relationships and illustrative failure cases. Those details are restored in the module/reference guides with their original status. [TECHNICAL_TERMS](TECHNICAL_TERMS.md) makes original names discoverable; [TECHNICAL_DETAIL_REVIEW](reference/TECHNICAL_DETAIL_REVIEW.md) explains specific deficiencies and repairs rather than claiming that matching counts proves completeness.
+
 All 207 visible discussion messages, the inherited product handoff, all 30 attachments, 24 substantive forum figures and selected continuing source excerpts are [bundled locally](reference/sources/INDEX.md). Exact events and attachments retain their bytes; forum HTML is inert text with offline reading views. The original export remains untouched, but is no longer needed for development or cited-source lookup. Historical paths inside quotations are provenance, not required checkout locations.
 
 ## Implementation status
@@ -23,6 +25,8 @@ No remote or release was created. This work preserves knowledge and makes it usa
 ## Review and verification
 
 The initial review divided the complete exported discussion/attachments among three subagents and independently checked source coverage and effective-owner consistency. The subsequent self-containment work expanded the terse records, added module-oriented technical explanations, and used source-aware subagent review to find missing mechanics and cross-guide contradictions. Root integration reconciles owners, navigation, local provenance and checks. [PRESERVATION_AUDIT](reference/PRESERVATION_AUDIT.md) records the actual reviewed scope, results and limits.
+
+The latest review rotated source areas between the three reviewers. They extracted technical details from original messages/attachments before assessing existing prose, including names and counterexamples hidden by broad point grouping. Direct chat retrieval returned actual message text: 205 overlapping discussion messages exactly matched the locally preserved source bodies. The two separate export-branch administrative messages were not returned, and the known empty message remains empty. No new source content or final API was invented to fill a gap.
 
 A working Python 3.9+ interpreter is the only dependency of the documentation utilities. The current portable check uses a standalone bundled Python 3.12.14 interpreter outside both repositories; the initial review used an existing Python 3.13.16 interpreter read-only with bytecode writing disabled. No dependency installation or global settings change is required.
 

@@ -3952,5 +3952,21 @@
       "R-027"
     ],
     "reason": "Explicit later user requirement controls the portable detailed development handoff."
+  },
+  {
+    "source_id": "LIVE-08",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "R-028"
+    ],
+    "reason": "Explicit later review requirement; the maintained source-first review explains actual gaps and remedies."
+  },
+  {
+    "source_id": "LIVE-09",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "R-029"
+    ],
+    "reason": "Explicit later review requirement; the maintained source-first review explains actual gaps and remedies."
   }
 ]

@@ -5016,5 +5016,25 @@
       "LIVE-07"
     ],
     "destination": "docs/DEVELOPMENT_GUIDE.md#reading-by-implementation-concern"
+  },
+  {
+    "id": "R-028",
+    "topic": "Technical-detail preservation beyond topic counts",
+    "summary": "Independently compare original terminology, fields, ordering, counterexamples and rejected rationale with maintained explanations; mappings or word matches do not prove detail completeness.",
+    "status": "explicit-user-requirement",
+    "source_ids": [
+      "LIVE-08"
+    ],
+    "destination": "docs/reference/LATER_DECISIONS.md#live-08"
+  },
+  {
+    "id": "R-029",
+    "topic": "Direct conversation review",
+    "summary": "Use accessible direct message text and later corrections as well as export sources; distinguish actual text, summaries and gaps without creating a chat dependency.",
+    "status": "explicit-user-requirement",
+    "source_ids": [
+      "LIVE-09"
+    ],
+    "destination": "docs/reference/LATER_DECISIONS.md#live-09"
   }
 ]
