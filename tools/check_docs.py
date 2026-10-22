@@ -169,7 +169,7 @@ def main():
     report = {'markdown_files':len(documents),'local_links_and_destinations_checked':links,
               'preserved_points':len(points),'source_dispositions':len(coverage),
               'bundled_source_files_verified':len(bundle_files),'development_detail_mappings':len(details),
-              'errors':errors,'scope':'Repository-only link, source-integrity and coverage checks; counts do not prove semantic completeness or runtime correctness.'}
+              'errors':errors,'scope':'Repository-only link, source-integrity and coverage checks. Counts do not prove semantic completeness or runtime correctness.'}
     print(json.dumps(report,ensure_ascii=False,indent=2))
     return bool(errors)
 

@@ -21,7 +21,7 @@
     "point_id": "P1-004",
     "destination": "docs/design/DOCUMENT_ENGINE.md#page-maps-and-provenance",
     "treatment": "explained",
-    "note": "Explains physical/printed labels, none/unknown and scope accounting; linked rendering/evidence and export sections preserve faithful images and explicitly selected same-version outputs."
+    "note": "Explains physical/printed labels, none/unknown and scope accounting. Linked rendering/evidence and export sections preserve faithful images and explicitly selected same-version outputs."
   },
   {
     "point_id": "P1-005",
@@ -39,7 +39,7 @@
     "point_id": "P1-007",
     "destination": "docs/reference/01-foundations-and-frameworks.md#p1-007",
     "treatment": "historical-reference",
-    "note": "Preserves the specific Breasts/Figure 4–13 old delivery, labels and pixels evidence with bounded acceptance; the integration guide explains why it is not rebuild readiness."
+    "note": "Preserves the specific Breasts/Figure 4–13 old delivery, labels and pixels evidence with bounded acceptance. The integration guide explains why this does not establish rebuild readiness."
   },
   {
     "point_id": "P1-008",
@@ -51,13 +51,13 @@
     "point_id": "P1-009",
     "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#motivation-and-evidence",
     "treatment": "explained",
-    "note": "Explains the old accumulation/intake gap and distinction between precise reads, optional release/checkpoint mechanisms, and an automatic capacity policy; old defaults remain historical."
+    "note": "Explains the old accumulation/intake gap and distinction between precise reads, optional release/checkpoint mechanisms, and an automatic capacity policy. Old defaults remain historical."
   },
   {
     "point_id": "P1-010",
     "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#versions-and-acceptance-limits",
     "treatment": "explained",
-    "note": "Explains availability, prescribed use, actual input consumption, natural adoption, content quality and net benefit as separate claims; non-use is not causal proof."
+    "note": "Explains availability, prescribed use, actual input consumption, natural adoption, content quality and net benefit as separate claims. Non-use is not causal proof."
   },
   {
     "point_id": "P1-011",
@@ -75,7 +75,7 @@
     "point_id": "P1-013",
     "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#nexus-subscription-and-portability",
     "treatment": "explained",
-    "note": "Explains why native compaction/background/counting features and compatible endpoints do not establish route availability; no research-derived universal threshold is selected."
+    "note": "Explains why native compaction/background/counting features and compatible endpoints do not establish route availability. The discussion selected no research-derived universal threshold."
   },
   {
     "point_id": "P1-014",
@@ -99,7 +99,7 @@
     "point_id": "P1-017",
     "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#nexus-subscription-and-portability",
     "treatment": "explained",
-    "note": "States the explicit portable baseline without native compaction/retrieval/cancellation and its multi-model rationale; aliases do not establish capabilities or cost."
+    "note": "States the explicit portable baseline without native compaction/retrieval/cancellation and its multi-model rationale. Aliases do not establish capabilities or cost."
   },
   {
     "point_id": "P1-018",
@@ -117,7 +117,7 @@
     "point_id": "P1-020",
     "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#pins-links-and-release",
     "treatment": "explained",
-    "note": "Explains release choices, exact retrieval and dependency-aware retention; saved/processed does not imply dispensable, and release-first is not compulsory cleanup."
+    "note": "Explains release choices, exact retrieval and dependency-aware retention. Saved/processed does not imply dispensable, and release-first is not compulsory cleanup."
   },
   {
     "point_id": "P1-021",
@@ -219,7 +219,7 @@
     "point_id": "P1-037",
     "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
     "treatment": "explained",
-    "note": "Explains historical summary truncation and wrapper-field concerns; native adapter and execution links retain shared budgets/cancellation and no inherited defaults."
+    "note": "Explains historical summary truncation and wrapper-field concerns. Native adapter and execution links retain shared budgets/cancellation and no inherited defaults."
   },
   {
     "point_id": "P1-038",
@@ -231,7 +231,7 @@
     "point_id": "P1-039",
     "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
     "treatment": "explained",
-    "note": "Explains the provisional high-level-first/create_agent ranking and the final small-StateGraph preference; no fallback ladder remains an active obligation."
+    "note": "Explains the provisional high-level-first/create_agent ranking and the final small-StateGraph preference. No fallback ladder remains an active obligation."
   },
   {
     "point_id": "P1-040",
@@ -309,7 +309,7 @@
     "point_id": "P1-052",
     "destination": "docs/reference/01-foundations-and-frameworks.md#p1-052",
     "treatment": "historical-reference",
-    "note": "Preserves useful forum themes and their limits: exact originals, evidence-first release, model judgment, working state and differentiated failures; not Nexus cancellation proof."
+    "note": "Preserves useful forum themes and their limits: exact originals, evidence-first release, model judgment, working state and differentiated failures. These themes do not prove Nexus cancellation."
   },
   {
     "point_id": "P1-053",
@@ -429,7 +429,7 @@
     "point_id": "P1-072",
     "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
     "treatment": "explained",
-    "note": "Corrects Pi/runtime-language and wrapper dismissals; describes package layouts and internal MCP/IPC as options while retaining the final Python control baseline."
+    "note": "Corrects Pi/runtime-language and wrapper dismissals. Describes package layouts and internal MCP/IPC as options while retaining the final Python control baseline."
   },
   {
     "point_id": "P1-073",
@@ -597,7 +597,7 @@
     "point_id": "P1-100",
     "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#verification-and-open-contracts",
     "treatment": "explained",
-    "note": "Keeps Q2 open with configurable capacity, self-sufficient incremental handoff, unprocessed history and preserved originals; no universal K/percentage/pass count."
+    "note": "Keeps Q2 open with configurable capacity, self-sufficient incremental handoff, unprocessed history and preserved originals. The discussion selected no universal K/percentage/pass count."
   },
   {
     "point_id": "P1-101",
@@ -609,7 +609,7 @@
     "point_id": "P1-102",
     "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#three-contracts-and-scope",
     "treatment": "scope-note",
-    "note": "Explains closure and proportional implementation/delivery continuation; historical mechanisms, old allowances and framework/platform matrices do not create an automatic backlog."
+    "note": "Explains closure and proportional implementation/delivery continuation. Historical mechanisms, old allowances and framework/platform matrices do not create an automatic backlog."
   },
   {
     "point_id": "P2-001",
@@ -633,13 +633,13 @@
     "point_id": "P2-004",
     "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#motivation-and-evidence",
     "treatment": "explained",
-    "note": "Distinguishes cumulative input from peak request size and null assistant prose from explicit notes or hidden reasoning; accounting consequences are developed later."
+    "note": "Distinguishes cumulative input from peak request size and null assistant prose from explicit notes or hidden reasoning. The later sections develop the accounting consequences."
   },
   {
     "point_id": "P2-005",
     "destination": "docs/reference/02-context-state-and-evidence.md#p2-005",
     "treatment": "historical-reference",
-    "note": "Keeps the exact thirteen-/forty-page observations, corrected time/round allowance, specific failure endings, and causal limits locally; guide explains their design implication."
+    "note": "Keeps the exact thirteen-/forty-page observations, corrected time/round allowance, specific failure endings, and causal limits locally. The guide explains their design implication."
   },
   {
     "point_id": "P2-006",
@@ -705,7 +705,7 @@
     "point_id": "P2-016",
     "destination": "docs/reference/02-context-state-and-evidence.md#p2-016",
     "treatment": "explained",
-    "note": "Retains the complete revision/error-isolation explanation and later pre-validation capture correction; exact document mechanics remain with Q1."
+    "note": "Retains the complete revision/error-isolation explanation and later pre-validation capture correction. Exact document mechanics remain with Q1."
   },
   {
     "point_id": "P2-017",
@@ -741,7 +741,7 @@
     "point_id": "P2-022",
     "destination": "docs/reference/02-context-state-and-evidence.md#p2-022",
     "treatment": "explained",
-    "note": "Keeps the header-unit/row, reordering/map, and asset/reference conflict cases; preserves stale-base conflict and rejects automatic semantic independence."
+    "note": "Keeps the header-unit/row, reordering/map, and asset/reference conflict cases. It preserves stale-base conflict and rejects automatic semantic independence."
   },
   {
     "point_id": "P2-023",
@@ -927,7 +927,7 @@
     "point_id": "P2-053",
     "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#computation-reuse",
     "treatment": "explained",
-    "note": "Preserves explicit recomputation, old evidence and fixed note references; newest cache selection is a declared policy rather than a quality claim."
+    "note": "Preserves explicit recomputation, old evidence and fixed note references. Newest cache selection is a declared policy rather than a quality claim."
   },
   {
     "point_id": "P2-054",
@@ -1005,7 +1005,7 @@
     "point_id": "P2-066",
     "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#compact-policy-authority",
     "treatment": "explained",
-    "note": "Keeps context selection separate from service-owned committed document/request/effect facts; a graph rollback cannot reverse those facts."
+    "note": "Keeps context selection separate from service-owned committed document/request/effect facts. A graph rollback cannot reverse those facts."
   },
   {
     "point_id": "P2-067",
@@ -1113,7 +1113,7 @@
     "point_id": "P2-084",
     "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#failed-handoff-and-restart",
     "treatment": "explained",
-    "note": "Separates return, hook observation, durable persistence, input inclusion and understanding; lazy timestamps are observations rather than joint commits."
+    "note": "Separates return, hook observation, durable persistence, input inclusion and understanding. Lazy timestamps are observations rather than joint commits."
   },
   {
     "point_id": "P2-085",
@@ -1161,7 +1161,7 @@
     "point_id": "P2-092",
     "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#scripts-and-partial-work",
     "treatment": "explained",
-    "note": "Distinguishes exact bytes, full decoding, consistent acquisition and requested coverage; salvage success does not erase original operation uncertainty."
+    "note": "Distinguishes exact bytes, full decoding, consistent acquisition and requested coverage. Salvage success does not erase original operation uncertainty."
   },
   {
     "point_id": "P2-093",
@@ -1299,7 +1299,7 @@
     "point_id": "P2-115",
     "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#verification-and-open-contracts",
     "treatment": "scope-note",
-    "note": "Keeps Q1-Q3 open with their exact remaining choices and retained boundaries; rejects turning historical caveats into added prerequisites."
+    "note": "Keeps Q1-Q3 open with their exact remaining choices and retained boundaries. It rejects turning historical caveats into added prerequisites."
   },
   {
     "point_id": "P2-116",
@@ -1311,55 +1311,55 @@
     "point_id": "P3-001",
     "destination": "docs/design/DOCUMENT_ENGINE.md#edit-semantics",
     "treatment": "explained",
-    "note": "Exact local edits preserve untouched content; logical output blocks do not dictate storage size or guarantee semantic correctness."
+    "note": "Exact local edits preserve untouched content. Logical output blocks do not dictate storage size or guarantee semantic correctness."
   },
   {
     "point_id": "P3-002",
     "destination": "docs/design/DOCUMENT_ENGINE.md#edit-semantics",
     "treatment": "explained",
-    "note": "Version-bound expected text, nonoverlapping same-base patches, descending offsets, sequential alternatives, locators and cross-language position conventions are explained."
+    "note": "This section explains version-bound expected text, nonoverlapping same-base patches, descending offsets, sequential alternatives, locators and cross-language position conventions."
   },
   {
     "point_id": "P3-003",
     "destination": "docs/reference/03-documents-delivery-and-recovery.md#local-patching",
     "treatment": "historical-reference",
-    "note": "The 本文件/本文作 and emphasis/glyph observations retain their scope; eight historical errors included failures outside patching."
+    "note": "The 本文件/本文作 and emphasis/glyph observations retain their scope. The eight historical errors included failures outside patching."
   },
   {
     "point_id": "P3-004",
     "destination": "docs/design/DOCUMENT_ENGINE.md#rendering-and-preview",
     "treatment": "explained",
-    "note": "Version-bound source/output images, optional montages, pixel preservation and resolution/crop/causal limits are explained."
+    "note": "This section explains version-bound source/output images, optional montages, pixel preservation and resolution/crop/causal limits."
   },
   {
     "point_id": "P3-005",
     "destination": "docs/design/DOCUMENT_ENGINE.md#evidence-and-exact-access",
     "treatment": "explained",
-    "note": "Immutable evidence plus internal location resolves coordinates; page-only and multiple-region references remain valid without mandatory per-word boxes."
+    "note": "Immutable evidence plus internal location resolves coordinates. Page-only and multiple-region references remain valid without mandatory per-word boxes."
   },
   {
     "point_id": "P3-006",
     "destination": "docs/reference/03-documents-delivery-and-recovery.md#capacity-visibility-and-access",
     "treatment": "explained",
-    "note": "Historical sizes are distinguished from selected repeated input contribution and configurable route/output capacity; timeout causality is not inferred."
+    "note": "Historical sizes differ from selected repeated input contribution and configurable route/output capacity. They do not establish timeout causality."
   },
   {
     "point_id": "P3-007",
     "destination": "docs/reference/03-documents-delivery-and-recovery.md#capacity-visibility-and-access",
     "treatment": "historical-reference",
-    "note": "P's disabled selective/checkpoint configuration and the limits of non-use as natural-adoption evidence are retained."
+    "note": "This section retains P's disabled selective/checkpoint configuration and the limits of non-use as natural-adoption evidence."
   },
   {
     "point_id": "P3-008",
     "destination": "docs/design/DOCUMENT_ENGINE.md#evidence-and-exact-access",
     "treatment": "explained",
-    "note": "Shared full/raw/field/range/native access, actual return coverage and the external MCP host's independent context responsibility are explained."
+    "note": "This section explains shared full/raw/field/range/native access, actual return coverage and the external MCP host's independent context responsibility."
   },
   {
     "point_id": "P3-009",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#context-work-and-frozen-input",
     "treatment": "explained",
-    "note": "Explicit optional context intents do not imply omission-triggered release; small policy and effective ordinary-dialogue requirements remain protected."
+    "note": "Explicit optional context intents do not imply omission-triggered release. Small policy and effective ordinary-dialogue requirements remain protected."
   },
   {
     "point_id": "P3-010",
@@ -1371,13 +1371,13 @@
     "point_id": "P3-011",
     "destination": "docs/design/DOCUMENT_ENGINE.md#page-maps-and-provenance",
     "treatment": "explained",
-    "note": "Subpage/section scope and completeness differ from per-page flags; blank, omitted, unprocessed, none and unknown remain distinct."
+    "note": "Subpage/section scope and completeness differ from per-page flags. Blank, omitted, unprocessed, none and unknown remain distinct."
   },
   {
     "point_id": "P3-012",
     "destination": "docs/reference/03-documents-delivery-and-recovery.md#continuity-and-state-ownership",
     "treatment": "explained",
-    "note": "Same-run context handoff, new/delegated task scope and same-execution recovery share data but require different authority, pending work and budget state."
+    "note": "Same-run context handoff, new/delegated task scope and same-execution recovery share data. They require different authority, pending work and budget state."
   },
   {
     "point_id": "P3-013",
@@ -1389,79 +1389,79 @@
     "point_id": "P3-014",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#ownership-and-entry-points",
     "treatment": "explained",
-    "note": "Ownership separates graph policy from durable attempts/budgets/document/external effects; physical database placement alone is not correctness."
+    "note": "Ownership separates graph policy from durable attempts/budgets/document/external effects. Physical database placement alone does not establish correctness."
   },
   {
     "point_id": "P3-015",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#request-and-attempt-identity",
     "treatment": "explained",
-    "note": "Input view, logical step, physical attempt, accepted parent reply, tool batch and operation identities are individually defined."
+    "note": "This section individually defines input view, logical step, physical attempt, accepted parent reply, tool batch and operation identities."
   },
   {
     "point_id": "P3-016",
     "destination": "docs/reference/03-documents-delivery-and-recovery.md#transport-salvage-and-slices",
     "treatment": "explained",
-    "note": "Request-local native image encoding replaces residual provider queues; controller budgets cannot be inherited by a nominally stateless wrapper."
+    "note": "Request-local native image encoding replaces residual provider queues. A nominally stateless wrapper cannot inherit controller budgets."
   },
   {
     "point_id": "P3-017",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#budgets-cancellation-and-stop",
     "treatment": "explained",
-    "note": "Local preflight, transport retry and capacity re-preparation use distinct policy eligibility with common totals; recognized errors and Retry-After remain qualified."
+    "note": "Local preflight, transport retry and capacity re-preparation use distinct policy eligibility with common totals. Recognized errors and Retry-After remain qualified."
   },
   {
     "point_id": "P3-018",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#process-and-progress",
     "treatment": "explained",
-    "note": "Read-only inspection, explicit termination and salvage are separate; snapshot stability, full decoding and Job Objects remain optional mechanisms."
+    "note": "Read-only inspection, explicit termination and salvage are separate. Snapshot stability, full decoding and Job Objects remain optional mechanisms."
   },
   {
     "point_id": "P3-019",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#q3-closure-and-implementation-order",
     "treatment": "explained",
-    "note": "A useful source/save/reopen/export increment includes early candidate preservation and capacity; product priority is not rigid layer-by-layer construction."
+    "note": "A useful source/save/reopen/export increment includes early candidate preservation and capacity. Product priority does not impose rigid layer-by-layer construction."
   },
   {
     "point_id": "P3-020",
     "destination": "docs/design/DOCUMENT_ENGINE.md#edit-semantics",
     "treatment": "explained",
-    "note": "Raw fidelity and mapped read/edit views avoid blanket NFC/HTML rewriting; U+2F800 and UTF-16/code-point examples explain the limits."
+    "note": "Raw fidelity and mapped read/edit views avoid blanket NFC/HTML rewriting. U+2F800 and UTF-16/code-point examples explain the limits."
   },
   {
     "point_id": "P3-021",
     "destination": "docs/design/DOCUMENT_ENGINE.md#edit-semantics",
     "treatment": "explained",
-    "note": "Repeated values, occurrence selection and rowspan/colspan require explicit version-bound locations; cell references can reuse a patch engine."
+    "note": "Repeated values, occurrence selection and rowspan/colspan require explicit version-bound locations. Cell references can reuse a patch engine."
   },
   {
     "point_id": "P3-022",
     "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-capture",
     "treatment": "explained",
-    "note": "Native and decoded capture precede their rejection boundaries; reference resolution/full-result validation precede commit, while projection failure remains separate."
+    "note": "Native and decoded capture precede their rejection boundaries. Reference resolution/full-result validation precede commit, while projection failure remains separate."
   },
   {
     "point_id": "P3-023",
     "destination": "docs/design/DOCUMENT_ENGINE.md#page-maps-and-provenance",
     "treatment": "explained",
-    "note": "Drafts remain readable, previewable and exportable with honest gaps; metadata/body changes can share an operation without a completion gate."
+    "note": "Drafts remain readable, previewable and exportable with honest gaps. Metadata/body changes can share an operation without a completion gate."
   },
   {
     "point_id": "P3-024",
     "destination": "docs/design/DOCUMENT_ENGINE.md#page-maps-and-provenance",
     "treatment": "explained",
-    "note": "Completion binds scope and version, printed-page/provenance observations can be corrected, and copyright content is not automatically decorative."
+    "note": "Completion binds scope and version. Printed-page/provenance observations can need correction, and copyright content is not automatically decorative."
   },
   {
     "point_id": "P3-025",
     "destination": "docs/reference/03-documents-delivery-and-recovery.md#draft-export-and-claims",
     "treatment": "historical-reference",
-    "note": "The accepted task's 191662-character inspect and A/C defect locations remain correctly scoped; interface-friction causality is unproven."
+    "note": "The accepted task's 191662-character inspect and A/C defect locations remain correctly scoped. Interface-friction causality remains unproven."
   },
   {
     "point_id": "P3-026",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#accepted-batch-execution",
     "treatment": "explained",
-    "note": "Trusted declaration order settles context intents, while actual tool dependencies/version changes require their own execution contract."
+    "note": "Trusted declaration order settles context intents. Actual tool dependencies/version changes require their own execution contract."
   },
   {
     "point_id": "P3-027",
@@ -1473,19 +1473,19 @@
     "point_id": "P3-028",
     "destination": "docs/design/DOCUMENT_ENGINE.md#rendering-and-preview",
     "treatment": "explained",
-    "note": "Whole-document CommonMark resolution, token/DOM relationships, independent source/output geometry and screenshot coverage limits are explained."
+    "note": "This section explains whole-document CommonMark resolution, token/DOM relationships, independent source/output geometry and screenshot coverage limits."
   },
   {
     "point_id": "P3-029",
     "destination": "docs/reference/03-documents-delivery-and-recovery.md#adapter-integration-boundaries",
     "treatment": "historical-reference",
-    "note": "The under-150-line and inherited-228-test guarantees are retracted; native tool/image ordering and integration responsibilities remain explicit."
+    "note": "The discussion retracted the under-150-line and inherited-228-test guarantees. Native tool/image ordering and integration responsibilities remain explicit."
   },
   {
     "point_id": "P3-030",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#request-and-attempt-identity",
     "treatment": "explained",
-    "note": "Durable app-step lookup recovers an accepted reply before another send across the graph-checkpoint gap; encoding obeys frozen evidence selection."
+    "note": "Durable app-step lookup recovers an accepted reply before another send across the graph-checkpoint gap. Encoding obeys frozen evidence selection."
   },
   {
     "point_id": "P3-031",
@@ -1497,13 +1497,13 @@
     "point_id": "P3-032",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#ownership-and-entry-points",
     "treatment": "explained",
-    "note": "Whole-batch/recovery/input ownership motivates a small StateGraph; fixed node counts and a mandatory BaseChatModel wrapper are not selected."
+    "note": "Whole-batch/recovery/input ownership motivates a small StateGraph. The design does not select fixed node counts or a mandatory BaseChatModel wrapper."
   },
   {
     "point_id": "P3-033",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#request-and-attempt-identity",
     "treatment": "explained",
-    "note": "New input or deliberate regeneration creates a new judgment even with identical input; recovery retains identity and cannot assume prepare is revisited."
+    "note": "New input or deliberate regeneration creates a new judgment even with identical input. Recovery retains identity and cannot assume prepare is revisited."
   },
   {
     "point_id": "P3-034",
@@ -1515,7 +1515,7 @@
     "point_id": "P3-035",
     "destination": "docs/design/DOCUMENT_ENGINE.md#commit-visibility",
     "treatment": "explained",
-    "note": "Prepared files differ from commit; short metadata transactions bind registration, promised pointers and operation/adoption facts while unknown effects keep their own records."
+    "note": "Prepared files differ from commit. Short metadata transactions bind registration, promised pointers and operation/adoption facts. Unknown effects keep their own records."
   },
   {
     "point_id": "P3-036",
@@ -1533,37 +1533,37 @@
     "point_id": "P3-038",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#q3-closure-and-implementation-order",
     "treatment": "explained",
-    "note": "Basic capacity belongs in the first usable runtime because even one inspect can be large; long-task history handling is not gated on forty pages."
+    "note": "Basic capacity belongs in the first usable runtime because even one inspect can be large. Long-task history handling does not wait for forty pages."
   },
   {
     "point_id": "P3-039",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#explicit-version-export",
     "treatment": "explained",
-    "note": "Task-owned explicit version/scope selection permits older versions and independent export; completion/waiting are separate and unused candidates do not force repair."
+    "note": "Task-owned explicit version/scope selection permits older versions and independent export. Completion/waiting are separate, and unused candidates do not force repair."
   },
   {
     "point_id": "P3-040",
     "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-repair-sequence",
     "treatment": "explained",
-    "note": "The worked page-12/page-13 repair distinguishes base preservation, content-only import and candidate merge, with final Q1 merge/ordering semantics still open."
+    "note": "The worked page-12/page-13 repair distinguishes base preservation, content-only import and candidate merge. Final Q1 merge/ordering semantics remain open."
   },
   {
     "point_id": "P3-041",
     "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-reuse-and-lineage",
     "treatment": "explained",
-    "note": "Exact candidate prose/block references work independently of stale deletion/reorder operations; raw preservation survives indexing failure."
+    "note": "Exact candidate prose/block references work independently of stale deletion/reorder operations. Raw preservation survives indexing failure."
   },
   {
     "point_id": "P3-042",
     "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-reuse-and-lineage",
     "treatment": "explained",
-    "note": "Unrelated later commits do not dispose of earlier candidates; partial adoption and useful work are scoped without mandatory per-fragment disposition."
+    "note": "Unrelated later commits do not dispose of earlier candidates. Partial adoption and useful work are scoped without mandatory per-fragment disposition."
   },
   {
     "point_id": "P3-043",
     "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-reuse-and-lineage",
     "treatment": "explained",
-    "note": "Ancestor adoption records historical usage; current content comes from the selected version and unfinished necessary work from task state."
+    "note": "Ancestor adoption records historical usage. Current content comes from the selected version and unfinished necessary work from task state."
   },
   {
     "point_id": "P3-044",
@@ -1575,55 +1575,55 @@
     "point_id": "P3-045",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#operation-replay",
     "treatment": "explained",
-    "note": "Old version and delivery-selection receipts report historical outcomes while newer pointers remain advanced; frozen model inputs remain historical."
+    "note": "Old version and delivery-selection receipts report historical outcomes while newer pointers remain advanced. Frozen model inputs remain historical."
   },
   {
     "point_id": "P3-046",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#accepted-batch-execution",
     "treatment": "explained",
-    "note": "The full accepted list includes completed, rejected and pending calls; restore results/intents and resolve outstanding work before a new model decision."
+    "note": "The full accepted list includes completed, rejected and pending calls. Restore results/intents and resolve outstanding work before a new model decision."
   },
   {
     "point_id": "P3-047",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#operation-replay",
     "treatment": "explained",
-    "note": "Each operation has specific recovery conditions; omitted defaults bind at the declared sequential start, and old-version export is independent of current head."
+    "note": "Each operation has specific recovery conditions. Omitted defaults bind at the declared sequential start, and old-version export is independent of current head."
   },
   {
     "point_id": "P3-048",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#operation-replay",
     "treatment": "explained",
-    "note": "Concurrency, reuse and rerun safety are distinct; output/source/settings/attempt facts determine reconciliation and useful files survive interruption."
+    "note": "Concurrency, reuse and rerun safety are distinct. Output/source/settings/attempt facts determine reconciliation, and useful files survive interruption."
   },
   {
     "point_id": "P3-049",
     "destination": "docs/design/DOCUMENT_ENGINE.md#rendering-and-preview",
     "treatment": "explained",
-    "note": "Source render works before any draft using source/page/region/render settings; output preview uses a saved version and explicit view parameters."
+    "note": "Source render works before any draft using source/page/region/render settings. Output preview uses a saved version and explicit view parameters."
   },
   {
     "point_id": "P3-050",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#budgets-cancellation-and-stop",
     "treatment": "explained",
-    "note": "Route-local rejection observations retain local-estimate and upstream-limit uncertainty; new step identities do not reset original totals."
+    "note": "Route-local rejection observations retain local-estimate and upstream-limit uncertainty. New step identities do not reset original totals."
   },
   {
     "point_id": "P3-051",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#send-boundary-sequence",
     "treatment": "explained",
-    "note": "Compaction and normal sends share durable identity/budgets/cancellation; accepted-result lookup precedes fresh-send accounting and remains possible at zero allowance."
+    "note": "Compaction and normal sends share durable identity/budgets/cancellation. Accepted-result lookup precedes fresh-send accounting and remains possible at zero allowance."
   },
   {
     "point_id": "P3-052",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#context-work-and-frozen-input",
     "treatment": "explained",
-    "note": "Actual supplied ranges, prior handoff, uncovered history and base revision constrain application; invalid/stale results preserve originals and complete pairs."
+    "note": "Actual supplied ranges, prior handoff, uncovered history and base revision constrain application. Invalid/stale results preserve originals and complete pairs."
   },
   {
     "point_id": "P3-053",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#context-work-and-frozen-input",
     "treatment": "explained",
-    "note": "Intermediate reduction can apply before normal-request readiness; assess full replacement overhead and stop within original limits on no useful progress."
+    "note": "Intermediate reduction can apply before normal-request readiness. Assess full replacement overhead and stop within original limits on no useful progress."
   },
   {
     "point_id": "P3-054",
@@ -1635,13 +1635,13 @@
     "point_id": "P3-055",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#context-work-and-frozen-input",
     "treatment": "explained",
-    "note": "Authoring arguments count alongside tool results; original pending operations remain intact while irrelevant latest/candidate portions may leave the model view."
+    "note": "Authoring arguments count alongside tool results. Original pending operations remain intact while irrelevant latest/candidate portions may leave the model view."
   },
   {
     "point_id": "P3-056",
     "destination": "docs/reference/03-documents-delivery-and-recovery.md#authoring-history-and-cache",
     "treatment": "historical-reference",
-    "note": "Fixed recent K, supersession-only release and 90-percent/max-cache claims are withdrawn; frozen snapshots protect replay independently."
+    "note": "The discussion withdrew fixed recent K, supersession-only release and 90-percent/max-cache claims. Frozen snapshots protect replay independently."
   },
   {
     "point_id": "P3-057",
@@ -1653,19 +1653,19 @@
     "point_id": "P3-058",
     "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-reuse-and-lineage",
     "treatment": "explained",
-    "note": "The partial JSON example explains exact same-attempt closed-span extraction and tolerant-parser limits; automatic salvage remains optional and outside V1 prerequisites."
+    "note": "The partial JSON example explains exact same-attempt closed-span extraction and tolerant-parser limits. Automatic salvage remains optional and outside V1 prerequisites."
   },
   {
     "point_id": "P3-059",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#completion-and-waiting",
     "treatment": "explained",
-    "note": "Execution, content claim and package consistency remain independent; cancellation/limits/local unknown effects differ from true questions and remote bounded replay."
+    "note": "Execution, content claim and package consistency remain independent. Cancellation/limits/local unknown effects differ from true questions and remote bounded replay."
   },
   {
     "point_id": "P3-060",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#completion-and-waiting",
     "treatment": "explained",
-    "note": "Optional persisted one-shot reminders follow explicit stop/question/cancel precedence and cannot turn every no-tool stall into awaiting-user state."
+    "note": "Optional persisted one-shot reminders follow explicit stop/question/cancel precedence. They cannot turn every no-tool stall into awaiting-user state."
   },
   {
     "point_id": "P3-061",
@@ -1677,198 +1677,198 @@
     "point_id": "P3-062",
     "destination": "docs/design/EXECUTION_AND_DELIVERY.md#process-and-progress",
     "treatment": "explained",
-    "note": "Durable results, snapshot/revision reconnect and coalesced progress respect finite-pipe limits; OCR progress is not conversion and mandatory first-line dup2 is withdrawn."
+    "note": "Durable results, snapshot/revision reconnect and coalesced progress respect finite-pipe limits. OCR progress is not conversion, and mandatory first-line dup2 remains withdrawn."
   },
   {
     "point_id": "P3-063",
     "destination": "docs/design/DOCUMENT_ENGINE.md#identities-and-canonical-data",
     "treatment": "explained",
-    "note": "Immutable files own body content; SQLite owns defined metadata/receipts rather than an independently mutable duplicate. Table/module counts and old tests do not prove completeness."
+    "note": "Immutable files own body content. SQLite owns defined metadata/receipts rather than an independently mutable duplicate. Table/module counts and old tests do not prove completeness."
   },
   {
     "point_id": "P3-064",
     "destination": "docs/reference/03-documents-delivery-and-recovery.md#final-three-contracts",
     "treatment": "scope-note",
-    "note": "The controlling final narrowing retains Q1-Q3 and separates design closure from implementation, observed evidence from hypotheses and optional ideas from prerequisites."
+    "note": "The controlling final narrowing retains Q1-Q3. It separates design closure from implementation, observed evidence from hypotheses and optional ideas from prerequisites."
   },
   {
     "point_id": "P3-065",
     "destination": "docs/design/DOCUMENT_ENGINE.md#evidence-and-exact-access",
     "treatment": "explained",
-    "note": "Optional computation reuse keys source/engine/language/parameters/page-region, supports overlap/recompute and does not force page-per-file storage or prove savings."
+    "note": "Optional computation reuse keys source/engine/language/parameters/page-region and supports overlap/recompute. It does not force page-per-file storage or prove savings."
   },
   {
     "point_id": "R-001",
     "destination": "docs/PRODUCT_REQUIREMENTS.md#outcome-and-product-surface",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Complete source-faithful usable Markdown/images, autonomous app with Python backend and Electron UI, no manual preprocessing/assembly."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. The autonomous app uses a Python backend and Electron UI. It delivers complete source-faithful usable Markdown/images without manual preprocessing or assembly."
   },
   {
     "point_id": "R-002",
     "destination": "docs/PRODUCT_REQUIREMENTS.md#outcome-and-product-surface",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Bundle required runtimes; Windows first, wider Windows x86_64/macOS Apple Silicon/Debian intent is not a universal first-version matrix."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Bundle required runtimes. Windows comes first. Wider Windows x86_64/macOS Apple Silicon/Debian intent is not a universal first-version matrix."
   },
   {
     "point_id": "R-003",
     "destination": "docs/PRODUCT_REQUIREMENTS.md#content-fidelity",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Preserve substantive text, tables, meaningful typography, glyph distinctions, sections/footnotes, cross-page relationships; distinguish decorative omissions."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Preserve substantive text, tables, meaningful typography, glyph distinctions, sections/footnotes and cross-page relationships. Distinguish decorative omissions."
   },
   {
     "point_id": "R-004",
     "destination": "docs/PRODUCT_REQUIREMENTS.md#content-fidelity",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: No blanket NFC/Traditional-Simplified conversion, silent source correction or destructive HTML reflow; pixels do not prove original Unicode."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Do not apply blanket NFC/Traditional-Simplified conversion, silent source correction or destructive HTML reflow. Pixels do not prove original Unicode."
   },
   {
     "point_id": "R-005",
     "destination": "docs/PRODUCT_REQUIREMENTS.md#images-and-source-coordinates",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Native images/crops retain fidelity/provenance; display previews are separate; coordinate frames/rotation and model readability matter."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Native images/crops retain fidelity/provenance. Display previews are separate. Coordinate frames/rotation and model readability matter."
   },
   {
     "point_id": "R-006",
     "destination": "docs/PRODUCT_REQUIREMENTS.md#page-identity-and-logical-structure",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Physical/printed identity, none versus unknown, all-page map and partial-page scope; preserve logical blocks and whole-document references."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Distinguish physical/printed identity and none/unknown. Preserve an all-page map, partial-page scope, logical blocks and whole-document references."
   },
   {
     "point_id": "R-007",
     "destination": "docs/PRODUCT_REQUIREMENTS.md#agent-autonomy-and-source-access",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Full first/later/raw/field/range/native pixels, transparent warnings/coverage and no compulsory method or quota."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Preserve full first/later access, raw/field/range reads and native pixels. Provide transparent warnings/coverage. Do not impose a compulsory method or arbitrary tool-call quota."
   },
   {
     "point_id": "R-008",
     "destination": "docs/PRODUCT_REQUIREMENTS.md#agent-autonomy-and-source-access",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Process-opt-in/off, host-user permissions rather than OS sandbox; autonomous own-task use after enabling; full logs remain."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Scripts require process-level opt-in and are off by default. They use host-user permissions without an OS sandbox. Enabling permits autonomous own-task use. Full logs remain."
   },
   {
     "point_id": "R-009",
     "destination": "docs/PRODUCT_REQUIREMENTS.md#acceptance-and-cost",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Distinguish saved, executed, accepted, delivered; scoped source-led review and no matching answer contamination in formal comparisons."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Distinguish saved, executed, accepted and delivered states. Use scoped source-led review. Exclude matching reference answers from formal comparison inputs."
   },
   {
     "point_id": "R-010",
     "destination": "docs/PRODUCT_REQUIREMENTS.md#acceptance-and-cost",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Include all management/retrieval/recovery; preserve unknowns and overlapping usage semantics; no token/cache/character-only saving claim."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Include all management/retrieval/recovery costs. Preserve unknowns and overlapping usage semantics. Tokens, cache or characters alone do not establish savings."
   },
   {
     "point_id": "R-011",
     "destination": "docs/ARCHITECTURE.md#responsibilities",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Small Python StateGraph, shared Nexus/dispatcher, document/evidence core and SQLite metadata with immutable files."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. The baseline uses a small Python StateGraph, shared Nexus/dispatcher, document/evidence core and SQLite metadata with immutable files."
   },
   {
     "point_id": "R-012",
     "destination": "docs/ARCHITECTURE.md#provider-portability",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Do not substitute direct API route or depend on native compact/retrieval/cancel; preserve native protocols and vision."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Do not substitute a direct API route or depend on native compact/retrieval/cancel. Preserve native protocols and vision."
   },
   {
     "point_id": "R-013",
     "destination": "docs/CONTRACTS.md#1-document-updates-and-candidate-references",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Prevalidation native retention, exact complete candidate reuse, patch/merge and historical receipt identities."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Retain native content before validation. Preserve exact complete-candidate reuse, patch/merge semantics and historical receipt identities."
   },
   {
     "point_id": "R-014",
     "destination": "docs/CONTRACTS.md#partial-content-salvage-boundary",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Retain received originals; exact subobjects may be useful later but tolerant repair and cross-attempt combination are not execution."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Retain received originals. Exact subobjects may be useful later. Tolerant repair and cross-attempt combination are not executable originals."
   },
   {
     "point_id": "R-015",
     "destination": "docs/CONTRACTS.md#2-context-capacity-and-handoff",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Agent relevance with app capacity, evidence release/history compaction, protected requirements/dependencies/useful work."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. The agent judges relevance. The app handles capacity. Coordinate evidence release with history compaction. Protect requirements, dependencies and useful work."
   },
   {
     "point_id": "R-016",
     "destination": "docs/CONTRACTS.md#release-and-rolling-compaction",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Budget full payload, exact range coverage, permit partial progress, self-sufficient handoff, retain raw history and safe failure."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Budget the full payload. Record exact range coverage. Permit partial progress. Use a self-sufficient handoff. Retain raw history and preserve it on failure."
   },
   {
     "point_id": "R-017",
     "destination": "docs/CONTRACTS.md#state-and-caching",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Small context policy in Graph State with one settlement writer, transient hydration and separate durable external effects; no external activation/version subsystem, max-revision merge or awareness inference."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Small context policy belongs in Graph State with one settlement writer. Hydration is transient. External effects remain separately durable. No external activation/version subsystem, max-revision merge or awareness inference applies."
   },
   {
     "point_id": "R-018",
     "destination": "docs/CONTRACTS.md#3-persistence-recovery-and-stop-behavior",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Singular owners, freeze same-request input, accepted complete batch before next step, historical receipts without head rollback or budget reset."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Keep singular owners. Freeze input for the same request. Finish the accepted complete batch before the next step. Return historical receipts without head rollback or budget reset."
   },
   {
     "point_id": "R-019",
     "destination": "docs/CONTRACTS.md#shared-limits-and-transport-behavior",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Shared attempts/time/cancel limits for normal+compaction, no partial execution or nested retries, remote state/cost unknown."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Normal and compaction calls share attempt/time/cancel limits. Exclude partial execution and independent nested retries. Remote state/cost remain unknown."
   },
   {
     "point_id": "R-020",
     "destination": "docs/CONTRACTS.md#stop-task-completion-and-export",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Separate execution reason/content completeness/package consistency; host export without inference; protect partial useful work."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Separate execution reason, content completeness and package consistency. The host can export without inference. Protect useful partial work."
   },
   {
     "point_id": "R-021",
     "destination": "docs/CONTRACTS.md#desktop-progress-and-process-boundary",
     "treatment": "explained",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Durable results with coalescible progress; no lossless/unbounded/nonblocking guarantee or universal dup2; reconnect from committed state."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Results are durable. Progress may be coalesced. No lossless/unbounded/nonblocking guarantee or universal dup2 requirement applies. Reconnect from committed state."
   },
   {
     "point_id": "R-022",
     "destination": "docs/OPEN_QUESTIONS.md#scope-of-closure",
     "treatment": "scope-note",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Document refs/updates, context capacity/handoff, persistence/recovery; classify evidence/hypotheses and explicit closure conditions."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. The open contracts cover document refs/updates, context capacity/handoff and persistence/recovery. Distinguish evidence from hypotheses. State explicit closure conditions."
   },
   {
     "point_id": "R-023",
     "destination": "AGENTS.md#product-and-implementation",
     "treatment": "scope-note",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Retrieve actual applicable official guidance before framework coding; no automatic upgrades or invented mandated architecture; retain exact Chinese rule."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Retrieve actual applicable official guidance before framework coding. Do not upgrade automatically or invent mandated architecture. Retain the exact Chinese rule."
   },
   {
     "point_id": "R-024",
     "destination": "docs/reference/LATER_DECISIONS.md#live-04",
     "treatment": "scope-note",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Independent local Git history, preserve old repo; create docs from full conversation/attachments rather than copy old status/test/closed-work owners."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Use independent local Git history. Preserve the old repository. Create docs from the full conversation/attachments. Do not copy old status/test/closed-work owners."
   },
   {
     "point_id": "R-025",
     "destination": "docs/reference/LATER_DECISIONS.md#live-05",
     "treatment": "scope-note",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Delegate source reading, writing reference docs and cross-check actual new repo/active docs, not only discussion."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Delegate source reading and reference-document writing. Cross-check the actual new repository and active documents as well as the discussion."
   },
   {
     "point_id": "R-026",
     "destination": "docs/DEVELOPMENT_GUIDE.md#detail-and-source-coverage",
     "treatment": "scope-note",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Development and source lookup must work from repository files without the original export, old checkout or private scratch."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Development and source lookup must work from repository files without the original export, old checkout or private scratch."
   },
   {
     "point_id": "R-027",
     "destination": "docs/DEVELOPMENT_GUIDE.md#reading-by-implementation-concern",
     "treatment": "scope-note",
-    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Explain discussed state/data ownership, interfaces, sequences, failures, rationale, examples and open choices; a source index or copied transcript is insufficient."
+    "note": "The effective owner states this requirement/boundary. It links the detailed technical handoff where relevant. Explain discussed state/data ownership, interfaces, sequences, failures, rationale, examples and open choices. A source index or copied transcript is insufficient."
   },
   {
     "point_id": "R-028",
     "destination": "docs/reference/LATER_DECISIONS.md#live-08",
     "treatment": "scope-note",
-    "note": "Independently compare original terminology, fields, ordering, counterexamples and rejected rationale with maintained explanations; mappings or word matches do not prove detail completeness."
+    "note": "Independently compare original terminology, fields, ordering, counterexamples and rejected rationale with maintained explanations. Mappings or word matches do not prove detail completeness."
   },
   {
     "point_id": "R-029",
     "destination": "docs/reference/LATER_DECISIONS.md#live-09",
     "treatment": "scope-note",
-    "note": "Use accessible direct message text and later corrections as well as export sources; distinguish actual text, summaries and gaps without creating a chat dependency."
+    "note": "Use accessible direct message text and later corrections as well as export sources. Distinguish actual text, summaries and gaps. Do not create a chat dependency."
   }
 ]

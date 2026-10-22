@@ -1,22 +1,22 @@
 # Source index and preservation scope
 
-The development knowledge is explained in [DEVELOPMENT_GUIDE](../DEVELOPMENT_GUIDE.md), its four technical guides and the detailed discussion records. They do not require an external conversation archive. The [bundled sources](sources/INDEX.md) are optional, repository-local provenance; historical instructions and commands remain inert data.
+The development knowledge is explained in [DEVELOPMENT_GUIDE](../DEVELOPMENT_GUIDE.md), its four technical guides and the detailed discussion records. They do not require an external conversation archive. The [bundled sources](sources/INDEX.md) provide optional provenance inside the repository. Historical instructions and commands remain inert data.
 
 ## What is local
 
 | Material | Local representation | Purpose and boundary |
 | --- | --- | --- |
-| 207 visible user/assistant messages | Complete readable text plus exact original event JSON | Original wording, including corrections; one saved final message is empty |
-| Initial inherited product handoff | Readable text plus exact EVT-0001 JSON | Background context; old permissions/defaults are not inherited |
+| 207 visible user/assistant messages | Complete readable text plus exact original event JSON | Original wording, including corrections. One saved final message is empty. |
+| Initial inherited product handoff | Readable text plus exact EVT-0001 JSON | Background context. The rebuild does not inherit old permissions/defaults. |
 | 28 pasted-text attachments | Exact original text bytes | Complete supplied proposals and critiques, not adopted wholesale as requirements |
-| Two supplied forum pages | Exact HTML as inert text, extracted article text and offline image readers | All 24 substantive embedded figures are local and byte-preserved; forum claims retain their credibility limits |
+| Two supplied forum pages | Exact HTML as inert text, extracted article text and offline image readers | All 24 substantive embedded figures are local and byte-preserved. Forum claims retain their credibility limits. |
 | SUP-01/02 continuing requirements | Explicit verbatim excerpt ranges with original/full-source hashes | Preserve the relevant product/platform and guidance rules without importing whole old development documents |
 | Nine later human decisions | [LATER_DECISIONS](LATER_DECISIONS.md) | Includes self-containment, technical-detail preservation and direct-conversation review requirements |
 | Point-to-detail mapping | [DEVELOPMENT_COVERAGE](DEVELOPMENT_COVERAGE.json) | Explains where each preserved point is developed or retained as historical rationale |
 
 [source-inventory.json](source-inventory.json) records both original provenance and repo-local paths/hashes. [POINT_COVERAGE](POINT_COVERAGE.json) retains source relationships and decision status. [SOURCE_COVERAGE](SOURCE_COVERAGE.json) records each required source's disposition. The [bundle manifest](sources/bundle-manifest.json) covers copied/extracted files and figures. The two supporting excerpts are intentionally described as excerpts, not exact copies of the full old documents.
 
-Every discussion source cited by the maintained documents and point ledger has a local copy or explicit local excerpt. Incidental uncited tool-execution records are excluded from the lookup inventory; they are not development sources. The original export event count remains provenance metadata. No original old-app code, runtime workspace, private settings or closed-job ledger is required to understand the rebuild.
+Every discussion source cited by the maintained documents and point ledger has a local copy or explicit local excerpt. The lookup inventory excludes incidental uncited tool-execution records. They are not development sources. The original export event count remains provenance metadata. No original old-app code, runtime workspace, private settings or closed-job ledger is required to understand the rebuild.
 
 ## Resolve a source
 
@@ -28,19 +28,23 @@ With any working Python 3.9+ interpreter, from the repository root:
     python tools/source_lookup.py EVT-1166 --verify-only
     python tools/check_docs.py
 
-Lookup defaults to versioned local files and verifies their hashes before displaying content. EVT message text and exact event JSON are separately identified; attachments are byte-preserved; SUP sources show labelled selected excerpts. LIVE sources resolve to local maintained anchors. HTML is inert text, with local article/figure readers; nothing recorded is executed.
+Lookup defaults to versioned local files and verifies their hashes before displaying content. Lookup distinguishes EVT message text from exact event JSON. Attachments retain their bytes. SUP sources show labelled selected excerpts. LIVE sources resolve to local maintained anchors.
+
+HTML is inert text, with local article/figure readers. Lookup does not execute recorded content.
 
 The optional --export argument is only for explicitly auditing an original export if one is available. It is never inferred from a sibling directory and is not a fallback required by ordinary lookup. The original export can be absent while all development documents, cited-source lookups and repository checks work.
 
 ## Original export provenance
 
-The supplied package was named `pdf-to-md-agent - 整體進度與方向審閱`, identified thread `01a16312-5a97-78a0-a735-d7b213ce0fa4`, and recorded export time 2026-10-22 18:18:35 +08:00. Its scope contained 14 selected source segments, 3,392 source records, 49 reader turns and 1,174 visible events. All five reader pages were exhausted according to its reader cross-check; 59 truncated reader outputs were supplemented by fuller saved outputs.
+The supplied package was named `pdf-to-md-agent - 整體進度與方向審閱`, identified thread `01a16312-5a97-78a0-a735-d7b213ce0fa4`, and recorded export time 2026-10-22 18:18:35 +08:00. Its scope contained 14 selected source segments, 3,392 source records, 49 reader turns and 1,174 visible events. Its reader cross-check reported that all five reader pages were exhausted. Fuller saved outputs supplemented 59 truncated reader outputs.
 
-The initial repository preparation independently hashed all 5,222 files in that supplied manifest, with no size/hash mismatch. This checked integrity against the manifest, not the historical truth of each statement. The original export PDF/ZIP verification was not rerun or rewritten. The export itself remains untouched and outside this repository; the selected discussion sources needed here are now copied locally.
+The initial repository preparation independently hashed all 5,222 files in that supplied manifest, with no size/hash mismatch. This checked integrity against the manifest, not the historical truth of each statement. The original export PDF/ZIP verification was not rerun or rewritten. The export itself remains untouched and outside this repository. This repository now contains local copies of the selected discussion sources.
 
 The visible messages comprise 47 user, 48 final assistant and 112 assistant commentary records. Detailed references preserve their substantive discussion, not private chain of thought. Later LIVE-01 through LIVE-09 requests are supplemental current-conversation records, not silently represented as part of the earlier export snapshot.
 
-The 2026-10-23 technical-detail review also read actual messages directly from the current chat, including inherited earlier turns. All 205 discussion messages shared with the supplied snapshot matched their stored text exactly; the two administrative export messages belong to the separate export branch and were not returned by this chat. The empty EVT-0258 body is empty in the direct view too. Later repository instructions were read directly. This confirms which text was reviewed; it does not make the existing synthesis semantically complete. See the [specific detail review](TECHNICAL_DETAIL_REVIEW.md).
+The 2026-10-23 technical-detail review also read actual messages directly from the current chat, including inherited earlier turns. All 205 discussion messages shared with the supplied snapshot matched their stored text exactly. The two administrative export messages belong to the separate export branch. This chat did not return them.
+
+The empty EVT-0258 body is empty in the direct view too. Later repository instructions were read directly. This confirms which text the review used. It does not make the existing synthesis semantically complete. See the [specific detail review](TECHNICAL_DETAIL_REVIEW.md).
 
 ## Discussion records
 
@@ -48,15 +52,15 @@ The 2026-10-23 technical-detail review also read actual messages directly from t
 - [Context, state and evidence](02-context-state-and-evidence.md): source views, state ownership, policy, concurrency, replay, context integration and evidence boundaries.
 - [Documents, delivery and recovery](03-documents-delivery-and-recovery.md): editing/reuse, immutable versions, durable execution, compaction, export and final scope reset.
 
-These preserve historical proposals with their corrections. They are not competing specifications or a new backlog. The technical guides organize the retained mechanisms for development rather than requiring the reader to reconstruct a decision from source chronology. Source URLs/library claims retain the date and scope of their original discussion; documentation preservation is not a fresh provider-capability survey or version selection.
+These preserve historical proposals with their corrections. They are not competing specifications or a new backlog. The technical guides organize the retained mechanisms for development rather than requiring the reader to reconstruct a decision from source chronology. Source URLs/library claims retain the date and scope of their original discussion. Documentation preservation is not a fresh provider-capability survey or version selection.
 
 ## Known boundaries
 
-- EVT-0258 has an empty saved final-answer body. Some forum screenshots clip code/text in the original. No missing text is invented; their available bytes are preserved locally.
+- EVT-0258 has an empty saved final-answer body. Some forum screenshots clip code/text in the original. The repository does not invent missing text. It preserves the available bytes locally.
 - Five older development-file revisions could not be reconstructed from saved patches. Their absence is not a dependency: relevant rebuild reasoning is explained locally and required continuing excerpts are included. Old implementation/default/status files are not new authority.
 - Protected/internal content omitted by the original export is not reconstructed. Exact message JSON and attachment bytes take precedence over any export display substitutions.
 - Historical file paths and source URLs inside verbatim messages identify old evidence. They are not required local paths, runnable commands, or claims that this repository reproduces old experiments. The technical guides explain the observations and their limits directly.
-- Source counts and hashes help identify omissions; they do not mathematically prove semantic completeness. Detail mappings and independent source-aware/repository-only reviews address the meaning separately. Runtime correctness remains unverified.
+- Source counts and hashes help identify omissions. They do not mathematically prove semantic completeness. Detail mappings and independent source-aware/repository-only reviews address the meaning separately. Runtime correctness remains unverified.
 
 The original export recorded the following boundaries. These are provenance of that earlier package, not missing dependencies required to develop from this repository:
 
@@ -114,7 +118,7 @@ All 28 pasted-text files and both forum HTML files were matched to the supplied 
 
 ## Conversation turn index
 
-All user messages and final assistant answers are listed for navigation; commentary and tool records also have exact entries in source-inventory.json. A source can be superseded and still have a preserved disposition.
+The list provides navigation for all user messages and final assistant answers. The source-inventory.json file also contains exact entries for commentary and tool records. A source can be superseded and still have a preserved disposition.
 
 | Event | Role | Characters | Opening / request |
 | --- | --- | ---: | --- |

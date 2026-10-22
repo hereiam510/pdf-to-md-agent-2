@@ -14,7 +14,7 @@
       "P1-059",
       "P1-060"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-02",
@@ -30,7 +30,7 @@
       "P1-066",
       "P1-067"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-03",
@@ -43,7 +43,7 @@
       "P1-071",
       "P1-072"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-04",
@@ -53,7 +53,7 @@
       "P1-045",
       "P1-048"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-05",
@@ -73,7 +73,7 @@
       "P1-084",
       "P1-095"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-06",
@@ -99,7 +99,7 @@
       "P1-096",
       "P1-097"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-07",
@@ -124,7 +124,7 @@
       "P2-100",
       "P2-103"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-08",
@@ -148,7 +148,7 @@
       "P2-101",
       "P2-113"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-09",
@@ -169,7 +169,7 @@
       "P2-102",
       "P2-112"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-10",
@@ -194,7 +194,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-11",
@@ -222,7 +222,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-12",
@@ -245,7 +245,7 @@
       "P2-093",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-13",
@@ -268,7 +268,7 @@
       "P2-105",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-14",
@@ -293,7 +293,7 @@
       "P2-105",
       "P2-110"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-15",
@@ -316,7 +316,7 @@
       "P2-087",
       "P2-096"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-16",
@@ -334,7 +334,7 @@
       "P2-087",
       "P2-088"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-17",
@@ -356,7 +356,7 @@
       "P2-106",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-18",
@@ -376,7 +376,7 @@
       "P2-092",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-19",
@@ -399,7 +399,7 @@
       "P2-091",
       "P2-092"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-20",
@@ -430,7 +430,7 @@
       "P2-111",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-21",
@@ -451,7 +451,7 @@
       "P3-019",
       "P3-065"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-22",
@@ -473,7 +473,7 @@
       "P3-017",
       "P3-019"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-23",
@@ -488,7 +488,7 @@
       "P3-029",
       "P3-031"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-24",
@@ -506,7 +506,7 @@
       "P3-030",
       "P3-031"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-25",
@@ -520,7 +520,7 @@
       "P3-038",
       "P3-039"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-26",
@@ -535,7 +535,7 @@
       "P3-038",
       "P3-039"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-27",
@@ -549,7 +549,7 @@
       "P3-050",
       "P3-051"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-28",
@@ -567,7 +567,7 @@
       "P3-059",
       "P3-062"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-29",
@@ -590,7 +590,7 @@
       "P3-061",
       "P3-062"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "ATT-30",
@@ -615,7 +615,7 @@
       "R-013",
       "R-014"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0001",
@@ -642,7 +642,7 @@
       "R-010",
       "R-019"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0002",
@@ -650,7 +650,7 @@
     "point_ids": [
       "P1-007"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0007",
@@ -658,7 +658,7 @@
     "point_ids": [
       "P1-007"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0021",
@@ -667,7 +667,7 @@
       "P1-002",
       "P1-007"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0047",
@@ -677,7 +677,7 @@
       "P1-007",
       "P1-008"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0053",
@@ -693,7 +693,7 @@
       "P1-025",
       "R-010"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0054",
@@ -701,7 +701,7 @@
     "point_ids": [
       "P1-009"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0055",
@@ -709,7 +709,7 @@
     "point_ids": [
       "P1-009"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0064",
@@ -717,7 +717,7 @@
     "point_ids": [
       "P1-009"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0068",
@@ -728,7 +728,7 @@
       "P1-011",
       "P1-025"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0069",
@@ -736,7 +736,7 @@
     "point_ids": [
       "P1-012"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0070",
@@ -744,7 +744,7 @@
     "point_ids": [
       "P1-012"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0073",
@@ -752,7 +752,7 @@
     "point_ids": [
       "P1-012"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0090",
@@ -761,7 +761,7 @@
       "P1-012",
       "P1-013"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0097",
@@ -771,7 +771,7 @@
       "P1-013",
       "P1-014"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0098",
@@ -779,7 +779,7 @@
     "point_ids": [
       "P1-015"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0099",
@@ -787,7 +787,7 @@
     "point_ids": [
       "P1-015"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0111",
@@ -795,7 +795,7 @@
     "point_ids": [
       "P1-015"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0124",
@@ -803,7 +803,7 @@
     "point_ids": [
       "P1-015"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0126",
@@ -812,7 +812,7 @@
       "P1-015",
       "P1-016"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0128",
@@ -821,7 +821,7 @@
       "P1-016",
       "R-012"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0129",
@@ -830,7 +830,7 @@
       "P1-016",
       "R-012"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0130",
@@ -841,7 +841,7 @@
       "P1-018",
       "R-012"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0132",
@@ -849,7 +849,7 @@
     "point_ids": [
       "P1-017"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0137",
@@ -867,7 +867,7 @@
       "R-007",
       "R-012"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0138",
@@ -875,7 +875,7 @@
     "point_ids": [
       "P1-035"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0139",
@@ -883,7 +883,7 @@
     "point_ids": [
       "P1-035"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0146",
@@ -893,7 +893,7 @@
       "P1-036",
       "P1-037"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0147",
@@ -901,7 +901,7 @@
     "point_ids": [
       "P1-051"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0148",
@@ -909,7 +909,7 @@
     "point_ids": [
       "P1-051"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0158",
@@ -917,7 +917,7 @@
     "point_ids": [
       "P1-051"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0183",
@@ -928,7 +928,7 @@
       "P1-066",
       "P1-067"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0185",
@@ -944,7 +944,7 @@
       "P1-066",
       "P1-067"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0186",
@@ -953,7 +953,7 @@
       "P1-014",
       "P1-018"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0188",
@@ -963,7 +963,7 @@
       "P1-018",
       "P1-019"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0189",
@@ -973,7 +973,7 @@
       "R-007",
       "R-015"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0190",
@@ -982,7 +982,7 @@
       "P1-019",
       "P1-020"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0191",
@@ -993,7 +993,7 @@
       "R-007",
       "R-015"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0192",
@@ -1001,7 +1001,7 @@
     "point_ids": [
       "P1-023"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0201",
@@ -1009,7 +1009,7 @@
     "point_ids": [
       "P1-023"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0206",
@@ -1020,7 +1020,7 @@
       "P1-025",
       "P1-028"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0207",
@@ -1028,7 +1028,7 @@
     "point_ids": [
       "P1-023"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0208",
@@ -1036,7 +1036,7 @@
     "point_ids": [
       "P1-023"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0214",
@@ -1050,7 +1050,7 @@
       "P1-024",
       "P1-025"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0215",
@@ -1060,7 +1060,7 @@
       "P1-021",
       "P1-026"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0216",
@@ -1068,7 +1068,7 @@
     "point_ids": [
       "P1-026"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0225",
@@ -1076,7 +1076,7 @@
     "point_ids": [
       "P1-026"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0232",
@@ -1084,7 +1084,7 @@
     "point_ids": [
       "P1-026"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0239",
@@ -1092,7 +1092,7 @@
     "point_ids": [
       "P1-026"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0240",
@@ -1100,7 +1100,7 @@
     "point_ids": [
       "P1-026"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0241",
@@ -1108,7 +1108,7 @@
     "point_ids": [
       "P1-026"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0248",
@@ -1116,7 +1116,7 @@
     "point_ids": [
       "P1-027"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0249",
@@ -1135,7 +1135,7 @@
       "P1-033",
       "P1-034"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0250",
@@ -1144,7 +1144,7 @@
       "P1-035",
       "P1-038"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0251",
@@ -1152,7 +1152,7 @@
     "point_ids": [
       "P1-038"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0256",
@@ -1164,13 +1164,13 @@
       "P1-038",
       "P1-039"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0258",
     "disposition": "empty-saved-message",
     "point_ids": [],
-    "reason": "The captured visible message body is empty. No missing answer text has been invented; adjacent substantive discussion is preserved."
+    "reason": "The captured visible message body is empty. The record invents no missing answer text. It preserves adjacent substantive discussion."
   },
   {
     "source_id": "EVT-0259",
@@ -1178,7 +1178,7 @@
     "point_ids": [
       "P1-038"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0260",
@@ -1186,7 +1186,7 @@
     "point_ids": [
       "P1-038"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0265",
@@ -1201,7 +1201,7 @@
       "P1-045",
       "P1-047"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0266",
@@ -1212,7 +1212,7 @@
       "P1-042",
       "P1-043"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0268",
@@ -1221,7 +1221,7 @@
       "P1-041",
       "P1-043"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0281",
@@ -1230,7 +1230,7 @@
       "P1-040",
       "P1-041"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0297",
@@ -1246,7 +1246,7 @@
       "P1-047",
       "P1-050"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0298",
@@ -1254,7 +1254,7 @@
     "point_ids": [
       "P1-068"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0299",
@@ -1262,7 +1262,7 @@
     "point_ids": [
       "P1-068"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0312",
@@ -1271,7 +1271,7 @@
       "P1-068",
       "P1-070"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0318",
@@ -1291,7 +1291,7 @@
       "P1-071",
       "P1-072"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0319",
@@ -1300,7 +1300,7 @@
       "P1-048",
       "P1-072"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0320",
@@ -1308,7 +1308,7 @@
     "point_ids": [
       "P1-048"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0331",
@@ -1317,7 +1317,7 @@
       "P1-045",
       "P1-047"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0346",
@@ -1325,7 +1325,7 @@
     "point_ids": [
       "P1-048"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0349",
@@ -1338,7 +1338,7 @@
       "P1-048",
       "P1-050"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0350",
@@ -1346,7 +1346,7 @@
     "point_ids": [
       "P1-048"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0351",
@@ -1354,7 +1354,7 @@
     "point_ids": [
       "P1-048"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0358",
@@ -1363,7 +1363,7 @@
       "P1-045",
       "P1-048"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0360",
@@ -1377,7 +1377,7 @@
       "P1-050",
       "P1-067"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0361",
@@ -1385,7 +1385,7 @@
     "point_ids": [
       "P1-073"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0362",
@@ -1393,7 +1393,7 @@
     "point_ids": [
       "P1-073"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0378",
@@ -1404,7 +1404,7 @@
       "P1-074",
       "P1-079"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0382",
@@ -1435,7 +1435,7 @@
       "P1-084",
       "P1-095"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0384",
@@ -1443,7 +1443,7 @@
     "point_ids": [
       "P1-085"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0385",
@@ -1451,7 +1451,7 @@
     "point_ids": [
       "P1-085"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0400",
@@ -1462,7 +1462,7 @@
       "P1-091",
       "P1-094"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0412",
@@ -1471,7 +1471,7 @@
       "P1-086",
       "P1-087"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0414",
@@ -1507,7 +1507,7 @@
       "P1-096",
       "P1-097"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0415",
@@ -1532,7 +1532,7 @@
       "P2-100",
       "P2-103"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0416",
@@ -1557,7 +1557,7 @@
       "P2-100",
       "P2-103"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0425",
@@ -1582,7 +1582,7 @@
       "P2-100",
       "P2-103"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0432",
@@ -1607,7 +1607,7 @@
       "P2-100",
       "P2-103"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0433",
@@ -1631,7 +1631,7 @@
       "P2-101",
       "P2-113"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0434",
@@ -1655,7 +1655,7 @@
       "P2-101",
       "P2-113"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0449",
@@ -1679,7 +1679,7 @@
       "P2-101",
       "P2-113"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0459",
@@ -1703,7 +1703,7 @@
       "P2-101",
       "P2-113"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0460",
@@ -1724,7 +1724,7 @@
       "P2-102",
       "P2-112"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0461",
@@ -1745,7 +1745,7 @@
       "P2-102",
       "P2-112"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0471",
@@ -1766,7 +1766,7 @@
       "P2-102",
       "P2-112"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0477",
@@ -1787,7 +1787,7 @@
       "P2-102",
       "P2-112"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0479",
@@ -1808,7 +1808,7 @@
       "P2-102",
       "P2-112"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0480",
@@ -1833,7 +1833,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0481",
@@ -1858,7 +1858,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0493",
@@ -1883,7 +1883,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0504",
@@ -1908,7 +1908,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0507",
@@ -1933,7 +1933,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0508",
@@ -1961,7 +1961,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0509",
@@ -1989,7 +1989,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0525",
@@ -2017,7 +2017,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0531",
@@ -2045,7 +2045,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0534",
@@ -2073,7 +2073,7 @@
       "P2-113",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0535",
@@ -2096,7 +2096,7 @@
       "P2-093",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0536",
@@ -2119,7 +2119,7 @@
       "P2-093",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0545",
@@ -2142,7 +2142,7 @@
       "P2-093",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0556",
@@ -2165,7 +2165,7 @@
       "P2-093",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0560",
@@ -2188,7 +2188,7 @@
       "P2-093",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0561",
@@ -2211,7 +2211,7 @@
       "P2-105",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0562",
@@ -2234,7 +2234,7 @@
       "P2-105",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0578",
@@ -2257,7 +2257,7 @@
       "P2-105",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0591",
@@ -2280,7 +2280,7 @@
       "P2-105",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0595",
@@ -2303,7 +2303,7 @@
       "P2-105",
       "P2-109"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0596",
@@ -2328,7 +2328,7 @@
       "P2-105",
       "P2-110"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0597",
@@ -2353,7 +2353,7 @@
       "P2-105",
       "P2-110"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0615",
@@ -2378,7 +2378,7 @@
       "P2-105",
       "P2-110"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0631",
@@ -2403,7 +2403,7 @@
       "P2-105",
       "P2-110"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0638",
@@ -2428,7 +2428,7 @@
       "P2-105",
       "P2-110"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0639",
@@ -2451,7 +2451,7 @@
       "P2-087",
       "P2-096"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0640",
@@ -2474,7 +2474,7 @@
       "P2-087",
       "P2-096"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0661",
@@ -2497,7 +2497,7 @@
       "P2-087",
       "P2-096"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0670",
@@ -2520,7 +2520,7 @@
       "P2-087",
       "P2-096"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0674",
@@ -2543,7 +2543,7 @@
       "P2-087",
       "P2-096"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0675",
@@ -2561,7 +2561,7 @@
       "P2-087",
       "P2-088"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0676",
@@ -2579,7 +2579,7 @@
       "P2-087",
       "P2-088"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0686",
@@ -2597,7 +2597,7 @@
       "P2-087",
       "P2-088"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0696",
@@ -2615,7 +2615,7 @@
       "P2-087",
       "P2-088"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0701",
@@ -2633,7 +2633,7 @@
       "P2-087",
       "P2-088"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0702",
@@ -2655,7 +2655,7 @@
       "P2-106",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0703",
@@ -2677,7 +2677,7 @@
       "P2-106",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0715",
@@ -2699,7 +2699,7 @@
       "P2-106",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0724",
@@ -2721,7 +2721,7 @@
       "P2-106",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0730",
@@ -2743,7 +2743,7 @@
       "P2-106",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0731",
@@ -2763,7 +2763,7 @@
       "P2-092",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0732",
@@ -2783,7 +2783,7 @@
       "P2-092",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0744",
@@ -2803,7 +2803,7 @@
       "P2-092",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0754",
@@ -2823,7 +2823,7 @@
       "P2-092",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0759",
@@ -2843,7 +2843,7 @@
       "P2-092",
       "P2-108"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0760",
@@ -2866,7 +2866,7 @@
       "P2-091",
       "P2-092"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0761",
@@ -2889,7 +2889,7 @@
       "P2-091",
       "P2-092"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0775",
@@ -2912,7 +2912,7 @@
       "P2-091",
       "P2-092"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0787",
@@ -2935,7 +2935,7 @@
       "P2-091",
       "P2-092"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0789",
@@ -2959,7 +2959,7 @@
       "P2-092",
       "R-017"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0790",
@@ -2990,7 +2990,7 @@
       "P2-111",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0791",
@@ -3021,7 +3021,7 @@
       "P2-111",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0807",
@@ -3052,7 +3052,7 @@
       "P2-111",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0819",
@@ -3083,7 +3083,7 @@
       "P2-111",
       "P2-114"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0826",
@@ -3115,7 +3115,7 @@
       "P2-114",
       "R-017"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0827",
@@ -3136,7 +3136,7 @@
       "P3-019",
       "P3-065"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0828",
@@ -3144,7 +3144,7 @@
     "point_ids": [
       "P3-001"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0841",
@@ -3154,7 +3154,7 @@
       "P3-004",
       "P3-012"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0853",
@@ -3164,7 +3164,7 @@
       "P3-007",
       "P3-013"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0855",
@@ -3186,7 +3186,7 @@
       "P3-017",
       "P3-019"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0856",
@@ -3208,7 +3208,7 @@
       "P3-017",
       "P3-019"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0857",
@@ -3217,7 +3217,7 @@
       "P3-002",
       "P3-019"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0872",
@@ -3228,7 +3228,7 @@
       "P3-014",
       "R-017"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0878",
@@ -3254,7 +3254,7 @@
       "P3-019",
       "R-017"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0880",
@@ -3269,7 +3269,7 @@
       "P3-029",
       "P3-031"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0881",
@@ -3278,7 +3278,7 @@
       "P3-020",
       "P3-031"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0894",
@@ -3287,7 +3287,7 @@
       "P3-020",
       "P3-022"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0910",
@@ -3296,7 +3296,7 @@
       "P3-024",
       "P3-029"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0914",
@@ -3311,7 +3311,7 @@
       "P3-029",
       "P3-031"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0915",
@@ -3329,7 +3329,7 @@
       "P3-030",
       "P3-031"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0916",
@@ -3338,7 +3338,7 @@
       "P3-022",
       "P3-027"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0931",
@@ -3348,7 +3348,7 @@
       "P3-027",
       "P3-028"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0940",
@@ -3357,7 +3357,7 @@
       "P3-029",
       "P3-030"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0942",
@@ -3376,7 +3376,7 @@
       "P3-031",
       "R-004"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0943",
@@ -3390,7 +3390,7 @@
       "P3-038",
       "P3-039"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0944",
@@ -3398,7 +3398,7 @@
     "point_ids": [
       "P3-032"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0957",
@@ -3407,7 +3407,7 @@
       "P3-033",
       "P3-037"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0968",
@@ -3422,7 +3422,7 @@
       "P3-039",
       "R-006"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0969",
@@ -3437,7 +3437,7 @@
       "P3-038",
       "P3-039"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0970",
@@ -3446,7 +3446,7 @@
       "P3-033",
       "P3-038"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0982",
@@ -3455,7 +3455,7 @@
       "P3-033",
       "P3-035"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-0999",
@@ -3464,7 +3464,7 @@
       "P3-036",
       "P3-039"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1005",
@@ -3478,7 +3478,7 @@
       "P3-038",
       "P3-039"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1006",
@@ -3492,7 +3492,7 @@
       "P3-050",
       "P3-051"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1007",
@@ -3500,7 +3500,7 @@
     "point_ids": [
       "P3-040"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1023",
@@ -3510,7 +3510,7 @@
       "P3-044",
       "P3-048"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1034",
@@ -3519,7 +3519,7 @@
       "P3-050",
       "P3-051"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1040",
@@ -3534,7 +3534,7 @@
       "P3-051",
       "R-019"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1041",
@@ -3552,7 +3552,7 @@
       "P3-059",
       "P3-062"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1042",
@@ -3561,7 +3561,7 @@
       "P3-041",
       "P3-052"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1060",
@@ -3572,7 +3572,7 @@
       "P3-051",
       "P3-052"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1068",
@@ -3590,7 +3590,7 @@
       "P3-062",
       "R-011"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1069",
@@ -3613,7 +3613,7 @@
       "P3-061",
       "P3-062"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1070",
@@ -3621,7 +3621,7 @@
     "point_ids": [
       "P3-052"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1083",
@@ -3631,7 +3631,7 @@
       "P3-061",
       "P3-062"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1099",
@@ -3639,7 +3639,7 @@
     "point_ids": [
       "P3-057"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1104",
@@ -3648,7 +3648,7 @@
       "P3-045",
       "P3-053"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1107",
@@ -3677,7 +3677,7 @@
       "R-020",
       "R-021"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1108",
@@ -3700,7 +3700,7 @@
       "P3-062",
       "P3-063"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1109",
@@ -3709,7 +3709,7 @@
       "P3-058",
       "P3-063"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1127",
@@ -3717,7 +3717,7 @@
     "point_ids": [
       "P3-058"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1142",
@@ -3726,7 +3726,7 @@
       "P3-054",
       "P3-055"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1147",
@@ -3748,7 +3748,7 @@
       "R-016",
       "R-021"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1148",
@@ -3764,7 +3764,7 @@
       "P3-064",
       "R-022"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1149",
@@ -3774,7 +3774,7 @@
       "P3-063",
       "P3-064"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1162",
@@ -3786,7 +3786,7 @@
       "P3-063",
       "P3-064"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1166",
@@ -3859,19 +3859,19 @@
       "R-020",
       "R-022"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "EVT-1167",
     "disposition": "administrative-source-production",
     "point_ids": [],
-    "reason": "Read export request/announcement; source-package production adds no app-design requirement. Recorded in reference 03 review-coverage-and-exclusions."
+    "reason": "The review read the export request/announcement. Source-package production adds no app-design requirement. Reference 03 records this under review-coverage-and-exclusions."
   },
   {
     "source_id": "EVT-1168",
     "disposition": "administrative-source-production",
     "point_ids": [],
-    "reason": "Read export request/announcement; source-package production adds no app-design requirement. Recorded in reference 03 review-coverage-and-exclusions."
+    "reason": "The review read the export request/announcement. Source-package production adds no app-design requirement. Reference 03 records this under review-coverage-and-exclusions."
   },
   {
     "source_id": "LIVE-01",
@@ -3879,7 +3879,7 @@
     "point_ids": [
       "R-024"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "LIVE-02",
@@ -3887,7 +3887,7 @@
     "point_ids": [
       "R-024"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "LIVE-03",
@@ -3895,7 +3895,7 @@
     "point_ids": [
       "R-024"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "LIVE-04",
@@ -3904,7 +3904,7 @@
       "R-024",
       "R-025"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "LIVE-05",
@@ -3912,7 +3912,7 @@
     "point_ids": [
       "R-025"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "SUP-01",
@@ -3927,7 +3927,7 @@
       "R-008",
       "R-009"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "SUP-02",
@@ -3935,7 +3935,7 @@
     "point_ids": [
       "R-023"
     ],
-    "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+    "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
   {
     "source_id": "LIVE-06",
@@ -3959,7 +3959,7 @@
     "point_ids": [
       "R-028"
     ],
-    "reason": "Explicit later review requirement; the maintained source-first review explains actual gaps and remedies."
+    "reason": "This is an explicit later review requirement. The maintained source-first review explains actual gaps and remedies."
   },
   {
     "source_id": "LIVE-09",
@@ -3967,6 +3967,6 @@
     "point_ids": [
       "R-029"
     ],
-    "reason": "Explicit later review requirement; the maintained source-first review explains actual gaps and remedies."
+    "reason": "This is an explicit later review requirement. The maintained source-first review explains actual gaps and remedies."
   }
 ]

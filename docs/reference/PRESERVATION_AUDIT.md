@@ -10,11 +10,11 @@ Updated 2026-10-23, Asia/Hong_Kong. This records documentation scope, technical-
 | Visible conversation | All 207 user/assistant messages accounted for: 47 user, 48 final assistant records, 112 commentary records |
 | Local discussion copies | Those 207 messages plus the inherited handoff: 208 exact event JSON records and readable text views |
 | Attachments | All 30 exact attachments bundled: 28 pasted-text files and two forum HTML files stored as inert text |
-| Forum figures | All 14 research illustrations in ATT-01 and all 10 substantive image pages in ATT-02 included as original decoded WebP bytes; offline readers are local |
-| Continuing requirements | SUP-01/02 relevant verbatim excerpt ranges included, with source and excerpt hashes; old active documents/defaults/permissions are not imported |
+| Forum figures | All 14 ATT-01 research illustrations and all 10 ATT-02 substantive image pages retain original decoded WebP bytes. Offline readers are local. |
+| Continuing requirements | Relevant SUP-01/02 verbatim excerpt ranges include source and excerpt hashes. The rebuild does not import old active documents/defaults/permissions. |
 | Later requests | LIVE-01 through LIVE-09 preserved locally, including self-containment, technical detail and direct-conversation review |
 | Point ledger | 312 entries: 102 foundations, 116 context/state, 65 delivery/recovery, 29 effective-owner/scope mappings |
-| Source dispositions | 249 sources: 246 mapped to retained points, one empty saved final message, two administrative export messages; no unresolved classification |
+| Source dispositions | 249 sources: 246 mapped to retained points, one empty saved final message and two administrative export messages. No classification remains unresolved. |
 | Development-detail map | All 312 point IDs mapped: 247 explained, 47 historical references, 18 scope notes |
 | Bundled-file integrity | 477 included files verified against local hashes, with a separate versioned bundle manifest |
 
@@ -30,28 +30,49 @@ The first repository version made original-byte lookup depend on the separate ex
 - [Document engine](../design/DOCUMENT_ENGINE.md): source/candidate/version/operation distinctions, retention and validation order, exact reuse, edits/maps, provenance, immutable-file/SQLite visibility and whole-document rendering.
 - [Execution and delivery](../design/EXECUTION_AND_DELIVERY.md): request/attempt/batch/receipt identities, complete batch settlement, durable limits, recovery, cancellation/wait/stop, process progress and explicit-version publication.
 
-The three detailed reference records were expanded with definitions, causal examples and historical corrections. Previously discussed alternatives remain available with status; they do not become current requirements. The optional local transcript/attachments support exact-wording audit, while the development explanations stand on their own.
+The three detailed reference records were expanded with definitions, causal examples and historical corrections. Previously discussed alternatives remain available with status. They do not become current requirements. The optional local transcript/attachments support exact-wording audit, while the development explanations stand on their own.
 
 ## Source-aware authorship and independent reading
 
 The initial review assigned complete discussion ranges and attachments to three agents: foundations EVT-0002–0414 and ATT-01–06, context/state EVT-0415–0826 and ATT-07–20, delivery/recovery EVT-0827–1168 and ATT-21–30. They also read the controlling final consolidation and cross-reviewed effective owners. The inherited handoff and substantive forum text/images were included.
 
-For the self-contained revision, three continuing review roles audited all 102/116/65 preserved points against the technical guides and relevant local original sources. They wrote missing explanations and per-point detail maps. Independent repository-only reads checked the context guide against document/execution, the integration guide against execution/document boundaries, and the main entrypoints as a developer without the original export. Root integrated the owners, vocabulary, provenance, source utilities and verification.
+For the self-contained revision, three continuing reviewers audited all 102/116/65 preserved points against the technical guides and relevant local original sources. They wrote missing explanations and per-point detail maps. Independent reviewers read only repository files. They checked the context guide against document/execution boundaries and the integration guide against execution/document boundaries. They also checked the main entrypoints as a developer without the original export. Root integrated the owners, vocabulary, provenance, source utilities and verification.
 
 Material corrections and additions included:
 
 - Rolling compaction, handoff content, note-version races, failures/restarts, computation reuse and script boundaries that the interrupted context draft had not yet developed.
 - Envelope/schema checks, candidate-reference resolution and full-result validation as distinct stages, with useful content retained first.
-- Resolving omitted defaults at their defined sequential operation boundary; a batch's acceptance must not accidentally bind a later dependent read to the pre-edit version.
+- Resolve omitted defaults at their defined sequential operation boundary. Batch acceptance must not accidentally bind a later dependent read to the pre-edit version.
 - Task-scoped delivery selection, atomic registration of actual adoption links, and separate export build/verify/directory/ZIP re-entry outcomes.
 - Malformed tool-argument JSON may bypass ordinary ToolNode dispatch, while successfully decoded domain/schema-invalid arguments need the common pre-validation capture path. These failures are not the same.
 - An accepted complete native reply can contain calls that later fail domain validation. Every batch member still needs a recorded success/rejection/failure outcome before continuation.
 - A model-input projection is assembled input, not proof that a send occurred. Attempt records establish dispatch.
-- The retained small Graph State policy/single settlement writer, original operation receipts and external durable budgets remain consistent across all guides; superseded external policy-version/activation machinery is clearly historical.
+- The small Graph State policy, single settlement writer, original receipts and external durable budgets remain consistent across all guides. The superseded external policy-version/activation machinery remains clearly historical.
 
-These reviews found and corrected specific issues. However, the later source-first review of `e243431` showed that some mechanisms still lost technical names, field relationships, call ordering and original counterexamples when condensed into broad points. The earlier absence of a reported gap was not proof that every detail was explained. [TECHNICAL_DETAIL_REVIEW](TECHNICAL_DETAIL_REVIEW.md) records those concrete deficiencies and their repairs. The core architecture and Q1–Q3 did not change.
+These reviews found and corrected specific issues. However, the later review of `e243431` found omissions in mechanisms condensed into broad points. These omissions included technical names, field relationships, call ordering and original counterexamples. The earlier absence of a reported gap was not proof that every detail was explained. [TECHNICAL_DETAIL_REVIEW](TECHNICAL_DETAIL_REVIEW.md) records those concrete deficiencies and their repairs. The core architecture and Q1–Q3 did not change.
 
 That later review also used the actual conversation directly: 205 overlapping discussion messages matched the preserved source text exactly. Two administrative export messages were on the export branch rather than the current chat, and EVT-0258 remained empty. Reviewers rotated source ranges and derived candidate details from originals rather than accepting the existing point list as exhaustive. A lexical scan helped locate lost names, but its sample IDs, old paths and aliases were not counted as missing mechanisms. [TECHNICAL_TERMS](../TECHNICAL_TERMS.md) now provides navigation by original terminology.
+
+## Language review and comparison with original meaning
+
+The 2026-10-23 language review used the ASD-STE100 skill, version 0.4.0, against the wording at `ff058bd`. Its scope covered 21 maintained Markdown files, prose fields in four JSON records, two utilities' messages, and one Git-ignore comment. Copied source files were outside the rewrite scope.
+
+The changes split long sentences, named relevant actors, separated conditions and corrected list boundaries. The review covered the 20-word instruction limit, 25-word description limit, paragraph length, active voice and consistent terminology. Technical names, numeric examples, code, quoted wording and requirement status remained protected. These writing rules did not authorize shorter explanations that lost a condition or technical distinction.
+
+After editing, three reviewers compared their assigned technical guides and detailed records with the baseline and relevant original messages/attachments. They also independently checked shared owner documents. Root compared the shared-owner changes with the original agreements, later corrections and final consolidation. Root additionally checked lexical changes, obligations, references, metadata structure and preserved payloads. Matching words, source IDs or hashes supplemented this reading but did not prove equivalent meaning.
+
+The comparison caught and corrected wording risks before completion:
+
+- Same-request replay must reuse already frozen input. Wording about freezing input during replay could imply a new selection.
+- Exact candidate reuse must not require retransmitting a long body. It does not prohibit optional retransmission.
+- An assembled input view records selected content. Attempt records separately establish dispatch.
+- Logit masking suppresses disallowed choices. It does not suppress the choices that remain permitted.
+- Recommendations retained their original strength. The review restored affected qualifiers and the repository-wide unimplemented/unverified status.
+- Quoted examples retained their original spelling, including punctuation and capitalization. Missing paragraph breaks after lists were corrected.
+
+The unfiltered linter still reports retained quotations and domain-dependent matches. Schema validation, byte verification, human confirmation, context removal and file deletion denote different operations. Process launch, task start and process termination also have different scopes. Passive status descriptions remain where the actor is irrelevant or unspecified. Some apparent verb matches are adjectives or labels, such as fixed input or an HTTP method.
+
+These are reviewed exceptions, not a zero-warning result. The review does not claim official dictionary verification or formal ASD conformity. No architecture decision or Q1–Q3 closure follows from the language edits. No remaining material meaning change was identified in the reviewed passages. The structural and source checks below establish separate, narrower facts.
 
 ## Repository-only verification
 
@@ -74,15 +95,21 @@ The public checks are repeatable with a working Python 3.9+ interpreter from thi
     python tools/source_lookup.py SUP-02
     python tools/source_lookup.py LIVE-07
 
-Default lookup never infers an external export directory. The explicit --export option is optional provenance auditing only. The lookup inventory includes the locally available discussion/design sources; uncited incidental tool-execution records are excluded rather than leaving unresolved external paths in the lookup set.
+Default lookup never infers an external export directory. The explicit --export option is optional provenance auditing only. The lookup inventory includes locally available discussion/design sources. It excludes uncited incidental tool-execution records, which would leave unresolved external paths in the lookup set.
 
-Whitespace checks cover maintained documentation and utilities. Exact historical source files are intentionally excluded from whitespace cleanup: original CRLF, Markdown hard-break spaces and other source formatting are protected by hashes and Git attributes. The check does not normalize those bytes. No dependency installation, global setting change or live provider request was needed.
+Whitespace checks cover maintained documentation and utilities. Whitespace cleanup excludes exact historical source files. Hashes and Git attributes protect original CRLF, Markdown hard-break spaces and other source formatting. The check does not normalize those bytes. The checks required no dependency installation, global setting change or live provider request.
 
 ## Original-project boundary and remaining limits
 
-The old repository was compared against its initial baseline again: HEAD and porcelain status unchanged, all 103 tracked/nonignored-untracked file hashes unchanged, and no added nonignored file. Its pre-existing uncommitted work remains intact. Ignored runtime trees are outside that hash comparison and were not intentionally modified. The initial review reused an old Python interpreter read-only; the portable verification uses an independent interpreter.
+The comparison against the old repository's initial baseline found these results:
 
-The supplied large export remains untouched. The source copies required here are now local; historical paths inside verbatim messages do not create a development dependency. No old application code, private configuration, run workspace or closed-job ledger became an active owner. No remote publication, app implementation, Nexus generation/probe, PDF conversion, benchmark or installer verification was performed.
+- HEAD and porcelain status remained unchanged.
+- All 103 tracked/nonignored-untracked file hashes remained unchanged.
+- No nonignored file was added.
+
+Its pre-existing uncommitted work remains intact. Ignored runtime trees are outside that hash comparison and were not intentionally modified. The initial review reused an old Python interpreter read-only. The portable verification uses an independent interpreter.
+
+The supplied large export remains untouched. The source copies required here are now local. Historical paths inside verbatim messages do not create a development dependency. No old application code, private configuration, run workspace or closed-job ledger became an active owner. No remote publication, app implementation, Nexus generation/probe, PDF conversion, benchmark or installer verification was performed.
 
 EVT-0258's saved final body is empty, some forum screenshots clip text/code, and the original export records missing incidental assets and five unreconstructible old document revisions. These source limits are disclosed, not filled with invented text. They do not represent missing pasted-text attachments or a requirement to consult the original export for the documented design.
 

@@ -1,28 +1,28 @@
 # Rebuild architecture
 
-Status: settled responsibility boundaries and preferred implementation baseline; no application is implemented here. EVT-1068, EVT-1107 and EVT-1166 consolidate this direction. The earlier Pi-first and LangChain `create_agent` recommendations remain documented in the reference discussion with their corrections.
+Status: settled responsibility boundaries and preferred implementation baseline. This repository contains no implemented application. EVT-1068, EVT-1107 and EVT-1166 consolidate this direction. The earlier Pi-first and LangChain `create_agent` recommendations remain documented in the reference discussion with their corrections.
 
-For shared terms, an end-to-end example and the module-specific engineering explanations, read [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md). It routes to detailed local guides; source IDs are optional provenance, not prerequisites for understanding this architecture.
+For shared terms, an end-to-end example and the module-specific engineering explanations, read [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md). It links to detailed local guides. Source IDs provide optional provenance. They are not prerequisites for understanding this architecture.
 
 ## Responsibilities
 
 | Component | Owns | Boundary |
 | --- | --- | --- |
-| Desktop shell | Task configuration, source/scope selection, progress, saved-document reading, intervention and export access | Electron/TypeScript/React; reconstruct UI from durable state after reconnect |
-| Python controller | Agent loop, finite execution policy, task lifecycle and accepted tool-batch sequencing | One controller and shared tools; agent chooses conversion methods |
+| Desktop shell | Task configuration, source/scope selection, progress, saved-document reading, intervention and export access | Electron/TypeScript/React. Reconstruct the UI from durable state after reconnect. |
+| Python controller | Agent loop, finite execution policy, task lifecycle and accepted tool-batch sequencing | One controller and shared tools. The agent chooses conversion methods. |
 | Small LangGraph StateGraph | Explicit model/tool/context/recovery transitions and checkpoints of compact orchestration state, including small context policy | Framework is a preferred substrate, not an external-effect transaction manager |
-| Nexus request service | Native encoding of the context-selected frozen input, request identity, attempts, complete accepted replies, budgets and cancellation checks | Shared by normal reasoning and compaction; it does not independently reselect evidence |
+| Nexus request service | Native encoding of the context-selected frozen input, request identity, attempts, complete accepted replies, budgets and cancellation checks | Normal reasoning and compaction share this service. It does not independently reselect evidence. |
 | Shared tool dispatcher | Tool discovery, raw argument retention, validation, dispatch and durable original receipts | App-internal and external MCP/CLI surfaces use the same core contracts |
-| Document/evidence core | Immutable source/evidence/candidate/version content, exact reads, editing, rendering and explicit-version exports | Content fidelity is assessed against the source; storage integrity is a separate guarantee |
-| SQLite metadata | Version registration, current pointers, operation uniqueness/receipts and defined execution metadata | Short transactions around durable metadata; large immutable files remain external |
+| Document/evidence core | Immutable source/evidence/candidate/version content, exact reads, editing, rendering and explicit-version exports | Assess content fidelity against the source. Storage integrity is a separate guarantee. |
+| SQLite metadata | Version registration, current pointers, operation uniqueness/receipts and defined execution metadata | Short transactions cover durable metadata. Large immutable files remain external. |
 
 There is no required module count or table count. Boundaries may share a file or be factored into packages as implementation warrants. Do not create a second agent loop merely to adopt a framework.
 
 ## Agent loop and autonomy
 
-A graph can express a dynamic model/tool loop. Graph-based execution does not require a fixed business workflow, and autonomy does not remove the need to manage state, budgets, side effects and recovery. The graph represents execution responsibilities; the model still selects methods, tools and continuation based on results.
+A graph can express a dynamic model/tool loop. Graph-based execution does not require a fixed business workflow, and autonomy does not remove the need to manage state, budgets, side effects and recovery. The graph represents execution responsibilities. The model still selects methods, tools and continuation based on results.
 
-The model selects source access, OCR, scripts and reconstruction scope. The app checks capacity, maintains identities and accepts complete native replies. The dispatcher executes only validated calls and records every accepted batch member's success, rejection or failure outcome before the next model input is assembled. A complete accepted reply does not imply that every proposed operation passes domain validation. Context work occurs at a defined safe boundary with the same durable request and budget handling as other model calls.
+The model selects source access, OCR, scripts and reconstruction scope. The app checks capacity, maintains identities and accepts complete native replies. The dispatcher executes only validated calls. Before the assembler builds the next model input, the dispatcher records each accepted batch member's success, rejection or failure. A complete accepted reply does not imply that every proposed operation passes domain validation. Context work occurs at a defined safe boundary with the same durable request and budget handling as other model calls.
 
 The exact nodes/edges and their schemas are implementation details to settle with [the three contracts](CONTRACTS.md). A simple `prepare -> model -> tools` sketch is not a guarantee that every recovery or cancellation branch is correct.
 
@@ -42,11 +42,11 @@ Evidence hydration belongs in transient request assembly. Returning large hydrat
 
 ## Authority and recovery
 
-Immutable version files are the recommended body authority. SQLite registers their identities and commits metadata/pointers/receipts; avoid a second independently mutable body in `blocks_json`. A staged file plus SQLite commit needs an explicit visibility/reconciliation contract. A database transaction does not also commit the external files or graph checkpoint.
+Immutable version files are the recommended body authority. SQLite registers their identities and commits metadata/pointers/receipts. Avoid a second independently mutable body in `blocks_json`. A staged file plus SQLite commit needs an explicit visibility/reconciliation contract. A database transaction does not also commit the external files or graph checkpoint.
 
-Each request, accepted reply, pending batch, document version and operation receipt has one authoritative record. The graph may keep references and deterministic projections of those facts, but a checkpoint timestamp is not proof that external effects were committed or seen by the model. Preserve local effects when replaying graph work; do not roll back external budgets or publication with a graph branch.
+Each request, accepted reply, pending batch, document version and operation receipt has one authoritative record. The graph may keep references and deterministic projections of those facts. A checkpoint timestamp proves neither committed external effects nor model exposure to those effects. Preserve local effects when replaying graph work. Do not roll back external budgets or publication with a graph branch.
 
-First-version recovery assumes one active writer per task. Multiple independent task workspaces may exist; do not confuse directory isolation with model-context isolation or an OS sandbox. General multi-writer/fork/merge coordination is not a first-version prerequisite.
+First-version recovery assumes one active writer per task. Multiple independent task workspaces may exist. Do not confuse directory isolation with model-context isolation or an OS sandbox. General multi-writer/fork/merge coordination is not a first-version prerequisite.
 
 ## Provider portability
 
@@ -56,10 +56,10 @@ Do not force every native interaction into a lossy common message shape. Keep a 
 
 ## Framework tradeoff retained
 
-Pi offers a lightweight extensible loop and compaction/context hooks, but moving the controller toward TypeScript and integrating the Python source/document core has real coordination costs. LangChain `create_agent` offers a maintained loop and middleware but still needs domain storage/protocol contracts. Deep Agents supplies useful offloading/filesystem/summary mechanisms with stronger built-in assumptions. LangMem supplies memory/summary mechanisms rather than the complete document runtime. OpenAI Agents SDK, Claude Agent SDK and other runtimes require provider/authentication/product-fit checks; SDK maturity alone does not prove Nexus subscription compatibility.
+Pi offers a lightweight extensible loop and compaction/context hooks, but moving the controller toward TypeScript and integrating the Python source/document core has real coordination costs. LangChain `create_agent` offers a maintained loop and middleware but still needs domain storage/protocol contracts. Deep Agents supplies useful offloading/filesystem/summary mechanisms with stronger built-in assumptions. LangMem supplies memory/summary mechanisms rather than the complete document runtime. OpenAI Agents SDK, Claude Agent SDK and other runtimes require provider/authentication/product-fit checks. SDK maturity alone does not prove Nexus subscription compatibility.
 
 The preferred small StateGraph keeps the Python core and native Nexus service explicit while reusing graph persistence/control primitives. This is a fit judgment, not a benchmark proving lower cost, fewer edits or greater reliability. No new framework bake-off is queued by this choice.
 
 ## Implementation boundary
 
-No backward compatibility or old-run migration is required. Useful old code can be reviewed for selective reuse, with the original repository preserved. Dependency versions, exact API/schema names and desktop packaging details are not silently copied from an old environment. Network transport expansion remains deferred; the already-discussed execution boundaries necessary for context and durable work are retained in CONTRACTS.
+No backward compatibility or old-run migration is required. Useful old code can be reviewed for selective reuse, with the original repository preserved. Dependency versions, exact API/schema names and desktop packaging details are not silently copied from an old environment. Network transport expansion remains deferred. CONTRACTS retains the discussed execution boundaries necessary for context and durable work.

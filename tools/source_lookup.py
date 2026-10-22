@@ -11,7 +11,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source_id', help='EVT-nnnn, ATT-nn, SUP-nn or LIVE-nn')
     parser.add_argument('--export', type=Path, dest='export_root',
-                        help='Optional explicit original-export audit; never used by default')
+                        help='Audit an original export only when explicitly requested. Default lookup does not use an export.')
     parser.add_argument('--original', action='store_true',
                         help='Read bundled exact event JSON instead of extracted message text')
     parser.add_argument('--verify-only', action='store_true')
@@ -48,7 +48,7 @@ def main():
         if args.original and not selected:
             selected = record.get('local')
         if not selected:
-            parser.error('Known development source has no local copy/excerpt; restore the checked repository bundle.')
+            parser.error('The known development source has no local copy/excerpt. Restore the checked repository bundle.')
         representation = selected.get('representation', 'Bundled exact source record')
     path = (source_root/selected['path']).resolve()
     if not path.is_relative_to(source_root):
@@ -57,7 +57,7 @@ def main():
         parser.error(f'Bundled/source file unavailable: {path}')
     raw = path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != selected['sha256']:
-        parser.error('Source hash differs from its recorded value; content not displayed')
+        parser.error('Source hash differs from its recorded value. Lookup did not display content.')
     print(f"{source_id}: verified {len(raw)} bytes\n{path}\n{representation}")
     if args.verify_only:
         return
@@ -66,11 +66,11 @@ def main():
             reader = record.get('local_reader', {}).get('path')
             if reader:
                 print(f'Offline article and original figures: {root / reader}')
-            print('HTML is inert source text; no script was executed.')
+            print('HTML is inert source text. Lookup did not execute a script.')
         elif path.suffix.lower() in ('.txt', '.md'):
             print(raw.decode('utf-8'))
         else:
-            print('HTML source and embedded images require separate inspection; no script was executed.')
+            print('HTML source and embedded images require separate inspection. Lookup did not execute a script.')
         return
     if not args.export_root and not args.original:
         print(raw.decode('utf-8'))

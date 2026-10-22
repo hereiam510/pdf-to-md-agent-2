@@ -1,6 +1,6 @@
 # Later repository-scoping decisions
 
-These visible exchanges occurred after the supplied export's discussion snapshot. They are transcribed here from the current conversation for scope/provenance; this is not a claim of a second full raw export. The current human task controls action. Original language and spelling are retained in quoted requests.
+These visible exchanges occurred after the supplied export's discussion snapshot. This file transcribes them from the current conversation for scope/provenance. It does not claim to be a second full raw export. The current human task controls action. Original language and spelling are retained in quoted requests.
 
 <a id="live-01"></a>
 ## LIVE-01: New repository, discuss first
@@ -20,7 +20,7 @@ The discussion proposed a new independent Git history, traceable preservation of
 > as we are reconstructing, is it necessary to keep 現行開發文件?
 > personally i am afraid the files may affect the new development
 
-The agreed direction was to leave the original project and its records available, write fresh rebuild specifications, and preserve discussion as explicitly non-normative reference. Merely moving obsolete instructions into `docs/archive/` would not prevent accidental use. New entry documents should identify effective owners; source records are read when a relevant rationale needs checking.
+The agreed direction was to leave the original project and its records available, write fresh rebuild specifications, and preserve discussion as explicitly non-normative reference. Merely moving obsolete instructions into `docs/archive/` would not prevent accidental use. New entry documents should identify effective owners. Read source records when a relevant rationale needs checking.
 
 <a id="live-03"></a>
 ## LIVE-03: Preserve rebuild knowledge, not old project ledgers
@@ -30,7 +30,7 @@ The user highlighted the earlier proposal to retain old implementation/test/clos
 > do we need to include this?
 > like we have discussed a lot for the new rebuild version
 
-The response withdrew unnecessary migration of old current-state files, test logs and closed-job lists. Retain all rebuild decisions, rationale, cautions and unresolved issues. Include an old observation only where it explains a rebuild requirement or tradeoff. Preserve consequential rejected ideas with their replacement; repeated turns need not be restated as competing specifications. Completeness is judged by preservation of the rebuild knowledge.
+The response withdrew unnecessary migration of old current-state files, test logs and closed-job lists. Retain all rebuild decisions, rationale, cautions and unresolved issues. Include an old observation only where it explains a rebuild requirement or tradeoff. Preserve consequential rejected ideas with their replacement. Repeated turns need not become competing specifications. Completeness is judged by preservation of the rebuild knowledge.
 
 <a id="live-04"></a>
 ## LIVE-04: Authorize creation and complete source review
@@ -42,7 +42,7 @@ The response withdrew unnecessary migration of old current-state files, test log
 > use sub-agents to assist and cross-check
 > keep the old repo unchanged.
 
-This authorizes the new local repository, writing its documentation, reviewing the supplied conversation/attachments and using subagents. The supplied export is the main exact source. The old repository is a read-only source; its pre-existing uncommitted work is preserved. The new repository is a documentation/design baseline, not an implied application implementation or remote publication.
+This authorizes the new local repository, writing its documentation, reviewing the supplied conversation/attachments and using subagents. The supplied export is the main exact source. The old repository is a read-only source. Its pre-existing uncommitted work remains intact. The new repository is a documentation/design baseline, not an implied application implementation or remote publication.
 
 <a id="live-05"></a>
 ## LIVE-05: Subagents also write and inspect the new repository
@@ -60,7 +60,7 @@ Subagents therefore read assigned full source ranges, author detailed reference 
 > i want the new repo to be self-contained
 > it seems that there are many info needs to refer to the conversation export
 
-The initial repository's external source-lookup dependency was insufficient. The new repository must include the development knowledge and the relevant local provenance so that moving/cloning it does not require the old checkout, the supplied export folder or private review scratch. The original repository and original export stay unchanged. Optional historical sources do not become active development instructions.
+The initial repository's external source-lookup dependency was insufficient. The new repository must include the development knowledge and relevant local provenance. Moving/cloning it must not require the old checkout, supplied export folder or private review scratch. The original repository and original export stay unchanged. Optional historical sources do not become active development instructions.
 
 <a id="live-07"></a>
 ## LIVE-07: Explain the technical details, not only preserve sources
@@ -69,7 +69,7 @@ The initial repository's external source-lookup dependency was insufficient. The
 > the new repo be not able to refer to the exported, original conversation i given
 > so i need the docs record or explain everything related to the development in detail
 
-Source counts, point mappings and a local transcript are not sufficient. Maintained development documents must explain the discussed mechanisms, data/state ownership, interface semantics, sequences, failure handling, rationale, concrete examples and unresolved choices in detail. Original messages are optional audit material. The work elaborates and preserves the existing discussion; it does not invent final schemas or reopen unrelated architecture decisions. Settled requirements, recommendations, historical alternatives and the three genuinely open contracts remain distinguishable.
+Source counts, point mappings and a local transcript are not sufficient. Maintained development documents must explain the discussed mechanisms, data/state ownership, interface semantics, sequences, failure handling, rationale, concrete examples and unresolved choices in detail. Original messages are optional audit material. The work elaborates and preserves the existing discussion. It does not invent final schemas or reopen unrelated architecture decisions. Settled requirements, recommendations, historical alternatives and the three genuinely open contracts remain distinguishable.
 
 <a id="live-08"></a>
 ## LIVE-08: Check the loss of technical terminology and detail
@@ -77,11 +77,11 @@ Source counts, point mappings and a local transcript are not sufficient. Maintai
 > my doubt is that, our previous conversation involves so many technical terms and details
 > and it seems that there are, comparatively, so few in the docs
 
-Reassess the synthesis against the original discussion, independently of its existing point inventory. A broad topic mapping or the presence of a term is insufficient when the explanation omits the field's meaning, an ordering rule, a failure example or the reason an alternative was rejected. Preserve exact technical spellings where they make the discussion searchable and precise. Distinguish an adequate paraphrase from a substantive omission. Restoring detail must not promote a historical proposal, example constant or forum claim into an agreed implementation requirement.
+Reassess the synthesis against the original discussion, independently of its existing point inventory. A broad topic mapping or a term alone is insufficient if an explanation omits material detail. Such detail includes field meaning, ordering rules, failure examples and reasons for rejecting an alternative. Preserve exact technical spellings where they make the discussion searchable and precise. Distinguish an adequate paraphrase from a substantive omission. Restoring detail must not promote a historical proposal, example constant or forum claim into an agreed implementation requirement.
 
 <a id="live-09"></a>
 ## LIVE-09: Use the direct conversation as well
 
 > ypu can also read our direct conversation, rather than export
 
-The direct conversation is an additional review source, including later corrections and scope requirements. Retrieve actual message text where available and distinguish it from summaries or unavailable content. The new repository must still explain the development knowledge on its own; access to this chat is not a dependency of development or documentation lookup.
+The direct conversation is an additional review source, including later corrections and scope requirements. Retrieve actual message text where available and distinguish it from summaries or unavailable content. The new repository must still explain the development knowledge on its own. Development and documentation lookup must not depend on access to this chat.
