@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9c36c13008191a7aeb0d7c20b73cd",
+    "content": [
+      {
+        "type": "Text",
+        "text": "也找到一個可以減少改動的做法：目前安裝的 MCP SDK 已有 `intercept_tool_call`，位置在工具參數驗證之前。它可讓我們先保存候選內容，再維持清楚的工具 schema，不必為了保存錯誤參數而全面放寬型別。另外，交付應綁定明確選定的版本；較新的試改草稿未必是 agent 要交付的成果。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2956,
+  "timestamp_original": "2026-10-22T08:03:55.718Z",
+  "timestamp_display": "2026-10-22T16:03:55.718+08:00",
+  "turn_id": "01a1629d-caf4-7b20-987f-2089ed7c96b0",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T16:03:55.573+08:00",
+  "completed_at": "2026-10-22T16:03:55.717+08:00",
+  "event_id": "EVT-0999",
+  "evidence_path": "evidence/events/EVT-0999.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

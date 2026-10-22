@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad97fbbe8b481919a0398fde1e72a28",
+    "content": [
+      {
+        "type": "Text",
+        "text": "工具重播也要補上一個限制：穩定訊息 ID 只會替換目前 state 裡仍存在的同 ID 訊息。如果原訊息已被整理移除，重新加入舊收據仍會把它帶回歷史。因此，恢復應先依 checkpointer 判斷待續工作，再重播對應收據，不能掃描所有成功操作後重新灌入。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2233,
+  "timestamp_original": "2026-10-22T03:15:10.031Z",
+  "timestamp_display": "2026-10-22T11:15:10.031+08:00",
+  "turn_id": "01a16197-e457-7912-8016-03dbb9de1b4a",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T11:15:09.941+08:00",
+  "completed_at": "2026-10-22T11:15:10.031+08:00",
+  "event_id": "EVT-0724",
+  "evidence_path": "evidence/events/EVT-0724.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

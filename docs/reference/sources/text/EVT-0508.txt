@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "這份審閱展現了極高的工程敏銳度——特別是抓出 PyMuPDF `span flags = 12` 的位元定義錯誤（`4 + 8` 為 `serifed` 與 …": C:\Users\laichungling\.codex/attachments/4d807d94-04d0-45f6-968c-e5871db31883/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9821ad39c8191b743988c824b141e",
+    "content": [
+      {
+        "type": "Text",
+        "text": "快取的方向有用，但文中的例子不會直接命中：`pages=15–20` 與 `pages=15–16` 的參數雜湊不同。若要重用重疊範圍，需要按實際運算單位建立索引；同時要讓 Agent 能更換 OCR 設定或明確重算，避免一直拿到有缺陷的舊結果。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2312,
+  "timestamp_original": "2026-10-22T03:25:17.552Z",
+  "timestamp_display": "2026-10-22T11:25:17.552+08:00",
+  "turn_id": "01a161a1-07d2-78e0-9a32-9e9f29116491",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T11:25:17.504+08:00",
+  "completed_at": "2026-10-22T11:25:17.552+08:00",
+  "event_id": "EVT-0754",
+  "evidence_path": "evidence/events/EVT-0754.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

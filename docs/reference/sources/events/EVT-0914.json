@@ -1,0 +1,32 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9b51030a8819187ab70b3933aec6e",
+    "content": [
+      {
+        "type": "Text",
+        "text": "**我支持這版的主架構，但有幾項細節應修改後才實作。** 特別是強制 NFC／HTML 重排、頁面完成狀態的繼承，以及「薄 adapter 可完整繼承既有保護」這三點，目前的承諾超過了設計實際能保證的範圍。\n\n我仍支持以 **LangChain `create_agent`＋持久化 LangGraph Checkpointer＋App 自有文件／證據服務**作為重構基準。接下來更值得完善的是保存、修改、接續工作的契約，而不是再增加框架或管理層。\n\n**1. 不應為了方便定位，強制改寫儲存內容。**\n\n「不要讓模型手算字元 offset」是合理方向；但因此要求所有正文先做 NFC，再自動重新排版 HTML，並不合理。\n\nNFC 會改變某些漢字的碼位。我用本機 Python 核對了一個例子：\n\n```text\nU+2F800 → NFC → U+4E3D\n```\n\n這不是說來源 PDF 一定使用了前者，而是說：**NFC 不能當成保留所有原始字元區別的無損步驟。** 本專案又明確要求保留來源支持的可見字形差異，更不應在保存時悄悄套用。[Unicode 正規化規範](https://www.unicode.org/reports/tr15/)、[專案保真要求](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/PRODUCT_REQUIREMENTS.md:17)\n\nHTML 重新排版也有類似問題：插入換行會增加文字節點，某些空白保留方式、複製結果和後續解析會受到影響，不能籠統保證「內容完全不變」。[MDN：HTML 空白的處理](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Text/Whitespace)\n\n我建議：\n\n- 保存完整原始候選內容；文件版本可採明確的 LF 換行契約。\n- 行號、表格分行與搜尋正規化，優先作為**讀取／編輯視圖**，保留回到實際內容的對應。\n- 修改綁定確切版本，使用 `expected_old_text`、前後文或工具產生的定位引用。\n- UI 若使用 offset，明定計數單位並由程式轉換即可；不必全面禁止。\n\n`table_cell_locator` 可以是便利功能，但 `{row:5,col:3}` 還不夠：遇到 `rowspan`、`colspan` 時，必須區分視覺格位與實際儲存格。較好的介面是工具回傳綁定版本的 `cell_ref`，再讓 agent 修改；無須先把所有文件改造成強制的表格結構模型。\n\n**2. 候選稿保存必須早於框架的工具參數驗證。**\n\n這是本版最值得補上的實作邊界。\n\n假設模型已產生正確正文，但 `save` 的其他參數不合 schema。LangChain 可能在進入文件服務之前就拒絕工具呼叫；因此，**只在 `DocumentService.save()` 裡「先存 candidate 再驗證」，仍可能接不到那些正文。** LangChain 的工具基底確實包含執行前的參數解析與驗證。[官方原始碼](https://github.com/langchain-ai/langchain/blob/master/libs/core/langchain_core/tools/base.py)\n\n而現有程式已經有一項值得保留的能力：`AgentTools.call()` 先保存完整工具參數，再交給工具驗證／執行。[現有保存位置](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/agent_tools.py:383)\n\n重構應把這項能力接好：\n\n> 保存已完整接收的寫入參數 → 驗證 → 建立／更新草稿 → 提交文件版本。\n\n驗證失敗時，回傳可重用的內容引用與精確錯誤，讓 agent 只修 metadata。原始記錄可以容納無效參數；正式草稿和文件版本仍須符合各自的契約。截斷的模型回覆可以保留作診斷，但不能因此執行不完整工具呼叫。\n\n另外，「已提交成功，但回覆欄位選取失敗」仍要保留成功收據，不能把它當成尚未寫入而再次提交。\n\n**3. 新的頁面狀態仍混合了來源事實、任務範圍和完成判斷。**\n\n`converted_full_page`、`converted_partial_scope` 可以表達 agent 的完成聲明，但不能稱為程式能直接確認的「客觀狀態」。\n\n尤其要處理這個例子：\n\n1. 任務 A：完成第 12 頁的 Breasts 小節。\n2. 任務 B：擴大為第 12 頁全部內容。\n3. A 的 `converted_partial_scope` 仍然有效，但**不足以證明 B 已完成**。\n\n所以，完成聲明應綁定**任務範圍版本與文件版本**。範圍擴大後保留已完成部分，同時把新增部分標示為尚未處理或待確認；不能只把其他頁面的 `outside_task_scope` 改成 `unprocessed` 就算解決了續工。\n\n不需要因此建立複雜的語義圖。幾個清楚的概念已足夠：\n\n| 資訊 | 它回答的問題 |\n|---|---|\n| 任務範圍 | 這次要求轉換甚麼、排除甚麼？ |\n| 來源／輸出對應 | 哪些內容來自哪些頁或區域？ |\n| 完成聲明與未解問題 | agent 認為哪些已完成，還欠甚麼？ |\n| 技術驗證結果 | 資產、引用、版本與結構是否有效？ |\n\n`subpage_boundary_note` 可以保留自然語言邊界，但程式不能靠這句話自動證明內容完整。也不應把「版權頁」預設歸為非內容；是否省略取決於使用者範圍，版權頁本身可能包含需要保留的實質文字。\n\n稀疏提交、完整頁碼對應的方向可以保留，只要不把自動補表誤當成完成證明。\n\n**4. 按父回覆的工具宣告順序結算 context intents，我同意；但它沒有解決文件操作的並行依賴。**\n\nLangGraph 官方確實指出，同一並行步驟的更新不應假定有固定順序；需要順序時，應保存排序依據。[官方並行更新說明](https://docs.langchain.com/oss/python/langgraph/use-graph-api)\n\n因此，可以由 runtime 根據已接受的父回覆，取得 `tool_call_id` 對應的宣告索引，再確定性結算。這個索引應來自可信的執行記錄。\n\n但要分清兩件事：\n\n- **Context intent 排序**：決定 pin、release、note 修改如何合併。\n- **工具執行依賴**：例如修改文件後再匯出該版本。\n\n前者不能讓並行的 `revise`、`export` 自動變成正確的先後關係。同樣地，兩個修改都基於版本 V，事後排列 context intents 也不能解決它們的版本衝突。\n\n第一個切片可以先保留現有有副作用操作的順序與版本檢查；獨立讀取再按需要並行。這比一開始重建通用排程器更符合目前需求。\n\n`before_model` 負責持久政策更新、`wrap_model_call` 負責暫態內容組裝，仍是合適分工。[LangChain context engineering](https://docs.langchain.com/oss/python/langchain/context-engineering)\n\n**5. 自訂 Nexus adapter 合理，但「不到 150 行、100% 繼承保護」應撤回。**\n\n原始碼顯示，目前可重用能力分散在不同位置：\n\n- 持久重試帳本位於 controller 的 [`model_round()`](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/agent.py:384)。\n- 圖片配對依賴 provider 的可變 `pending_images`；實際順序是**先補齊整批 tool results，再加入配對圖片訊息**。[圖片組裝](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/provider.py:798)\n- 原有 228 項檢查涵蓋特定版本的多個模組，不是新 adapter 的既有驗證結果。[驗證範圍](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/EVIDENCE.md:198)\n\n所以可重用編碼、解析和帳本邏輯，但仍要把它們從舊迴圈中分離，避免共享模型物件讓不同請求混用暫存圖片。自訂模型也要正確接上工具綁定、非同步呼叫與訊息轉換，不能用行數預測工作量。[`BaseChatModel` 官方契約](https://raw.githubusercontent.com/langchain-ai/langchain/master/libs/core/langchain_core/language_models/chat_models.py)\n\n還有兩個重要邊界：\n\n- **AgentState 不能直接只剩任意「訊息引用」。** `create_agent` 的工具派發仍需要可執行的 `AIMessage.tool_calls`。大證據正文與圖片可以外置；目前待執行的工具呼叫結構仍須保留或明確解析。\n- `accepted_reply_id` 放進 `response_metadata` 有用，但它必須指向已持久保存的同一份回覆，重啟不能重新產生另一個身分。\n\n這些是整合工作，不需要另建一個 agent 框架；也不能靠套上 Checkpointer 自動完成。\n\n**6. 局部雙圖對照值得做，但它是提高可讀性的工具，不是清晰度保證。**\n\n「900×350 圖片送入任何視覺模型都不會縮放、保持 100% 原始清晰度」不成立。Qwen 官方就明示圖片會依處理器的像素設定調整尺寸；其他路由也不能從輸入尺寸推定其實際處理方式。[Qwen 官方影像處理說明](https://github.com/QwenLM/Qwen3-VL)\n\n此外：\n\n- 把低解析掃描渲染成 400 DPI，不能恢復原本不存在的筆畫。\n- 一個輸出區塊可能對應多個來源區域，不能假設一個 bbox 涵蓋全部內容。\n- Markdown 預覽會重新排版，來源裁切與輸出裁切通常不是相同幾何區域。\n- 現有 preview 是整份 Markdown 渲染，沒有已建立的 `block_id → DOM element` 對應；`#tbl_02` 定位需要新增這個契約。[現有 preview](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/preview.py:47)\n\n我會保留 `inspect_block_pair` 這個方向：回傳版本綁定的來源區域與實際輸出區域、像素尺寸及定位精度，讓 agent 可繼續放大、換區域或看整頁。裁切方法與解析度由需求決定，不固定成必經階段。\n\n**7. Slice 1 已接近合理，但應用「可完成的工作」界定，而不是四個模組都出現就算完成。**\n\n我建議第一個切片的驗收集中在：\n\n| 要證明的能力 | 可觀察結果 |\n|---|---|\n| Nexus 與新 runtime 接合 | 文字、工具呼叫及真實圖片正確往返 |\n| 有用正文不因參數錯誤丟失 | 修正 metadata 後可重用同一候選內容 |\n| 修改與交付一致 | 保存、重開、實際閱讀及匯出指向同一版本 |\n| 接續執行不重複提交 | 重啟後能辨認已完成操作與尚未完成工作 |\n\n樣本應是一個**完整而有用的小節**；「1～2 頁」只是可能的大小，不應切斷表格或圖文關係。這些是未來實作的驗收方向，不是現在新增 Nexus 試驗的安排。\n\n也要明確標示：完成這個切片，尚不等於完成 context management。後續仍需處理普通對話歷史的整理、有效使用者修訂與未解依賴的保護，以及單次選取內容過大時如何繼續工作。`context_policy` 提供控制位置，這些實際行為才決定長任務能否可靠完成。\n\n本輪只作提案、原始碼與官方資料查核，沒有修改專案或呼叫 Nexus。"
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 2734,
+  "timestamp_original": "2026-10-22T07:03:45.482Z",
+  "timestamp_display": "2026-10-22T15:03:45.482+08:00",
+  "turn_id": "01a16265-b33c-7390-b542-6a14e6703741",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T15:02:41.638+08:00",
+  "completed_at": "2026-10-22T15:03:45.482+08:00",
+  "event_id": "EVT-0914",
+  "evidence_path": "evidence/events/EVT-0914.json",
+  "supporting_paths": [
+    "supporting/workspace/docs/EVIDENCE.md",
+    "supporting/workspace/docs/PRODUCT_REQUIREMENTS.md",
+    "supporting/workspace/src/pdf_to_md_agent/agent.py",
+    "supporting/workspace/src/pdf_to_md_agent/provider.py",
+    "supporting/workspace/src/pdf_to_md_agent/agent_tools.py",
+    "supporting/workspace/src/pdf_to_md_agent/preview.py"
+  ],
+  "embedded_paths": []
+}

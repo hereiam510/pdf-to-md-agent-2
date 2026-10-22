@@ -1,0 +1,218 @@
+這份審閱抓出了前一版在時序模型與執行邊界上的四個決定性漏洞：包括將「操作建立序號（`event_seq`）」誤當成「完成時間線」導致晚完成的早期操作被漏檢、單一最大序號 `based_on_input_seq` 無法表達選擇性投影的真實輸入、工作目錄不等於作業系統沙箱，以及 `in_flight` 狀態無法區分子程序是否仍在背景執行。同時，將通用批次屏障簡化為「明確回傳 `produced_revision`（或由文件服務提供提交與預覽狀態分離的組合操作）」，並改用 `ToolMessage.artifact` 承載結構化引用，大幅降低了我們自行維護排程器與字串解析器的負擔。
+
+為使 App 在 **`create_agent` ＋ 持久化 LangGraph Checkpointer** 的基準上達到最佳功能表現，以下先確認五項定案修正，接著針對這版設計在 **Hook 間狀態傳遞、整理程序水合一致性、孤兒程序清除，以及歷史摘要格式** 上的四個實作缺口進行交鋒與補強，最後給出修正後的精簡資料模型。
+
+---
+
+## 一、 完全成立並納入設計基線的五項修正
+
+1. **分級持久化與 `ToolMessage.artifact` 結構化引用：** 短小的成功、錯誤或狀態回報直接內聯於 `ToolMessage.content`，無須繞行外部 Blob；大型證據與原圖（保留原始 PNG 或 JPEG 格式與尺寸，不強制轉碼）則外置儲存，並將引用憑證存於 `ToolMessage.artifact`，避免靠解析訊息正文 JSON 來判斷載入行為。
+
+
+2. **以不可變的 `input_view_id` 取代單一序號水位：** 撤回 `based_on_input_seq`，改在每次模型請求時記錄一份輕量的不可變輸入清單（`model_input_views`），精確記載當次請求納入的要求版本、草稿版本、訊息與證據欄位範圍，以及因容量未納入的項目。
+3. **分離「操作建立」、「嘗試執行」與「完成事件」：** 不再用單一 `operations.event_seq` 混充完成時間線與 Compaction 邊界；將邏輯操作身分（`operations`）與物理執行嘗試（`operation_attempts`）拆開，並以實際被替換的框架訊息 ID 範圍來記錄歷史整理邊界。
+4. **移除通用 `after_batch_mutation` 排程器：** 預設由 `update_draft` 回傳明確的 `produced_draft_rev`，再由 Agent 指定版本進行預覽或匯出；若需減少模型往返，則在文件服務層提供可選的 `preview_on_commit` 參數，並嚴格分開回報 `commit_status` 與 `preview_status`，且不禁止 Agent 在修改失敗後主動檢視舊版草稿或候選稿。
+
+
+5. **每文件獨立工作區資料庫與 State 錨定：** 依照專案隔離原則，每個文件任務使用獨立的本地工作區與專屬 SQLite 資料庫，從根本消除跨文件 `draft_rev` 或筆記混用的風險；同時將App 的不可變 `context_policy_rev` 引用寫入 LangGraph State，確保重啟恢復時兩套儲存對齊同一時間點。
+
+
+
+---
+
+## 二、 四個正面交鋒：補齊新方案中的關鍵執行缺口
+
+### 1. 交鋒一（針對第 2 點）：`wrap_model_call` 產生的 `input_view_id`，在下一輪 `wrap_tool_call` 中要如何精確關聯到筆記與操作？
+
+你建議讓工作筆記連結 `input_view_id`（或 `model_request_id`），以記錄 Agent 產生該筆記時實際收到的輸入清單。這個設計在概念上非常嚴密，但在 LangChain / LangGraph 的執行生命週期中存在一個**具體的傳遞斷層**：
+
+* **機制斷層：** `input_view_id` 是在呼叫模型前的 **`wrap_model_call`** 中組裝並寫入 SQLite 的；然而，當模型回傳 `AIMessage(tool_calls=[...])`、進入下一個節點的 **`wrap_tool_call`** 執行筆記寫入或文件更新時，`wrap_tool_call` 預設只收到當次的 `ToolCall` 與執行環境，**它並不知道這組 `tool_calls` 是模型看了哪一個 `input_view_id` 才產生的**！若直接去 SQLite 查「最新的一筆 `input_view_id`」，在並行分支或重試情境下又會重蹈「取最新值導致錯位」的覆轍。
+* **最佳設計補強（透過 `AIMessage.response_metadata` 傳遞檢視身分）：**
+1. 在 `wrap_model_call` 完成輸入清單持久化（產生 `input_view_id = "view_008"`）並取得模型回覆的 `AIMessage` 後，Middleware **立即將 `"input_view_id": "view_008"` 寫入該 `AIMessage.response_metadata`（或 `additional_kwargs`）**，隨 LangGraph Checkpoint 一併持久化。
+2. 當後續執行 `wrap_tool_call` 時，Adapter 直接從觸發該 `tool_call_id` 的父級 `AIMessage.response_metadata["input_view_id"]` 讀取確切的檢視身分，100% 無歧義地綁定至 `operations` 與 `working_notes`。
+
+
+
+### 2. 交鋒二（針對第 1 點）：如何避免「主模型拿到完整內容，歷史整理程序卻只看到憑證編號」？
+
+你在第 1 點敏銳提醒：「正常模型呼叫與歷史整理都要理解這套引用機制，避免主模型取得完整內容，整理程序卻只拿到憑證編號。」
+
+* **問題根源：** 許多框架（如預設的獨立 Summarization Middleware 或外部壓縮函數）在整理歷史時，會直接從 State 取出未經水合的 `messages` 陣列丟給摘要模型——若 `ToolMessage.content` 裡只有簡短憑證摘要、真正的資料放在 `artifact` 引用裡，摘要模型就會在「看不見表頭與前文細節」的盲態下硬寫摘要！
+
+
+* **最佳設計補強（廢除旁路摘要器，統一經由 `InputViewAssembler` 水合）：**
+* App **不設立任何直接讀取裸 State Messages 的旁路摘要程序**。
+* 當容量接近整理門檻時，`wrap_model_call` 走的依然是同一個 **`InputViewAssembler`**（將當前活躍的 `ToolMessage.artifact` 完整水合為原文與原圖），只是在該次請求尾端附加整理交接指引（請 Agent 依據目前完整可見的上下文更新結構化筆記、確認未解依賴與可釋放證據）。
+
+
+* 即使在選用輔助歷史摘要時，該摘要請求也必須強制通過同一個水合管線，並在 `model_input_views` 中留存其真實看到的展開範圍。
+
+
+
+### 3. 交鋒三（針對第 5 點）：破解腳本 `in_flight` 的四種模糊狀態——用「作業系統命運共享」加上「嘗試目錄完成標記」
+
+你準確指出：單憑 SQLite 裡的 `status = "in_flight"`，重啟時無法區分「尚未啟動」、「仍在背景跑」、「已完成但未寫收據」還是「中途崩潰」，且控制器退出不等於子程序已停止。
+
+* **最佳設計補強（兩階段嘗試登記 ＋ OS 級聯終止 ＋ 檔案完成信標）：**
+為了在不建立複雜分散式監控的前提下徹底解決這四種模糊狀態，每次工具或腳本的執行嘗試（`operation_attempts`）應遵循以下硬性協議：
+1. **消除「仍在背景偷跑的孤兒程序」：** 在 Windows 平台啟動任何子程序（Node OCR、Python 腳本或渲染器）時，強制將子程序綁定至設定了 **`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`** 的 Windows Job Object（macOS / Linux 則使用對應的 Process Group 與父程序退出信號）。這在作業系統核心層保證：**一旦主控制器崩潰或終止，所有子程序必然同步終止**，重啟恢復時絕不會有舊嘗試還在背景偷改檔案。
+
+
+2. **精確區分其餘三種狀態：**
+* **Step A（啟動前）：** 在 SQLite 建立 `attempt_no=1, state='spawning'`，並建立專屬目錄 `attempts/<attempt_id>/`。
+* **Step B（啟動瞬間）：** 取得子程序 `(pid, process_CreationTime)` 後更新為 `state='running'`。
+* **Step C（子程序退出瞬間）：** 執行器在將收據寫入 SQLite 之前，先在 `attempts/<attempt_id>/` 下原子寫入一個極小的 `_exit_status.json`（含 `exit_code` 與產出檔案 SHA-256 清單）。
+
+
+3. **重啟時的確定性判準：**
+* 若 `state == 'spawning'` 且無 `_exit_status.json` $\rightarrow$ **尚未啟動**，可安全重跑。
+* 若 `state == 'running'` 且有完整的 `_exit_status.json`（`exit_code == 0` 且產出檔案雜湊吻合） $\rightarrow$ **已完成但來不及更新 SQLite**，直接補齊成功收據並重用成果，無須重跑！
+* 若 `state == 'running'` 但無 `_exit_status.json`（或 `exit_code != 0`） $\rightarrow$ **確認為中途異常終止**。對於無外部副作用的純抽取／OCR 可直接建立 `attempt_no=2` 重跑；對於具宿主權限的任意腳本，則將狀態標為 `interrupted_uncertain`，保留 `attempts/<attempt_id>/` 供檢視，絕不盲目自動重跑。
+
+
+
+
+
+
+
+### 4. 交鋒四（針對第 6 點）：恢復視圖中的「歷史工具呼叫摘要」絕不能偽裝成原生 `AIMessage.tool_calls`
+
+你提醒：「摘要後的歷史工具呼叫必須被當成查閱資料……避免被執行器誤當成待執行呼叫，或被模型誤認為原始精確參數。」
+
+* **深層風險：** 如果在組裝 `[Recovery Context]` 時，把過去已執行過的回合保留為帶有截短參數的 `AIMessage(tool_calls=[...])` 與 `ToolMessage`，不僅可能觸發協定層對 JSON Schema 的驗證錯誤，更會產生嚴重的 **Few-Shot 污染**——模型看到前文 `AIMessage` 裡的 `update_draft` 只傳了摘要字串而非完整結構，下一輪自己呼叫工具時就會模仿這種不合法的簡寫格式！
+* **最佳設計補強（以唯讀「歷史活動摘錄區塊」取代偽造 Tool Call 訊息）：**
+* 在任何經過整理或恢復組裝的 Context 中，**只有保持 100% 原始完整參數與合法配對的近期回合，才以原生 `AIMessage` / `ToolMessage` 形式存在**。
+* 凡是已被壓縮或轉為緊湊骨架（Compact Turn Skeleton）的早期活動，一律渲染為基準視圖中的**唯讀結構化文字區塊（`[Historical Activity Log - Read-Only Reference]`）**，明確列出操作 ID、工具名稱、目標頁碼、結果狀態、候選稿 `candidate_id` 與原始記錄查詢入口，徹底隔絕執行器誤派發與模型格式模仿。
+
+
+
+---
+
+## 三、 修正後的四大核心表設計（單一文件工作區作用域）
+
+既然每個文件任務擁有獨立的工作區與 `state.db`，我們可以移除跨文件冗餘欄位，修正命名空間、狀態列舉、事件完成序號與輸入檢視綁定：
+
+```sql
+-- 1. 邏輯操作與物理執行嘗試（分離建立序號、完成序號與未知中斷狀態）
+CREATE TABLE operations (
+    operation_id TEXT PRIMARY KEY,          -- 由 (thread_id, checkpoint_ns, tool_call_id) 衍生之穩定識別碼
+    thread_id TEXT NOT NULL,
+    checkpoint_ns TEXT NOT NULL DEFAULT '',
+    tool_call_id TEXT NOT NULL,
+    tool_name TEXT NOT NULL,
+    canonical_input_sha256 TEXT NOT NULL,
+    triggered_by_view_id TEXT REFERENCES model_input_views(input_view_id),
+    status TEXT NOT NULL CHECK(status IN (
+        'registered', 'running', 'succeeded', 'failed', 'interrupted_uncertain'
+    )),
+    created_seq INTEGER NOT NULL,           -- 僅表示登記順序
+    completed_seq INTEGER,                  -- 僅在完成時賦予單調遞增序號，供查詢「某時間點後新完成的操作」
+    result_summary_json TEXT,               -- 小型結果或錯誤明細
+    artifact_ref_json TEXT,                 -- 寫入 ToolMessage.artifact 的結構化引用 (produced_draft_rev / evidence_id / candidate_id)
+    UNIQUE(thread_id, checkpoint_ns, tool_call_id)
+);
+
+CREATE TABLE operation_attempts (
+    attempt_id TEXT PRIMARY KEY,
+    operation_id TEXT NOT NULL REFERENCES operations(operation_id),
+    attempt_no INTEGER NOT NULL,
+    run_id TEXT,
+    attempt_dir_path TEXT NOT NULL,
+    os_pid INTEGER,
+    os_process_start_time TEXT,
+    attempt_state TEXT NOT NULL CHECK(attempt_state IN (
+        'spawning', 'running', 'exited_ok', 'exited_error', 'killed_or_lost'
+    )),
+    exit_code INTEGER,
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    UNIQUE(operation_id, attempt_no)
+);
+
+-- 2. 不可變的模型輸入檢視清單（精確記錄每次模型請求實際看到的資料與解析後版本）
+CREATE TABLE model_input_views (
+    input_view_id TEXT PRIMARY KEY,         -- 寫入 AIMessage.response_metadata["input_view_id"]
+    thread_id TEXT NOT NULL,
+    checkpoint_ns TEXT NOT NULL DEFAULT '',
+    policy_rev INTEGER NOT NULL REFERENCES context_policies(policy_rev),
+    effective_req_rev INTEGER NOT NULL,
+    effective_draft_rev INTEGER NOT NULL,
+    resolved_pins_json TEXT NOT NULL,       -- 將 follow_latest 解析為當次請求實際載入的固定 (block_id, content_ref)
+    included_messages_and_projections_json TEXT NOT NULL, -- 實際載入之訊息 ID、evidence_id、欄位範圍、圖片格式(PNG/JPEG)
+    capacity_omitted_items_json TEXT NOT NULL,            -- 因容量未展開之項目與明示收據
+    estimated_tokens INTEGER NOT NULL,
+    observed_input_tokens INTEGER,          -- 收到回覆後回填之 usage.input_tokens
+    created_at TEXT NOT NULL
+);
+
+-- 3. 版本化工作草稿、候選稿與不可變證據（保留原始圖片格式與雙狀態預覽）
+CREATE TABLE draft_revisions (
+    draft_rev INTEGER PRIMARY KEY,
+    parent_draft_rev INTEGER,
+    created_by_op_id TEXT NOT NULL REFERENCES operations(operation_id),
+    blocks_manifest_json TEXT NOT NULL,     -- [{"block_id": "tbl_1", "content_ref": "sha256:..."}, ...]
+    page_map_json TEXT NOT NULL,
+    open_issues_json TEXT NOT NULL
+);
+
+CREATE TABLE evidence_blobs (
+    evidence_id TEXT PRIMARY KEY,
+    created_by_op_id TEXT NOT NULL REFERENCES operations(operation_id),
+    source_kind TEXT NOT NULL,
+    media_type TEXT NOT NULL,               -- 'application/json' | 'image/png' | 'image/jpeg' (保留原件格式)
+    source_pages_json TEXT NOT NULL,
+    target_draft_rev INTEGER,
+    blob_sha256 TEXT NOT NULL,
+    byte_size INTEGER NOT NULL,
+    observed_metadata_json TEXT NOT NULL,
+    derived_hints_json TEXT
+);
+
+-- 4. 具版本鎖與輸入檢視綁定的工作筆記與 Context Policy
+CREATE TABLE working_notes (
+    note_id TEXT PRIMARY KEY,
+    note_rev INTEGER NOT NULL DEFAULT 1,    -- 防止並行工具同時修改同一則筆記的樂觀鎖版本
+    note_category TEXT NOT NULL,
+    scope_json TEXT NOT NULL,
+    content_text TEXT NOT NULL,
+    linked_refs_json TEXT,
+    status TEXT NOT NULL CHECK(status IN ('active', 'resolved', 'superseded')),
+    based_on_view_id TEXT NOT NULL REFERENCES model_input_views(input_view_id),
+    updated_by_op_id TEXT NOT NULL REFERENCES operations(operation_id),
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE context_policies (
+    policy_rev INTEGER PRIMARY KEY AUTOINCREMENT, -- 其值同步存於 LangGraph State["active_policy_rev"]
+    replaced_message_ids_json TEXT NOT NULL,      -- 實際被整理替換的框架訊息 ID 清單（非模糊序號）
+    pinned_specs_json TEXT NOT NULL,
+    evidence_retention_choices_json TEXT NOT NULL,-- 各 evidence_id 的保留/釋放設定
+    historical_activity_digest_text TEXT,         -- 唯讀歷史活動摘要（不偽裝成待執行 Tool Calls）
+    based_on_view_id TEXT REFERENCES model_input_views(input_view_id),
+    created_at TEXT NOT NULL
+);
+
+```
+
+---
+
+## 四、 收斂後的執行閉環：單一回合的精確互動
+
+在這套修正設計下，`create_agent` 與 App 服務在單一回合的互動完全消除了先前的時序漏洞：
+
+1. **呼叫模型前（`wrap_model_call`）：**
+* 讀取 LangGraph State 中的 `active_policy_rev`，將所有 `follow_latest` 釘選解析為當前確切的 `(block_id, content_ref)`。
+* 掃描未替換的歷史訊息：對帶有 `ToolMessage.artifact` 的訊息，依保留規則與容量預算從 `evidence_blobs` 載入原文或原始格式圖片（PNG/JPEG），構造**全新的暫態訊息物件**送往模型（絕不把展開後的大內容寫回 LangGraph State）。
+
+
+* 將本次實際展開的所有項目寫入 `model_input_views`（取得 `input_view_id`），並在收到 `AIMessage` 回覆後將 `input_view_id` 附加至 `AIMessage.response_metadata`。
+
+
+2. **執行工具時（`wrap_tool_call`）：**
+* 以 `(thread_id, checkpoint_ns, tool_call_id)` 與輸入雜湊查核 `operations`：若已 `succeeded`，直接回傳既有 `ToolMessage(content=summary, artifact=ref)`。
+* 若需執行，從父級 `AIMessage.response_metadata` 取得 `triggered_by_view_id`，登記 `operations` 與 `operation_attempts`（子程序綁定 `KILL_ON_JOB_CLOSE` Job Object）。
+* 執行完成後寫入 `_exit_status.json`，並在 SQLite 短交易內更新 `status='succeeded'`、賦予遞增的 `completed_seq`，回傳輕量 `content` 與結構化 `artifact`。
+
+
+
+這份修正是否已徹底解決你提出的 **「`input_view_id` 實際輸入關聯」、「`completed_seq` 晚完成操作追蹤」、「`operation_attempts` 腳本狀態核實」** 與 **「`ToolMessage.artifact` 載入隔離」**？若這個基準已無結構性衝突，我們下一步可以直接針對這個四表核心與兩個 Middleware 設計具體的測試案例或原型實作。

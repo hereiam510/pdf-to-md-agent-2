@@ -1,0 +1,178 @@
+將 `MCP SDK 2.3.0` 的 `Extension.intercept_tool_call` 找出來作為驗證前候選保存入口、指出 `core.py:353`「搬移版本資料夾」與「更新 `current.json`」之間的兩階段斷層、拆穿「相同 Prompt 重新生成時指紋也會相同」，以及將交付綁定「明確選定版本」而非盲目取「最新版本」（保護 V10 vs. V11 試改退回的判斷權），這幾點修正非常精準。
+
+若以「讓 App 發揮最佳功能、減少多餘複雜度」為目標，把這 8 點修正合在一起檢視時，仍有**三個必須正視的機制矛盾與實作缺口**。以下先針對這三點進行交鋒與補強，接著給出第 8 點「文件編輯核心契約」的最佳設計。
+
+---
+
+## 一、 三個深層交鋒：補齊這 8 點修正背後的機制缺口
+
+### 1. 交鋒一（針對第 3、4 點的組合矛盾）：如果允許從 `prepare_step` 之後直接進入 `model_step`，且「重新生成」的指紋可以完全相同，系統要如何區分「崩潰恢復」與「刻意重新生成」？
+
+你在第 3 點同時指出了兩個事實：
+
+* 從 `prepare_step` 後面的 Checkpoint 建立分支（或使用 `update_state`），可能直接進入 `model_step`；
+* 相同輸入要求重新生成時，`request_fingerprint` 可以完全相同，但代表不同的執行意圖。
+
+**這裡會產生一個直接衝突：**
+假設 `prepare_step` 產生了 `model_step_id = "step_04"` 與 `request_ref = "req_abc"` 並完成 Checkpoint。隨後進入 `model_step`，Nexus 回覆已落盤保存為 `"step_04"` 的結果，但程序在寫入 `model_step` 後繼 Checkpoint 前崩潰。
+現在系統再次進入 `model_step`（此時 State 裡的 `model_step_id` 是 `"step_04"`，指紋也完全相同）：
+
+* 如果是**崩潰重啟恢復**，它**必須**直接重用已落盤的回覆，不能再打一次 HTTP；
+* 如果是**使用者／呼叫端從該 Checkpoint 分支要求重新生成**，它**絕對不能**重用舊回覆，必須重新呼叫 Nexus！
+既然兩者的 State 與指紋一模一樣，直接跳進 `model_step` 時，程式根本無法區分這兩種意圖！
+* **最佳功能設計（嚴格綁定「外部啟動模式」與「步驟生命週期狀態」）：**
+1. **禁止未經 `prepare_step` 的隱式重新生成：** App 對外只暴露明確的恢復／分支入口，不讓外部任意把 `as_node="prepare_step"` 當成重新生成手段：
+* **`resume_interrupted_job()`（故障續跑）：** 唯一允許直接從 `prepare_step` 後繼節點進入 `model_step` 的路徑。此時 `model_step` 檢查持久帳本中 `"step_04"` 的狀態：
+* 若已有完整落盤回覆 $\rightarrow$ 直接重用；
+* 若無完整回覆，但有已登記的 `attempt_count > 0`（請求可能已送出但未完成） $\rightarrow$ 讀取剩餘預算並套用 `agent.py:384` 的有限重試／退避政策。
+
+
+
+
+* **`branch_or_regenerate()`（重新判斷或分支）与 `append_user_input()`（追加要求）：** 呼叫入口強制先將 State 的 `step_intent` 設為 `"new_judgment_required"` 並將起點指向 **`prepare_step`**。`prepare_step` 無論當次輸入指紋是否與上次相同，一律生成全新的 `model_step_id`（附帶遞增的 `branch_seq`）。
+
+
+2. **外部請求快照鎖定：** 採納你第 4 點的設計，`prepare_step` 將組裝好的完整請求（含當下解析完畢的確定版本號、圖片引用、工具 Schema 與模型路由參數）寫入外部不可變檔案 `requests/<model_step_id>.json`，LangGraph Checkpoint 只存輕量的 `(model_step_id, request_ref, request_fingerprint, active_policy_rev)`。`model_step` 只負責讀取 `request_ref` 發送，徹底杜絕「準備與發送之間 `latest` 指標漂移」或 Checkpoint 膨脹。
+
+
+
+
+
+---
+
+### 2. 交鋒二（針對第 1、7 點）：如何同時消滅 `core.py:353` 的兩階段斷層，又支援「V11 試改後退回交付 V10」？
+
+你在第 1 點指出：現有 `core.py:353` 先把版本資料夾移到正式位置，再更新 `current.json`；若中間斷電，版本資料夾雖存在，但整個 `save` 並未完成。同時你在第 7 點指出：Agent 可能保存了 V10，接著保存 V11 試改表格，檢查預覽後決定放棄 V11、維持交付 V10。
+
+* **正面交鋒：** 如果我們還沿用舊版「單一 `current.json` 代表一切」的結構，要同時處理「兩階段斷電恢復」與「V11 存在但選定 V10 為基底／交付版本」，邏輯會非常扭曲。
+* **最佳功能設計（以單一原子替換的 `document_manifest.json` 作為唯一提交權威）：**
+在文件核心中，不靠「資料夾是否存在」來判定版本是否提交，而是將版本提交定義為對 **`document_manifest.json` 的單次原子檔案替換（Windows `ReplaceFileW`）**：
+
+
+1. **Phase 1（鎖外準備不可變資料夾）：** 將新版本的 Markdown、結構化 JSON、安全 HTML、已驗證資產與內嵌的 `{operation_id, input_sha256}` 完整寫入 `versions/<version_id>/`。此時即使斷電，因為 `document_manifest.json` 尚未更新，該資料夾只被視為「已準備好但尚未提交的準版本（Prepared Version Folder）」。
+
+
+2. **Phase 2（單點原子提交）：** 更新 `document_manifest.json` 並以 `ReplaceFileW` 原子替換。該檔案內同時維護三個明確分離的指標：
+
+
+* `committed_versions`: 已正式生效的版本表（映射 `version_id -> {operation_id, input_sha256, parent_version_id, created_at}`）；
+* `working_version_id`: 當前預設工作基底版本；
+* `selected_delivery`: `{version_id, scope_rev, mode: "draft" | "complete_claimed"}`（明確選定的交付目標）。
+
+
+3. **無縫恢復與 V10/V11 切換：**
+* **若在 Phase 1 後、Phase 2 前斷電：** 重啟恢復時，文件服務掃描到 `versions/<version_id>/` 內嵌的 `{operation_id, input_sha256}` 與待恢復的工具呼叫完全吻合，直接補做 Phase 2 的 `document_manifest.json` 原子更新即可完成提交，連重新渲染 HTML 都不用！
+* **支援試改退回：** 當 Agent 建立 V11 試改後覺得不如 V10，只需將 `working_version_id` 或 `selected_delivery.version_id` 指回 `V10`（或在後續修改直接指定 `base_version="V10"`），V11 保留為歷史分支紀錄，匯出與交付則嚴格對齊 `selected_delivery` 指定的 `V10`！
+
+
+
+
+
+---
+
+### 3. 交鋒三（針對第 5 點）：當跨路由容量估算失準、實際觸發上游 Context Overflow 時，4 節點圖該如何自救？
+
+你在第 5 點提到一個非常務實的邊界：「跨 Nexus 模型路由的容量估算不宜宣稱『單次輸入絕不爆窗』。需要保留估算誤差，以及實際超限後如何重新準備輸入的處理。」
+
+* **機制補齊（`model_step -> prepare_step` 降載重備迴路）：**
+在 4 節點圖中，如果 `prepare_step` 算出的預估容量沒超標，但進入 `model_step` 發送給 Nexus 後，上游實際回傳了 **Context Length Exceeded（容量超限錯誤）**：
+1. **不消耗網路重試預算：** 這不是網路瞬斷（如 502/503/Timeout），重送同一份 `request_ref` 必然再次失敗。因此 `model_step` 絕不對同一份 `request_ref` 重試。
+
+
+2. **記錄真實上限並退回 `prepare_step`：** `model_step` 將該次失敗標記為 `status = "overflow_rejected"`，把當次請求的估算值記為該路由的實測超限警戒線（自動下調當前路由的安全容量上限），並在 Graph 路由中**直接跳回 `prepare_step**`（每輪最多允許 1～2 次降載重備，防範無限迴圈）。
+3. **重新準備縮減版輸入：** `prepare_step` 收到 `overflow_rejected` 訊號後，若本輪有剛展開的大型工具結果，優先將其降級為「範圍清單＋讀取入口」；若無新大結果而是累積歷史過長，則觸發緊急證據釋放／歷史壓縮，生成新的 `model_step_id` 與縮減後的 `request_ref` 再送出。
+
+
+
+
+
+---
+
+## 二、 針對第 2、8 點：如何設計「文件編輯契約」以發揮最佳功能？
+
+你在第 2 點找出了 `MCP SDK 2.3.0` 的 `Extension.intercept_tool_call`（`mcp/server/mcpserver/server.py:354`），讓我們不必為了保存候選稿而把 Schema 弱化成 `dict[str, Any]`；同時你在第 8 點列出了現有系統最痛的編輯缺口（插入、追加、刪除、調整順序、局部改頁碼／來源對應、用 `candidate_ref` 重用已存正文並只修 metadata）。
+
+為了讓模型能以**最低的認知負擔與最少的 Schema Token 開銷**用好這些能力（避免拆成七、八個零碎工具），建議將文件寫入收斂為 **兩個結構清晰的工具（外加 `intercept_tool_call` 統一保護）**：
+
+### 1. 統一攔截與候選保存層（跨內建 Agent / MCP / CLI）
+
+* **攔截點：** MCP 透過 `Extension.intercept_tool_call`、內建 Agent 與 CLI 透過 `AppToolDispatcher` 的前置入口，在進入 Pydantic 參數驗證前，將所有寫入工具的已解析呼叫參數寫入 `candidates/<candidate_ref>.json`（綁定當前回合／操作識別碼）。
+* **失敗回傳契約：** 若後續 Pydantic Schema 驗證或領域一致性檢查失敗，錯誤訊息統一附加：
+`{"error_code": "...", "field_errors": [...], "saved_candidate_ref": "cand_004", "recovery_hint": "Body content is preserved in cand_004. Call edit_document with reuse_candidate_ref='cand_004' and override only the invalid fields."}`。
+
+
+
+### 2. 核心增量編輯工具：`edit_document`
+
+不再要求重傳整份文件或全書 173 頁映射表，單一呼叫即可針對明確的 `base_version` 組合完成正文修改、頁碼更新與候選重用：
+
+| 參數欄位 | 型別與設計規則 | 解決的第 8 點痛點 |
+| --- | --- | --- |
+| **`base_version`** | `str`（必填，或在重用候選稿時沿用候選稿基底） | 防止並發或過時覆寫。
+
+ |
+| **`reuse_candidate_ref`** | `Optional[str]` | 若指定（如 `"cand_004"`），直接載入該候選稿已保存的 `block_ops` 與設定，本次呼叫只需傳入要覆寫修正的欄位（如修正後的 `page_map_updates`），**免重傳幾千字正文**！
+
+ |
+| **`block_ops`** | `Optional[list[BlockOp]]`（依序套用至 `base_version`）：<br>
+
+<br>1. `append`: 在文末追加新區塊<br>
+
+<br>2. `insert`: 在指定 `before_block_id` 或 `after_block_id` 插入新區塊<br>
+
+<br>3. `replace`: 替換一個或多個指定 `block_id`<br>
+
+<br>4. `delete`: 刪除指定 `block_id`<br>
+
+<br>5. `reorder`: 將指定 `block_id` 清單移動至目標位置<br>
+
+<br>6. `patch`: 針對單一 `block_id` 執行 `expected_old_text -> new_text` 替換（未指定 `occurrence` 時強制要求唯一匹配，重複時回傳行號與前後文供選擇） | 一次解決插入、追加、刪除、重排與局部字詞修補，無須為改一個字重傳整塊，也無須為了加一段而重用最後一塊。
+
+ |
+| **`page_map_updates`** | `Optional[list[PageMapPatch]]` | **支援稀疏局部更新：** 只需提交本次新增或更正的物理頁碼（如更新第 12 頁的 `printed_page`、將未映射頁預設填為 `unprocessed` / `outside_scope`），由底層與 `base_version` 的完整映射表自動合併。草稿階段允許頁碼或範圍待確認（`unconfirmed`）。
+
+ |
+| **`provenance_updates`** | `Optional[list[BlockProvenancePatch]]` | 允許單獨更正既有區塊的 `source_refs`（指向不可變的 `evidence_id`／頁碼／區域）與來源備註，不塗改原始證據。
+
+ |
+| **`delivery_selection`** | `Optional[{select_this_version: bool, claim_status: "draft" | "complete_scope"}]` | 明確表達此版本是否設為當前交付目標（支援第 7 點：若只是 V11 試改，可設 `select_this_version=False`，保持 V10 為交付目標）。 |
+
+---
+
+## 三、 修正後的工具執行順序與 `delivery_check_step` 規則（回應第 6、7 點）
+
+### 1. 批次工具執行規則（消除 `version="latest"` 競態與重啟重複執行）
+
+* **廢除隱式 `"latest"` 參數：** `view_preview`、`reopen` 與 `export` 優先要求傳入明確的 `version_id`；若未傳入則明確解析為「當前已選定的 `working_version_id`」。
+* **預設依宣告順序執行，僅「純不可變讀取」允許並行：**
+* 在 `tool_batch_step` 內部，只有**僅讀取不可變來源 PDF 或已指定明確 `evidence_id` / 既有 `version_id**` 的純讀取操作（如 `inspect_pdf`、`ocr_pdf`、`render_pdf`、`read_evidence`）才可並行派發；
+* 任何涉及 `save`、`edit_document`、`view_preview`、`reopen`、`export`、`run_script` 或 Context 標記的操作，嚴格按照模型在 `AIMessage.tool_calls` 中的宣告索引依序執行。
+
+
+* **批次內部逐項持久化（防半途崩潰重跑整批）：**
+* 雖然多個工具包在同一個 LangGraph `tool_batch_step` 節點中，但 `AppToolDispatcher` 每完成一個 `tool_call_id`，立即將該呼叫的結果與產生的 Context Intent 寫入工作區持久狀態；若在第 3 個工具崩潰，重啟再進入 `tool_batch_step` 時，前 2 個已完成的工具直接讀回持久結果與 Intent，絕不整批重跑。
+
+
+
+
+
+### 2. 修正後的 `delivery_check_step`（節點 4）終止與交付矩陣
+
+採納你第 7 點的三項重要修正（對齊「選定版本」而非盲目取最新、區分「已放棄的舊候選」與「當前未決候選」、需要使用者澄清時直接停機等待輸入）：
+
+1. **檢查當前未決候選（Unresolved Active Candidates）：**
+* 只檢查「產生於最後一次成功版本提交之後、且尚未被標記為 superseded/abandoned」的 `candidate_ref`。至於更早之前因試改或已修復而留下的歷史候選檔，僅保留於磁碟供稽核，絕不觸發修補提示。
+
+
+2. **對齊明確選定的 `(selected_version_id, scope_rev)` 進行自動打包：**
+* 若已有明確選定的交付版本（例如 Agent 選擇保留 `V10` 而非試改的 `V11`），且 `V10` 尚未產出對應的匯出包（或匯出包不一致），由 App 直接針對 `V10` 執行一致性打包匯出，**不額外消耗一次模型回合**。
+
+
+
+
+3. **需要使用者澄清或遇阻礙時直接進入等待狀態：**
+* 若模型回覆明確表示需要使用者澄清範圍／指令，或遇到無法自動恢復的阻礙，節點保存所有既有版本與當前未決候選引用後，直接轉入 `waiting_for_user_input`（結束本次 Graph 執行迴圈），**絕不繞回 `prepare_step` 讓模型空轉**。
+
+
+
+這套整合了 **`Extension.intercept_tool_call` 原始參數攔截**、**`document_manifest.json` 單階段原子提交**、**`edit_document` 全功能增量編輯契約**，以及 **4 節點明確入口與降載迴路** 的設計，已經將你點出的全部 8 項細節落實為無衝突的工程規範。我們接下來是否直接以這套 Stage 1 規格作為重構實作的起點？

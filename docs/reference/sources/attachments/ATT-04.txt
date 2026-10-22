@@ -1,0 +1,99 @@
+**以我們目前的要求，我會把 Pi SDK 排第一、Deep Agents 排第二；直接用 LangGraph 自建 harness 排第三。**
+
+原因是：我們需要成熟的 session／compaction 基礎，同時精確控制 PDF 證據何時離開 context、如何重新取回。**Pi 提供的擴充入口，與這個責任分配最接近，預計需要替換的框架行為較少。**
+
+這是根據官方文件與原始碼的架構判斷。我主要核對了 Pi **1.3.0**、Deep Agents **0.7.29**，以及 LangGraph 現行文件；還沒有在你的 Nexus 上做整合實測。
+
+**先把「修改最少」說清楚：我們應比較滿足全部要求後，需要自行維護多少程式。** 能最快跑出一個 demo，不一定等於長期修改最少。
+
+| 我們的實際要求 | Pi SDK | Deep Agents | 直接使用 LangGraph |
+|---|---|---|---|
+| Agent 自主選擇讀取、OCR、腳本、重建方法 | 原生 agent loop，適合 | 原生 agent loop，適合 | 可以，但需要組裝 loop |
+| 不依賴 provider 原生 compaction | 有 app 端摘要／compaction | 有 app 端摘要／compaction | 需自行加入 |
+| 長對話的 session、整理與延續 | 已有完整基礎 | 已有摘要與 LangGraph persistence | 有 persistence，context 整理需另外建立 |
+| 保留原始紀錄，同時改變下一次模型所見內容 | **有直接對應的 session projection／context edit 機制** | 可透過 middleware 與 state 實現 | 自行設計 state 與組裝方式 |
+| 由 agent 決定釋放哪些證據，app 執行容量管理 | 需加入領域 extension，接口較貼合 | 需調整預設 offloading／summarization policy | 大部分自行實作 |
+| 保護跨頁依賴、有效要求、未保存成果 | 需要我們補上 | 需要我們補上 | 需要我們補上 |
+| 精確取回 OCR／欄位／範圍／原始圖片 | 需要 PDF evidence tools | 有通用檔案基礎，仍需 PDF evidence tools | 需要 PDF evidence tools |
+| Nexus、多模型、Chat Completions／Responses | 有相容 endpoint 與協定設定入口 | 有模型 integration；第三方欄位須逐路由處理 | 通訊層可自由選擇，但須整合 |
+| 滿足本案後的預期自訂負擔 | **較低至中等** | **中等，與 Pi 有一定接近程度** | **最高** |
+
+三者都能保留 agent 自主性。LangGraph 也能讓模型動態選工具、決定下一步；它不要求把 PDF 轉換寫成固定步驟。只是它主要提供執行與持久化基礎，Deep Agents 才是在上面提供 context management 等功能的 harness。[LangGraph 官方定位](https://docs.langchain.com/oss/python/langgraph/overview)
+
+**Pi 最吸引我的地方，是它已經把「原始歷史」與「模型目前所見內容」分開。**
+
+Pi 的 `context_edit` 可以替換某則訊息在後續 context 中的內容，同時保留原始 session entry。例如：
+
+- 原始 OCR 結果完整保存。
+- Agent 判斷目前不再需要該內容。
+- 下一次模型輸入改成證據引用。
+- 之後需要時，由工具取回相同版本的內容或圖片。
+
+這與我們的證據釋放方向非常接近，而且不用自行發明整套 session 儲存與投影機制。[Pi session 格式](https://github.com/earendil-works/pi/blob/v1.3.0/packages/coding-agent/docs/session-format.md)
+
+它也提供 `session_before_compact`，讓我們取消、調整或提供自訂 compaction 結果。因此，通用 session 機制可以沿用，PDF 的保護規則放在 extension 裡。[Pi compaction 擴充](https://github.com/earendil-works/pi/blob/v1.3.0/packages/coding-agent/docs/compaction.md)
+
+不過，**Pi 的預設值也不能直接照用**：
+
+- 預設摘要序列化會截短工具結果；我們不能讓重要依賴只靠這份截短材料進入摘要。
+- 預設圖片處理有自動縮放，必須保留我們要求的原始像素讀取路徑。
+- 通用摘要不知道哪個表頭仍被下一頁引用，也不知道某段尚未保存的 Markdown 是否值得保留。
+
+所以我建議沿用 Pi 的 session、loop、事件與 compaction 基礎，加入 PDF 專用的內容保護和摘要材料組裝。圖片縮放本身有設定入口；不需要為此先修改 Pi 原始碼。[Pi 圖片設定](https://github.com/earendil-works/pi/blob/v1.3.0/packages/coding-agent/docs/settings.md)
+
+**Deep Agents 的現成功能其實更多，仍然是很有競爭力的第二選擇。**
+
+它已有大型工具結果卸載、檔案讀取、歷史摘要，也可加入讓 agent 主動呼叫的 `compact_conversation`。這些都是我們需要的基礎能力。[Deep Agents context engineering](https://docs.langchain.com/oss/python/deepagents/context-engineering)
+
+而且需要修正一個容易過時的印象：**Deep Agents 0.7.29 的原始碼已經包含 inline media 卸載與圖片引用處理，不能說它只會保存文字。** 不過，儲存圖片與判斷圖片是否應繼續留在工作 context，是兩個不同問題。[Deep Agents 0.7.29 摘要實作](https://github.com/langchain-ai/deepagents/blob/deepagents%3D%3D0.7.29/libs/deepagents/deepagents/middleware/summarization.py)
+
+它排在 Pi 後面，主要是我們需要調整的地方恰好位於它的核心預設 policy：
+
+1. **卸載判斷要加入用途。** 大小與訊息年齡可以提供容量訊號，但不能單獨決定某份證據已不再需要。
+2. **保留條件要超越近期訊息。** 舊表頭、後續使用者更正、未解問題，可能比最近幾輪工具輸出更重要。
+3. **保存成功要成為釋放前提。** 我查到的摘要實作，在歷史卸載失敗後仍可能繼續摘要；我們需要可靠的獨立原件保存，或調整這段失敗處理。
+
+這些可以透過自訂 backend／middleware 處理，未必需要 fork 框架。只是當我們改寫了主要的卸載與整理決策，Deep Agents「現成 context management」帶來的節省便會縮小。
+
+如果需求是一般文字研究助手，接受以大小、近期程度為主的自動卸載，我會更傾向 Deep Agents。但我們需要保護的是細緻的 PDF 證據關係，Pi 的直接 context 控制比較合適。
+
+**Nexus 支援方面，Pi 有適配優勢，但不能把 CLIProxyAPI 插件當成即插即用證明。**
+
+Pi 可以設定 `baseUrl`，並選用 `openai-completions` 或 `openai-responses`；也有多種 reasoning／thinking 格式的相容設定。這讓我們有機會先透過設定處理差異，遇到實際不相容之處才補 provider adapter。[Pi 模型設定](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models-configuration.md)
+
+不過，`pi-cliproxyapi-provider` 使用了 CLIProxyAPI 特定的模型目錄及 `/backend-api/` 路由。Nexus 即使以 CLIProxyAPI 為基礎，也不代表對外暴露相同接口。[該插件的路由說明](https://github.com/router-for-me/pi-cliproxyapi-provider)
+
+因此，對你的 app，我會：
+
+- 連接你目前的 **Nexus endpoint 與本地憑證**。
+- 按實際模型路由配置協定、context 容量、圖片能力與 reasoning 格式。
+- 摘要仍透過一般模型請求完成，維持「不依賴 provider 原生 compaction」的基線。
+- 避免只看模型名稱猜容量；Nexus alias 或代理路由可能有不同限制。
+
+Deep Agents 也能透過自訂 endpoint／模型 integration 接 Nexus。但 `ChatOpenAI` 對第三方非標準 reasoning 欄位有已知限制，需要選擇適合的 integration，或補上適配。[ChatOpenAI 相容範圍](https://docs.langchain.com/oss/python/integrations/chat/openai)
+
+**如果現在重新設計，我會採用下面的責任分配：**
+
+```mermaid
+flowchart TD
+    UI["Electron UI"] --> Runtime["Pi SDK：獨立 Node 執行程序"]
+    Runtime --> Nexus["Nexus → 選定模型"]
+    Runtime --> Policy["PDF Context Extension"]
+    Runtime --> Tools["Python PDF 工具"]
+    Policy --> Store["完整證據、工作狀態、成果版本"]
+    Tools --> Store
+```
+
+Pi SDK 本身可以嵌入 Node.js，並讓宿主控制工具、session 與資源載入；Python 可以專注處理 PDF、OCR、圖片與成果輸出。[Pi SDK](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/sdk.md)
+
+我們主要需要維護三部分：
+
+| 自訂部分 | 責任 |
+|---|---|
+| **PDF 工具與證據儲存** | 完整原件、精確引用、欄位／範圍讀取、原始圖片、成果版本 |
+| **Context extension** | 保護有效要求與依賴；處理 agent 的保留／釋放選擇；容量不足時要求整理；組裝延續狀態 |
+| **Nexus 路由設定／必要適配** | 協定、模型能力與特殊欄位；只補實際缺口 |
+
+其中第一部分，無論選哪個框架都需要。Pi 的優勢在於，我們可以集中實作第二部分的 **PDF 判斷規則**，並重用它已有的 session 和 context 修改機制。
+
+我建議先以 **Pi SDK＋PDF context extension** 作為技術設計基線。正式採用前仍要確認三個關鍵邊界：Nexus 的工具／圖片往返、釋放後精確取回，以及 compaction 後有效要求與未解依賴是否仍能正確延續。這些結果才能把「預計修改最少」提升為已驗證的選型結論；本次沒有執行模型呼叫或修改 app。

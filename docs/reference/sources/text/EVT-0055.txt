@@ -1,0 +1,1 @@
+我會先核對最新文件與程式，分別說明 context management 和 network management 已實作甚麼、實際驗證到哪裏，以及仍存在的問題。

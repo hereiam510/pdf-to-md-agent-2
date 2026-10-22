@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad87ebdcfb08191b20095364d9f7d44",
+    "content": [
+      {
+        "type": "Text",
+        "text": "我目前傾向 Pi SDK，主要因為它已提供「保留原始 session、另外修改模型可見內容」的機制，很接近我們的證據釋放需求。Deep Agents 的新版原始碼也已有圖片卸載能力，比文件概述完整；它仍是有力候選。不過兩者都要補上 PDF 的依賴保護規則，不能直接套用預設壓縮策略。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1231,
+  "timestamp_original": "2026-10-21T08:58:39.398Z",
+  "timestamp_display": "2026-10-21T16:58:39.398+08:00",
+  "turn_id": "01a15dab-4409-7430-b712-00008fe74f6b",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-21T16:58:37.147+08:00",
+  "completed_at": "2026-10-21T16:58:39.398+08:00",
+  "event_id": "EVT-0346",
+  "evidence_path": "evidence/events/EVT-0346.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

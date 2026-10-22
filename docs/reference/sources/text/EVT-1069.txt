@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "這份審閱意見非常精準地鎖定了決定系統成敗的六個工程邊界——特別是指出**撤回大型證據後歷史仍可能因長篇草稿與工具往返而超量**、**`save_draft` …": C:\Users\laichungling\.codex/attachments/64e2b7b7-5de9-4251-a26b-191791253325/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following, or the whole project, or previously mentioned/not mentioned, if you find anything worth mentioning
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

@@ -1,0 +1,224 @@
+這份五點審閱非常敏銳地抓出了上一版將「大量證據水合放進 `before_model` 會再次污染持久 Checkpoint」的架構失誤，並釐清了「來源引用（`linked_refs`）不等於常駐要求」、「運算／儲存／選取粒度分離」、「HTTP 413 不會自動跳回 `before_model`」以及 Windows `CreateFileW` 的共享旗標語義。
+
+若我們同時拉高視角，結合專案在 `CURRENT_STATE.md` 與 `EVIDENCE.md` 的真實歷史數據審視整場重構討論，會發現一個更關鍵的全局問題：**我們花了近十輪把「崩潰恢復與 Context 狀態機」打磨到了極致，卻還沒正面解決過往 13 頁與 40 頁實測真正導致任務失敗或成品被退回的三大病根（視覺強調格式漏標、長文件回合耗盡、以及 Agent 對管理工具的 0% 自然採用率）**。
+
+以下分為三部分：第一部分先完成你這五點修正的最終工程收斂；第二部分跳出局部細節，對**整個專案的設計重心與未提及的盲點**提出四個全局質詢；第三部分給出能讓 App 發揮最佳功能的完整重構藍圖。
+
+---
+
+## 一、 對本輪五點審閱的精確回應與邊界收斂
+
+### 1. 釐清三種引用關係與同批次目標狀態合併（針對第 1 點）
+
+你將關係拆為「筆記引用證據（僅保來源與重讀入口）」、「工作未決（保留待辦與關聯引用）」與「明確要求常駐（Pinned）」是完全正確的。草稿表格標註來源為第 19 頁原圖，絕不代表之後每一輪都要把 4MB 的原圖塞進模型輸入。
+
+* **收斂規則：**
+* **僅 `pinned_refs` 鎖定活躍位置：** `linked_refs` 只受「刪除保護（不可從磁碟或索引抹除）」與「版本追溯保護」，完全不阻擋證據退出活躍 Context。
+* **按合併後目標狀態結算（Net-State Resolution）：** 同批次的局部意圖先在記憶體折算為目標狀態集合。因此 `pin_remove(ev03)` ＋ `release(ev03)` 會自然合成為「解除釘選並移出活躍輸入」而順利通過；唯有同一批次內一個工具要求 `pin_add(ev03)`、另一個工具要求 `release(ev03)` 時才構成真矛盾，此時採「保守保留（維持在場）＋ 明示衝突報告」處理。
+
+
+
+### 2. `before_model` 與 `wrap_model_call` 的嚴格職責切分，以及「政策啟用收據」（針對第 2 點）
+
+你抓出了上一版架構圖的最大矛盾：`before_model` 的回傳值會寫入 LangGraph State（進入 Checkpointer），若在 `before_model` 水合展開大型證據，就會把幾十 MB 的原文與圖片寫回資料庫。同時，若 `before_model` 在 SQLite 建立 `policy 8` 後、寫入 Checkpoint 前崩潰，重啟時必須防止重複建立 `policy 9`。
+
+* **收斂規則（三段式無狀態污染管線）：**
+1. **`wrap_tool_call`（執行與提案登記）：** 核對操作收據；執行工具並將完整原件存入 Blob；若有 Context 變更意圖，寫入 SQLite `policy_proposals` 並在 `ToolMessage.artifact` 附上明確的 `proposal_id`。
+
+
+2. **`before_model`（純輕量狀態結算）：** 僅讀取當前分支已接受的最新一批 `ToolMessage.artifact["proposal_id"]` 與 `State["active_policy_rev"]`（例如 `rev=7`）。以确定性雜湊 `settlement_key = SHA256(parent_policy_rev=7, sorted(proposal_ids))` 查詢 SQLite 的 `policy_activations` 表：
+* 若尚未結算，產生 `policy_rev = 8` 並寫入 `policy_activations`；
+* 若崩潰前已結算過同一組 `(7, proposal_ids)`，**直接重用已建立的 `policy_rev = 8**`，並回傳 `{"active_policy_rev": 8, "last_settled_key": settlement_key}` 更新 Graph State。
+
+
+3. **`wrap_model_call`（純暫態水合與輸入記錄）：** 讀取 `State["active_policy_rev"]`，在記憶體中將 `Delivery Ticket` 展開為模型可見的文字與原始格式圖片（PNG/JPEG），記錄本次請求的 `input_view_id`，並在收到 `ModelResponse` 後將 `app_input_view_id` 寫入被接受的 `AIMessage.response_metadata`（保留既有 provider metadata）。
+
+
+
+
+
+### 3. 解耦「運算、儲存、選取」三種粒度：改用「頁級／區域索引表」而非強制拆檔（針對第 3 點）
+
+完全接受你的反駁：包含 6 頁的不可變 JSON 不必為了釋放其中 4 頁而拆成 6 個實體檔案。
+
+* **收斂規則（以邏輯索引解耦實體檔案）：**
+* **儲存單位（Storage Unit）：** 保持工具自然產出的不可變檔案（單次多頁 `inspect` 可存為單一 JSON Blob；單頁渲染或逐頁 OCR 自然存為單頁 Blob）。
+* **運算快取索引（Computation Unit Index）：** 在 SQLite 建立 `computed_page_units(source_hash, tool_name, engine_and_model_ver, resolved_params_hash, pdf_page, crop_bbox) -> (evidence_id, json_pointer_or_slice, created_at)`。
+* 當 `ocr_pdf` 或 `inspect_pdf` 處理逐頁獨立運算時，即使產出打包在同一個 `evidence_id` 檔案內，也會為每一頁登記一筆索引。
+* 下次呼叫重疊範圍（如先跑了 `15-20`，後呼叫 `19-22`）時，直接透過索引取出 `19-20` 的對應 JSON Pointer 切片，僅對 `21-22` 執行新運算並合成回覆。
+
+
+* **Context 選取單位（Selection Unit）：** `context_policies` 中的保留／投影規則支援指定 `(evidence_id, selected_pages, selected_pointers)`，`wrap_model_call` 水合時只抽取被選中的頁面切片送入模型。
+
+
+
+### 4. 在 `wrap_model_call` 內部閉環處理容量錯誤與 $K=0$ 退避（針對第 4 點）
+
+你指出了三個極為關鍵的邊界：HTTP 413 / Context 超限不會自動跳回 `before_model`、單張巨圖可能導致可載入數 $K=0$、且分批不能限制跨頁同時比對（如第 15 頁與第 19 頁）。
+
+* **收斂規則（`wrap_model_call` 內的有限重組迴圈）：**
+1. **明確的例外攔截位置：** 容量錯誤的捕捉與重組直接放在 **`wrap_model_call` 內部**（而非假設會跳回 `before_model`）。當組裝器預估超限，或下游 Adapter 回傳結構化的 `CapacityRejectedError(kind="http_413" | "context_exceeded")` 時，`wrap_model_call` 在同一回合內最多進行 **2 次受控縮減重組**（每次實際發出的請求均記入該回合的嘗試帳本，受全局回合與時間預算約束，不獲得無限嘗試）。
+
+
+2. **支援非連續跨頁組合與 $K=0$ 診斷收據：**
+* 先退避歷史中 Agent 已標記為 `evict_when_needed` 的舊證據；
+* 若本批新請求仍超限（甚至單一項目就超限，即 $K=0$），系統**不替 Agent 決定固定閱讀順序**，而是直接將無法塞入的項目替換為「容量攔截診斷收據（Capacity-Blocked Envelope）」，列明該項目的實際 Byte 數、圖片尺寸、包含的頁碼／欄位目錄，以及可行的精確讀取方式（例如：`call read_evidence(id, pages=[15, 19], fields=["blocks"])` 或降低渲染 DPI／裁切區域），把跨頁選取權 100% 交還給 Agent。
+
+
+
+
+
+### 5. 簡化救援介面與精確化 Windows 共享衝突診斷（針對第 5 點）
+
+修正對 `CreateFileW` 的表述：以 `GENERIC_READ` 搭配 `dwShareMode = FILE_SHARE_READ` 開啟檔案時，若遭遇 `ERROR_SHARING_VIOLATION`，代表目前有其他控制代碼以不相容的存取或共享模式持有該檔案（無法排除仍有程序寫入，亦可能是獨佔讀取），因此應誠實回報 `sharing_violation_snapshot_unavailable`，而非斷言必有後代程序正在寫入。
+
+* **工具人體工學收斂：** 不強迫 Agent 呼叫四個碎裂工具。對外僅提供：
+* `inspect_attempt`（純唯讀診斷日誌與檔案列表，不殺程序、不要求全目錄合法）；
+* `salvage_attempt`（指定欲救回的檔案與預期範圍；內部自動確認程序已終止或先執行終止、取得 `FILE_SHARE_READ` 穩定副本、用 Pillow `load()` 或 JSON 解析器完整解碼，並以觀察到的實際內容範圍登記為局部成果，同時保留原嘗試未完成的真實紀錄）。
+
+
+
+---
+
+## 二、 跳出局部細節：對整個專案與過往實測的四大全局質詢（Confronting the Whole Project）
+
+既然你允許評論整個專案與先前未提及的面向，並以「如何設計讓 App 發揮最佳功能（允許完全重構）」為目標，我們必須誠實面對專案在 `CURRENT_STATE.md` 與 `EVIDENCE.md` 留下的真實證據：
+
+### 質詢一：設計重心失衡——過往實測真正的失敗原因是「視覺強調漏標、字形誤判與 `revise` 摩擦」，而非缺乏複雜的 SQLite 恢復狀態機
+
+回顧專案所有真實模型測試紀錄：
+
+* 在 13 頁正式比較中，A（Full History）與 C（Checkpoint）都順利跑完且 **0 次重試、0 次崩潰恢復**，但兩者的最終成品都被獨立審查**退回（Draft, not accepted）**——因為第 14、16、18、24 頁發生了嚴重的**粗體／強調格式漏標（material rendered emphasis errors）**，以及第 14 頁 `礪→厲`、40 頁測試第 27 頁 `本文件→本文作` 的字形錯誤！
+
+
+* 在 40 頁測試中，Agent 之所以卡住並在 1,200 秒超時，是因為遭遇了 **8 次工具報錯**（主要來自舊版 `revise` 強制要求非空連續 `remove_ids` 與每次重傳整份 173 頁完整頁碼表）以及一口氣拉取 8 個完整 OCR 物件（186 萬字元）。
+
+
+
+**全局建議：** 如果重構只換來一個無懈可擊的 SQLite + LangGraph 恢復底座，卻沒有改善「Agent 如何低成本、高準確率地感知視覺粗體／上下標與字形差異」**，重構後的轉換品質不會有任何提升！App 的最佳功能設計必須在**視覺與文字證據工具層提供更高信噪比的輔助：
+
+1. **為透明 OCR 文字層／一般文字層提供「客觀像素墨跡密度對比（Ink-Weight / Stroke-Contrast Hints）」：** 在 Nursing（`GlyphLessFont` 全透明）或 JRE 掃描件中，文字層的 `flags` 無法區分粗體。當工具渲染頁面或執行 OCR 時，App 可直接根據每個文字 Span / Word 的 `bbox` 在原始渲染像素上計算**局部筆畫黑度／線寬比值（相對於同段落中位數）**，在證據中附帶客觀量測值（例如 `pixel_ink_ratio: 1.48 (above line median)`）。這不是代替 Agent 做語義判斷，而是提供客觀光學量測，直接提醒 Agent：「這幾個字在像素上明顯比周圍粗，請核對是否需標為粗體！」
+
+
+2. **支援「多區域拼圖預覽（Multi-Crop Contact Sheet）」：** 當 Agent 只有 5 個局部詞語、小字註腳或表頭字形（如 `礪` vs `厲`、`勞工福利部部長`）不確定時，不必載入 5 張 4MB 的全頁大圖。讓 `render_pdf` 支援傳入一組 `regions: [{page, bbox, label}, ...]`，直接合成一張輕量的高 DPI 對照拼圖（Contact Sheet），一次模型請求即可看清所有存疑字形與粗體！
+
+
+
+### 質詢二：長文件（173 頁 JRE / 290 頁新聞寫作）的時間與回合瓶頸——單靠單一對話迴圈 Compaction 跑不完一整本書
+
+看看 `CURRENT_STATE.md` 的真實耗時數據：
+
+* 9 頁自然轉換（A/B/C）耗時 **217～228 秒（約 25 秒／頁，8～10 個回合）**；
+
+
+* 13 頁轉換（A/C）耗時 **392～544 秒（約 30～42 秒／頁，14～22 個回合）**。
+
+
+* 按此線性推算，173 頁的 `jre-full` 需要 **5,500～7,000 秒（約 1.5～2 小時、250+ 個回合）**；290 頁的 `news-writing` 需要 **3 小時以上**。而在單一長對話中，每經過幾十頁做一次 Compaction，累積的跨章節狀態與歷史包袱仍會逐漸拖慢推理並稀釋注意力。
+
+
+
+**全局建議（原生支援「序列式章節子任務 Episode / Scoped Sub-Agent」）：**
+`PRODUCT_REQUIREMENTS.md` 與 `ARCHITECTURE.md` 早已明文將 **`selective subagents`（選擇性子代理）與 `logical tasks**` 列為合法可組合的方法。既然重構採用 LangGraph（`create_agent`），我們不應只把 LangGraph 當成單一扁平迴圈，而應在架構上支援「兩層式轉換調度（可選，非強制流水線）」：
+
+* **短範圍任務（如 1～15 頁）：** 主 Agent 直接在單一迴圈內完成提取、撰寫、預覽與匯出。
+* **長篇／整本書任務（如 40～290 頁）：** 主 Agent（Coordinator）可先透過輕量探勘建立全書的「章節邊界、印刷頁碼規則與跨章節術語表」，接著自主選擇呼叫 **`run_section_episode(page_range="25-42", section_goal=..., inherited_pins=[...])`**：
+* 系統啟動一個**乾淨的 LangGraph 子圖執行分支（Sub-thread）**，專注完成第 25–42 頁並提交至同一個 Working Draft；
+* 為了遵守專案「避免自身任務重疊並發衝擊 Nexus」的規則，子任務完全**按順序（Sequentially）執行**，共用同一個任務預算與單一版本庫；
+
+
+* 當該章節完成並返回主 Agent 時，子分支的幾百萬字元中間 OCR 與圖片過程自動封存於該子分支 Checkpoint，主 Agent 的 Context 只收到乾淨的章節完成收據、更新後的草稿版本與跨章節未結依賴！這比在單一對話裡連續壓縮 15 次乾淨得多。
+
+
+
+### 質詢三：為什麼自然任務中 Context 工具採用率是 0%？——別把「釋放記憶體」做成需要 Agent 分心呼叫的顯式負擔
+
+在 9 頁自然採用測試（Jobs B、C）中，`manage_evidence` 與 `checkpoint` 的主動呼叫率都是 **0%**。為什麼？因為對模型而言，轉換 PDF 的核心目標是「讀來源 $\rightarrow$ 寫 Markdown $\rightarrow$ 核對 $\rightarrow$ 匯出」；要求模型在寫作途中還得像 C 語言工程師一樣手動呼叫 `free()` 去管理哪些 `evidence_id` 要釋放，違反了模型的任務注意力結構。
+
+**全局建議（以「草稿提交伴隨式工作集滑動」取代手動呼叫釋放工具）：**
+
+* 保留顯式的 `manage_context` 工具供 Agent 隨時覆寫；
+* 但將最常見的容量管理直接內建為 **`update_draft` 的選填伴隨參數 `keep_evidence_ids: [...]`（預設只將未釘選的已讀巨型載荷轉為 `evict_when_needed` 候選）**。
+* 當容量寬裕時，舊證據繼續留在輸入中享受 Prompt Cache；當容量逼近水位線時，`wrap_model_call` 自動將先前回合已轉為 `evict_when_needed` 且無未決問題的龐大圖片／座標替換為精確檢索入口（保留頁碼與欄位目錄），**不需要 Agent 為了騰出空間而中斷思路去呼叫專門的記憶體管理工具**。
+
+
+
+### 質詢四：採用 `create_agent` 的最大潛在退步——絕不能用通用 `ChatOpenAI` 換掉現有已驗證的 HTTPX2 雙協定傳輸層
+
+過去幾輪我們把焦點放在 LangGraph 的狀態與 SQLite，並將 Nexus 留在接入邊界。但請回顧 `CURRENT_STATE.md` 與 `TECHNICAL_STACK.md`：現有專案最寶貴、已經通過 **228 項離線測試與 R1/R2 實戰故障注入驗證**的資產，正是那套**基於 HTTPX2 的雙協定（Chat Completions / Responses）與雙傳輸（Streaming / Non-Streaming）編碼與重試控制器**！
+
+* 它實現了「派發前落盤單輪 `1 + automatic_retries` 預算（跨重啟不重置）」、「Attempt-local SSE 完整組裝（絕不執行半截 Tool JSON 或跨次拼接）」、「過濾不安全錯誤 Body 與非標 `service_tier` 容錯」，以及「Chat 協定 Tool Result 後緊接配對 User Image ／ Responses 協定 Function Output 原生帶圖與加密 Reasoning 往返」。
+
+
+* 如果在重構為 `create_agent` 時，直接換成 LangChain 內建的 `ChatOpenAI`，OpenAI SDK 的內建重試與訊息正規化會直接破壞上述所有保證！
+
+**全局建議（以自訂 `NexusWireChatModel` 封裝既有 HTTPX2 核心）：**
+在重構架構中，不要丟棄現有的 HTTPX2 傳輸與雙協定編碼器。應將現有已驗證的 HTTPX2 請求組裝、SSE 狀態機、單輪持久化重試帳本與雙協定圖片配對邏輯，直接封裝為實作 LangChain `BaseChatModel` 介面的 **`NexusWireChatModel`**。如此一來，上層享受 `create_agent` + LangGraph Checkpointer 的執行生命週期，下層則 100% 繼承現有 228 項測試驗證過的 Nexus 傳輸與視覺配對能力！
+
+---
+
+## 三、 面向最佳產品功能的完整重構藍圖（Final Converged Architecture）
+
+將上述所有收斂條件與四大全局補強整合後，新系統的完整架構與職責邊界如下：
+
+```mermaid
+flowchart TD
+    subgraph UI_CLI["宿主入口層 (Electron Desktop UI / CLI / MCP Stdio)"]
+        Host["任務配置 / 進度呈現 / 雙向預覽 / 暫停與範圍修訂"]
+    end
+
+    subgraph Runtime["Agent 執行層 (LangChain create_agent + LangGraph Checkpointer)"]
+        LeadAgent["主轉換 Agent 迴圈 (支援短任務直接轉換，或長書按章節派發 Episode 子分支)"]
+        MW_Before["before_model 節點 (更新持久 State)\n- 依 settlement_key 冪等結算本批 Context 提案\n- 推進唯一 State.active_policy_rev"]
+        MW_WrapModel["wrap_model_call 攔截層 (僅修改當次暫態輸入)\n- 依 active_policy_rev 水合證據切片與原圖\n- 捕捉 HTTP 413 / Token 超限，在當回合內執行有限縮減重組\n- 記錄 input_view_id 並寫入被接受之 AIMessage.response_metadata"]
+        MW_WrapTool["wrap_tool_call 攔截層\n- 核對 (thread_id, tool_call_id) 收據決定重播或執行\n- 將產出與 proposal_id 寫入 ToolMessage.artifact"]
+        WireModel["NexusWireChatModel (繼承自既有 HTTPX2 核心)\n- 雙協定原生圖片配對 (Chat / Responses)\n- Attempt-local SSE 組裝 + 單輪持久化重試帳本"]
+    end
+
+    subgraph AppCore["App 核心服務層 (每文件獨立 SQLite WAL + Immutable Blobs)"]
+        EvEngine["證據與光學輔助服務\n- PyMuPDF / Tesseract.js / 多區域拼圖渲染 (Contact Sheet)\n- 局部像素筆畫粗細對比提示 (Ink-Weight Hints)\n- 頁級/區域運算快取索引 (支援跨範圍切片重用)"]
+        DocEngine["版本化草稿與交付服務\n- {block_id, content_ref} 結構與檔案引用匯入\n- 局部頁碼映射合併 + 候選稿保留重用\n- 同源安全 HTML 預覽截圖与 ZIP 匯出"]
+        SalvageEngine["受控子程序與救援服務\n- Windows Job Object 生命週期管理\n- 唯讀檢視 (inspect_attempt) 與獨佔快照驗證採用 (salvage_attempt)"]
+    end
+
+    Host <--> LeadAgent
+    LeadAgent --> MW_Before --> MW_WrapModel --> WireModel
+    WireModel --> MW_WrapTool --> LeadAgent
+    MW_Before <--> AppCore
+    MW_WrapModel <--> AppCore
+    MW_WrapTool <--> EvEngine & DocEngine & SalvageEngine
+
+```
+
+### 收斂後的五大設計支柱（可直接作為重構開發規格）
+
+1. **三段式 Hook 責任分離（零狀態污染、100% 恢復閉環）：**
+* `wrap_tool_call` 負責工具收據重播與產出登記；
+* `before_model` 負責以 `(parent_policy_rev, sorted_proposal_ids)` 的冪等收據結算政策並更新 `State["active_policy_rev"]`（解決政策啟用中斷問題）；
+* `wrap_model_call` 負責按 `active_policy_rev` 暫態水合原文／像素、在內部閉環處理 HTTP 413 與 Token 容量超限縮減，並將 `input_view_id` 寫入最終被接受的 `AIMessage.response_metadata`。
+
+
+2. **「運算索引、實體檔案、輸入選取」三層解耦：**
+* 不強制將多頁 JSON 拆成單頁碎檔；改在 SQLite 維護頁級／區域級 `computed_page_units` 索引指向 Blob 內的 JSON Pointer。既能讓 `pages=15-20` 的快取直接滿足後續 `pages=19-22` 的重疊頁面，又能讓 Context 投影只抽取指定頁面切片。
+
+
+3. **高信噪比的視覺與編輯工具（直接解決過往實測退件主因）：**
+* 新增**局部像素筆畫密度提示**與**多區域高 DPI 拼圖渲染（Contact Sheet）**，協助 Agent 低成本抓出透明 OCR 層或掃描頁中的粗體強調與易混淆字形（如 `礪/厲`）；
+* 支援完整區塊增刪改、局部頁碼映射合併、工作區檔案引用匯入與驗證失敗候選稿重用，消除 40 頁實測中的工具報錯摩擦。
+
+
+
+
+4. **無感容量管理 ＋ 長書選用章節子分支（Episode Sub-Agent）：**
+* 分離來源引用（`linked_refs`）與常駐釘選（`pinned_refs`），讓已完成頁面的龐大證據自動進入 `evict_when_needed` 佇列，在容量吃緊時由 `wrap_model_call` 自動替換為帶目錄的檢索入口；
+* 對上百頁長書支援按章節啟動序列式子分支（共用同一個 Working Draft 與任務預算），突破單一對話 40 回合／1,200 秒的物理瓶頸。
+
+
+5. **保留經過實戰驗證的 HTTPX2 雙協定傳輸內核：**
+* 將現有通過 228 項測試的 HTTPX2 控制器傳輸層封裝為 `NexusWireChatModel` 接入 `create_agent`，確保雙協定真實圖片配對、Attempt-local SSE 防殘缺執行與單輪持久化重試預算在重構後毫髮無傷。
+
+
+
+
+
+你認為這四大全局補強（特別是**保留 HTTPX2 雙協定傳輸內核為 `NexusWireChatModel**`，以及**針對強調格式／易錯字形的「多區域拼圖渲染＋像素墨跡提示」**）是否切中了過往實測的真正痛點？若方向確認，我們可以直接定義第一階段重構的模組清單與遷移順序。

@@ -1,0 +1,248 @@
+這份回應抓出了幾個極具價值的產品設計盲點——特別是指出「程式能精確解碼的 Tuple，不代表模型更容易理解」**、**「`mg` 變 `μg` 或多一個『不』字結構不變但語義劇變」**、**「未釘選不等於已不需要」**，以及**「正在編輯的候選稿必須能進入活躍工作集」。這些洞察完全切中了「如何讓 App 發揮最佳轉換功能」的核心。
+
+更關鍵的是，你在第 1 點主動引入了 **LangChain `create_agent` 搭配選定 Middleware** 這個中間選項，並修正了 Deep Agents `FilesystemMiddleware(tool_token_limit_before_evict=None)` 的公開設定事實。這其實直接幫我們揭開了框架選型的真正謎底。
+
+以下先針對這份方案中四個最核心的產品設計問題進行交鋒與升級，接著按照你要求的四級標準（**直接重用、公開設定、薄轉接／組合、替換政策／自訂實作**），將 **Pi SDK**、**LangChain `create_agent**` 與 **Deep Agents** 進行完全對稱的比較。
+
+---
+
+## 一、 四個關鍵交鋒與「最佳功能」設計升級
+
+### 1. 交鋒一：既然把 `LangChain create_agent` 放上檯面，為什麼它比 `Deep Agents` 更適合這個 App？
+
+你正確指出 Deep Agents 0.7.29 的 `FilesystemMiddleware` 支援 `tool_token_limit_before_evict=None` 公開參數，可藉此關閉依大小自動卸載的路徑，並透過同名 Middleware 替換機制掛載。
+
+* **從「App 最佳功能」視角交鋒：** 請進一步檢視 `FilesystemMiddleware` 與 Deep Agents 預設組裝在關閉 `tool_token_limit_before_evict` 之後，還對 Agent 做了什麼？
+Deep Agents 的核心定位是通用型檔案／編碼代理，因此它的預設 Middleware 會自動向模型注入一整套通用虛擬檔案系統工具（如 `ls`、`read_file`、`write_file`、`edit_file`、`glob`、`grep`）與待辦清單工具（`write_todos`），並在 System Prompt 中強力引導模型使用這些工具。
+* **這對 PDF 轉換 App 會造成什麼功能傷害？**
+我們的 App 擁有嚴格驗證頁碼對應、資產完整性與版本血緣的專用工具（`inspect`、`ocr`、`read_evidence`、`save`、`revise`、`reopen`、`view_preview`）。如果讓 Deep Agents 把通用 `write_file` / `edit_file` / `read_file` 暴露給模型，模型極易繞過我們的結構化 `save`/`revise` 驗證器，直接把 Markdown 寫進虛擬檔案系統，破壞頁碼映射與資產追蹤契約！
+而如果你為了保護產品契約，既把 `tool_token_limit_before_evict` 設為 `None`，又把 `FilesystemMiddleware` 的通用檔案工具與 `TodoListMiddleware` 停用或替換掉，**那你實際上保留下來的，就正是你提到的 `LangChain create_agent` ＋ `SummarizationMiddleware` ＋ 自訂 Middleware！**
+
+
+* **結論：** 引入 `create_agent` 是一個極佳的修正。在 LangChain 生態系中，**直接用 `create_agent` 組合我們需要的 Middleware，比「先載入整套 Deep Agents 再把它的檔案工具與預設卸載關掉」更乾淨，且完全不會污染模型的工具空間**。
+
+---
+
+### 2. 交鋒二：破解「原始 `dict` 太肥（147,366 字元）」與「Tuple 編碼難讀」的兩難——設計「模型友善的語義標註視圖」
+
+你一針見血地指出：**「程式能精確解碼，不代表模型更容易使用。大量位置式 tuple 和樣式索引可能增加模型查表、理解欄位和定位錯誤的負擔。」** 這句話非常精準。
+
+* **深入剖析 `layout` 佔 147,366 字元的真正原因：**
+在該頁 41 個 blocks、446 個 spans 的紀錄中（頂層 `text` 另佔約 3,034 字元），PyMuPDF 的 `get_text("dict")` 之所以產生近 15 萬字元，同時對模型極不友善，是因為它把所有視覺屬性編碼成了**人類與 LLM 都很難直覺判讀的底層數值**：
+
+
+1. `flags` 是整數元位遮罩（Bitmask，如 `20` 代表粗體＋襯線，模型必須心算二進位才能知道是不是粗體）；
+2. `color` 是十進位 sRGB 整數；
+3. 每個 span 重複攜帶 `ascender`、`descender`、`origin`、`bbox` 的長浮點數與完整字典鍵名；
+4. 大量在同一行內樣式完全相同、僅因 PDF 內部字距微調而被切碎的連續文字，被拆成了數百個獨立 span 物件。
+
+
+* **如何設計「既大幅縮小體積、又讓模型一眼看懂、且不丟失局部樣式位置」的表示法？**
+我們不應該用「位置式 Tuple＋樣式索引表」考驗模型的心算查表能力，而是把工具的 `layout` 表示分為兩層（原始 `dict` 完整保存於磁碟供精確查閱）：
+* **1. 模型友善結構化視圖（`model_layout`，作為日常讀取選項）：**
+* **保留完整 Block / Line / Span 層級與精確座標**，但將底層數值直接轉譯為直覺的語義標籤（例如將 `flags` 與 `font` 轉為明確的 `style: "bold,italic"` 或 `layer: "transparent_ocr"`），並省去模型排版不需要的 `ascender`/`descender` 等字體度量常數。
+
+
+* **明示可逆的「同質連續片段群組」：** 若同一行內的多個 spans 樣式完全相同且無跨欄級別的水平跳躍，在視圖中呈現為完整易讀的連續文字，但**明確標註 `span_count: 6` 與首尾外框**；若該行內有局部粗體、上下標或大間距（如表格分欄、圖表標籤），則原樣展開每一個獨立 span 與各自的 `bbox`。
+
+
+* **2. 原始無損結構（`raw_dict` / `words` / `chars`）：**
+* 當 Agent 需要處理複雜圖表標籤定位或精細裁切時，隨時可對指定頁面或區域直接請求未簡化的原始 span/word 座標與原生圖片。
+這樣既不必逼模型查索引表，也不會把局部粗體或透明字層的位置洗掉。
+
+
+
+
+
+
+
+---
+
+### 3. 交鋒三：解決「未釘選 $\neq$ 已不需要」與「超量時不知該載入哪幾頁」——以「工作生命週期」驅動容量分配
+
+你在第 3 點指出了兩個極佳的實務問題：
+
+1. 若沒釘選就被當成可釋放，Agent 就被迫每一步都維護完整釘選表；
+2. 超量時若死板載入「前幾頁」，可能剛好切掉 Agent 正在核對的「上一頁表尾＋下一頁表頭」。
+
+* **最佳功能設計：將證據保留優先級與「頁面工作狀態（Page Work State）」自動綁定，而非只看釘選與否**
+App 本身知道每一頁目前的發布與草稿狀態，也知道當前回合 Agent 正在操作哪幾頁。因此，容量分配器的保留優先級（從高到低）應由系統自動判定，無須 Agent 手動釘選每一份使用中的證據：
+1. **P0（絕對保留）：當前請求焦點與顯式釘選（Current Focus & Explicit Pins）**
+* 本輪工具呼叫指定讀取的目標範圍，以及 Agent 顯式標記 `pinned` 的跨頁表頭／參考圖。
+
+
+2. **P1（預設自動保護）：已讀但尚未落稿的活躍頁面（Inspected & Uncommitted Pages）**
+* 凡是 Agent 已經呼叫過 `inspect` / `ocr` / `render`，但該頁在目前工作稿中仍處於 `unprocessed`（尚未轉寫成區塊）或正在編輯中的證據，**即使 Agent 沒有釘選，系統也自動視為「未完成工作之活躍證據」予以保留**！這直接消除了「忘記釘選就被誤刪」的風險。
+
+
+3. **P2（優先保留邊界）：最近剛落稿的相鄰頁（Adjacent Boundary Pages）**
+* 緊鄰當前未處理頁面之前的最後 1～2 個已寫入頁面（例如正在處理第 15 頁時，第 14 頁的證據與表尾區塊自動享有次高優先級，直接滿足跨頁表格「表尾接表頭」的核對需求）。
+
+
+4. **P3（可轉為精簡引用／釋放）：已落稿、無未解依賴且非相鄰的歷史頁（Committed Historical Pages）**
+* 只有當頁面已經寫入成果、沒有任何未解問題指向它、也不在當前跨頁邊界上時，才會在容量不足時優先將其大型內容替換為輕量收據（原件仍留存磁碟可隨時重取）。
+
+
+
+
+
+
+* **超量時的「智慧對焦與目錄回退」：**
+當單批工具結果過大無法全數放入時，系統優先展開與 **P0 / P2（當前工作頁與跨頁邊界）** 重疊的部分；若是一次大範圍探勘（例如一次請求 10 頁 OCR）且無明確單頁焦點，則不盲目塞入前幾頁耗盡預算，而是回傳「各頁字數、區塊數、異常統計與圖片清單的緊湊目錄（Page Directory Manifest）」，讓 Agent 根據目錄自主決定先展開哪幾頁。
+
+---
+
+### 4. 交鋒四：將「正在編輯的候選稿」徹底融入工作流——建立「工作草稿（Working Draft） vs. 已發布版本（Published Version）」雙層模型
+
+你在第 4 點指出了一個極關鍵的實務場景：**「Agent 已完成一張跨頁表格，只因頁碼 metadata 尚未補齊而未發布。接下來修表頭、補下一頁時，最有用的是那份候選稿的精確內容。」**
+同時你也指出，`mg` 改 `μg` 或多一個「不」字，結構不變但語義全變，程式絕不能自作聰明判定為「單純文字微調」。
+
+* **最佳功能設計：把「候選稿」正名為「當前工作草稿（Active Working Draft）」，並支援草稿級預覽與差異揭露**
+如果只有在驗證失敗時才產生一堆散落的 `candidate_1`、`candidate_2`，Agent 在跨多頁編輯時會搞不清楚自己到底是在改 `v1` 還是在改某個 `candidate`。最乾淨的產品設計是參考 Git 的 **Working Tree vs. Tagged Commit** 模型：
+1. **單一活躍工作草稿（Active Working Draft）：**
+* Agent 的所有區塊增量操作（`insert`、`replace`、`append`、`delete`）與局部頁碼映射更新，都會立即落地到當前文件的 `Working Draft`（具備遞增的 `draft_revision`）。
+* **活躍工作集永遠直接載入 `Working Draft` 中正在編輯的區塊！** 就算第 15 頁的頁碼 metadata 還沒填完，Agent 剛寫好的第 14 頁跨頁表格已經穩穩地躺在 `Working Draft` 裡，下一輪補第 15 頁時可以直接讀取、釘選並繼續修改它，完全不會退回舊版。
+
+
+* **預覽工具（`view_preview`）同時支援 `Working Draft` 與 `Published Version`：** Agent 不必等到全書頁碼映射都完美通過發布檢查，就能隨時對 `Working Draft` 中的跨頁表格擷取渲染像素進行視覺核對！
+
+
+2. **不可變發布版本（Immutable Published Version）：**
+* 當 `Working Draft` 通過結構與頁碼映射完整性檢查（或由 Agent 顯式以 `honest draft` 模式補齊未處理頁標記）時，原子發布為不可變的 `Published Version (v1, v2...)`，供最終重開與匯出。
+
+
+* 其他未被採納的歷史分支／被拒嘗試則留存在 `Candidate Archive` 僅供索引查詢。
+
+
+3. **釘選跟隨（`follow_latest`）的「無條件差異揭露（Unconditional Change Disclosure）」：**
+* 廢除任何由程式猜測「是否只是微調」的脆弱邏輯。
+* 只要 `follow_latest` 釘選的目標區塊在 `Working Draft` 或新版中被修改過，Context 組裝器在載入新版內容時，**一律自動附上精確的變更前後對照（例如：`[Updated in draft_rev 4: "10 mg" -> "10 μg"]`）**。把「改了什麼」100% 確定性地攤在陽光下，至於這個改動是否影響下一頁的轉換，交給唯一有語義理解能力的 Agent 判斷。
+
+
+
+
+
+---
+
+## 二、 核對紀錄沿用（Carry-Over）與單一權威提交點設計
+
+完全採納你在第 5 點的兩項修正，這讓狀態機的可靠性大幅提升：
+
+1. **以 `Active Context Manifest` 作為跨儲存的單一權威提交點（Single Commit Authority）：**
+* 無論底層選用哪個框架，都不依賴「同一個 Hook 內連續寫入兩套儲存」的假原子性。
+* App 維護的 `context_manifest.json` 是唯一的活躍狀態真相來源（Source of Truth），內部記錄：
+`manifest_id`、`framework_session_cursor`（對應 Pi 的 entry ID 或 LangGraph 的 checkpoint ID）、`requirements_rev`、`working_draft_rev`、`published_version_id`、`notes_rev` 與 `pinned_refs`。
+* 切換時，先確保框架 Session 紀錄與 App 筆記皆已落盤，最後僅透過一次原子檔案替換（Windows `ReplaceFileW`）更新 `active_manifest_pointer`。若中途崩潰，重啟時永遠以 `active_manifest_pointer` 指向的完整組合為準，未被引用的孤立寫入自動視為未生效。
+
+
+
+
+2. **歷史核對事實不變，按「核對面向（Aspect）」判定跨版本沿用性：**
+* 核對紀錄永久保存歷史事實：`Verified(target="v1 / draft_rev 3", scope="page 12, blk_04", aspect="text_fidelity | table_structure | image_crop | rendered_layout", result="pass")`。
+
+
+* 當推進到新版 `v2`（或 `draft_rev 4`）時，App 透過區塊血緣計算各面向的**沿用狀態（Carry-Over Status）**：
+* 僅修改區塊樣式或位置 $\rightarrow$ `text_fidelity` 維持 **Valid（可沿用）**，`rendered_layout` 標為 **Needs Re-evaluation（建議重看預覽）**；
+* 修改了區塊內文 $\rightarrow$ 該區塊的 `text_fidelity` 與相關跨頁依賴標為 **Needs Re-evaluation**，但同頁未修改之獨立圖片的 `image_crop` 維持 **Valid**；
+* 使用者變更了任務要求 $\rightarrow$ 原有證據與文字觀察保留，僅將受新要求影響之範圍的任務符合度標為 **Needs Re-evaluation**。
+
+
+
+
+
+---
+
+## 三、 對稱式框架公開接口比較（Pi SDK vs. LangChain `create_agent` vs. Deep Agents）
+
+納入你指出的公開設定與 `LangChain create_agent` 選項後，我們將上述所有產品機制對照到三個候選方案（含 Python 與 TypeScript 路線），嚴格區分「直接重用、公開設定、薄轉接／組合、替換政策／自訂實作」：
+
+| 產品所需能力與契約 | 候選 1：Pi SDK (1.3.0, TypeScript) | 候選 2：LangChain `create_agent` + 選定 Middleware (Python / TS) | 候選 3：Deep Agents (0.7.29, Python / TS) |
+| --- | --- | --- | --- |
+| **1. 基礎 Agent 回合、事件流、取消控制與持久化** | **[直接重用]**<br>
+
+<br>內建 Agent Loop、Session JSONL、事件流與 Abort 控制。
+
+ | **[直接重用]**<br>
+
+<br>內建 LangGraph 執行迴圈、Checkpointer 持久化與串流事件。
+
+ | **[直接重用]**<br>
+
+<br>底層即 `create_agent` / LangGraph，具備相同持久化與事件基礎。
+
+ |
+| **2. 避免框架預設工具與內建卸載干擾 PDF 專用工具契約** | **[公開設定 + 薄轉接]**<br>
+
+<br>宿主可完全指定只載入我們的 PDF 工具集，不掛載通用 coding 工具；內建圖片縮放與自動 compaction 需透過**公開設定**關閉或攔截。
+
+ | **[直接重用（最乾淨）]**<br>
+
+<br>`create_agent` 預設**不注入**任何虛擬檔案系統或 Todo 工具，100% 只暴露我們傳入的 PDF 工具契約，無須關閉多餘工具。 | **[公開設定 + 需移除預設工具干擾]**<br>
+
+<br>可透過 `tool_token_limit_before_evict=None` **公開設定**關閉大結果自動卸載；但 `FilesystemMiddleware` 與 `TodoListMiddleware` 預設注入的 `ls`/`edit_file`/`write_todos` 工具與提示詞，仍須額外設定停用或替換，以免干擾 `save`/`revise`。 |
+| **3. 批次工具結果統一容量核算、分級展開與部分成功收據** | **[薄轉接 + 自訂政策]**<br>
+
+<br>工具層各自回傳結構化收據；利用公開的 `context` 擴充點在組裝當次請求前，呼叫 App 的容量分配器決定展開範圍。
+
+ | **[薄轉接 + 自訂政策]**<br>
+
+<br>利用公開的 `wrap_tool_call` 處理單一工具例外，並在 `wrap_model_call` 攔截點呼叫 App 的容量分配器，統一核算整批 `ToolMessage` 後產生當次模型輸入。 | **[公開設定 + 薄轉接 + 自訂政策]**<br>
+
+<br>先設定 `tool_token_limit_before_evict=None` 停用內建單一訊息卸載，再與 `create_agent` 相同，透過公開的 `wrap_model_call` 接入 App 的統一容量分配器。 |
+| **4. 整理前交接（Handshake）、可選摘要與單一權威 Manifest 切換** | **[薄轉接 + 自訂政策]**<br>
+
+<br>透過 `session_before_compact` 攔截內建整理，改執行 Handshake 與 Manifest 原子提交，並用 `context_edit` 或 `context` 投影新工作集；可重用其摘要請求結構。
+
+ | **[薄轉接／組合 + 自訂政策]**<br>
+
+<br>可選擇性組合官方 `SummarizationMiddleware`（自訂 prompt / token counter / 觸發條件）處理舊對話摘要；Handshake、P0–P3 工作集篩選與 Manifest 提交則寫在自訂 Middleware 中。 | **[公開設定／替換 + 自訂政策]**<br>
+
+<br>使用公開的同名 Middleware 替換機制，調整 `SummarizationMiddleware` 設定並串接 Handshake 與 Manifest 提交邏輯。實際可重用的摘要基礎與 `create_agent` 相同。
+
+ |
+| **5. PDF 領域核心（`Working Draft`、局部頁碼合併、雙模態釘選、差異揭露、面向級核對紀錄）** | **[自訂實作（App 文件與狀態服務）]**<br>
+
+<br>與框架無關，100% 由 App 獨立模組實作。 | **[自訂實作（App 文件與狀態服務）]**<br>
+
+<br>與框架無關，100% 由 App 獨立模組實作。 | **[自訂實作（App 文件與狀態服務）]**<br>
+
+<br>與框架無關，100% 由 App 獨立模組實作。 |
+| **6. Nexus 雙協定圖片配對、加密 Reasoning 與網路容錯／收據對帳** | **[公開設定 + 部分自訂 Adapter]**<br>
+
+<br>可設定 `baseUrl`、`openai-completions` / `openai-responses` 與 thinking 格式；單輪重試預算與發布收據對帳需在工具與 Provider Adapter 補齊。
+
+ | **[薄轉接 + 部分自訂 Adapter]**<br>
+
+<br>接標準 ChatModel 或將現有已驗證的 Python HTTPX2 雙協定編碼器／重試帳本封裝為自訂 Model / Transport 接入。
+
+ | **[薄轉接 + 部分自訂 Adapter]**<br>
+
+<br>與 `create_agent` 完全相同（共用 LangChain 模型介面）。
+
+ |
+
+---
+
+## 四、 修正後的選型與架構建議
+
+透過這張對稱比較表，我們可以得出比前幾輪都更客觀、不偏頗的結論：
+
+1. **為什麼 `LangChain create_agent + 選定 Middleware` 比 `Deep Agents` 更貼合本專案？**
+Deep Agents 並不是「不能用」或「完全沒價值」，而是它在 `create_agent` 之上多包的那一層預設裝備（虛擬檔案系統工具 `ls`/`read_file`/`edit_file`、依單一訊息大小的自動 offloading、內建 Todo 與 Subagent 提示詞），剛好都是我們為了保護 PDF 結構化存檔契約而需要**透過設定關掉或替換掉**的東西。既然 `create_agent` 本身就是官方公開支援的一等公民 API，且能直接掛載 `SummarizationMiddleware` 與自訂 `wrap_model_call`，**直接用 `create_agent` 做正向組合（Opt-in Composition），比用 `Deep Agents` 做反向刪減（Opt-out Stripping）更符合「最少心智與維護負擔」的原則**。
+2. **最終架構路線收斂為兩個乾淨的對等候選：**
+* **候選 A：`LangChain create_agent`（Python 或 TypeScript）＋ 選用 `SummarizationMiddleware` ＋ App Context / Document 服務**
+* 若在 Python 端執行，可直接重用現有已驗證的 PyMuPDF 抽取、HTTPX2 雙協定原生圖片編碼與收據對帳邏輯。
+
+
+
+
+* **候選 B：`Pi SDK`（TypeScript）＋ 公開設定停用預設截斷／縮放 ＋ App Context / Document 服務**
+* 直接提供 `context_edit` / `session_before_compact` 等貼合 Session 投影的原語，且與 Electron / Node.js 同構。
+
+
+
+
+
+
+
+你認為將比較焦點收斂為 **「Pi SDK」對決「LangChain `create_agent` + 選定 Middleware」**（或保留 Deep Agents 僅作為 `create_agent` 預組裝對照組），並按照這套 **「Working Draft vs. Published Version ＋ P0-P3 頁面生命週期容量分配 ＋ 無條件釘選差異揭露」** 的設計來做下一步的公開接口實測，是否已經完全對齊你對最佳 App 功能的期待？

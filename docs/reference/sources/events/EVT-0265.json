@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad73352d26c8191abfbac5100cb3b77",
+    "content": [
+      {
+        "type": "Text",
+        "text": "**適用，但沒有任何一套能直接完整滿足我們的需求；而完全自訂，也不會自然令 app 更可靠。** 就目前的要求，我最傾向：**使用 LangGraph／LangChain 提供執行基礎，自訂 PDF 工具、證據儲存及 context 政策。**\n\n我上一輪說「以框架為優先」，應更精確地理解為：優先重用符合需求的機制，而不是先決定搬進框架，再調整產品去適應它。\n\n**逐項對照我們的需求，適配情況是這樣：**\n\n| 我們的要求 | 框架的適配程度 | 仍需自行負責 |\n|---|---|---|\n| Agent 自主選擇讀取、OCR、檢查、保存 | **適合**。一般 model–tool loop 就能支援 | 工具介面、權限與來源品質規則 |\n| 完整歷史與目前模型輸入分開 | **可實現**。可利用 state 與模型呼叫前的 middleware | 哪些資料保存、哪些送出，以及原始記錄的保留方式 |\n| 先釋放可取回證據，再整理歷史 | **部分現成、需要調整** | 我們的保護規則、精確引用及 agent 選擇 |\n| 跨頁表格、未解問題及使用者修訂不遺失 | **沒有現成保證** | `TaskContract`、`WorkingState`、依賴與更新規則 |\n| 原始 OCR、圖片、版本可精確取回 | **能接入，但不是框架自帶的 PDF 能力** | EvidenceStore、來源映射、實際圖片輸入 |\n| 保存／恢復執行狀態 | **LangGraph 很相關** | 保存成果與執行 checkpoint 之間的一致性 |\n| Nexus＋不同供應商模型 | **有條件適用** | 實際協定、特殊欄位、模型能力及接入驗證 |\n| 忠實完成整份 PDF／完整章節 | **框架不能保證** | Agent 能力、工具品質及來源核對 |\n\nLangChain 的 middleware 有模型呼叫前後、工具呼叫周圍的介面，可以調整輸入、更新狀態及處理工具結果。因此，我們提出的 context manager **可以實作在其正式擴充介面內**，未必需要改框架內部。[官方 middleware 文件](https://docs.langchain.com/oss/python/langchain/middleware/custom)\n\n**四個候選工具，適合我們的程度並不一樣。**\n\n**LangGraph：最適合作為可自訂的底層。**  \n它本來就是低階 agent 執行與狀態管理框架，不強制特定 prompt，也不要求使用 LangChain 的模型介面。這對我們有利：如果標準模型 integration 不適合 Nexus，仍可以保留專門的 adapter。[官方定位](https://docs.langchain.com/oss/python/langgraph/overview)\n\nGraph 也不必變成固定的「文字抽取 → OCR → 轉換」流程。可以只表達：\n\n> 準備 context → 模型決定 → 執行選定工具 → 保存結果 → 繼續\n\n具體採用甚麼轉換方法，仍由 agent 決定。\n\n**LangChain：適合當方便的 agent loop，但要確認它沒有妨礙必要控制。**  \n若 `create_agent` 加 middleware 已能清楚表達我們的 context、工具及狀態規則，就使用它。若為了控制每次訊息組裝，必須層層攔截、修補內部行為，直接使用 LangGraph 可能更簡單。\n\n這是兩種使用同一生態系的方式，不必一開始便選擇完全自製。\n\n**LangMem：適合某些摘要需求，不能直接當成整個 context 系統。**  \n它能管理 running summary，但不會替我們理解 PDF 依賴、保存原始圖片或維護成果版本。其文件還說明，摘要輸入過大時可能只處理最後一部分內容；這需要與我們的完整保留要求核對。[LangMem 文件](https://langchain-ai.github.io/langmem/reference/short_term/)\n\n因此，我不會預設要採用 LangMem。即使選用 LangGraph，也可以用其他摘要元件，或讓工作中的 agent 透過工具提交接續狀態。\n\n**Deep Agents：現成功能最多，但需要檢查的預設也最多。**  \n它提供檔案操作、摘要及其他 harness 功能，並支援替換 middleware。可是我們已有自己的文件版本、證據與工具權限；如果大量內建功能都要替換，使用較薄的 LangChain／LangGraph 基礎可能更合適。[官方自訂文件](https://docs.langchain.com/oss/python/deepagents/customization)\n\n**Nexus 是目前一個具體的適配風險，不能用「OpenAI-compatible」一語帶過。**\n\n例如，LangChain 的 `ChatOpenAI` 官方文件明確指出，它針對官方 API 規格，不保留某些第三方的非標準 reasoning 欄位。如果 Nexus 的模型路由需要那些欄位，直接換 `base_url` 不一定足夠，可能需要適合該路由的 integration 或自訂 adapter。[官方 API 範圍說明](https://docs.langchain.com/oss/python/integrations/chat/openai)\n\n這不表示要改用付費官方 API，也不表示整個框架不適用；它說明**模型接入與 agent 執行框架要能分開選擇**。\n\n**完全自訂甚麼情況下會比較好？**\n\n如果發現以下情況，自訂薄 controller 就可能更合理：\n\n- 關鍵需求必須修改框架私有內部，而非使用公開擴充介面。\n- 為保留圖片、reasoning 或精確訊息結構，需要反覆繞過框架。\n- 框架與 app 各自維護一份執行狀態，容易產生不一致。\n- 適配程式與依賴維護的複雜度，已超過它替我們省下的工作。\n\n反過來，**需要自訂 PDF 工具或 context 政策，本身不是放棄框架的理由**。這些業務規則無論採用哪種方案，都需要我們寫。\n\n我的選擇順序會是：\n\n1. **先看 LangChain `create_agent`＋自訂 middleware 是否足夠。**\n2. 若高階 agent 抽象限制必要控制，改用 **LangGraph＋自訂節點／adapter**。\n3. 只有底層框架仍造成明確障礙，才選擇完全自訂 controller。\n\n判準是：**我們能否透過框架的公開介面，清楚實現所需行為，並減少總體維護責任。** 目前資料支持它們「適用且值得採用部分能力」，尚未支持「整套直接使用就完全符合」，也未顯示必須完全自訂。"
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 944,
+  "timestamp_original": "2026-10-20T09:25:27.434Z",
+  "timestamp_display": "2026-10-20T17:25:27.434+08:00",
+  "turn_id": "01a158a0-1271-7df1-9aec-7b821fd13a0f",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T17:24:36.053+08:00",
+  "completed_at": "2026-10-20T17:25:27.434+08:00",
+  "event_id": "EVT-0265",
+  "evidence_path": "evidence/events/EVT-0265.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

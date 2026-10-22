@@ -1,0 +1,26 @@
+{
+  "item": {
+    "type": "UserMessage",
+    "id": "01a15867-a779-70e2-964c-f86c804a30ae",
+    "client_id": "2692b06a-87c2-4ae5-ad16-100174279359",
+    "content": [
+      {
+        "type": "text",
+        "text": "let's discuss context management first, left network for later discussion",
+        "text_elements": []
+      }
+    ]
+  },
+  "source_line": 649,
+  "timestamp_original": "2026-10-20T08:22:30.531Z",
+  "timestamp_display": "2026-10-20T16:22:30.531+08:00",
+  "turn_id": "01a15867-8d87-75a2-a3d4-a039eb7d8ed9",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T16:22:30.531+08:00",
+  "completed_at": "2026-10-20T16:22:30.531+08:00",
+  "event_id": "EVT-0186",
+  "evidence_path": "evidence/events/EVT-0186.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

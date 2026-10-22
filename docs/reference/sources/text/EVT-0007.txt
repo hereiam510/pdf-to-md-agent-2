@@ -1,0 +1,1 @@
+目前 HEAD 正是 `dd6e4ce`，工作樹乾淨；local master 比本地記錄的 `origin/master` 領先 22 commits，沒有新差異。我會採用 `vibe-coding` skill 的審閱方式，區分實作、已驗證交付與仍未知的效果。

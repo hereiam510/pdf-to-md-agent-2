@@ -1,6 +1,7 @@
 """Check local documentation links, source IDs and preservation coverage structure."""
 
 import json
+import hashlib
 import re
 import sys
 from collections import Counter
@@ -48,7 +49,7 @@ def main():
 
     for path, text in documents.items():
         # Only actual Markdown links, not raw source paths or code identifiers.
-        for match in re.finditer(r'(?<!!)\[[^\]\n]+\]\((<[^>]+>|[^\s)]+)(?:\s+"[^"]*")?\)', text):
+        for match in re.finditer(r'\[[^\]\n]+\]\((<[^>]+>|[^\s)]+)(?:\s+"[^"]*")?\)', text):
             check_target(path, match.group(1))
 
     inventory_path = ROOT/'docs/reference/source-inventory.json'
@@ -98,7 +99,77 @@ def main():
         for source in set(re.findall(r'\b(?:EVT-\d{4}|ATT-\d{2}|LIVE-\d{2}|SUP-\d{2})\b', text)):
             if source not in source_ids:
                 errors.append(f'{path.relative_to(ROOT)}: unknown source ID {source}')
-    report = {'markdown_files':len(documents),'local_links_and_destinations_checked':links,'preserved_points':len(points),'source_dispositions':len(coverage),'errors':errors,'scope':'Structural documentation check; semantic completeness and runtime correctness require separate evidence.'}
+    # Verify that explanations and cited sources survive a repository-only copy.
+    cited = required | {s for point in points for s in point.get('source_ids', [])}
+    for text in documents.values():
+        cited.update(re.findall(r'\b(?:EVT-\d{4}|ATT-\d{2}|SUP-\d{2}|LIVE-\d{2})\b', text))
+    records = {record['id']: record for key in ('events', 'attachments', 'live_sources', 'supporting_sources')
+               for record in inventory.get(key, [])}
+    for source in sorted(cited):
+        record = records.get(source, {})
+        if source.startswith('LIVE-'):
+            if record.get('path'):
+                check_target(ROOT/'_root.md', record['path'] + '#' + record['anchor'])
+        elif not record.get('local'):
+            errors.append(f'{source}: cited development source has no repo-local copy/excerpt')
+    manifest_path = ROOT/'docs/reference/sources/bundle-manifest.json'
+    bundle_files = []
+    if not manifest_path.is_file():
+        errors.append('Missing repo-local source bundle manifest')
+    else:
+        bundle_files = json.loads(manifest_path.read_text(encoding='utf-8')).get('files', [])
+        bundled = {}
+        for item in bundle_files:
+            target = (ROOT/item['path']).resolve()
+            if not target.is_relative_to(ROOT):
+                errors.append(f'Bundle path escapes repository: {item["path"]}')
+                continue
+            if item['path'] in bundled:
+                errors.append(f'Duplicate bundled file: {item["path"]}')
+            bundled[item['path']] = item
+            if not target.is_file():
+                errors.append(f'Missing bundled source: {item["path"]}')
+                continue
+            raw = target.read_bytes()
+            if len(raw) != item['bytes'] or hashlib.sha256(raw).hexdigest() != item['sha256']:
+                errors.append(f'Bundled source integrity differs: {item["path"]}')
+        for record in records.values():
+            original = record.get('local_original')
+            if original and original.get('sha256') != record.get('sha256'):
+                errors.append(f'{record["id"]}: original event copy differs from export identity')
+            if record.get('kind') in ('pasted-text', 'forum-html') and record.get('local'):
+                if record['local']['sha256'] != record.get('sha256'):
+                    errors.append(f'{record["id"]}: attachment copy differs from original identity')
+            copies = [record[key] for key in ('local', 'local_original', 'local_text', 'local_reader') if key in record]
+            copies += record.get('local_figures', [])
+            for item in copies:
+                registered = bundled.get(item['path'], {})
+                if any(item.get(k) != registered.get(k) for k in ('path', 'bytes', 'sha256')):
+                    errors.append(f'{record["id"]}: local inventory disagrees with bundle manifest')
+    detail_path = ROOT/'docs/reference/DEVELOPMENT_COVERAGE.json'
+    details = []
+    if detail_path.is_file():
+        details = json.loads(detail_path.read_text(encoding='utf-8'))
+        detail_ids = set()
+        for item in details:
+            identity = item.get('point_id')
+            if identity not in point_ids or identity in detail_ids:
+                errors.append(f'Unknown/duplicate development-detail mapping: {identity}')
+            detail_ids.add(identity)
+            if item.get('treatment') not in ('explained', 'historical-reference', 'scope-note') or not item.get('note'):
+                errors.append(f'{identity}: invalid development-detail treatment/note')
+            if item.get('destination'):
+                check_target(ROOT/'_root.md', item['destination'])
+            else:
+                errors.append(f'{identity}: missing development-detail destination')
+        for identity in sorted(point_ids-detail_ids):
+            errors.append(f'Missing development-detail mapping: {identity}')
+    elif (ROOT/'docs/DEVELOPMENT_GUIDE.md').is_file():
+        errors.append('Missing development-detail coverage index')
+    report = {'markdown_files':len(documents),'local_links_and_destinations_checked':links,
+              'preserved_points':len(points),'source_dispositions':len(coverage),
+              'bundled_source_files_verified':len(bundle_files),'development_detail_mappings':len(details),
+              'errors':errors,'scope':'Repository-only link, source-integrity and coverage checks; counts do not prove semantic completeness or runtime correctness.'}
     print(json.dumps(report,ensure_ascii=False,indent=2))
     return bool(errors)
 

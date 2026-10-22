@@ -1,0 +1,1 @@
+還有一個比 Pydantic 驗證更早的邊界：LangChain 會把 JSON 解析失敗的呼叫放入 `invalid_tool_calls`，一般 ToolNode 不會派發它們。因此，`wrap_tool_call` 可以保存送達它的錯誤參數，卻不能獨自保證所有候選原件都留存。原生回覆保存仍應留在 Nexus 接收層。

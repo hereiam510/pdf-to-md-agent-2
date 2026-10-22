@@ -1,0 +1,26 @@
+{
+  "item": {
+    "type": "UserMessage",
+    "id": "01a1588c-b5f4-7c90-8506-111f1f645f2f",
+    "client_id": "533a9e6c-5298-46af-986b-3eaf2a0e9ff3",
+    "content": [
+      {
+        "type": "text",
+        "text": "let's continue our discussion\nthen, how should we design the context management, technically\nno need to consider backward compatibility",
+        "text_elements": []
+      }
+    ]
+  },
+  "source_line": 859,
+  "timestamp_original": "2026-10-20T09:02:59.069Z",
+  "timestamp_display": "2026-10-20T17:02:59.069+08:00",
+  "turn_id": "01a1588c-a533-7351-8f93-400714535fc6",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T17:02:59.069+08:00",
+  "completed_at": "2026-10-20T17:02:59.069+08:00",
+  "event_id": "EVT-0240",
+  "evidence_path": "evidence/events/EVT-0240.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

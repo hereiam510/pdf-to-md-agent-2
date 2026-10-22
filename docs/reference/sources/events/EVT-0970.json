@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9c203f9a88191a2e43d6ff3e736aa",
+    "content": [
+      {
+        "type": "Text",
+        "text": "我會先讀這版提案，重點檢查步驟身分、跨入口保存和恢復流程是否真正補上了漏洞，也看 context 管理是否仍保留 agent 的自主判斷與完整證據存取。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2885,
+  "timestamp_original": "2026-10-22T07:57:56.740Z",
+  "timestamp_display": "2026-10-22T15:57:56.740+08:00",
+  "turn_id": "01a1629d-caf4-7b20-987f-2089ed7c96b0",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T15:57:55.448+08:00",
+  "completed_at": "2026-10-22T15:57:56.740+08:00",
+  "event_id": "EVT-0970",
+  "evidence_path": "evidence/events/EVT-0970.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

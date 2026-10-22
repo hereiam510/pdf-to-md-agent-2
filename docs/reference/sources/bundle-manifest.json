@@ -1,0 +1,3348 @@
+{
+  "format_version": 1,
+  "scope": "Portable optional discussion reference; not application data or active instructions.",
+  "event_records": 208,
+  "attachments": 30,
+  "substantive_figures": 24,
+  "files": [
+    {
+      "path": "docs/reference/sources/events/EVT-0001.json",
+      "sha256": "47cf884b039ab897b1d2d2293064ac6f291eae34e18c727c4f9582ff6817935b",
+      "bytes": 29263,
+      "role": "exact-export-event",
+      "source_id": "EVT-0001"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0001.txt",
+      "sha256": "9e3b7b1d6c83435dc30a9b31f9694ffc5591aa4bf2ed93432e046f6e00cd20ed",
+      "bytes": 20503,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0001"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0002.json",
+      "sha256": "3044b4ec62f587ce9f77603755485ff564013c9324d298d073045465ff6a0f73",
+      "bytes": 918,
+      "role": "exact-export-event",
+      "source_id": "EVT-0002"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0002.txt",
+      "sha256": "3181c6dcd985f7c991d63f7de3507c9a899fdf30005fb1773a39db1b62622426",
+      "bytes": 236,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0002"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0007.json",
+      "sha256": "b238ab3739e8920db653256997c0d38dbbe89425cb8986cb5eeca02bf13fe2d1",
+      "bytes": 923,
+      "role": "exact-export-event",
+      "source_id": "EVT-0007"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0007.txt",
+      "sha256": "7252f208bf610848d6fe51e2d79f47abe6b0d29a541a97a146aed07b4da55851",
+      "bytes": 241,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0007"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0021.json",
+      "sha256": "e4f8b63baa7bf86525f478b3f86750ad14cf5be1b9fb79d82be595e175ebe8a3",
+      "bytes": 1082,
+      "role": "exact-export-event",
+      "source_id": "EVT-0021"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0021.txt",
+      "sha256": "0768fd660c279b2784f32469e2b51308c6373a08902ea976987e145fe349bc1c",
+      "bytes": 400,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0021"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0047.json",
+      "sha256": "f9f54e34978d32ab4d3c2560475a4b41340db5c9c2ff748a7abe016a824308bb",
+      "bytes": 1186,
+      "role": "exact-export-event",
+      "source_id": "EVT-0047"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0047.txt",
+      "sha256": "d4d49cacf9c2e8f059594958a232d323abc5c32bc7f74ef3fd61274c2bc10f24",
+      "bytes": 501,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0047"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0053.json",
+      "sha256": "7da6acca78cefb81ef39c950bc6f6347ef85047b38fd08ea6a38aa384552f324",
+      "bytes": 7331,
+      "role": "exact-export-event",
+      "source_id": "EVT-0053"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0053.txt",
+      "sha256": "2d26f4c0cb3535e0b1ee623c740d5936647c9ae8657b0db6af7569805ed9ce81",
+      "bytes": 4888,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0053"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0054.json",
+      "sha256": "00df2efc4a5106c17ed2aae279853ee61e5aebbd361da440e29f56c7853ad564",
+      "bytes": 894,
+      "role": "exact-export-event",
+      "source_id": "EVT-0054"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0054.txt",
+      "sha256": "40613b5ed278b0439d983353346d0ef4a3e37cb429062b5df056f14e749f1f27",
+      "bytes": 166,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0054"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0055.json",
+      "sha256": "0003664e5d8c9bb9575301057812340c8357ba26a96543043163ec9790d3da4a",
+      "bytes": 847,
+      "role": "exact-export-event",
+      "source_id": "EVT-0055"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0055.txt",
+      "sha256": "4ef917b3f5551340e914ea1a7e70c4e64d5f4acf1dea49f3122928817a2910d9",
+      "bytes": 164,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0055"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0064.json",
+      "sha256": "58d3d7c36135a19b07de3d8a4320ba7384bdc4634537cb5df53206324eb4daf5",
+      "bytes": 1038,
+      "role": "exact-export-event",
+      "source_id": "EVT-0064"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0064.txt",
+      "sha256": "fb9a909e9922f362ebd9f4eadc3523afdce15b256c63e0143c980e48aa4b8ddf",
+      "bytes": 355,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0064"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0068.json",
+      "sha256": "5e2010bedb983a4ae5be006e4f3d011071f61ad33157d33e90f68186331516bb",
+      "bytes": 7340,
+      "role": "exact-export-event",
+      "source_id": "EVT-0068"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0068.txt",
+      "sha256": "90d8203df635daba0fb0f39b52222959174c339caa3b7beb10c55603a1fd1bdd",
+      "bytes": 6459,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0068"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0069.json",
+      "sha256": "ece26e2fed7bf43d3bf2034aea4cc77e5fbaef61e4ba5023d49ba02f018d4005",
+      "bytes": 781,
+      "role": "exact-export-event",
+      "source_id": "EVT-0069"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0069.txt",
+      "sha256": "0798faadf2396018cfb4444c40864a4b5d0eee26c71903b350d0a623b8e2c58b",
+      "bytes": 58,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0069"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0070.json",
+      "sha256": "0189ccde9c9964fae4ac2f65f5504a1510d5914e7774945ccfa523955244406a",
+      "bytes": 846,
+      "role": "exact-export-event",
+      "source_id": "EVT-0070"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0070.txt",
+      "sha256": "461e59724b55e6e42cf2daa4b11bd0aaca7537fd1da9fd567cc4d614b6096508",
+      "bytes": 163,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0070"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0073.json",
+      "sha256": "b3b907608d4bd31b938ff5d014d4efcefab30e8f338923eabda5ee9f49156163",
+      "bytes": 878,
+      "role": "exact-export-event",
+      "source_id": "EVT-0073"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0073.txt",
+      "sha256": "f4f01e90fe17cab8183d94bd5628fea487e6dbb68147293ec36987300c911ee8",
+      "bytes": 195,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0073"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0090.json",
+      "sha256": "8e568794f307fec7eb5337039dde962bfd531defc9f838c3a9833ab24bf0ae17",
+      "bytes": 1132,
+      "role": "exact-export-event",
+      "source_id": "EVT-0090"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0090.txt",
+      "sha256": "4a64dd1f554ab1cbdcbda7e153ec144ed9391e3a58dd14c3e97d0ed18873c1df",
+      "bytes": 447,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0090"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0097.json",
+      "sha256": "fe7dcb5a764d43561f4beebcbe216911db0f134fb95d942b521b16438330588e",
+      "bytes": 7407,
+      "role": "exact-export-event",
+      "source_id": "EVT-0097"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0097.txt",
+      "sha256": "16f9d450a79f747f05f8eb07dd840dc6954b0485dba81a4bd4a6d600afccc24d",
+      "bytes": 6675,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0097"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0098.json",
+      "sha256": "a52c949c0f1d5c3a155862c000069ed62d7f30b1d9a3d8e8d72d1a494eb78d72",
+      "bytes": 943,
+      "role": "exact-export-event",
+      "source_id": "EVT-0098"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0098.txt",
+      "sha256": "f83ea974f9781e0815cedd39c7c24c85d2fc8b340419f5c82dbd45dd2527e803",
+      "bytes": 221,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0098"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0099.json",
+      "sha256": "e7ef45d63525494e00780c53e31a97f6f523e46a432c842a69ae6e9a60f3813d",
+      "bytes": 891,
+      "role": "exact-export-event",
+      "source_id": "EVT-0099"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0099.txt",
+      "sha256": "7b8a7d26c66e1b66fc47a46f0bd00a31a76e9adb150037e9481747d7b1cd687b",
+      "bytes": 208,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0099"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0111.json",
+      "sha256": "13d48c82266b6bda8222aa1030644ca6aedfd4971657a6a628900406daacde7e",
+      "bytes": 1042,
+      "role": "exact-export-event",
+      "source_id": "EVT-0111"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0111.txt",
+      "sha256": "f4250d743abcc09eda83491e5066ff58d8b9136fe640c93cefdf894e435c8565",
+      "bytes": 359,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0111"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0124.json",
+      "sha256": "7d4a6913ad56e1ed727aecf9fb600924ea584cd811adc7242f5f4eb9af263f52",
+      "bytes": 1139,
+      "role": "exact-export-event",
+      "source_id": "EVT-0124"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0124.txt",
+      "sha256": "0f5d408c5e7e850453a16770f59631d437855fb606edd82d1a09ba33d7892a2b",
+      "bytes": 454,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0124"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0126.json",
+      "sha256": "8fda4a308655ffe99caaaa000022e1e3f962d5f28e09743b78d75d977b163381",
+      "bytes": 4292,
+      "role": "exact-export-event",
+      "source_id": "EVT-0126"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0126.txt",
+      "sha256": "cf109b31f56467d5404da1e0a16ac5a2b9491664753c31a875151ad29b63b628",
+      "bytes": 3587,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0126"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0128.json",
+      "sha256": "2cb0c11288f51bd9d2bdce958d945082c8308282a50bac9ad54ba7162dd8551c",
+      "bytes": 1693,
+      "role": "exact-export-event",
+      "source_id": "EVT-0128"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0128.txt",
+      "sha256": "ba9c0ff83d051ccb9f3d1f154475dae296dce995d616130ce9e2274c5cc0b446",
+      "bytes": 944,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0128"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0129.json",
+      "sha256": "55edd813a8a4b69c5f5fc812e693a08d4daec6b349a91e8cfd583694fab7361a",
+      "bytes": 2101,
+      "role": "exact-export-event",
+      "source_id": "EVT-0129"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0129.txt",
+      "sha256": "480c7c29744c21c958bd4c33d073b91bca3fe425d10517f28a954c980a93a48c",
+      "bytes": 1402,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0129"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0130.json",
+      "sha256": "6c4ca262d82241b6af3c27590fddcebd81f25d885f49fbd07c1510befdb92bda",
+      "bytes": 2428,
+      "role": "exact-export-event",
+      "source_id": "EVT-0130"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0130.txt",
+      "sha256": "635251d2c3133bb0391e3925bf5291d2ec0b7ec620aae3113f6f4d9f64d5b370",
+      "bytes": 1657,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0130"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0132.json",
+      "sha256": "c1381890e6aa14dc032cf6e95bfc7297361c34e8cb113f6a17c31f803d010d43",
+      "bytes": 906,
+      "role": "exact-export-event",
+      "source_id": "EVT-0132"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0132.txt",
+      "sha256": "ba9a46fea77e39a5c664b458e5e39629f4b0486c3ef409553cf49a408844e9ec",
+      "bytes": 224,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0132"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0137.json",
+      "sha256": "97a41c3070164be824e5d44bbd7939102ae3d59cd196ef8ccb83442cc0609c25",
+      "bytes": 6315,
+      "role": "exact-export-event",
+      "source_id": "EVT-0137"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0137.txt",
+      "sha256": "1d42402fc3804e1ae0038afa3e8237aa93b68e6c38196d3cf975cf0933674cec",
+      "bytes": 5505,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0137"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0138.json",
+      "sha256": "551da685e24008ba2b39aa8d2e6c03097ecaee596e71c5120e4eb790f197e89e",
+      "bytes": 796,
+      "role": "exact-export-event",
+      "source_id": "EVT-0138"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0138.txt",
+      "sha256": "d7652f1c7813f21128b5e8e10315b858559458b05fcc848dc61be0a9306cbda9",
+      "bytes": 73,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0138"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0139.json",
+      "sha256": "188b4b3e9c59af35d75dffd6be85a6c2639db0fd89582731a5d73a1feb89589b",
+      "bytes": 856,
+      "role": "exact-export-event",
+      "source_id": "EVT-0139"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0139.txt",
+      "sha256": "91e68be6b5d6b89c7598040da1ba5e09cb285e7dca6f6a2476a4476cc2eed212",
+      "bytes": 174,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0139"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0146.json",
+      "sha256": "8e07c99e289655532dc8ad06c078026edd2780c60fb9cefe22665186f224fbb1",
+      "bytes": 6025,
+      "role": "exact-export-event",
+      "source_id": "EVT-0146"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0146.txt",
+      "sha256": "23b0daef745a20ad74843d88dd025011fba55db08e3f5195d206cfbf392ab65f",
+      "bytes": 5231,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0146"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0147.json",
+      "sha256": "0de53ed36b5d1b6e1983e5b4ef57ded43638165c6a767ffdb2e18d0e556d2bad",
+      "bytes": 1819,
+      "role": "exact-export-event",
+      "source_id": "EVT-0147"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0147.txt",
+      "sha256": "4aa89f6a479a7463de4d1b37dd70fa3c8f7d9e0931b9775d3b30b0a4c4822211",
+      "bytes": 758,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0147"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0148.json",
+      "sha256": "a178d8e39cfa43c5a8796cbb68b32b40d43430c577649d4739f04802eb1e4514",
+      "bytes": 850,
+      "role": "exact-export-event",
+      "source_id": "EVT-0148"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0148.txt",
+      "sha256": "beaab0c984d184676aa5b86594dc183665064a7c7509375b79e7b7fdf71ae9c8",
+      "bytes": 168,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0148"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0158.json",
+      "sha256": "6489bad9bf2cbb16838b6d221d9f7afebf144f2fcd16699fe91a8785928aab5e",
+      "bytes": 894,
+      "role": "exact-export-event",
+      "source_id": "EVT-0158"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0158.txt",
+      "sha256": "376cb0705e44da946e985459f215fec7c158eb2b7c4969a49656e64812d3592d",
+      "bytes": 212,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0158"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0183.json",
+      "sha256": "f817f3b6b2e0cdac9d705d923327c154dcb48142803ee10c1caaff90ab752049",
+      "bytes": 1065,
+      "role": "exact-export-event",
+      "source_id": "EVT-0183"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0183.txt",
+      "sha256": "6b54b8597e312d3d71727f325f2ce21c3e1d7e3f5cccab188bfdaa95fbfefa97",
+      "bytes": 383,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0183"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0185.json",
+      "sha256": "4179f5a8fe189de4732c9b768e74a644bb85c6af2a4a33ad275cd973affb4542",
+      "bytes": 5405,
+      "role": "exact-export-event",
+      "source_id": "EVT-0185"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0185.txt",
+      "sha256": "d1877ceb2fa6c06647378e2ed58be2da3e5660c8ba1c6639ea0a73a1712f197b",
+      "bytes": 4676,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0185"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0186.json",
+      "sha256": "9fa958ab3096c94ec39bc5779033eee73a58a8ce5449939af7532986d3252990",
+      "bytes": 795,
+      "role": "exact-export-event",
+      "source_id": "EVT-0186"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0186.txt",
+      "sha256": "57f6a235413e8fe4b0eba155764da93eeb92d5134409bad8cb1bacda053275b3",
+      "bytes": 73,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0186"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0188.json",
+      "sha256": "74647560b2e4f6c8a3042995eddf2af3a4a31ab72341f2c6529a749aaf4ea044",
+      "bytes": 2745,
+      "role": "exact-export-event",
+      "source_id": "EVT-0188"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0188.txt",
+      "sha256": "be039bc7b5f21adbec0cd08ecf8de15b2c2be45a07d7725a82cec58886f0eeed",
+      "bytes": 2040,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0188"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0189.json",
+      "sha256": "2e41f56d74ce27da12153d37d014106eebd117a0ac68f84357558c40c068b71d",
+      "bytes": 1601,
+      "role": "exact-export-event",
+      "source_id": "EVT-0189"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0189.txt",
+      "sha256": "33186754d573160b6f092cd2a56296c29eb884e3dacb529697d4c8234713caae",
+      "bytes": 852,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0189"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0190.json",
+      "sha256": "e1f2706bd6ee9e773cec67be9c0bd18dc37a23c43a217eb5a3c85c13b7c26f19",
+      "bytes": 1766,
+      "role": "exact-export-event",
+      "source_id": "EVT-0190"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0190.txt",
+      "sha256": "df9245abbbc655860513853e3fe60b04c330ba6831d49ba41fb680dd7a14e7ef",
+      "bytes": 1068,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0190"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0191.json",
+      "sha256": "a84a9ff63066f401dfbb7fd53c0d463468e7d90a5e7285e8488fb35a781f7445",
+      "bytes": 1954,
+      "role": "exact-export-event",
+      "source_id": "EVT-0191"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0191.txt",
+      "sha256": "af9e4c5a602364d7d1d4c0055b4e54c32e6a07154cb1ae50dc23f2d80060ecef",
+      "bytes": 1200,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0191"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0192.json",
+      "sha256": "cf5e595940350fd61f3cac16f736ab527e6d862d421dc54ae57698eb6c1514b8",
+      "bytes": 870,
+      "role": "exact-export-event",
+      "source_id": "EVT-0192"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0192.txt",
+      "sha256": "97062229d2b8d3e90cf17c25e95f843449abe1ce80b7bcf2905e939da0bbda7b",
+      "bytes": 188,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0192"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0201.json",
+      "sha256": "34ba823889f06ebb8bed22aad1479c6811fcefdb74d999e95ca46a402fdd65bc",
+      "bytes": 984,
+      "role": "exact-export-event",
+      "source_id": "EVT-0201"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0201.txt",
+      "sha256": "d81779ffc87e5973d9292a07c4cb3f9786440961c612c0a2a17537f380df5b57",
+      "bytes": 302,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0201"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0206.json",
+      "sha256": "8b47a9f678622800d4c8520676a363678fa7e05222227548933bd77906cd08d0",
+      "bytes": 4825,
+      "role": "exact-export-event",
+      "source_id": "EVT-0206"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0206.txt",
+      "sha256": "edf103cade3cf32fc9b359fcf17e38d5b72cd5cad3a6af58fb46a1f081da3c42",
+      "bytes": 4110,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0206"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0207.json",
+      "sha256": "5675ce08d600acd42c26a7e9e227b8026de5527e6484bc1e1e62474568017372",
+      "bytes": 759,
+      "role": "exact-export-event",
+      "source_id": "EVT-0207"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0207.txt",
+      "sha256": "c63061f097cd97f722593ac1d7c2c759af9c573466043138e57bb6457724ffb9",
+      "bytes": 36,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0207"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0208.json",
+      "sha256": "3166822586da9f9fd7f786d960cac2ded29829cbcad63996804338c7b9fbaf68",
+      "bytes": 852,
+      "role": "exact-export-event",
+      "source_id": "EVT-0208"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0208.txt",
+      "sha256": "6ae66af98928d48a57fce4ac2d950ef56b7836c242e0a32c8a7038b68698d4f1",
+      "bytes": 169,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0208"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0214.json",
+      "sha256": "32bdafcbc9e4906e3c64485ddf9fe56b1e5a98282f8d11687f0ae86b7a840bf4",
+      "bytes": 5541,
+      "role": "exact-export-event",
+      "source_id": "EVT-0214"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0214.txt",
+      "sha256": "2fe57ef8d02ac858cd6c10fd28aed47dd9c2d5e5aac89ab2ea497d960a90c655",
+      "bytes": 4807,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0214"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0215.json",
+      "sha256": "91ad45fb73b8682f8a455ed264fb37214cc37a5caa395374eafb93972fe48ad2",
+      "bytes": 869,
+      "role": "exact-export-event",
+      "source_id": "EVT-0215"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0215.txt",
+      "sha256": "13ab45b9f96a77a6c0278ba7af5558145a42c79f5664a9200bb51269cd6aa67b",
+      "bytes": 145,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0215"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0216.json",
+      "sha256": "ba6b583e1f94ef3ed696dd4fb88d7739736289314775c430d4a20f93f6d51e7d",
+      "bytes": 925,
+      "role": "exact-export-event",
+      "source_id": "EVT-0216"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0216.txt",
+      "sha256": "b81e8b5d780ce143c85a1f58a6f41c919e9e84d7998886c068c602bdda2f1e2e",
+      "bytes": 242,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0216"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0225.json",
+      "sha256": "d473be055217471056aefa9d6bda9d47f404fde60c4de997de65e16e6f6965c2",
+      "bytes": 977,
+      "role": "exact-export-event",
+      "source_id": "EVT-0225"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0225.txt",
+      "sha256": "3d57cbab2f019af087165194883bd69d992efd98ff552f505aaf67f8d06890f4",
+      "bytes": 294,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0225"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0232.json",
+      "sha256": "e483759e6d1245e7836b1b9ed40e081662c8c7b296b3fb7d26e90c70e2700503",
+      "bytes": 973,
+      "role": "exact-export-event",
+      "source_id": "EVT-0232"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0232.txt",
+      "sha256": "61af8b88dd02e0ecca70a50bf8e5e0933fff153db906a8c64b056fe1e7dc7705",
+      "bytes": 290,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0232"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0239.json",
+      "sha256": "d3e7eb6112eb243b0908b53623d05c7fc1ac72bdcb8eb7a1b4533c16b2aa036d",
+      "bytes": 1592,
+      "role": "exact-export-event",
+      "source_id": "EVT-0239"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0239.txt",
+      "sha256": "35025d64719dfa068a6b4677813dca4edc568906f5d9b20cdc02fb14c3604faa",
+      "bytes": 542,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0239"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0240.json",
+      "sha256": "02a89fbf5116fdd10dae914ee9b32d38a1eb23845f810e79c3e8e3aa773a0c29",
+      "bytes": 859,
+      "role": "exact-export-event",
+      "source_id": "EVT-0240"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0240.txt",
+      "sha256": "f52ac898ec12b98713c219a4d1451ee969fa7f34585e6404bbc67e17c4b68835",
+      "bytes": 135,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0240"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0241.json",
+      "sha256": "320036ae6b770529908dd533f3ee20f09dbf337c9cb4ca8e41319c9bf271a087",
+      "bytes": 905,
+      "role": "exact-export-event",
+      "source_id": "EVT-0241"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0241.txt",
+      "sha256": "13ef6610503242551b013007bce9ad7119437fb9cb117fd0208f09a064696ab1",
+      "bytes": 222,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0241"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0248.json",
+      "sha256": "e5b6653330c1fb44eeaf524667caf38874561df85c7731a0c754bad10399bcae",
+      "bytes": 989,
+      "role": "exact-export-event",
+      "source_id": "EVT-0248"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0248.txt",
+      "sha256": "c82632aaf98adfcceffa18496e4e758de57a03e43ad48b041260338413b574ea",
+      "bytes": 306,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0248"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0249.json",
+      "sha256": "c9b0940b0428d85b80c3543493f1e95201c729a879dbc19012a959558869e06c",
+      "bytes": 10631,
+      "role": "exact-export-event",
+      "source_id": "EVT-0249"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0249.txt",
+      "sha256": "fbc6482f7e4810ce43e58eea5310627325d97e94f5bc2052e371b0b29138b472",
+      "bytes": 9656,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0249"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0250.json",
+      "sha256": "8f9d52e2cd8b932d33a1d9a4606f0f5d05b66e710956e6051649de099a69af15",
+      "bytes": 1683,
+      "role": "exact-export-event",
+      "source_id": "EVT-0250"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0250.txt",
+      "sha256": "e286cfcc1eba19ca0583f8394a2878579ccfb364a7b756ad1517c777467950ea",
+      "bytes": 932,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0250"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0251.json",
+      "sha256": "9306bd816db5d9abe55ae9870c658e3c70a390f3af928f37dd5bc2305d2e4642",
+      "bytes": 899,
+      "role": "exact-export-event",
+      "source_id": "EVT-0251"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0251.txt",
+      "sha256": "99e6c3ee0b797b89ddc46d8dde39e0628f3b0f08c3c3ea5a2e46c2542177a8b4",
+      "bytes": 216,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0251"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0256.json",
+      "sha256": "776f553e234633faddffc9bad95405d4463a1e2fea758b228d2ce70f7ed6ff74",
+      "bytes": 5405,
+      "role": "exact-export-event",
+      "source_id": "EVT-0256"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0256.txt",
+      "sha256": "2f6b2dfe57e61de7eae782ec76467675a604780eb6ef19cf2ca9e693f4351b29",
+      "bytes": 4667,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0256"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0258.json",
+      "sha256": "427fbea72360f9ebfbd6f76d40eeb9af7e38f7fe1946b8c9dc53e96d774ec495",
+      "bytes": 684,
+      "role": "exact-export-event",
+      "source_id": "EVT-0258"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0258.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0258"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0259.json",
+      "sha256": "2e876320702ca5130048fa9c7baf4763622479b5cec7f017919b366e069164e4",
+      "bytes": 907,
+      "role": "exact-export-event",
+      "source_id": "EVT-0259"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0259.txt",
+      "sha256": "134e4d3294e845bb759c11f01c082b517e1bfff639e8f662f1489c131bf548ca",
+      "bytes": 184,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0259"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0260.json",
+      "sha256": "f415d5b6ec277b9662053d5259c661f9a38472fc09e7afec7f5ac1f564192f64",
+      "bytes": 894,
+      "role": "exact-export-event",
+      "source_id": "EVT-0260"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0260.txt",
+      "sha256": "754f83fb8a65ed610c95157964feb189aa6be78c78f671180827e0bef52112a9",
+      "bytes": 211,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0260"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0265.json",
+      "sha256": "aac4005f46084366099171254d6a9970b768ceadecd9fb2c1ba8848a38efee12",
+      "bytes": 6637,
+      "role": "exact-export-event",
+      "source_id": "EVT-0265"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0265.txt",
+      "sha256": "9a384639aabf3b4bc574a2899e1c4c3f6d7844996796de248dab6c6db7994d11",
+      "bytes": 5887,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0265"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0266.json",
+      "sha256": "1980a8bcc0887d89dfa7810c6f013d5598afdbef7936c5ae8010a4da54c5476c",
+      "bytes": 11293,
+      "role": "exact-export-event",
+      "source_id": "EVT-0266"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0266.txt",
+      "sha256": "62915a8bc8c4a0784d2b7ff884c231ee6b849f95009093da34af16540f8a1996",
+      "bytes": 10487,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0266"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0268.json",
+      "sha256": "490c7b929fd0627a95a842d14e42660cdc760d1c5586da8935beb9fdc7bb68ca",
+      "bytes": 994,
+      "role": "exact-export-event",
+      "source_id": "EVT-0268"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0268.txt",
+      "sha256": "a9032680a6b29d02bfca08ed060e7dd467477096391d0aeeac53bd29a0b68035",
+      "bytes": 311,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0268"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0281.json",
+      "sha256": "81883aa54523be916cd40adf3e026ef82ab67fa3e7246ac36a24ce5977a7dca0",
+      "bytes": 987,
+      "role": "exact-export-event",
+      "source_id": "EVT-0281"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0281.txt",
+      "sha256": "27387675353edfc243c9acbe1daef5701368986d645ecfa766d22b8618abb246",
+      "bytes": 303,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0281"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0297.json",
+      "sha256": "5ade27ac149acbf82e9e01fde5fcef6eabdabccad1f05e48a674500ccdb983dd",
+      "bytes": 9082,
+      "role": "exact-export-event",
+      "source_id": "EVT-0297"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0297.txt",
+      "sha256": "b94c70c412f45bb33c43d4b39d08c63732e0cf3693647c8dbcfea9557cb2ade3",
+      "bytes": 8307,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0297"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0298.json",
+      "sha256": "3e8960c809e625aa807c80d88ec448fd70bc2f0b388df776ee6ecf71b706e8fd",
+      "bytes": 1032,
+      "role": "exact-export-event",
+      "source_id": "EVT-0298"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0298.txt",
+      "sha256": "8d0a27250a1dc1f3ac21274d50a2aa7791405cd2f6c6ac2002354858a983d32e",
+      "bytes": 237,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0298"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0299.json",
+      "sha256": "6f15abb728328f10fa4991dd45181a517cb67005a70956db177cfc68f7e9dae9",
+      "bytes": 814,
+      "role": "exact-export-event",
+      "source_id": "EVT-0299"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0299.txt",
+      "sha256": "91abfbfabf9273112b9bea613759388c6e786d4301c80cf1300003bd90e356e3",
+      "bytes": 130,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0299"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0312.json",
+      "sha256": "2859eec9f7df0ed1370d00fa70d2e54412ce15f060293aa8e1ec765e24f56b99",
+      "bytes": 1026,
+      "role": "exact-export-event",
+      "source_id": "EVT-0312"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0312.txt",
+      "sha256": "697accf500f1c4a4908c8dc606cf724406f6fb6046b2d8cf2672ecd115758e82",
+      "bytes": 342,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0312"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0318.json",
+      "sha256": "dbecb12efa9a5f47464c55e68eaf1461d85a92aee7de9c18c51813238684dcd7",
+      "bytes": 8481,
+      "role": "exact-export-event",
+      "source_id": "EVT-0318"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0318.txt",
+      "sha256": "19cff9f03df6ebc9ecda8482ebcd50a3694cfb566cceb357477160b0562eac12",
+      "bytes": 7730,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0318"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0319.json",
+      "sha256": "d8aa8e3e543f3abc26875695a36b5308ac50801257b122f6ec90e106f2bd197a",
+      "bytes": 1031,
+      "role": "exact-export-event",
+      "source_id": "EVT-0319"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0319.txt",
+      "sha256": "f59b8e568827b94c532993885bf459a5b848128dedc31f09e57a5e8bc40521d8",
+      "bytes": 304,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0319"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0320.json",
+      "sha256": "55c0541c81f38c3aa9f82713b5338419195c910658af539c8bc7f770701c8f3c",
+      "bytes": 944,
+      "role": "exact-export-event",
+      "source_id": "EVT-0320"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0320.txt",
+      "sha256": "1e5cd420e6143c2dca2525f8acee945e9b3ba4363a901020e458a341336fdbe1",
+      "bytes": 260,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0320"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0331.json",
+      "sha256": "25b85fba06262804ae8bff525f4a8842215239d1ae214afd8363752caa2c78ba",
+      "bytes": 1067,
+      "role": "exact-export-event",
+      "source_id": "EVT-0331"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0331.txt",
+      "sha256": "a003eaf0301b924e3b096fac49fa7fd1974d91688b2666da431e88457893fd2b",
+      "bytes": 383,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0331"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0346.json",
+      "sha256": "8a339e45b511b0637e0ebac4b80b16d5b0fdf494e888efe3bdc9aa4d097ac5f1",
+      "bytes": 1044,
+      "role": "exact-export-event",
+      "source_id": "EVT-0346"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0346.txt",
+      "sha256": "3cd96b8807dfcfcd6aa093bb38bd72a99e474122c4c7064277745162f299b913",
+      "bytes": 360,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0346"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0349.json",
+      "sha256": "ae52ae938e1b618973cf291f81aad5ce9e9f3abab7b87f771e562c43c7a4d58e",
+      "bytes": 9959,
+      "role": "exact-export-event",
+      "source_id": "EVT-0349"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0349.txt",
+      "sha256": "c6f2a3b2dea7aa1d2e5f9d25e4c0adfe6331fc01f0b1e91213c7a02adddcc0b3",
+      "bytes": 9164,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0349"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0350.json",
+      "sha256": "99fb3fce49be68befc5375d16f1f584735c8f5b2e60343be91168bd1f3d32976",
+      "bytes": 1159,
+      "role": "exact-export-event",
+      "source_id": "EVT-0350"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0350.txt",
+      "sha256": "aec943076607a2e6b4ce59a308a08e877581a68d20c1e12c5c712af366074b12",
+      "bytes": 362,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0350"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0351.json",
+      "sha256": "d440794b95f44f07648dedc9cfbdcc55acb2fe3d44667cb9f7f571df979774ef",
+      "bytes": 841,
+      "role": "exact-export-event",
+      "source_id": "EVT-0351"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0351.txt",
+      "sha256": "d905b9cebc140109a56c8f73aa3b3fdbb730afc6fb1c50c860f479fb085bcb60",
+      "bytes": 157,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0351"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0358.json",
+      "sha256": "abc71963abe92cfcbd46655054a2a751632d735646ab2ddfb5631b15928b7dd4",
+      "bytes": 958,
+      "role": "exact-export-event",
+      "source_id": "EVT-0358"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0358.txt",
+      "sha256": "8615d61064ddfbfce5bad0653718b13302f9561df604872debf1da3fe1c42148",
+      "bytes": 274,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0358"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0360.json",
+      "sha256": "c6cbaf44b51a9659995d13abde02c2f8cf6b47e6e0d60e43c103edfa99541f0c",
+      "bytes": 7067,
+      "role": "exact-export-event",
+      "source_id": "EVT-0360"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0360.txt",
+      "sha256": "0d9b8518259966adc96c76e3e34a38226edaedfe621d3cfa384a864301e2b52a",
+      "bytes": 6293,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0360"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0361.json",
+      "sha256": "5e127f6712d7dd1597a68f63f1a99c50b2d6c974e0b016a556a29c4b3fa9a05b",
+      "bytes": 1345,
+      "role": "exact-export-event",
+      "source_id": "EVT-0361"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0361.txt",
+      "sha256": "0e0623b92f456385677db0962d20551848636c6a94e9a3c7e48b3a2f92da03a6",
+      "bytes": 547,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0361"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0362.json",
+      "sha256": "6df0c517c6f13e44da16d71a0f957e51b4d0582a81820b1d54add7eefd80ba0f",
+      "bytes": 937,
+      "role": "exact-export-event",
+      "source_id": "EVT-0362"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0362.txt",
+      "sha256": "5c77414a8e28ba2ce47410ca0e62cf23e723d6afec726231f6bfb76b186aacb9",
+      "bytes": 253,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0362"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0378.json",
+      "sha256": "d2154fe33a4df316bc9652e87b0bbaf251115e65c25a134b316a90d46fdd0efa",
+      "bytes": 1052,
+      "role": "exact-export-event",
+      "source_id": "EVT-0378"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0378.txt",
+      "sha256": "c891c1d04bb4f5fab88da9ef682b68349587aeffe52697bd9402798d311a805d",
+      "bytes": 368,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0378"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0382.json",
+      "sha256": "dda3ccc9fa04c727715093b2b949e0caad7c110888bf99a5affbe21c166fcf60",
+      "bytes": 11449,
+      "role": "exact-export-event",
+      "source_id": "EVT-0382"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0382.txt",
+      "sha256": "933e87cba7858601a92d958651e44024e1fa3ef861183077e37bf44f59c5bdad",
+      "bytes": 10595,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0382"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0384.json",
+      "sha256": "98dced09e60e38a65ea79f2eaa00820d2b8d3b31802bfd4be76c1d3abfaa82a5",
+      "bytes": 1317,
+      "role": "exact-export-event",
+      "source_id": "EVT-0384"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0384.txt",
+      "sha256": "a1a79871564fab49cf303eaaa1ec0b44fe7b043994a8e33e0f811e7c48d7ac87",
+      "bytes": 519,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0384"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0385.json",
+      "sha256": "f14930d976bdfe5de184c1e2246f13520a6a9ea215383a2de51cfa19ed0a4c80",
+      "bytes": 871,
+      "role": "exact-export-event",
+      "source_id": "EVT-0385"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0385.txt",
+      "sha256": "0bb4624932581a83f5240630665b0bb399f6d49a541f3936a66ee7405485c27f",
+      "bytes": 187,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0385"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0400.json",
+      "sha256": "29cdd265144fc9fb88a5015189c0d9e0a30f17d734655b5d0e92ddae83a99aa8",
+      "bytes": 1004,
+      "role": "exact-export-event",
+      "source_id": "EVT-0400"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0400.txt",
+      "sha256": "dc85c3a6f7c576bfe75b5eaabda0a5c99869f32fa0bf63d8df4678cea3439e89",
+      "bytes": 320,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0400"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0412.json",
+      "sha256": "847927a93f665abc6e47f38b54c73070a9ab44f36f4c28424c4f3ea14d25968b",
+      "bytes": 1035,
+      "role": "exact-export-event",
+      "source_id": "EVT-0412"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0412.txt",
+      "sha256": "dc78cdba7763ca87dda654bf859830614339cc6a844374560b08f6e5f5c8a712",
+      "bytes": 351,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0412"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0414.json",
+      "sha256": "4aae3acadafe407358d047fe810384da5bae42cf6c2d1162fd3142f0f854a06f",
+      "bytes": 12242,
+      "role": "exact-export-event",
+      "source_id": "EVT-0414"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0414.txt",
+      "sha256": "c4cdfc58421ed96c6bf4f6224fd7a58f05a395188f4e52f8b4442f89ab369c65",
+      "bytes": 11252,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0414"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0415.json",
+      "sha256": "34de5314f46be8462bf251536a0b254f3bb039af0b68e0e8edfd3aeed830acef",
+      "bytes": 1299,
+      "role": "exact-export-event",
+      "source_id": "EVT-0415"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0415.txt",
+      "sha256": "d40e01b846dffcda2b66a7b7201f50561c1a10cecffd8f2fa6517152239c9089",
+      "bytes": 501,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0415"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0416.json",
+      "sha256": "a7d8efdc8e9e33bab3e93f76d55d4d5e3790e501e8129b1e33f4f26049859e0d",
+      "bytes": 854,
+      "role": "exact-export-event",
+      "source_id": "EVT-0416"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0416.txt",
+      "sha256": "df0d7a473c6ba80c92fb0e79ef95721e50f722550a238179a4f115806d61fff8",
+      "bytes": 170,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0416"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0425.json",
+      "sha256": "73e2d8922ee6db08f42055a9db5eb9bcc27d8a315e6355ddb0d9195b389ff06e",
+      "bytes": 1019,
+      "role": "exact-export-event",
+      "source_id": "EVT-0425"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0425.txt",
+      "sha256": "996151c317d2d0786cda813362251e8729a5beffb0c8407fb672845a3b0cfecc",
+      "bytes": 335,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0425"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0432.json",
+      "sha256": "a69b7cd939c2e31f8e1a5b4113e5151631e583f1742c7a8bb0bc5f38eadc55d3",
+      "bytes": 11459,
+      "role": "exact-export-event",
+      "source_id": "EVT-0432"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0432.txt",
+      "sha256": "a9f3b7a79cd4e10a7b8af946b989639718655b3ba6d8cb036bd7a8d626c92728",
+      "bytes": 10589,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0432"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0433.json",
+      "sha256": "2973712f957571ffb733bd0ee0648859ea2fc61c1980adc595bb4a7a4ba7f0e7",
+      "bytes": 1253,
+      "role": "exact-export-event",
+      "source_id": "EVT-0433"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0433.txt",
+      "sha256": "ca00d707a7a5942cdb78c86295cb64e81527a1995ab3fa681c35ecd5380fc937",
+      "bytes": 455,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0433"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0434.json",
+      "sha256": "2ee76086a884643ae287ad6142b58816629efb20344edd031a3f4df21667b3d4",
+      "bytes": 832,
+      "role": "exact-export-event",
+      "source_id": "EVT-0434"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0434.txt",
+      "sha256": "6829cbaeb6a55350ea680d129a82374c3c265b7146713e8a45ad8b171b7383c1",
+      "bytes": 148,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0434"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0449.json",
+      "sha256": "72431298495dba379a7f183c9876fb7a959e1f2ae6b5e47e81e4adc44dc48908",
+      "bytes": 992,
+      "role": "exact-export-event",
+      "source_id": "EVT-0449"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0449.txt",
+      "sha256": "291990264bd656d605c5a3796e92efc4751ffbb4506ebd795d16acf3837cc940",
+      "bytes": 308,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0449"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0459.json",
+      "sha256": "e4e67a3ab5ac9f6c51c8f3ce677234c4c61c0c321508d827e124d5de59ff8b4f",
+      "bytes": 11317,
+      "role": "exact-export-event",
+      "source_id": "EVT-0459"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0459.txt",
+      "sha256": "0fe0e31085704de4dd54de75e608c6af5e852ab86a8f91f794691c9117ee2b67",
+      "bytes": 10389,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0459"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0460.json",
+      "sha256": "7a8fe57f1670fbc8bb0e063950dc1adbf77150f3a13588552973c381338ec4d4",
+      "bytes": 1304,
+      "role": "exact-export-event",
+      "source_id": "EVT-0460"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0460.txt",
+      "sha256": "c62f79292427254021695f18956c4a482ec961d3335c462113f0d41333bd7317",
+      "bytes": 506,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0460"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0461.json",
+      "sha256": "eaa6c984a73a4691d694f963b674437a0056198232bf37ec9d4c1bad5bb30e64",
+      "bytes": 863,
+      "role": "exact-export-event",
+      "source_id": "EVT-0461"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0461.txt",
+      "sha256": "5c7a778d7082d4adc9ed78d2f54cfbd93c7eeb4c263b889267694e25c9e3dd86",
+      "bytes": 179,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0461"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0471.json",
+      "sha256": "62688d4c926204e4f0ce6f9913c73788a96e860c84ddeb8b5396a18e1425906d",
+      "bytes": 969,
+      "role": "exact-export-event",
+      "source_id": "EVT-0471"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0471.txt",
+      "sha256": "7573f31c5d59c9c42536ed56220344e9aac1f8afd3b5ff0e8075015a18c79454",
+      "bytes": 285,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0471"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0477.json",
+      "sha256": "23c1399ac44dea26b4b186ddfc35e7cd6ef326894aa4f55382669d75208118ca",
+      "bytes": 945,
+      "role": "exact-export-event",
+      "source_id": "EVT-0477"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0477.txt",
+      "sha256": "85999daa5110602535d5dadb2154e74ebe120ae6ce0909cfa568adf2ad67d546",
+      "bytes": 261,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0477"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0479.json",
+      "sha256": "c0044b666da88e0438da575a1636a3b43e19b2fc71b088e82e760525c58c725f",
+      "bytes": 9874,
+      "role": "exact-export-event",
+      "source_id": "EVT-0479"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0479.txt",
+      "sha256": "10412c8cac921bea27cbc800f47ecbfeb1e660c508f190f8afec925b62efb956",
+      "bytes": 8945,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0479"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0480.json",
+      "sha256": "bcb302e72965248d28b0b76d97e55a286ad1f9092f4f18379d90ee547b6da621",
+      "bytes": 1237,
+      "role": "exact-export-event",
+      "source_id": "EVT-0480"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0480.txt",
+      "sha256": "47c90b4108c2ddd7f2a7b5dedc3989f4efc74b8266f519d3855715da8033dfaf",
+      "bytes": 439,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0480"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0481.json",
+      "sha256": "cc883463ce1d434f358cfe19bb451fc7a1f802945ad5f53b7256d53db138fdfd",
+      "bytes": 860,
+      "role": "exact-export-event",
+      "source_id": "EVT-0481"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0481.txt",
+      "sha256": "b62459ce6b5d8e81594989b54ef615cb484220ff90c029e9d4a7e212e98658b2",
+      "bytes": 176,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0481"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0493.json",
+      "sha256": "336f06f4218548d45d315dbb9c852a8af534904c2873913498889dd03bafa0fa",
+      "bytes": 1074,
+      "role": "exact-export-event",
+      "source_id": "EVT-0493"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0493.txt",
+      "sha256": "50adb8bce24727550a6a015e68d0fe3a909dbd3ae60d53da8971de4bf412cec6",
+      "bytes": 390,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0493"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0504.json",
+      "sha256": "2f789057a64f7d3c9019c705f4e8680dd80f4af9c32fcdfbc674db8ebe75b03b",
+      "bytes": 1121,
+      "role": "exact-export-event",
+      "source_id": "EVT-0504"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0504.txt",
+      "sha256": "b80e594c00821afe3763cdceac2f969755ca34c988a21baf8839b2c102e28f54",
+      "bytes": 435,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0504"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0507.json",
+      "sha256": "74de3eaed3efbc5e90abb1bcdfe45bea42c25e9f34bfe9960d99101dfe39d108",
+      "bytes": 11150,
+      "role": "exact-export-event",
+      "source_id": "EVT-0507"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0507.txt",
+      "sha256": "8a86e4f746916f19d756361e2f5deda8f628328aa7c7eee61156d787f3a782a6",
+      "bytes": 10286,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0507"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0508.json",
+      "sha256": "b243052ceac9a10a29dde8236ffd260cc9131c7016b409c157d4570c710bd699",
+      "bytes": 1251,
+      "role": "exact-export-event",
+      "source_id": "EVT-0508"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0508.txt",
+      "sha256": "c57b2d41129a4617ef81fe90dc6bb71001ed015eb32987ee34a272d2749671f4",
+      "bytes": 453,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0508"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0509.json",
+      "sha256": "7cff8bed4fcfe6398577ce1758141d0c90167f1406791ca5ad109432141e0ae7",
+      "bytes": 863,
+      "role": "exact-export-event",
+      "source_id": "EVT-0509"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0509.txt",
+      "sha256": "19b02b2342cdfc8b8aa66ff6d45b52232ce598021f513e2194b5be5f4dff41ef",
+      "bytes": 179,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0509"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0525.json",
+      "sha256": "3859fff13667b6631517a317688187de5fe87a7808b9cd82d75f49a4aa99d7a5",
+      "bytes": 1120,
+      "role": "exact-export-event",
+      "source_id": "EVT-0525"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0525.txt",
+      "sha256": "3c5dd786340690be106e0753108e164003e44584190abd667a029d0043f8a514",
+      "bytes": 436,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0525"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0531.json",
+      "sha256": "7c8b8f965a1cd2cf238fd659f0ee90b794dbd54c54e247b48a47a55f72849fa8",
+      "bytes": 1020,
+      "role": "exact-export-event",
+      "source_id": "EVT-0531"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0531.txt",
+      "sha256": "ef27b8c052fae28068abd4cb7da7d2a71c63982829ee96a48c9c150291fe2152",
+      "bytes": 336,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0531"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0534.json",
+      "sha256": "c95e937caae6adc74126e87062776c7b6dadac9f48222384ad1472515ab7d78d",
+      "bytes": 11545,
+      "role": "exact-export-event",
+      "source_id": "EVT-0534"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0534.txt",
+      "sha256": "3b4bce9fdb80e24b37868fe94042de75de07e3a2b516443050ff8926c560f70d",
+      "bytes": 10648,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0534"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0535.json",
+      "sha256": "da0f1f21df300a8382c526eaec0c9d533b224585eff9452ce9ea0956d78770e1",
+      "bytes": 1345,
+      "role": "exact-export-event",
+      "source_id": "EVT-0535"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0535.txt",
+      "sha256": "070057711d7faa85fef85580bc8a47303f9d0bb36d1de6940390e13044870710",
+      "bytes": 547,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0535"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0536.json",
+      "sha256": "18fe6628de37511cfc859ae8809c0d8f015b3bd9b1716e161c421444027cb80e",
+      "bytes": 851,
+      "role": "exact-export-event",
+      "source_id": "EVT-0536"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0536.txt",
+      "sha256": "cc597be233768bcd8910f0cceca51b05b755b46946c7a8e8b70102c69f340457",
+      "bytes": 167,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0536"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0545.json",
+      "sha256": "2cf6dc7b5d56efde252d8171ea0602817a05c1b44a59f2a1a37070b0f5ad376a",
+      "bytes": 1032,
+      "role": "exact-export-event",
+      "source_id": "EVT-0545"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0545.txt",
+      "sha256": "a98fc779e7b60baf27b7cbfe48525c7b97d1110160ec5f07463b90e10667e3ea",
+      "bytes": 348,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0545"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0556.json",
+      "sha256": "a6e5069953f76ca8138a96b70415e718ab85ed44380ff980d979b1cdc6740ab7",
+      "bytes": 979,
+      "role": "exact-export-event",
+      "source_id": "EVT-0556"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0556.txt",
+      "sha256": "5e9a937ad519f50456c5cd577cdf67ee700f131d29b97fcba5bf1bdae7522c6f",
+      "bytes": 295,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0556"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0560.json",
+      "sha256": "afeb9874402b994c9621bda69d98bf9a16952f11afe816d5d09f880cc3fae7ed",
+      "bytes": 10549,
+      "role": "exact-export-event",
+      "source_id": "EVT-0560"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0560.txt",
+      "sha256": "4af4b9fac56a8130fe59e583b0e2709b03bde0c6a9d0a493134db1f2324f6aac",
+      "bytes": 9640,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0560"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0561.json",
+      "sha256": "3d63b4a1b0ea381f3075d9f2eed1f624a70bc5315a8a7c28ca267df997e24d1c",
+      "bytes": 1345,
+      "role": "exact-export-event",
+      "source_id": "EVT-0561"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0561.txt",
+      "sha256": "7160979df3284501cdf22c41c363d260a9b36d0c33b5c820b6a056dbc7413d73",
+      "bytes": 547,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0561"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0562.json",
+      "sha256": "ae6638f7da4f9fe9a170c155229c7ea74db9dbb12155330a1afdd7c8fbf3d8fb",
+      "bytes": 851,
+      "role": "exact-export-event",
+      "source_id": "EVT-0562"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0562.txt",
+      "sha256": "3a2519d51f358f7e75ba348b7720f320c4988a2af195579d5afd41f09b3ddcdc",
+      "bytes": 167,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0562"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0578.json",
+      "sha256": "5dbe8832903a174c4977b292bda87fa6255fb6cce25bf78efe966549b85ef613",
+      "bytes": 1016,
+      "role": "exact-export-event",
+      "source_id": "EVT-0578"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0578.txt",
+      "sha256": "087ae96bb3b5105f88f4fd03676ccfbc8e1f61434ec932748b45861678d382d0",
+      "bytes": 332,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0578"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0591.json",
+      "sha256": "866359f95e4cdb8bd83c64e7e0de81e9a1a834e081e0534fc4cf9df3e86b453b",
+      "bytes": 1016,
+      "role": "exact-export-event",
+      "source_id": "EVT-0591"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0591.txt",
+      "sha256": "3e0009fa36887ae861fc6c94e290b4ce5c64761170e10a2bf970fe9c6840267f",
+      "bytes": 332,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0591"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0595.json",
+      "sha256": "c742796dd4471a048fe5501183050ddc20d317e8ed18629d2474b22c47b2047a",
+      "bytes": 10713,
+      "role": "exact-export-event",
+      "source_id": "EVT-0595"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0595.txt",
+      "sha256": "77f3c098b604d9cc46172f933dde84a45c41bb99019261cc1bbaeb7db0ab8e1e",
+      "bytes": 9894,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0595"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0596.json",
+      "sha256": "e5cd53072118fc3d6fa199a15dc5737c66910fc46519afc6eedf82274e1b0fb6",
+      "bytes": 1237,
+      "role": "exact-export-event",
+      "source_id": "EVT-0596"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0596.txt",
+      "sha256": "e0e6510eb6429534dba9296028597c7de338d178d5f109bcca79e63fb2e6070a",
+      "bytes": 439,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0596"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0597.json",
+      "sha256": "b9a0327c0884140c8e0a560a0faebea3d49d54a9efa347418261c0fc010cda4a",
+      "bytes": 874,
+      "role": "exact-export-event",
+      "source_id": "EVT-0597"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0597.txt",
+      "sha256": "91e4fb131ac23224b57037677df68e21867fd4f97ab9530cd2c05e615d682c43",
+      "bytes": 190,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0597"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0615.json",
+      "sha256": "026b706b321d0d6d44e62dbbb5cd2d18e268ff9fc001541079dfe5a17054a8de",
+      "bytes": 1029,
+      "role": "exact-export-event",
+      "source_id": "EVT-0615"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0615.txt",
+      "sha256": "1dd4b02bed5d4151b694cdef20fa1aac5f86a97c4fbca859feae6edc0fc395d1",
+      "bytes": 345,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0615"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0631.json",
+      "sha256": "446d150d5cd281d68b117535d5c8e548c8a7ab21d6897a0446c8e4cfc7c9ae1b",
+      "bytes": 973,
+      "role": "exact-export-event",
+      "source_id": "EVT-0631"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0631.txt",
+      "sha256": "bf034f5aa2b8ef14d21187ac9655b4167210722ef4847bb417e189851248e72c",
+      "bytes": 289,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0631"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0638.json",
+      "sha256": "7f9d524899592e49310dd42da55f09f29a680e50834430af726aa6310962d872",
+      "bytes": 11118,
+      "role": "exact-export-event",
+      "source_id": "EVT-0638"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0638.txt",
+      "sha256": "6d22c130aff16124b5535f82d63659cc88683dac7caec62136571c463a3173ec",
+      "bytes": 10216,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0638"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0639.json",
+      "sha256": "fae2d9cac5a40b950bfd98807a7232058d5453bc2713e919c5fe82f5ce9c4bf4",
+      "bytes": 1209,
+      "role": "exact-export-event",
+      "source_id": "EVT-0639"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0639.txt",
+      "sha256": "07f99af2af7b680c3b6c5df4023fa9422815194d88c1fb54de158c51807cda6d",
+      "bytes": 411,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0639"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0640.json",
+      "sha256": "068984089cabd1921497701084225ea69f550e72f5b08adff3e989924f13e62f",
+      "bytes": 868,
+      "role": "exact-export-event",
+      "source_id": "EVT-0640"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0640.txt",
+      "sha256": "6587efbc34080595d7e4fc8a7636dcd5beaf9c3d813ab80cd4f25c7d2ec26cc6",
+      "bytes": 184,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0640"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0661.json",
+      "sha256": "9dc815fef06a1358d510765bddc15c204ad6637eda2029cfc922ab152a8c4b40",
+      "bytes": 1017,
+      "role": "exact-export-event",
+      "source_id": "EVT-0661"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0661.txt",
+      "sha256": "bf052df156ecd1b353b623858bb53f20c86b9d38307e0748ef5143ae5758ccd8",
+      "bytes": 333,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0661"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0670.json",
+      "sha256": "c0e80f58346f15e20bb4b66614f158221efc2dc797904421ccdc1506a2265e88",
+      "bytes": 1044,
+      "role": "exact-export-event",
+      "source_id": "EVT-0670"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0670.txt",
+      "sha256": "34d860b67e61158c5bf8e272fd932a4461a0b2ed73761587bdc985c83e7d38e9",
+      "bytes": 360,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0670"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0674.json",
+      "sha256": "464de85124033932570094c0dad07750b4c43dd35356e458e10cd8093782cfe3",
+      "bytes": 10913,
+      "role": "exact-export-event",
+      "source_id": "EVT-0674"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0674.txt",
+      "sha256": "fbdf5b6e8f497527bcc354d77708b8f9aef23332f6491c0b9d730fe10d9dd0cf",
+      "bytes": 10025,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0674"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0675.json",
+      "sha256": "4dc33827c05e95ace22896609c0ba144b1afec793478f29e2b244deb03258289",
+      "bytes": 1323,
+      "role": "exact-export-event",
+      "source_id": "EVT-0675"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0675.txt",
+      "sha256": "591a241679da09fe9e164349674703c6dc23a8327a4232eb26f4305109a6667b",
+      "bytes": 525,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0675"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0676.json",
+      "sha256": "1e980fe06e2ed6e611e3d9e59e5165dc25387ac2834dc7575b72e098719bfbcb",
+      "bytes": 879,
+      "role": "exact-export-event",
+      "source_id": "EVT-0676"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0676.txt",
+      "sha256": "de2f6df982f3cff90a2c47af4f12f5d24ae75e0bc7e3b5c0a860720752471cca",
+      "bytes": 195,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0676"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0686.json",
+      "sha256": "eac229ca771291e0b4c4cdd2cf029ce1f1518d69bd04819bbc58a366bd2594a0",
+      "bytes": 1014,
+      "role": "exact-export-event",
+      "source_id": "EVT-0686"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0686.txt",
+      "sha256": "6cc0e63af209ae61697c01ac96ca559a35d48f4ec15b97b1d42f3f248eff4173",
+      "bytes": 330,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0686"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0696.json",
+      "sha256": "933ea89a36f576cc4f74bf852769498f0858ea9c73f9e27ff51bf430b953677a",
+      "bytes": 1030,
+      "role": "exact-export-event",
+      "source_id": "EVT-0696"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0696.txt",
+      "sha256": "2f1e807270d8d0c322fd4529b40730fa6ff5218f2f3daa44e004aaaee6c6c7a3",
+      "bytes": 346,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0696"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0701.json",
+      "sha256": "5f7c850ffb937db4341ba5cb1bb61382e5223277a56a284a23472020107159f1",
+      "bytes": 11413,
+      "role": "exact-export-event",
+      "source_id": "EVT-0701"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0701.txt",
+      "sha256": "280caae626a1a6e0367e104c9f408aa7e1f792260073edbb6be40e13d2e64b05",
+      "bytes": 10597,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0701"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0702.json",
+      "sha256": "fdf76fc7dd32b4107a9396d725d0a56e73b076198fcb504765de9922937414e7",
+      "bytes": 1279,
+      "role": "exact-export-event",
+      "source_id": "EVT-0702"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0702.txt",
+      "sha256": "281f0bd87d61967933e8e3b49033ac6b7f6ec4e85a3d3b9e3684870ddd595457",
+      "bytes": 481,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0702"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0703.json",
+      "sha256": "f2f1938feb57cbffad00f7f137ffdf7584dbfd2cdda2fe179e649899420006c5",
+      "bytes": 898,
+      "role": "exact-export-event",
+      "source_id": "EVT-0703"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0703.txt",
+      "sha256": "b01dd5a1c25af27fa5b399fa05f4ec754611614f88b0fc7f40dee54b2cc296da",
+      "bytes": 214,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0703"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0715.json",
+      "sha256": "bbf74e66f0ae2de4f54d43ebdda1cbb2d377d76a63460860855924f75fcceff8",
+      "bytes": 969,
+      "role": "exact-export-event",
+      "source_id": "EVT-0715"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0715.txt",
+      "sha256": "a81535adee8b99587d458bc1dc52de7d4e91e6d57024f4172b7cfc92b3fc8ecd",
+      "bytes": 285,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0715"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0724.json",
+      "sha256": "94308a67297b78a8b22144f37a60d233cc5cb3e4e21a6b1ce7692e3b3973aea7",
+      "bytes": 1011,
+      "role": "exact-export-event",
+      "source_id": "EVT-0724"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0724.txt",
+      "sha256": "20e07d5e6cb263b2e3539bd42058282bd627364068e65e10ff574e5e459dd6cf",
+      "bytes": 327,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0724"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0730.json",
+      "sha256": "fa6c615ce6aead52ede646220e263413277b8854e8d9ea6020f0041cca90d3d3",
+      "bytes": 10941,
+      "role": "exact-export-event",
+      "source_id": "EVT-0730"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0730.txt",
+      "sha256": "a21da2ce744c63190320b1ae484f759f2fe0a21aa5193998e58abc4218874594",
+      "bytes": 10017,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0730"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0731.json",
+      "sha256": "e701f952a19000d07105de82e063bf9076156b86dc2d115f6f38a48b668addb2",
+      "bytes": 1259,
+      "role": "exact-export-event",
+      "source_id": "EVT-0731"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0731.txt",
+      "sha256": "73f974ebd0561b09aac55f35cdbb43fce8c89f33f8d5a0c3e18bf86a58708edb",
+      "bytes": 461,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0731"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0732.json",
+      "sha256": "a05d56e92b07507303f1f3fcfb24753529b6c222f4e6ccca77be73c64e447ae3",
+      "bytes": 872,
+      "role": "exact-export-event",
+      "source_id": "EVT-0732"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0732.txt",
+      "sha256": "21f1f1481e45d5b0645987410708efdc97d1a89e69f5ceaadd1f56901b106827",
+      "bytes": 188,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0732"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0744.json",
+      "sha256": "3ec2a0b5f15f2555ea76c40c90de3b4630955a85dac18d86309769c128857a5c",
+      "bytes": 999,
+      "role": "exact-export-event",
+      "source_id": "EVT-0744"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0744.txt",
+      "sha256": "c27480bd87fc8b94c0272eb526a5619bf92dec072a27554f63095e2b4b41914c",
+      "bytes": 315,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0744"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0754.json",
+      "sha256": "f6c249f15514c49a19652993e01c4cb1d918e12ea1e09ac09b1051da2ac76f62",
+      "bytes": 976,
+      "role": "exact-export-event",
+      "source_id": "EVT-0754"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0754.txt",
+      "sha256": "16d1caf3f67303f1d77d825e90536de080ef5c6417a11c27e9a7ca749a96b483",
+      "bytes": 292,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0754"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0759.json",
+      "sha256": "1c62dba881ef544f1e10ec9d316ed508369624d7d66747f8b2ef26889694636c",
+      "bytes": 10644,
+      "role": "exact-export-event",
+      "source_id": "EVT-0759"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0759.txt",
+      "sha256": "857ae80022818a05d02ffdd31298191da167236ba13722ca6e1edc6876886b5a",
+      "bytes": 9788,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0759"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0760.json",
+      "sha256": "e20150dad7b45e606a6c103912bc866d47d6e30ef52afcb34f1af59376b1b6bc",
+      "bytes": 1283,
+      "role": "exact-export-event",
+      "source_id": "EVT-0760"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0760.txt",
+      "sha256": "0f81f8228f014c103cf9adfe568243a02e906d1c6c82256cefe7456172d45ffa",
+      "bytes": 485,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0760"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0761.json",
+      "sha256": "c7359dac8338bdff9384fcd3fe973f47e354ed76e2c7899d23c5bfc3d4ef2a2f",
+      "bytes": 857,
+      "role": "exact-export-event",
+      "source_id": "EVT-0761"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0761.txt",
+      "sha256": "cd810fe97a47e85121f79b114e2684375e295197d1f0959d07c2f2a1e2978719",
+      "bytes": 173,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0761"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0775.json",
+      "sha256": "f498ad4d1c89a64cca370e95d38bb29cb647318c5a9fe3cb81d759c22a59c6e7",
+      "bytes": 960,
+      "role": "exact-export-event",
+      "source_id": "EVT-0775"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0775.txt",
+      "sha256": "bf3e6d22427a6372ef7cd705f5e37236f0fd4fa91deb4315567c851ae872d485",
+      "bytes": 276,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0775"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0787.json",
+      "sha256": "68010073a42ea50f062e8a3ad3b4df442e456fef661dff0a2322c98ef8acc4fe",
+      "bytes": 1020,
+      "role": "exact-export-event",
+      "source_id": "EVT-0787"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0787.txt",
+      "sha256": "2263fc01ab8bb9d1c1365e873a14e63a63ab28156be64e5906dd6fa9f6ee9349",
+      "bytes": 336,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0787"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0789.json",
+      "sha256": "78c3cbb497eef2136c755c600cee1d5c196a57bc85b6e829d99abe9cd1308291",
+      "bytes": 9954,
+      "role": "exact-export-event",
+      "source_id": "EVT-0789"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0789.txt",
+      "sha256": "0c0fd9e6101f6bf36a1018de02f5559874e6a7f079c7d70b5cec3eccbfdf5b36",
+      "bytes": 9102,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0789"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0790.json",
+      "sha256": "5ad03688d35b74d872214c39227d2528d8224dda18d802dc1ccd6bba83f4b2c8",
+      "bytes": 1389,
+      "role": "exact-export-event",
+      "source_id": "EVT-0790"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0790.txt",
+      "sha256": "325afaf81264f2c3919e56f108c38c106da43f7e19ce161dba2870f5326fec13",
+      "bytes": 591,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0790"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0791.json",
+      "sha256": "9e6d0f49f2dc903abdd1f5476469d21c00ebc5290090c0d6be73f2365e199da6",
+      "bytes": 873,
+      "role": "exact-export-event",
+      "source_id": "EVT-0791"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0791.txt",
+      "sha256": "ff7ad723b1f6da749bd63e96dfdad99f858eafb2df391a45a86ef1e2085b1a8b",
+      "bytes": 189,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0791"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0807.json",
+      "sha256": "b98e38b9575aabc6a2b76d43a8d5491942a4062074d27b30bf254a29d73d6877",
+      "bytes": 1059,
+      "role": "exact-export-event",
+      "source_id": "EVT-0807"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0807.txt",
+      "sha256": "abe2d9a3aef289a84527938639140a7af14b104371c39206728f3af3c1e80bb3",
+      "bytes": 375,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0807"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0819.json",
+      "sha256": "82ce8d4fe449f97135cf580e5e97abe95195e7442d01894bf97c5f3a6e8c7198",
+      "bytes": 1094,
+      "role": "exact-export-event",
+      "source_id": "EVT-0819"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0819.txt",
+      "sha256": "485ae5eec5043ccf586a380f3f2ff47112dd4d7c5e815d39226906f9a02a7a8a",
+      "bytes": 410,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0819"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0826.json",
+      "sha256": "6169d04a708b8baf20ac37538b19fdaf8441bc77af84af0ebbda581ba5afdbb6",
+      "bytes": 12292,
+      "role": "exact-export-event",
+      "source_id": "EVT-0826"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0826.txt",
+      "sha256": "abcca5256b7eb79c17cf03e5653c782aa6dcfa915e8dd0c4fdfd8b63c9ba3047",
+      "bytes": 11233,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0826"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0827.json",
+      "sha256": "e2b2c61c94b5747ed4950b778cd1406754ebc8a2877fce7a66044e341ac2b829",
+      "bytes": 1437,
+      "role": "exact-export-event",
+      "source_id": "EVT-0827"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0827.txt",
+      "sha256": "b0b08d54e0700f5dd38012f4ef44a79ed8b1f44569d74018e8ce1eb7956d7105",
+      "bytes": 639,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0827"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0828.json",
+      "sha256": "d565ca19891f9e0dee9a9ae070c2a08d86166d0d26ab8c1171c48747c5581c17",
+      "bytes": 883,
+      "role": "exact-export-event",
+      "source_id": "EVT-0828"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0828.txt",
+      "sha256": "1866c7cc310255abee2a25a348786087e002e95742f82ff2e84171c3f6306136",
+      "bytes": 199,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0828"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0841.json",
+      "sha256": "f77a0a6857da18a56b51b3df0991dd77e8cf585b930d9dc5b16da7744ad244ee",
+      "bytes": 1015,
+      "role": "exact-export-event",
+      "source_id": "EVT-0841"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0841.txt",
+      "sha256": "158b0ce222812001300be2999a2588afb923f096e6554040fd51d1ec21754d18",
+      "bytes": 331,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0841"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0853.json",
+      "sha256": "88de8d0c72a788108a5e0438bd69cf076f2a145f9615f2ec77178fd6e045cd3a",
+      "bytes": 1029,
+      "role": "exact-export-event",
+      "source_id": "EVT-0853"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0853.txt",
+      "sha256": "4df38b699cbddc583f58f874ddd8f3901129e7877feba96aca69cdce4718e46a",
+      "bytes": 345,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0853"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0855.json",
+      "sha256": "dead3b34e347e126d00b13f0659e2db74ca17ab3058ec6aa7fbaeb0ee8391db0",
+      "bytes": 11560,
+      "role": "exact-export-event",
+      "source_id": "EVT-0855"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0855.txt",
+      "sha256": "95f5cd103fc42356ee44bb4b973b856b9c1612192e0bc87f31dc3334f22b05d7",
+      "bytes": 10541,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0855"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0856.json",
+      "sha256": "24036f54dd4b09811b0ccbd11cbfbd541b8f4bb0fd06b7d2f468c0ff0ac2e397",
+      "bytes": 1391,
+      "role": "exact-export-event",
+      "source_id": "EVT-0856"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0856.txt",
+      "sha256": "806614dac0b33bc38a3f6328929d83a8839ddf6a0d4db89b6f89bf15892dd2d7",
+      "bytes": 593,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0856"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0857.json",
+      "sha256": "37a380c1b7df9ca51adfdebdbb6f5b65adc2a6464773e40855825b8a8504aa02",
+      "bytes": 877,
+      "role": "exact-export-event",
+      "source_id": "EVT-0857"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0857.txt",
+      "sha256": "97336f3896dc413ef69b1685b3134db49d8314eb2d3e7897de4ad6729e702463",
+      "bytes": 193,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0857"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0872.json",
+      "sha256": "2765691a79542533f158fe9df36c6fa4c678df110ad02e251ef7eabaffbf2889",
+      "bytes": 1050,
+      "role": "exact-export-event",
+      "source_id": "EVT-0872"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0872.txt",
+      "sha256": "7cb446f3a4231b37df578dfd9ca2b8c292422e82f946c51aafd345618ff54d77",
+      "bytes": 366,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0872"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0878.json",
+      "sha256": "c4b3cd8cf2c5a362ae90c069a51b050bf99803276adf23df7ed02df21f12ea7f",
+      "bytes": 11533,
+      "role": "exact-export-event",
+      "source_id": "EVT-0878"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0878.txt",
+      "sha256": "a55700961aa5eecb5f9d4c080fd4876acfc445166ba2adc6f3e0e9df1117bb1e",
+      "bytes": 10493,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0878"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0880.json",
+      "sha256": "78b35a5fe9a87d68f46535dd1f319c0be7d6a91e0ec457170c72fa6866fd7b7f",
+      "bytes": 1335,
+      "role": "exact-export-event",
+      "source_id": "EVT-0880"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0880.txt",
+      "sha256": "437f1c400212ba678ea29602d14baefc99a8db6fdcf53dc4c21bc05c89d1d768",
+      "bytes": 537,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0880"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0881.json",
+      "sha256": "e923b4e60c9331dd0b8cf60d3895a79f3acf7c0787e998c9df81530dee6c2a52",
+      "bytes": 881,
+      "role": "exact-export-event",
+      "source_id": "EVT-0881"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0881.txt",
+      "sha256": "3f64c42818305fb325e828f1f5b2ffc5b651bce7c91af9d12113a5f7f6111d7d",
+      "bytes": 197,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0881"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0894.json",
+      "sha256": "42d5f868f26e6a327df6de7e01a9cec4daa5c7c35dd35451bcb825f2a73fd5cc",
+      "bytes": 1044,
+      "role": "exact-export-event",
+      "source_id": "EVT-0894"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0894.txt",
+      "sha256": "6de12df83472a4dbb97c8802dc1f1ea7b662df6f261b91fdd5e28fda4ed9aee1",
+      "bytes": 360,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0894"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0910.json",
+      "sha256": "e5f8bcf1df898c97b7d4e4446d45bd1cfea59bfd1d5ae9c8d71ea249399fcc88",
+      "bytes": 1030,
+      "role": "exact-export-event",
+      "source_id": "EVT-0910"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0910.txt",
+      "sha256": "06e8c9202822f206bac262d8e1aa60597055bf4466699049e4613bb3ec3dcf5a",
+      "bytes": 346,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0910"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0914.json",
+      "sha256": "ad09924ce8825e316f360681636a27f62591aabcdbcaa2df5ea0fac6c82c37e2",
+      "bytes": 11661,
+      "role": "exact-export-event",
+      "source_id": "EVT-0914"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0914.txt",
+      "sha256": "28b1c1a99426b0122c7589d0739f2c00ce05de7e0c04c93b01536df185c8b6b7",
+      "bytes": 10503,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0914"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0915.json",
+      "sha256": "c9387a1ab2d4810590111eeb0f9503a5ffb62d9cd3a94552d2ffb75767184770",
+      "bytes": 1405,
+      "role": "exact-export-event",
+      "source_id": "EVT-0915"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0915.txt",
+      "sha256": "7905798ddbd8c8ed3ebfdb392d46728848e3c79ea430adeae74fa3c4987df1e6",
+      "bytes": 607,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0915"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0916.json",
+      "sha256": "0cdb51cb78cef5dd4b5331330fb8f8d4787bafb163780c96f2f409b9082b1cf1",
+      "bytes": 860,
+      "role": "exact-export-event",
+      "source_id": "EVT-0916"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0916.txt",
+      "sha256": "6db8c071c1579afe61c8d863d0999d1519eed6003a720abaf777c9c490688fbe",
+      "bytes": 176,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0916"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0931.json",
+      "sha256": "3333fea5c980910b263e973256cf3fb42caa6f6881953a0f03ddd33e80eccc81",
+      "bytes": 1018,
+      "role": "exact-export-event",
+      "source_id": "EVT-0931"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0931.txt",
+      "sha256": "8b9042987963e19778b43f0a5ddaab6f221f18a5ec4d475b84c52755f0cb916b",
+      "bytes": 334,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0931"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0940.json",
+      "sha256": "edd127991a6c6d567e2df43ce71d127334f6e1cdfe86c9e2068a95c172ebc7e7",
+      "bytes": 1029,
+      "role": "exact-export-event",
+      "source_id": "EVT-0940"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0940.txt",
+      "sha256": "34869256c3b27ebbdc38b4b84718e27ef57541d07343ec59f3ed02e858c732df",
+      "bytes": 345,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0940"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0942.json",
+      "sha256": "503b5eb726efa8e66d885098c8047ab0f925fe6e3c25725fa354cf3716f8211f",
+      "bytes": 11481,
+      "role": "exact-export-event",
+      "source_id": "EVT-0942"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0942.txt",
+      "sha256": "797aa2cd9816ee59fff46713dd5d60f9343dd5a1f4f99d047aacf448f9426581",
+      "bytes": 10549,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0942"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0943.json",
+      "sha256": "57233d529e10f5c08c3821bf07da6e34bffe6005cc13f2689462ebbce03d957d",
+      "bytes": 1421,
+      "role": "exact-export-event",
+      "source_id": "EVT-0943"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0943.txt",
+      "sha256": "f004cd75381c19de122eba6a11904ee4af66c121a1a96faeecab0cadfc907de4",
+      "bytes": 623,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0943"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0944.json",
+      "sha256": "cd832f40db5afc1a9233e7a0724795860d2672d1a248cddb04715b0843aaf7ab",
+      "bytes": 853,
+      "role": "exact-export-event",
+      "source_id": "EVT-0944"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0944.txt",
+      "sha256": "c6277050dc89efc1ebac9a15c5182f44e3460171f42d751301a70f6cb6aaebb3",
+      "bytes": 169,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0944"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0957.json",
+      "sha256": "ea6cb90286c7afb9ad77267b86f1ec9522656a77fc3ada766996a48cd7d1eab9",
+      "bytes": 1008,
+      "role": "exact-export-event",
+      "source_id": "EVT-0957"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0957.txt",
+      "sha256": "04e15db1fdada8b51b1979c0b1bd8975f479fd508878d3d64e35f8a170f56d2e",
+      "bytes": 324,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0957"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0968.json",
+      "sha256": "23f7813686726714ab1b125effc7644d65dbc1bb2e2fc4f0e432e95514dcb505",
+      "bytes": 10780,
+      "role": "exact-export-event",
+      "source_id": "EVT-0968"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0968.txt",
+      "sha256": "c7c3ea253d92e2d8eea35841435eca981346878ec459f5445c4fc36ec5e7a833",
+      "bytes": 9784,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0968"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0969.json",
+      "sha256": "8c2b25816ca5ff087e07bb84b396a793da614264a715132c40c0979f02ce5c78",
+      "bytes": 1367,
+      "role": "exact-export-event",
+      "source_id": "EVT-0969"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0969.txt",
+      "sha256": "1eda777d6ecb0ada4fc049d1e683337895e0e84ac2cbc94539256a5fe674a96c",
+      "bytes": 569,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0969"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0970.json",
+      "sha256": "d5035bb9772ff87137f3139700916b20824ecf4028a896bd115f04611895a971",
+      "bytes": 881,
+      "role": "exact-export-event",
+      "source_id": "EVT-0970"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0970.txt",
+      "sha256": "2c34c6423d1fcbb33b41e212f05ad5dd3d9a3d96bbdab1787406124c293f9b69",
+      "bytes": 197,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0970"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0982.json",
+      "sha256": "0d90c3da72c3ad4945428f292013e22feb13978f69c22ddf713b3d56ab0e3647",
+      "bytes": 977,
+      "role": "exact-export-event",
+      "source_id": "EVT-0982"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0982.txt",
+      "sha256": "6297afabf060d4ad1d6c068e7a519a32deaad361400b20b4a5137b62215287db",
+      "bytes": 293,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0982"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-0999.json",
+      "sha256": "731f93cb69d31744061d4affb857de779de5ccb1c752f43e3af4161b1972da58",
+      "bytes": 1054,
+      "role": "exact-export-event",
+      "source_id": "EVT-0999"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-0999.txt",
+      "sha256": "9c0001aa4623bc17ac80de3e15b94d657f4978a2a11e33bfce09adf73684836f",
+      "bytes": 370,
+      "role": "extracted-message-text",
+      "source_id": "EVT-0999"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1005.json",
+      "sha256": "6573d2cec2acefc70ecb87221ac3f5be12d427db2aa08f43f8342330e7e97504",
+      "bytes": 10796,
+      "role": "exact-export-event",
+      "source_id": "EVT-1005"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1005.txt",
+      "sha256": "49ea3b8df0d86c7ab8b220a0de30ac064154cbe269f312b5d556daf90ddb33d4",
+      "bytes": 9797,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1005"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1006.json",
+      "sha256": "44f36a68fe545a0cfd73f86bb99650682e8f3af66a4465d967bfb19cf47b8b77",
+      "bytes": 1325,
+      "role": "exact-export-event",
+      "source_id": "EVT-1006"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1006.txt",
+      "sha256": "7981daba5308d03be47fe518aadb81a176880677ca24fc60ab036cabb38c6249",
+      "bytes": 527,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1006"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1007.json",
+      "sha256": "0ad23a196aa930f072f4da06c8d9f35aec828e1073662cfc36894fe259a2bc42",
+      "bytes": 867,
+      "role": "exact-export-event",
+      "source_id": "EVT-1007"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1007.txt",
+      "sha256": "1dcd1dc17a36d9229bae9effef4436ffbeb0c3aa40b4baad5029e3ae6ac105de",
+      "bytes": 183,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1007"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1023.json",
+      "sha256": "5dd4724466cfd027da7cb835d416f2cad2cfab447fe05708ecd533eb31a7cfc1",
+      "bytes": 1045,
+      "role": "exact-export-event",
+      "source_id": "EVT-1023"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1023.txt",
+      "sha256": "226f2c62fbf22e6de6b65c65d7207aaf36dc19ec989db7fa432fa46078531490",
+      "bytes": 361,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1023"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1034.json",
+      "sha256": "63048c8b82a6685ab2d98f37d714f50cd7a19c70603dbffc0d05f1d71306f272",
+      "bytes": 970,
+      "role": "exact-export-event",
+      "source_id": "EVT-1034"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1034.txt",
+      "sha256": "b2369ce1d7ed680791fc59381e0cadb56177ac2d5508c9d160afbdea1e77705a",
+      "bytes": 286,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1034"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1040.json",
+      "sha256": "ca552d18df59e3ce50d98e0d2ced85030da394f30585efaed4d7bdf511248a72",
+      "bytes": 11353,
+      "role": "exact-export-event",
+      "source_id": "EVT-1040"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1040.txt",
+      "sha256": "2d4982fc695299e6aa9fe85220b70735dd6125741da01073b4534497911f390f",
+      "bytes": 10300,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1040"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1041.json",
+      "sha256": "f6b0b57192df685af641f1a6cdf044f9cf5f58dcfa9816d0fc8b53815bb1426a",
+      "bytes": 1421,
+      "role": "exact-export-event",
+      "source_id": "EVT-1041"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1041.txt",
+      "sha256": "9f4ab81c412db4c016f23d88dc493d990df746a3d19ce3afe56a9549dbfde6c1",
+      "bytes": 623,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1041"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1042.json",
+      "sha256": "dc9f277403d0c1952c4e1eb1f15c7f7cfea9e518b218c1f54eb3afc769f3f9b4",
+      "bytes": 867,
+      "role": "exact-export-event",
+      "source_id": "EVT-1042"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1042.txt",
+      "sha256": "1a121f66032e8a0d00498cc401513a4ac24d04e11e768d3275b832527abf095b",
+      "bytes": 183,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1042"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1060.json",
+      "sha256": "80efb954f4e6addd6104fd08c69968f97f9aa671f56231380241f351c618d2be",
+      "bytes": 997,
+      "role": "exact-export-event",
+      "source_id": "EVT-1060"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1060.txt",
+      "sha256": "611fac70bc86e76df4b30df80e7d48d1bd9ca7541c3559b880b8345623cec469",
+      "bytes": 313,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1060"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1068.json",
+      "sha256": "16190b761a4215d6d6650e5fb49a9b32247152e8980a3cb3b16ec14d11a97596",
+      "bytes": 10201,
+      "role": "exact-export-event",
+      "source_id": "EVT-1068"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1068.txt",
+      "sha256": "3304878e5452f849fa6f188ef9316d431e357975d54eb2cb69399380df45bfbe",
+      "bytes": 9272,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1068"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1069.json",
+      "sha256": "9f487f999486316aec485290609c025917ab3f2b5e9f9a7331583d7e91c8d9f7",
+      "bytes": 1407,
+      "role": "exact-export-event",
+      "source_id": "EVT-1069"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1069.txt",
+      "sha256": "58c6039f02a021750198d306f7d482552e8d9f39d2838fe93ae75939c627d9ed",
+      "bytes": 609,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1069"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1070.json",
+      "sha256": "1304dad1e14e807b6efaa957d3d7162c3e2bfae24a430dcaddef255037c5273b",
+      "bytes": 871,
+      "role": "exact-export-event",
+      "source_id": "EVT-1070"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1070.txt",
+      "sha256": "d98083f22cb50217ce4069e14da927c988baec40eac325da7bbfeb8a7536c50f",
+      "bytes": 187,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1070"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1083.json",
+      "sha256": "3dbc665794f445c1dcd2a33a6d3992d50eea59644ffd040f5099ae5a42d8026f",
+      "bytes": 1003,
+      "role": "exact-export-event",
+      "source_id": "EVT-1083"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1083.txt",
+      "sha256": "a5b1a1270138950b7c6968ef1d6f1e9dec0c98bb01fde9cdced6cdb4605d2955",
+      "bytes": 319,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1083"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1099.json",
+      "sha256": "5b261ec42de97337e76e1a852e23bca54255813408ebf6e850879620354d8e92",
+      "bytes": 1009,
+      "role": "exact-export-event",
+      "source_id": "EVT-1099"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1099.txt",
+      "sha256": "ab4c156bf422f3714abbb1c77980064724226a389016d324c9a6ac505ccbd407",
+      "bytes": 325,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1099"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1104.json",
+      "sha256": "48f9a738845e541c728aca7dba2c4e19d804a9772c5fdd5ac05f0ba559f0b9e5",
+      "bytes": 964,
+      "role": "exact-export-event",
+      "source_id": "EVT-1104"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1104.txt",
+      "sha256": "17348623f269da64e15414250ef49faa60ac70c658be7c57e82aeec48e9b0dd3",
+      "bytes": 280,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1104"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1107.json",
+      "sha256": "2f57d3e892be07fe82484d4da6907abe35432bf19c8e07d13a395011d83c4c1e",
+      "bytes": 12228,
+      "role": "exact-export-event",
+      "source_id": "EVT-1107"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1107.txt",
+      "sha256": "a1d4364431bc74f8a354c28987682681d2381db5d36fca2ac5495555926f05bf",
+      "bytes": 11155,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1107"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1108.json",
+      "sha256": "5ec8d590d7e7456f51771e38721b609a40d5fa6d231446f9591ee79cec5e3eee",
+      "bytes": 1421,
+      "role": "exact-export-event",
+      "source_id": "EVT-1108"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1108.txt",
+      "sha256": "874e49db5197cd5b59d4e5f3b3ade77012ca6e26d64c4511dee9478b27e639f0",
+      "bytes": 623,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1108"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1109.json",
+      "sha256": "1724fd5db94a26320faadeede2670073c5cd7eb775a468e9764c46f75b372992",
+      "bytes": 856,
+      "role": "exact-export-event",
+      "source_id": "EVT-1109"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1109.txt",
+      "sha256": "defc71acbfdf3b4c74f06c96baf30e1ab63b73f0ec8c4b73fe39958fba65d38f",
+      "bytes": 172,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1109"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1127.json",
+      "sha256": "132d8ba8abfe493b55eb6c4ddcab1a12d28e4cbdb826eb234766cf5ac556ff42",
+      "bytes": 1057,
+      "role": "exact-export-event",
+      "source_id": "EVT-1127"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1127.txt",
+      "sha256": "42f623bdffef3ca6cd344c910ff0ce06f865b63943e4064b7280988679a62723",
+      "bytes": 373,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1127"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1142.json",
+      "sha256": "592aac0592b2980a552edf34414a29f027eaf728d01d44c259d1d8b044c2f1cb",
+      "bytes": 1077,
+      "role": "exact-export-event",
+      "source_id": "EVT-1142"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1142.txt",
+      "sha256": "4cc6021b0e54971fa21872e6f21d60da725be6a6ceb4e38d7ae94c0f74477d4f",
+      "bytes": 393,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1142"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1147.json",
+      "sha256": "5397564136caa5ac31899ec7e024c01bbfc28d26a5818c556289f0f6a55f8a70",
+      "bytes": 11404,
+      "role": "exact-export-event",
+      "source_id": "EVT-1147"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1147.txt",
+      "sha256": "89ad344a33d8922a0341c4e15f4794e11f7b2c71a37d6665a7d7b611d7883457",
+      "bytes": 10460,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1147"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1148.json",
+      "sha256": "0dd657e6ca6b9f9d7adc8e1c50a373decf2e6afcd2c4ab5fbbd47d76951071b7",
+      "bytes": 935,
+      "role": "exact-export-event",
+      "source_id": "EVT-1148"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1148.txt",
+      "sha256": "591204a06d5f6a0156a1b001b55b4a8aeccc640d1a159173d944aee86734a6aa",
+      "bytes": 211,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1148"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1149.json",
+      "sha256": "03ae6aab3300022b70c0e7d2567d799d71213d269dfefe774b5dac32e7749224",
+      "bytes": 826,
+      "role": "exact-export-event",
+      "source_id": "EVT-1149"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1149.txt",
+      "sha256": "895ec5a9c76556d27c62edea594fe79f5ea534ab6668ff98a5b7e6e0127b61da",
+      "bytes": 142,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1149"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1162.json",
+      "sha256": "c4541521c5de694987fabd39c2f39a0a74b99d39fae6bb3885f71095c2ec6386",
+      "bytes": 1005,
+      "role": "exact-export-event",
+      "source_id": "EVT-1162"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1162.txt",
+      "sha256": "848224d1f1298017ce49a540908b750c7a11fae2adea59778baa3a731b529857",
+      "bytes": 321,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1162"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1166.json",
+      "sha256": "320b136bafadb7525eddf6d870f72086c0c7f3fc9cafa2912bd6be59e70e78b8",
+      "bytes": 7247,
+      "role": "exact-export-event",
+      "source_id": "EVT-1166"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1166.txt",
+      "sha256": "b3262685321322c224c26b0818064153f288e7983a654cec55019176662309a8",
+      "bytes": 6396,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1166"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1167.json",
+      "sha256": "64d5d75d7f260b10f3d9010095933fe43c298e788ebe583cee388a4cdb3c955a",
+      "bytes": 1050,
+      "role": "exact-export-event",
+      "source_id": "EVT-1167"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1167.txt",
+      "sha256": "85aec4f5e4505d0c5b2ec90980052d94930e5c8d88c56d9515d8ceb2eeeb3f4d",
+      "bytes": 190,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1167"
+    },
+    {
+      "path": "docs/reference/sources/events/EVT-1168.json",
+      "sha256": "ecd9d063a5a12d6e8a82a2a429b042b0a26d7e428640cbd92596f3b177023011",
+      "bytes": 901,
+      "role": "exact-export-event",
+      "source_id": "EVT-1168"
+    },
+    {
+      "path": "docs/reference/sources/text/EVT-1168.txt",
+      "sha256": "3740cc0dc803775194cda59d9286ae230092422d38e1ef1cf524002ed68f0bda",
+      "bytes": 217,
+      "role": "extracted-message-text",
+      "source_id": "EVT-1168"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-01.html.txt",
+      "sha256": "f950ddaa2877d47244dfd3216fd635f867658c67eb20f2e385a633939809ed66",
+      "bytes": 1024683,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-01.webp",
+      "sha256": "08b5640730903cfa4a101a544fd3911f5002effaec1c2a314944966ca49a73c6",
+      "bytes": 5850,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-02.webp",
+      "sha256": "aeff1ae59f2454a514e0f02661058065b46d1e0b2cbeb855443fe33c0d9cac4b",
+      "bytes": 15074,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-03.webp",
+      "sha256": "95722f0cfd3654a09a0844076ac9f8f21b09030ce2f826514a9b0f0760102452",
+      "bytes": 27894,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-04.webp",
+      "sha256": "9b8c1b33961f6c9dc9af01b49e16c59bce3fd8cc07f6d6f97dbef583bf996f3a",
+      "bytes": 58952,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-05.webp",
+      "sha256": "e8dc53d4f14fa9b0b6b3ef18c94505cc465b5a41ece5128336b6b1c486cb0a19",
+      "bytes": 29442,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-06.webp",
+      "sha256": "8f8b0653fbaaaacbc3b88f248f3df36f53b213203a9f0d287cb17f0e7ef3c862",
+      "bytes": 31456,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-07.webp",
+      "sha256": "d5f501954d30b413345375c54acc48829d7d9a139bed95c437d56c497655ce4d",
+      "bytes": 22318,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-08.webp",
+      "sha256": "ee092fa7d6f0fabf1823d00e7bfdd6d70ccf42bdcf511d2ffded641b32ce8ee9",
+      "bytes": 55166,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-09.webp",
+      "sha256": "6483a0f408dfd1458e5fbecb87325f546cb84ec85a904bb49e895157e76f3044",
+      "bytes": 55090,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-10.webp",
+      "sha256": "40f19371a820275b76af57a8578836bfdc05e3858654f57560a76b718edaad78",
+      "bytes": 52130,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-11.webp",
+      "sha256": "791493b0c562bd8779f4de2b1a7e18fa013e551c026a72e9a0eb541e516024c5",
+      "bytes": 23808,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-12.webp",
+      "sha256": "aeba4398174bb1a4a5b83b9a53b458b8f51cfa71856cbe97cd986838cfb1e9ec",
+      "bytes": 58382,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-13.webp",
+      "sha256": "6bb7fc1db685a560b4fe43a1b739b245682dbb9bd4041bc16694b9c5b3eadb4e",
+      "bytes": 56346,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-01-14.webp",
+      "sha256": "b6cd4337164fc78b26c37b992231ce547aceb94a2862237d1671f4cfdaa1ffc9",
+      "bytes": 24014,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-01-article.txt",
+      "sha256": "fd3649f09c9c8a631572a8224f62678e2c7e4b414912de6bfd77c51f6558c3a9",
+      "bytes": 35156,
+      "role": "derived-article-text",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-01.md",
+      "sha256": "79a984c34049e29b70c2352579b9ba9a2382011ea774e0fa6747347fd0bf664a",
+      "bytes": 1462,
+      "role": "forum-offline-reader",
+      "source_id": "ATT-01"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-02.html.txt",
+      "sha256": "bde5d624124a5b52457dbb5f853df45e9f8011dae821f1aacd08ae2d6e99557c",
+      "bytes": 1577123,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-02-01.webp",
+      "sha256": "5d6128b78d6e56c92f3ec9b1c02ee76cac65fe3e49796ddb8865598e5246bc4b",
+      "bytes": 126272,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-02-02.webp",
+      "sha256": "f1e10c5b1650c2a12a70a77b95baf0f068d88fc582b95d11861f6ae2d653a669",
+      "bytes": 123722,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-02-03.webp",
+      "sha256": "56dada7ffd351621fa67a8d2e2ef5774629b13d8e4d865c697c930b70005b9d6",
+      "bytes": 143562,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-02-04.webp",
+      "sha256": "86e78d2dd52f4219e84d1320807a7cd17e355e0452bf2fbb4ed26700b51ae0d9",
+      "bytes": 100924,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-02-05.webp",
+      "sha256": "95224b57e8b1aead6763bda6ca8ec568d607e1ccdde157880a36a99ec8a29cc2",
+      "bytes": 110254,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-02-06.webp",
+      "sha256": "f8fe0541cfb430870db40d781e8286204c9431f3c9750c52265b0fd0ca359058",
+      "bytes": 98048,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-02-07.webp",
+      "sha256": "51f1ab7d9177ba20b67da5e99a4e6894eca31ce42f9ecd44e57b488cdcacd998",
+      "bytes": 68420,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-02-08.webp",
+      "sha256": "9ff4dec69226128d1b81991383cf24d7d6309443a4c20b3cef09d450c64001f3",
+      "bytes": 59382,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-02-09.webp",
+      "sha256": "b1c73678bf48772c746a3859eaf902de5a3f36fcb2bb7ec02ee49ce1b1fd49c8",
+      "bytes": 84358,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/images/ATT-02-10.webp",
+      "sha256": "56bb7c8a40f7def583535f16a5641bf1af0c18f899fbb9c150b614eecbd14d39",
+      "bytes": 50164,
+      "role": "exact-decoded-embedded-figure",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-02-article.txt",
+      "sha256": "74585100b5453bf24066d5d9aae74c824efa8e05f1df4ead6a2c45968cd4648d",
+      "bytes": 2511,
+      "role": "derived-article-text",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-02.md",
+      "sha256": "cbcd8a1ccb7af240d86b065d57045337c82b9a09fcd40704562afe4b3006f0bf",
+      "bytes": 1182,
+      "role": "forum-offline-reader",
+      "source_id": "ATT-02"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-03.txt",
+      "sha256": "6000c8853d9b80c2a6acfb72701d220bdf5da908dc820fdcf91087cbf8427d65",
+      "bytes": 9746,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-03"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-04.txt",
+      "sha256": "97329f8cfccbcb50fe2d260e598806bd7590c49c143522ee3d128a504f41ccde",
+      "bytes": 9262,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-04"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-05.txt",
+      "sha256": "2c064c773300f37e922a6d1d0a07197f9d40c44169ddd9662d20ab889b247b7b",
+      "bytes": 22896,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-05"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-06.txt",
+      "sha256": "c402b2d49ce8eb60428c3739d7672b41cb743eda6c12251ac31f7f91c8708786",
+      "bytes": 17837,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-06"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-07.txt",
+      "sha256": "5f756303b05fa739e9187eabc4bab20df9c10d5736fd3678c7a96aec552008cb",
+      "bytes": 18687,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-07"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-08.txt",
+      "sha256": "5262884fffbb89bb14a656894e916ea1db89e426ecf96988faee225a59ef3a30",
+      "bytes": 19298,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-08"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-09.txt",
+      "sha256": "031a1826e9df50003c8417c7aa57ac770f537058fddcf33a8ba7bb2e2cca41b1",
+      "bytes": 20026,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-09"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-10.txt",
+      "sha256": "88b2bf376b818f7f8ee52000d442f86f897996a68ed2d0fea4a5e8bdd127c557",
+      "bytes": 18953,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-10"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-11.txt",
+      "sha256": "eec81da55d71a05de2889d0207ed78a81887883aa326cd1f14de240fa7a42e03",
+      "bytes": 20016,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-11"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-12.txt",
+      "sha256": "f14815d5417eada44a0bd71c3c8790fe9bdcf1197a08ec672c5979684e6eb35d",
+      "bytes": 20397,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-12"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-13.txt",
+      "sha256": "c500dee2b45013010a1362b716c0afc84a3874d4ea8db8cbf841336e3a9f2f86",
+      "bytes": 22940,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-13"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-14.txt",
+      "sha256": "e9c627b378b3d477c74b220757582d5a64570dd5db9b5905b42c2aaee4917a5e",
+      "bytes": 15747,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-14"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-15.txt",
+      "sha256": "b5602dddbab2423d066856f360242c9b19574a9cb3af538777e8e98495dea22b",
+      "bytes": 20778,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-15"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-16.txt",
+      "sha256": "4285cb4fd907dade533d6dbaf27349f1b102f7cabb7f72f89339d5f400fd0ef9",
+      "bytes": 17157,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-16"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-17.txt",
+      "sha256": "a7d33d7f1c739f7ae8f3ef8083ffea6c65f2d45153360deef89d72ec28f5a7fe",
+      "bytes": 18706,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-17"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-18.txt",
+      "sha256": "d35dfc5623c2924fb2211ee723828a06be95e38726b5a74bc3a1cdbd67fcfd06",
+      "bytes": 17615,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-18"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-19.txt",
+      "sha256": "e7c79c6c851f80ebd33ccb2c55a6294bff45afb9952e6790b5ae447f85a95a82",
+      "bytes": 22331,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-19"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-20.txt",
+      "sha256": "33dd7a0c4a10ee5510343aa3a777af0096bfb8a6944f5fde2bf829f6d1ed9c1a",
+      "bytes": 21300,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-20"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-21.txt",
+      "sha256": "d352389be506990d4bcf891a8a0983e7fd58ff6d5acfc177a8873e7c064dd37e",
+      "bytes": 20266,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-21"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-22.txt",
+      "sha256": "bf2240946c105701e431a41c4f27ab3c31553647c9be051bb5062d8bac0b5f29",
+      "bytes": 22663,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-22"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-23.txt",
+      "sha256": "fa713d3af52c4c08c87ec8b0eddae7e19ae0650083a283dad489458765a9575a",
+      "bytes": 17690,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-23"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-24.txt",
+      "sha256": "8645d4b413a5b97d2b71cf12fc017472bf6e59b1fd53501560fdbe93219105c1",
+      "bytes": 17747,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-24"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-25.txt",
+      "sha256": "4571f441886c11764fe691460be7e8d1fad83fd075567a05b2e15e01f407fbcd",
+      "bytes": 14276,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-25"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-26.txt",
+      "sha256": "d154bee2c2eff1787349737b0ba4b22b4ce1005fd33b77d9c155e266f786424f",
+      "bytes": 13535,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-26"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-27.txt",
+      "sha256": "88fd77d9e7b6c57fadd12ace231addba5e3b78d7ed842357ff99312726662b01",
+      "bytes": 15034,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-27"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-28.txt",
+      "sha256": "c411d29ef50cdd06d586bcdfe740953b7afbf3ed1d3fb303ed2074b8b11e0aee",
+      "bytes": 17730,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-28"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-29.txt",
+      "sha256": "2b10709d452e3c31508cde89d72f087aa2cc391e5b2c24be86e12cc5af54257f",
+      "bytes": 23027,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-29"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-30.txt",
+      "sha256": "1a377fc051cf8487ca219e92b0c3aaec714b68832ace841698b95184c51f2698",
+      "bytes": 20289,
+      "role": "exact-original-attachment",
+      "source_id": "ATT-30"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-01.txt",
+      "sha256": "cd7911fb4afcc9b5fc5817a04f94ce6516343a9a21652cd4377c6fe93eeaec60",
+      "bytes": 8104,
+      "role": "selected-continuing-source-excerpts",
+      "source_id": "SUP-01"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-02.txt",
+      "sha256": "9a0ca055a5c309796323837c6e19a3a275ac7c5b2f06e9b51ce707006b6db75a",
+      "bytes": 1750,
+      "role": "selected-continuing-source-excerpts",
+      "source_id": "SUP-02"
+    },
+    {
+      "path": "docs/reference/sources/INDEX.md",
+      "sha256": "3a6c252731652a9de87709f44ccc302557511cfddf6d43400fb81456428631d6",
+      "bytes": 63175,
+      "role": "source-navigation",
+      "source_id": "bundle"
+    }
+  ]
+}

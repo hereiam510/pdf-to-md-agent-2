@@ -1,0 +1,137 @@
+**我會保留這條架構路線：小型 LangGraph＋現有 Nexus 協議處理＋共用工具派發器＋文件／證據核心。** 它能讓 agent 自主決定如何轉換文件，同時讓 app 負責保存、容量控制和可靠交付。
+
+但這份提案仍有幾個過度確定的結論，尤其是「版本存在就是提交成功」「所有分支都會經過 prepare」「放寬 schema 就能完整保存所有候選」。以下是我會修改的地方。
+
+**1. `Commit-as-Receipt` 可以採用，但要先定義「提交」究竟完成了甚麼。**
+
+把 `operation_id` 和輸入指紋內嵌版本，是合理的簡化，可以避免另外維持一份重複的成功收據。
+
+不過，目前程式有兩個不同步驟：
+
+- 先把完整版本資料夾移到正式位置。
+- 然後更新 `current.json`，讓它成為目前工作版本。
+
+兩者之間仍可能中斷。因此，**版本資料夾存在，可以證明版本已準備好，未必能證明整個 save 操作已完成。** 現有程式的次序就在 [core.py:353](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/core.py:353)。
+
+新設計可以選擇把「建立不可變版本」和「更新工作版本」分開定義；如果 `save` 承諾同時完成兩者，我傾向讓版本登記、工作版本指向及操作身分在同一個短交易提交，資產檔案則預先保存。未提交的準備成果保留供恢復使用。
+
+另外，成功版本也不能取代「操作已開始、結果未確認」的紀錄。OCR、腳本和模型請求都有這種狀態。**可以省去完整事件溯源系統，但不能省去必要的執行紀錄。**
+
+**2. MCP 不需要為了保存候選內容而全面放寬 schema。**
+
+這次找到一個更直接的實作入口：目前安裝的 MCP SDK 2.3.0 已提供 `Extension.intercept_tool_call`。它接收到有效的 `tools/call` 協議參數後，才會進入實際工具函式及其參數驗證。可以在這裡保存 authoring 工具的原始參數，再讓正常驗證繼續。[本機註冊位置](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/.venv/Lib/site-packages/mcp/server/mcpserver/server.py:354)、[官方 Extension 原始碼](https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/main/src/mcp/server/extension.py)
+
+因此，我建議：
+
+- MCP 入口先保存候選參數；內建 agent、直接 CLI 入口呼叫同一套保存邏輯。
+- 工具仍提供清楚的欄位、型別、必填條件和說明。
+- 草稿真正允許缺少的 metadata，按草稿契約設為選填。
+- 驗證失敗時，回傳欄位錯誤及已保存的 `candidate_ref`。
+
+將 `page_map` 改成 `dict[str, Any]`，既不能保證錯誤容器型別或缺少必填參數必然通過，也減少了模型產生正確參數的指引。
+
+保證範圍應寫成：**保存已到達 app、可解析為有效工具呼叫的候選參數。** 外部 MCP client 在發送前就拒絕的內容，server 無法保存。
+
+**3. 四節點可以保留，但恢復、新輸入和重新生成必須有不同入口規則。**
+
+「所有恢復和分支都會先跑 `prepare_step`」不是 LangGraph 自動提供的行為。
+
+LangGraph 從 checkpoint 的後繼節點繼續；`update_state` 的 `as_node` 也會影響下一個節點。從 prepare 後面的 checkpoint 建立分支，可能直接進入 model。[LangGraph 官方時間旅行文件](https://docs.langchain.com/oss/python/langgraph/use-time-travel)
+
+我會明確定義：
+
+| 情況 | 步驟身分與輸入 |
+|---|---|
+| 恢復同一個已準備的模型步驟 | 保留原 `model_step_id` 和凍結輸入 |
+| 使用者追加要求、進入下一輪判斷 | 經過 prepare，建立新步驟 |
+| 要求重新生成，或在新分支重新判斷 | 建立新步驟，即使輸入內容完全相同 |
+
+第三種情況直接推翻「新分支的 fingerprint 必然不同」：**相同 prompt 再生成一次，指紋可以完全相同，但它仍然是不同的執行意圖。**
+
+同一個 step ID 如果對應不同輸入，應視為狀態不一致，重新走新步驟的準備流程；不應沿用該 ID 偷換請求內容。
+
+還有一個不能漏掉的狀態：
+
+> 找不到已保存回覆，不代表請求尚未送出。
+
+`model_step` 必須先檢查已持久化的 attempt 狀態及剩餘預算，再套用既有的有限恢復政策。現有控制器已在發送前保存 attempt 消耗，重構應保留這項能力。[agent.py:384](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/agent.py:384)
+
+`durability="sync"` 能保證下一步開始前保存 graph checkpoint；它本身不保證 Nexus 只執行一次。[官方 durability 說明](https://docs.langchain.com/oss/python/langgraph/checkpointers#durability-modes)
+
+**4. `prepare_step` 應凍結請求身分，但不要再次把大型證據塞進 checkpoint。**
+
+提案寫「組裝實際輸入，再寫入 State」，這裡需要補上儲存邊界。
+
+我建議 checkpoint 只保存：
+
+- `model_step_id`、`request_ref`、指紋。
+- 本次選取的不可變證據引用。
+- 小型工作狀態和 context policy。
+
+完整準備好的請求及大型資料留在外部檔案，由 model step 按引用讀取。
+
+指紋需要涵蓋會影響請求的模型／路由設定、生成參數、工具 schema 和實際選入內容，不能只雜湊文字訊息或證據檔名。prepare 後到發送前，也不能再偷偷解析成另一個 `latest` 文件或另一份圖片。
+
+這能同時避免兩個問題：checkpoint 膨脹，以及「恢復時使用相同步驟 ID，實際送出的卻是不同內容」。
+
+**5. 超量時回傳清單是必要的，但它還不是完整的 context 管理。**
+
+把完整工具結果保存，再回傳載入範圍和精確讀取入口，方向正確。問題是：**如果既有歷史已經接近滿窗，連這份清單和下一次模型回覆也可能放不下。**
+
+所以容量管理至少需要兩種處理：
+
+- **新結果太大：** 保留完整結果，清楚呈現容量限制及取回入口，讓 agent 選擇範圍、欄位或處理方式。
+- **累積歷史太大：** 提前留出整理空間，讓 agent 釋放可恢復證據，必要時整理較舊歷史。
+
+整理空間應包括工具描述、影像估算、模型回覆，以及進行整理本身需要的餘裕。不要等到完全超限才要求模型「想辦法整理」。
+
+另外，跨 Nexus 模型路由的容量估算不宜宣稱「單次輸入絕不爆窗」。需要保留估算誤差，以及實際超限後如何重新準備輸入的處理。
+
+因此，Stage 1 可以先完成大型結果處理；但**基本歷史整理與恢復也應納入第一個可用的長任務版本**。進階自動化策略可以後補。正常容量內，仍然保留完整首次讀取，不把清單變成每次讀取的強制關卡。
+
+**6. 「讀取並行、寫入依序」仍然太粗略。**
+
+例如同一批工具包含：
+
+```text
+save(...)
+view_preview(version="latest")
+export(version="latest")
+```
+
+若 preview 被當成讀取而立即並行，它可能看到保存前的版本。寫入操作彼此有序，也解決不了這個問題。
+
+我會讓第一版維持清楚的工具執行順序，只對**引用不可變版本、彼此沒有依賴的讀取**開放並行。預覽和匯出盡量綁定明確 `version_id`。
+
+此外，把多個工具包進一個 graph node，不會自動讓每個工具都獲得獨立 checkpoint。恢復仍須重用已完成工具的結果和 context intents，避免把整批重新執行。
+
+**7. 交付應對齊「選定版本」，不能一律對齊「最新版本」。**
+
+「永遠交付最新保存成果」可能損害 agent 的判斷權。
+
+例如 V10 已經完成，agent 保存 V11 試改表格，檢查後決定保留 V10。若 delivery service 自動匯出最新 V11，就交付了 agent 不想採用的版本。
+
+我會將交付意圖綁定明確的 `(version_id, scope_rev)`。版本可以由 agent 的完成動作選定，也可以由當前任務中已明確選定的工作成果提供，不需要每次再問使用者。
+
+接著由 app 自動完成一致性打包；單純漏匯出，不值得多消耗一次模型回合。
+
+提案的三種終止狀態也不是互斥的：**可以同時存在已交付版本，以及保存著但已放棄的試改候選。** 舊候選的存在不應自動觸發修補。只有仍屬於當前未完成工作的候選，才需要提示 agent 處理。
+
+「需要使用者澄清」則應進入等待輸入狀態，不能直接繞回 prepare，讓模型在沒有新資訊時繼續轉圈。
+
+**8. 第一階段仍要把文件編輯的實用性放在核心位置。**
+
+目前提案明確列出 `patch_block`，但 app 的可用性還依賴：
+
+- 插入、追加、刪除和調整區塊順序。
+- 局部修改頁碼或來源對應。
+- 用 `candidate_ref` 重用已保存正文，只修正錯誤 metadata。
+- 修改一小部分時，不必重新生成整份文件或完整頁碼表。
+
+這些正是現有文件列出的實際操作缺口。[PRODUCT_REQUIREMENTS.md:60](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/PRODUCT_REQUIREMENTS.md:60)
+
+我會以這些能力，加上可恢復執行、基本 context 整理及明確版本交付，構成第一個完整可用的重構版本。進階表格定位、局部視覺對照和更複雜的 context 策略再逐步增加。
+
+架構上可以維持同一個 Python backend 內的幾個模組；「Nexus 請求服務」不必另開一個 HTTP 服務。LangGraph 管執行位置與狀態，agent 決定讀甚麼、如何重建和如何修正，文件核心確保成果保存與交付一致。這是我會選的設計方向；四個節點只是目前合理的實作形狀。
+
+本輪核對了附件、現有程式及官方文件；未修改專案，也未執行 Nexus 呼叫。

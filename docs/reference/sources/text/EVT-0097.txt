@@ -1,0 +1,49 @@
+我查了 OpenAI、Anthropic、LangChain／LangGraph、AWS 和 Microsoft 的官方文件。**目前較一致的工程方向，是管理下一輪真正需要的 context、持久保存工作進度，以及在有限預算內恢復故障。** 各平台實作不同，沒有一套所有產品都適用的標準。
+
+以下是截至 **2026-10-20** 查到、與本專案最相關的做法。
+
+**Context management 通常會組合幾種方法。**
+
+| 做法 | 實際用途與限制 |
+|---|---|
+| **按需取回資料** | 保留檔案、位置、大小等索引，讓 agent 精確查找內容。Anthropic 描述 Claude Code 採用預載必要指引＋執行時搜尋的混合方式；資料探索本身也有時間與 token 成本。[Anthropic 工程文章](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) |
+| **保留近期原文，整理較舊歷史** | 常見選項包括 trimming、清理舊工具結果、摘要較舊訊息。取捨是省容量與可能遺失細節，因此需要按任務選擇。[LangChain short-term memory](https://docs.langchain.com/oss/python/langchain/short-term-memory) |
+| **原生 compaction** | OpenAI Responses 提供服務端門檻觸發及獨立 compact endpoint；Anthropic 提供按需與門檻式 compaction，也支援保留近期 turns。這些都有特定 API、模型及平台條件。[OpenAI Compaction](https://developers.openai.com/api/docs/guides/compaction)、[Anthropic Compaction](https://platform.claude.com/docs/en/build-with-claude/compaction) |
+| **把任務狀態放在 context 之外** | 工作筆記、已完成事項、未解問題及成品持久保存，之後再讀回。LangGraph 也區分執行狀態快照與跨執行的資料儲存。[LangGraph Persistence](https://docs.langchain.com/oss/python/langgraph/persistence) |
+| **量度實際輸入容量** | 可使用供應商的 token-counting 能力確認請求大小；文字字元數不能代替包含圖片、工具 schema 等內容的模型輸入量。[OpenAI Counting tokens](https://developers.openai.com/api/docs/guides/token-counting) |
+
+這些資料**沒有建立通用的「到 30%／50% 就必須壓縮」規則**。較合理的選擇取決於任務依賴、模型容量、壓縮造成的資訊損失，以及補讀成本。
+
+還有一個重要細節：**原生 compaction 不一定只是普通文字摘要。** OpenAI 會回傳包含 opaque compaction item 的下一個 context；獨立 compact endpoint 的回傳窗口應完整沿用。自行刪改它，可能破壞服務預期的續接方式。[OpenAI 官方合約](https://developers.openai.com/api/docs/guides/compaction)
+
+對我們的 PDF 轉換而言，我的判斷是：原始來源、精確讀取和保存成品應繼續獨立於摘要；要解決的是長任務中「何時整理 context、必須留下甚麼、如何找回細節」。現有 `_select`、release、checkpoint 已覆蓋部分方法，但尚未證明適用本專案的整體策略。
+
+**Network management 的成熟做法，涵蓋 timeout、retry 和工作復原。**
+
+| 做法 | 實際用途與限制 |
+|---|---|
+| **明確區分 timeout** | Connection、讀取等待和整體 deadline 要有清楚語義；設定值應考慮實際延遲及可接受等待。過短會製造重試，過長會拖延失敗處理。[AWS Builders’ Library](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/) |
+| **有限、按錯誤分類的重試** | 對暫時故障採用 backoff／jitter，尊重 `Retry-After`，限制 attempts／時間。先確認 SDK 內建行為，避免 app、SDK、proxy 各自重試而疊乘。[Microsoft transient-fault guidance](https://learn.microsoft.com/en-us/azure/architecture/best-practices/transient-faults) |
+| **保存進度，避免重做成功步驟** | LangGraph 保存已完成節點的結果，其他節點失敗後可沿用；涉及副作用的操作則需要冪等或結果核對。Timeout 本身不代表操作沒有發生。[LangGraph Checkpointers](https://docs.langchain.com/oss/python/langgraph/checkpointers)、[AWS 重試與副作用說明](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/) |
+| **獨立處理 stream 中途失敗** | HTTP 200 後仍可能收到 stream error，因此要檢查協定的完成狀態。Anthropic 官方文件明確列出這個情況。[Claude API errors](https://platform.claude.com/docs/en/api/errors) |
+| **長生成採可查詢的非同步工作** | 服務支援時，可先取得工作 ID，再查詢狀態、取回結果或取消，減少依賴一條長連線。OpenAI Background mode 提供這些能力，但有適用條件與資料保留規則。[OpenAI Background mode](https://developers.openai.com/api/docs/guides/background) |
+
+對持續故障、高並發或共享服務，還可能加入 **circuit breaker、整體 retry budget、流量限制**。它們用於避免故障時繼續放大負載；單一桌面轉換工作是否需要，應按實際負載判斷。[Microsoft Circuit Breaker](https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker)
+
+這裏也要分清名稱：**LangGraph 的 checkpoint 通常是執行狀態快照；本專案的 context checkpoint 是開始新的模型 context。** 保存執行狀態、縮小模型輸入、恢復網路請求，是不同責任。
+
+**對照本專案，我的判斷如下。**
+
+| 領域 | 已符合上述做法的部分 | 仍值得注意的差距 |
+|---|---|---|
+| Context | 原始證據保存、精確取回、可選 release／checkpoint、保存成品與 active input 分開 | 尚未形成經交付驗證的長任務 context 策略；容量、品質及淨效益仍需分別判斷 |
+| Network | 單一 retry owner、有限預算、backoff／jitter、receipts、完整回覆驗證、保留有用工作 | 自動恢復預設關閉；等待策略的正常使用體驗仍待決；缺乏遠端原結果查詢／取消能力 |
+
+所以，我會修正「還缺很多基礎機制」這種印象：**不少關鍵機制已經存在，下一層問題是如何選擇和組合，讓普通長任務可靠完成。**
+
+這次搜尋支持兩個具體設計議題：
+
+- **Context：** 在可取回原始證據的前提下，如何保留足夠工作狀態，及時整理累積歷史。
+- **Network：** 如何設定合理的正常恢復政策，並在未知結果、重試耗盡及使用者取消時留下清楚狀態。
+
+供應商文件提供了可借鑑的路線；**Nexus 是否支援原生 compaction、background retrieval 或 cancellation，仍需另行確認，不能由相容 API 或 model alias 推定。** 這些發現也沒有直接構成更換 controller、引入新框架或重開試驗的理由。

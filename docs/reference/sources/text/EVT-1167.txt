@@ -1,0 +1,1 @@
+[$export-codex-chat](C:\\Users\\laichungling\\.codex\\skills\\export-codex-chat\\SKILL.md) export all to C:\Users\laichungling\Documents\ChatGPT\pdf-to-md-agent - 整體進度與方向審閱

@@ -1,0 +1,224 @@
+這份修正精準刺破了前幾輪設計中逐漸膨脹的「過度承諾」與「概念混淆」——特別是揪出 **P 任務的 selective/checkpoint 本來就是關閉的（不能算自然採用失敗）**、指出 **`Block` 目前根本沒有 `bbox` 欄位**、點破 **「不是所有工作狀態都屬於文件全域（如單次任務的 `outside_scope`）」**，以及點出 **外部 MCP 宿主無法由我們的 Server 控制其對話歷史與水位**。最重要的是你在最後提出的施工順序修正：**改用「由小到大的垂直可用切片（Vertical Slices）」取代「P0→P1→P2 隔層堆疊」**，這正是把專案從「無限期的架構紙上談兵」拉回「真實產品交付」的關鍵轉折。
+
+若以「完全重構（Clean-Slate Reconstruction）、讓 App 發揮最佳功能」為唯一目標，這份文字本身仍有 **五個深層的設計盲點與未解矛盾**，且整個專案在經歷十幾輪架構疊加後，出現了一個必須正面戳破的 **「雙資料庫狀態分裂」結構性陷阱**。
+
+---
+
+## 一、 對這份修正的五個正面交鋒（Confrontations & Rebuttals）
+
+### 1. 交鋒一（針對第 1 點）：純字串比對的 `patch_block`（`expected_matches: 1`）在真實表格中會頻繁失效，且「依序執行多個 Patch」存在座標漂移陷阱
+
+你正確指出「保持完整邏輯區塊」不代表禁止對表格做局部修補，並主張不需要先建結構化表格編輯器，而是對 Markdown／HTML 字串提供精確比對的 `patch_block`（借用 RFC 6902 的前置 `test` 與操作序列）。
+
+* **真實表格的「稀疏重複陷阱」：** 為什麼 Agent 需要修補長表格？在 JRE 或 Nursing 的實測中，最常見的修改是「某個儲存格漏了粗體（`| 12.4 |` $\rightarrow$ `| **12.4** |`）」、「某個空白格填錯（`|  |` $\rightarrow$ `| — |`）」或「修正單一錯字（`礪` $\rightarrow$ `厲`）」。在一張 30 行、6 欄的 Markdown 或 HTML 表格中，像 `| 0 |`、`<td></td>`、`| 是 |` 這樣的片段會重複出現十幾次！
+
+
+* 如果 `patch_block` 只能靠 `old_text` 字串精確出現 1 次（`expected_matches: 1`）來定位，Agent 為了讓搜尋字串唯一，**被迫在 `old_text` 和 `new_text` 中連帶複製前後 3～5 整行的表格內容作為錨點**。一旦要在 JSON 參數裡重傳好幾行充滿 `|`、`<tr>`、`rowspan` 的字串，不僅轉義極易出錯，也喪失了「小範圍精確修補」的意義。
+
+
+* **多 Patch 序列的「錨點互毀問題」：** 你提到「明確定義多個 patch 的順序與重疊處理」。如果同一次呼叫包含 3 個字串替換，且採「依序執行（Sequential Application）」，第 1 個 patch 修改了字串後，可能會意外創造出或破壞第 2 個 patch 的匹配字串！
+* **最佳功能設計（行號區間定位 ＋ 基於原始快照的平行非重疊套用）：**
+不需要做複雜的 DOM／AST 表格編輯器，只需給 `patch_block` 加上**區塊內行號定位（1-based Line-Scoped Patching）**：
+1. 當 Agent 呼叫讀取／重開某個 `block_id` 時，工具支援回傳帶行號的視圖（例如 `001: | 部門 | 預算 | ...`）。
+2. `patch_block` 的每個操作指定 `line_range: [start_line, end_line]` 搭配 `expected_old_text`（即 RFC 6902 的 `test`）與 `replacement_text`。因為鎖定了第 18 行，就算 `| 0 |` 在整張表出現 50 次，在第 18 行內也只有唯一 1 個（或極少數可指定 `occurrence_in_range`）！
+3. **多 Patch 原子套用規則：** 同一批針對同一 `block_id` 的所有 patches，**全部先對齊修改前的原始區塊文字（Base Snapshot）驗證行號與字串不重疊**，驗證通過後**由後往前（Bottom-Up，從最大索引往最小索引）一次性替換**，徹底消除前一個 patch 改動行號或錨點導致後一個 patch 錯位的問題。
+
+
+
+---
+
+### 2. 交鋒二（針對第 2 點）：同框視覺對照為何未必能抓出強調格式錯誤？真正的瓶頸在「視覺 Token 降採樣」與「缺少來源錨點繼承」
+
+你敏銳地指出：現有紀錄並未證明「跨回合視覺記憶」是 13 頁測試（Jobs A/C）強調格式錯誤（第 14/16/18/24 頁）的原因，也不能保證同框對照就能一眼看出。
+
+* **為什麼模型看了圖還是漏掉粗體或把 `礪` 看成 `厲`？**
+1. **拼接同框（Side-by-Side Stitching）反而會降低單字解析度：** 如果把「來源 PDF 全頁渲染圖」與「輸出 HTML 全頁預覽截圖」在畫面上左右拼接成一張寬幅大圖送入模型，主流視覺模型（Vision Encoders）會對超過最大邊長限制的圖片執行自動縮放（Downscaling）。原本一個中文字有 $24 \times 24$ 像素，左右拼接被縮放後可能只剩 $12 \times 12$ 像素——「石」字旁與「厂」字旁（`礪` vs `厲`）或微弱的筆畫加粗，在縮圖後會在物理像素層面直接糊掉！
+2. **缺乏區塊與來源座標的「無痛繼承」：** 你指出現有 `Block` 只有 `id`、`pages`、`markdown`，沒有 `bbox`，且正確主張「不需要強迫 Agent 為每個字或儲存格建立 bbox」。但請注意：**Agent 不必手寫 `bbox`，因為 `inspect_pdf` 和 `ocr_pdf` 的原始輸出裡本來就已經有每個文字區塊（Text Block）與圖片的 `bbox` 了！**
+
+
+* **最佳功能設計（雙圖獨立原尺寸傳遞 ＋ 證據區塊 ID 順手關聯）：**
+1. **對照不併圖：** 當進行來源与成品視覺對照時，不要把兩張圖合成一張大圖；應作為同一次模型請求中的兩張獨立原生圖片（Native Image Content Items）傳入，並在文字標籤中標明對應關係，確保兩張圖各自享有完整的視覺解析度預算。
+2. **零負擔的粗粒度區域對齊：** 在 `Block` 模型中新增一個選填的 `source_refs: list[SourceRef]`（可填 `{page: 14}`，也可選填 `{page: 14, from_inspect_block: "p14_b03"}` 或 `{page: 14, crop_asset_id: "img_02"}`）。Agent 寫草稿時若順手填了 `p14_b03`，App 底層就能自動從 `inspect` 證據中查出精確 `bbox` 來提供局部高 DPI 對照與桌面 UI 跳轉；若 Agent 只填了 `pages: [14]`，就自然退回你建議的整頁粗定位，完全不增加 Agent 的座標計算作業。
+
+
+
+---
+
+### 3. 交鋒三（針對第 4 點）：把你對 `outside_scope` 的洞察推到底——應徹底廢除「每次存檔都必須在文件中填滿全書 173 頁映射」的舊契約！
+
+你在第 4 點抓出了一個極為關鍵的架構缺陷：**「不是所有工作狀態都屬於文件全域。例如今天只轉換第 1–10 頁，其他頁屬於這個任務的 `outside_scope`；明天要求整本書，這些頁不能永久維持『範圍外』。」**
+
+* **正面交鋒現行設計：** 既然你已經看出 `outside_scope` 是**當次任務（Task）的範圍屬性**，而不是**文件（Document）本身的內容屬性**，請回頭看現行專案的 `save` / `revise` 契約（`TOOLS.md`）——現行系統要求**每一個已保存的文件版本（Document Version），都必須在文件結構內塞入整本 PDF 全部 173 頁的完整映射表**，並把第 11–173 頁硬寫進文件版本裡標為 `outside_scope`！
+
+
+* **這造成了兩個嚴重後果：**
+1. 當第 1–10 頁完成後，這份文件版本本身就背負了「第 11–173 頁是 `outside_scope`」的過時標籤；明天啟動新任務續寫第 11–20 頁時，狀態立刻衝突。
+2. 在長文件（如 290 頁的新聞寫作 PDF）中，為了改第 12 頁的一個字，文件版本與驗證器卻要反覆搬運並檢查另外 289 頁的映射狀態。
+
+
+
+
+* **最佳功能設計（將「文件頁面覆蓋事實」與「任務目標範圍」徹底解耦）：**
+* **文件層（Document Service）：** 只記錄**已經被探勘或納入草稿／版本的頁面事實**（稀疏映射表 Sparse Page Map）。每一頁在文件中的狀態只有三種客觀事實：
+* `converted`（已有對應區塊與印刷頁碼 `printed_page`）；
+* `source_blank_or_omitted`（經確認原頁為空白或純裝飾頁，不產出正文區塊，但記錄印刷頁碼）；
+* `drafting`（處理中草稿）。
+* **尚未處理的頁面，在文件中就是單純的「尚未收錄（Unrecorded）」，根本不需要在文件裡存幾百筆 `outside_scope`！**
+
+
+* **任務層（Task State）：** 記錄本次任務的 `target_pages: [1..10]`。
+* **驗收與匯出檢查（Task-Scoped Completeness Check）：** 當檢查「本次任務是否完成」時，只需驗證：`Task.target_pages` 中的每一頁，在當前文件版本中是否都已達到 `converted` 或 `source_blank_or_omitted`！這樣當明天第二個任務把 `target_pages` 設為 `[11..173]` 時，直接基於同一份文件繼續往後新增頁面即可，零狀態衝突、零全書映射搬運稅。
+
+
+
+---
+
+### 4. 交鋒四（針對第 5 點）：既然外部 MCP 宿主無法被我們壓縮 Context，「工具回傳的源頭控管」在 MCP 模式下就是唯一防線
+
+你在第 5 點精準劃出了內建 Agent 與外部 MCP 的邊界：外部 MCP 宿主（如 Claude Desktop、Cursor、Codex）自行管理模型與對話歷史，我們的 MCP Server 既不知道宿主的真實容量水位，也無法透過 `release_evidence` 把宿主舊對話裡的文字與圖片刪掉。
+
+* **延伸的架構衝擊：** 這意味著我們在前幾輪討論的「先把大結果存起來，等 `wrap_model_call` 組裝輸入時再動態投影或釋放舊證據」，**在外部 MCP 模式下完全無效！**
+* 在內建 Agent 中，如果第 1 次 `inspect` 回傳了 191,662 字元，內建執行層還能在第 3 輪透過 Context Projection 把它從後續請求中拿掉。
+
+
+* 但在外部 MCP 模式下，**只要你的 MCP Tool 在第 1 次呼叫時回傳了 191,662 字元的 JSON 字串，這 19 萬字元就會永遠焊死在外部宿主的對話歷史裡，我們連事後補救的機會都沒有！**
+
+
+* **最佳功能設計（由 `Document/Evidence Service` 提供跨介面一致的「安全首回傳契約」）：**
+1. 雖然全局 `context_footprint` 屬於內建執行層，但 **「單次工具回傳的資料形狀、精簡預設視圖與自身大小報告（Self-Footprint Metadata）」必須下沉到共用的工具核心層**。
+2. 無論是內建 Agent 還是外部 MCP 呼叫 `inspect_pdf` / `ocr_pdf`，預設都不應把重疊的 `text` + 完整 `get_text("dict")` + `words` 同時傾倒在同一個回覆字串裡；而是回傳結構清晰的預設視圖，並在每個工具回覆的 metadata 中附上 `{ "returned_chars": 4200, "full_evidence_id": "ev_01", "available_detail_fields": ["spans_dict", "words", "tsv"], "omitted_bytes": 187400 }`。這讓外部 MCP 宿主既不會在第一輪被塞爆，又能自主按需調用 `read_evidence` 讀取細部座標。
+
+
+
+---
+
+### 5. 交鋒五（針對第 6 點與整體架構）：為什麼會出現「Policy 8 倒退覆蓋 Policy 9」的 Bug？因為前幾輪把「執行狀態」拆進了兩個不同的資料庫！
+
+你在第 6 點抓出了一個非常幽微的 Bug：「若這批曾產生 policy 8，但分支後來已合法推進到 policy 9，再看到舊批次時強制設回 8，就會撤銷後續決定。」同時也指出了 `(thread_id, checkpoint_ns, tool_call_id)` 在不同父模型回覆下的重名風險，以及 `1 + automatic_retries` 在 `automatic_retries = 0` 時無法處理容量超限重組的矛盾。
+
+* **直視問題根源（對前幾輪過度設計的總反思）：**
+為什麼系統會複雜到需要手動對帳「App SQLite 裡的 `produced_policy_rev: 8`」與「LangGraph Checkpoint 裡的 `active_policy_rev: 9`」？
+**因為前幾輪的設計犯了一個架構大忌：把明明屬於同一個「執行生命週期（Execution State）」的狀態，一分為二放在 LangGraph Checkpointer 和 App 自建的 `context_policies` SQLite 表裡！**
+* **徹底簡化的解法（按第 4 點的職責分工，讓執行狀態回歸 Checkpoint 單一真相）：**
+回看你在第 4 點列出的四層分工：
+1. `文件與證據服務`（跨任務、跨介面持久存在）
+2. `任務狀態`（有效要求、範圍、進度）
+3. `執行狀態`（對話、待執行工作、**context 政策**、操作與請求帳本）
+4. `Continuity Snapshot`（交接視圖）
+
+
+既然 **Context 政策（哪些證據被選為釋放、哪些區塊被釘選、上次整理到哪則訊息）100% 屬於「內建執行狀態」**（且你在第 5 點也證明了外部 MCP 根本用不到它），**那就根本不應該在外部 SQLite 建一張 `context_policies` 表，再拿 `policy_rev` 去跟 LangGraph 對帳！**
+* 直接把 `context_policy`（保留／釋放清單、釘選引用、工作筆記快照）作為結構化欄位放進 **LangGraph 的 `AgentState`（搭配自訂 Reducer）**。
+* 當工具或整理節點回傳 `Command(update={"context_policy": ...})` 時，它直接跟著 LangGraph 的 Checkpoint 一起原子儲存、一起隨分支前進或回退——**永遠不可能發生「資料庫在 policy 8、分支在 policy 9」的跨庫倒退問題！**
+
+
+* **關於操作重播身分與容量重組預算的精確切分：**
+1. **操作唯一身分：** 將 App 文件服務的操作冪等鍵定為 `(thread_id, checkpoint_ns, parent_model_request_id, tool_call_id)`。因為每一次實際發出的模型請求都有唯一的 `parent_model_request_id`（即 `input_view_id`），不同父回覆產生的同名 `tool_call_id`（例如模型在不同輪次都生出 `"call_1"`）自然擁有完全不同的複合鍵，徹底消除誤判。
+2. **分離「網路故障重試（`automatic_retries`）」與「容量超限降級重送（`overflow_repack_allowance`）」：**
+* `automatic_retries`（預設 `0`，試驗設為 `2`，伴隨 60–120 秒退避等待）專門處理 **HTTP 500/502/503/504、Timeout 與串流中斷**。
+
+
+* 當請求在本地發送前估算就超限，本地直接重新組裝，**消耗 0 次 HTTP 額度**。
+* 萬一本地估算通過、實際發送後被上游明確以 **容量超限（HTTP 400 `context_length_exceeded` 或 413）** 拒絕（非伺服器崩潰，無須等待 60 秒退避），即使 `automatic_retries = 0`，也應允許 **每回合最多 1 次立即縮減投影後的重送（Immediate Payload-Shrink Retry）**，並如實記入同一本 HTTP 請求總帳本（受回合總發送上限約束）。這樣既誠實記帳，又不會在 `automatic_retries = 0` 的預設設定下因為一次 Token 估算誤差就直接炸毀整個任務。
+
+
+
+
+
+---
+
+## 二、 這個 App 應該如何設計才能達到最佳功能？（Clean-Slate 終極架構）
+
+綜合所有實戰證據與你這份修正的精髓，若現在動手徹底重構，最能讓 App 發揮極致功能、同時把程式碼維護量壓到最低的架構，應濃縮為 **「一個獨立核心（Document & Evidence Core）＋ 一個內建執行器（LangGraph Runtime）＋ 四階段垂直交付」**：
+
+```mermaid
+flowchart TD
+    subgraph Interfaces["多介面入口 (各自管理自身對話/UI)"]
+        UI["Electron 桌面 UI\n(來源/成品錨點跳轉、草稿檢視)"]
+        MCP["外部 MCP / CLI Adapter\n(僅暴露文件/證據操作與資料大小)"]
+        BuiltIn["內建 Agent 執行層 (LangChain create_agent)\n- LangGraph State 內建 Context Policy 與筆記\n- 模型輸入組裝邊界：計算三層容量水位計\n- 請求帳本與雙協定 (Chat/Responses) 編碼"]
+    end
+
+    subgraph Core["共用文件與證據服務 (Document & Evidence Service - SQLite + Blobs)"]
+        EvEngine["證據與視覺引擎\n- PyMuPDF / Tesseract.js / 原尺寸預覽渲染\n- 輸出附帶粗/細來源引用與大小 Metadata"]
+        DocEngine["文件與候選稿引擎\n- 稀疏頁碼覆蓋表 (不塞全書 outside_scope)\n- 候選稿保存 + 行號區間 patch_block\n- 綁定版本之核對紀錄"]
+        TaskStore["任務與範圍紀錄 (Task Scope & Continuity View)\n- 獨立記錄本次任務 target_pages 與要求版本\n- 按需投影 Continuity Snapshot 供交接/子任務使用"]
+    end
+
+    UI --> Core
+    MCP --> Core
+    UI --> BuiltIn
+    BuiltIn --> Core
+
+```
+
+### 四大核心模組的最佳功能設計規格
+
+| 模組邊界 | 關鍵設計選擇（吸收全部修正後的定案） | 直接解決的實戰痛點 |
+| --- | --- | --- |
+| **1. 文件與局部修補引擎**<br>
+
+<br>（`DocumentEngine`） | - **儲存與修補分離：** 區塊保持完整邏輯單位（`id`, `pages`, `source_refs`, `markdown`）；支援 `append`/`insert`/`replace` 及**帶行號區間與原文 `test` 檢查的 `patch_block**`（多 patch 基於原始快照由下往上原子套用）。<br>
+
+<br>- **稀疏頁面記錄：** 文件只記錄已處理／已確認空白的頁面；`outside_scope` 移交 `TaskStore`，不再每次存檔搬運全書 173 頁映射。
+
+<br>
+
+<br>- **失敗零丟失：** 任何修改先存為可追溯的 `candidate_id`，驗證失敗時保留內文供直接修正 metadata 或局部重試。
+
+ | 徹底消滅 40 頁測試中因 `revise` 連續區塊限制與全書頁碼表漏填導致的 8 次工具報錯與重寫失真（如第 27 頁 `本文件` $\rightarrow$ `本文作`）。
+
+ |
+| **2. 證據與對照服務**<br>
+
+<br>（`EvidenceEngine`） | - **漸進式來源錨點：** 自動保留 `inspect`/`ocr` 區塊的頁碼與已知 `bbox`；無 `bbox` 時標示為頁級粗定位，支援多頁／多區域對多區塊（M:N）。<br>
+
+<br>- **保真視覺對照：** `view_preview` 綁定確切 `draft_rev` 或 `version_id`；對照時提供**原尺寸局部裁切或雙圖獨立輸入**（不強制拼接縮圖），修改後自動將舊版核對紀錄標為「對應舊版，需重評」。 | 針對性改善 13 頁測試中第 14/16/18/24 頁的強調格式遺漏與字形誤判（`礪` vs `厲`），且不強迫 Agent 手工標註座標。
+
+ |
+| **3. 內建 Context 與容量水位計**<br>
+
+<br>（`BuiltIn Agent Layer`） | - **輸入組裝邊界計算（綁定 `input_view_id`）：** 在發送請求前計算三維水位（1. 原始證據總大小、2. 本次選取與重複出現後的活躍輸入貢獻、3. 扣除系統/工具/輸出預留後的估算餘裕；未知上限誠實標為 `unknown`）。<br>
+
+<br>- **狀態單一真相：** Context Policy（釋放選擇、釘選、活躍筆記）直接存於 **LangGraph `AgentState**`，不另建外部 `context_policies` 表，徹底根除跨庫版本倒退。<br>
+
+<br>- **MCP 邊界誠實化：** 外部 MCP 只回傳單次工具結果大小與精確片段，不計算宿主全局水位，也不宣稱 `release` 能刪除宿主歷史。 | 解決 13 頁 C 任務一口氣拉取 197 萬字元完整 OCR 的盲目爆量問題，同時避免外部 MCP 契約做出無法兌現的承諾。
+
+ |
+| **4. 任務生命週期與恢復分流**<br>
+
+<br>（`Lifecycle & Continuity`） | 嚴格區分三種續工機制：<br>
+
+<br>1. **程序重啟恢復同一執行：** 直接走 LangGraph Checkpointer + 操作收據（複合鍵含 `parent_request_id`）原位續跑。<br>
+
+<br>2. **同一 Agent 整理 Context：** 在組裝邊界更新 `AgentState` 的投影選擇與工作筆記。<br>
+
+<br>3. **跨任務／子任務交接：** 從 `DocumentEngine` + `TaskStore` 投影出唯讀的 `Continuity Snapshot`（含目標範圍、當前版本與未決問題），不繼承舊任務的待執行 Tool Calls。 | 解決「今天轉 1–10 頁、明天轉全書」的範圍污染問題，以及重啟時漏掉待處理工具結果或誤繼承舊操作的混亂。 |
+
+---
+
+## 三、 落地施工路線圖：調整後的四階段垂直切片（Vertical Slices）
+
+你最後提出的四階段漸進交付順序非常務實。若結合上述修正微調每階段的驗收閉環，我們可以用最小風險完成重構：
+
+1. **Slice 1：最小端到端轉換閉環（Minimal Framework + Nexus + Sparse Document Core）**
+* **實作內容：** 接通 `create_agent`（LangGraph Checkpointer）與 Nexus 雙協定（Chat Completions / Responses）適配層（含持久化的單輪網路重試帳本）；建立支援稀疏頁面映射的 `DocumentService`（`inspect`, `ocr`, `save`, `reopen`, `export`）。
+* **具體回答的產品問題：** 框架能否在真實 Nexus 路由上正確往返工具、原生圖片與 reasoning，並在不強迫填寫全書 `outside_scope` 的情況下，穩定完成一個完整章節的交付與中斷原位恢復？
+
+
+2. **Slice 2：零重寫修補與誠實來源對照（Candidate Reuse + Line-Scoped `patch_block` + Progressive Provenance）**
+* **實作內容：** 加入 `Working Draft` 與候選稿自動保留（驗證失敗回傳 `candidate_id`）；實作支援行號區間與前置 `test` 的 `patch_block`；加入綁定版本的 `view_preview` 與漸進式來源區域對照。
+* **具體回答的產品問題：** 當長表格出現單一字形／強調格式錯誤（如 `礪` vs `厲` 或漏標粗體）或頁碼 metadata 漏填時，Agent 能否在不重傳整張表、不丟失已寫內文的前提下完成精確修補與核對？
+
+
+3. **Slice 3：組裝邊界水位計與 Context 延續（Input-Boundary Capacity Gauge + Evidence Release + Compaction）**
+* **實作內容：** 在內建 Agent 的 `wrap_model_call` 組裝邊界實作三維容量水位計（區分原始大小、活躍貢獻、餘裕）；支援證據釋放投影與跨 Context 整理（將 Context Policy 收歸 LangGraph State，並提供按需生成的 `Continuity Snapshot`）。
+* **具體回答的產品問題：** 面對 40 頁以上或含巨量 OCR 的長文件時，Agent 能否清楚感知本次輸入負擔、釋放無用巨量結構，並在跨 Context 後無損延續跨頁表頭與未決問題？
+
+
+4. **Slice 4：多介面擴展（Electron UI + 誠實邊界的 MCP + 選用子任務）**
+* **實作內容：** 將已驗證穩定的 `DocumentService` 與 `TaskStore` 接上 Electron 預覽／對照介面（利用粗／細來源錨點實現「跳至相關來源」）及外部 MCP Server（暴露精確讀取與局部修補，不假裝控制外部宿主 Context）。
+
+
+
+這個四階段垂直切片完全擺脫了「先造完十張資料表才跑第一頁 PDF」的瀑布式風險。我們是否就直接以 **Slice 1（最小 `create_agent` + Nexus 雙協定適配 + 解耦 `TaskScope` 與 `DocumentState` 的核心服務）** 作為重構的第一個實作目標？

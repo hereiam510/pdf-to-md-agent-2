@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad97f6f92388191ab80bf59298a3fd8",
+    "content": [
+      {
+        "type": "Text",
+        "text": "這版修正了幾個實質問題，但有兩條新規則需要調整：版本號較大，不代表它包含另一個並行修改；未載入的證據，也不必逐項永久留在每輪 context。前者可能悄悄丟掉有效設定，後者可能讓檢索索引本身越積越大。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2207,
+  "timestamp_original": "2026-10-22T03:13:53.918Z",
+  "timestamp_display": "2026-10-22T11:13:53.918+08:00",
+  "turn_id": "01a16197-e457-7912-8016-03dbb9de1b4a",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T11:13:53.836+08:00",
+  "completed_at": "2026-10-22T11:13:53.918+08:00",
+  "event_id": "EVT-0715",
+  "evidence_path": "evidence/events/EVT-0715.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

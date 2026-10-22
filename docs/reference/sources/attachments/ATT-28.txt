@@ -1,0 +1,182 @@
+將版本登記、操作唯一性與工作指標收回 **SQLite 短交易（搭配外部不可變檔案）**，並撤回「以最後一次成功提交時間篩選候選稿」、「將估算失敗值當成模型規格上限」與「把緊急語義壓縮藏進確定性準備步驟」，這幾項修正精準堵住了會在恢復與長任務續工時發生的資料覆蓋與邏輯漏洞。
+
+若從「允許徹底重構、讓 App 發揮最佳功能」的全局角度審視這 7 點修正與整個專案，目前設計中仍有 **五個深層機制張力** 以及 **兩個先前未充分討論的全專案盲點** 值得正面交鋒。
+
+---
+
+## 一、 針對 7 點修正的五個深度交鋒與工程收斂
+
+### 1. 交鋒一（針對第 4 點）：為甚麼「候選稿重用時的巢狀欄位合併規則」是個假議題？因為我們不該重用「半截失敗的工具呼叫」，而該重用「已落盤的候選區塊內容」！
+
+你在第 4 點提出了一個極為尖銳的問題：**「例如候選中有第 12、13 頁的更新，這次只修正第 12 頁，究竟是替換整個 `page_map_updates`，還是按頁碼合併？如果不定義，保存正文的好處可能被 metadata 靜默遺失抵銷。」** 同時你也指出：「修正候選是一個新操作，不能沿用原 operation ID 卻更換輸入（`agent_tools.py:389`）。」
+
+* **正面交鋒：** 如果我們把「重用候選稿」設計成「在新的工具呼叫裡傳入 `reuse_candidate_ref="cand_04"`，然後讓新呼叫的參數去跟 `cand_04` 的舊 JSON 參數做局部欄位覆寫（Partial Argument Override）」，無論怎麼定義陣列與巢狀欄位的合併規則，模型都很容易搞混「哪些欄位被繼承了、哪些欄位被洗掉了」。
+* **為什麼模型需要重用候選稿？** 因為正文（`blocks` / `block_ops`）動輒幾千字，重新生成既慢又容易改錯字（如歷史 40 頁測試中第 27 頁從候選稿的「本文件」變成重寫後的「本文作」）；相反地，1～2 頁的 `page_map_updates` 只佔幾十個字元，讓模型在修正呼叫中**完整明確地寫出當次要更新的頁碼項目**，根本沒有負擔！
+
+
+* **最佳功能設計（只重用「候選內容區塊」，不搞「跨呼叫 JSON 參數隱式繼承」）：**
+1. **前置保存時為每個內容區塊建立可尋址引用：** 當 `intercept_tool_call` 或派發器保存原始寫入參數為 `cand_04` 時，同時將其中包含的正文區塊索引為 `cand_04` 的可重用內容集。
+2. **修正呼叫是一次全新的獨立操作（新 `operation_id`）：** 當驗證失敗時，錯誤回報明確列出：
+* 哪些 metadata 欄位有錯；
+* `cand_04` 中已安全保存的 `block_ops` 摘要（例如：`cand_04 contains 3 blocks: blk_10..blk_12`）。
+
+
+3. **零歧義重用契約：** 模型發起新操作時，使用明確的 **`block_ops_from_candidate="cand_04"`**（代表本次操作的區塊變更完整取自 `cand_04`，不做半截陣列拼接），同時在本次呼叫中**明確提供修正後的 `page_map_updates**`（且 `page_map_updates` 以物理頁碼 `pdf_page` 為唯一鍵，每一頁直接對齊 `base_version` 的頁碼表做 Per-Page Upsert）。
+4. **拆分工具表面以降低 Schema 認知負擔：** 正如你所言「工具數目少不一定代表更容易使用」，與其把所有操作塞進一個巨型多態工具，不如拆為職責分明的三個工具（共用同一個 SQLite 原子版本引擎）：
+* **`save_draft`**：用於初次建立或整節草稿提交（支援同時提交區塊與已知頁碼，未確認處標為 `unconfirmed`）；
+
+
+* **`edit_document`**：用於針對明確 `base_version` 執行增量 `block_ops`（`insert` / `append` / `replace` / `delete` / `reorder` / 唯一匹配 `patch`）、稀疏頁碼更新與 `block_ops_from_candidate` 重用；
+* **`select_delivery`**：專門用於切換當前任務要交付的既有 `version_id`（如放棄試改的 V11、改選已存在的 V10）或更新完成聲明，無須為了切換交付目標而假造一次文件編輯。
+
+
+
+
+
+---
+
+### 2. 交鋒二（針對第 3、7 點）：將 `working_version` 與 `selected_delivery` 徹底移出全域文件層，改歸屬「任務／分支（Task / Branch）」
+
+你在第 3 點舉出「操作 A（基於 V10 準備了 V11）恢復時，另一個合法操作已把工作版本推進到 V12」的衝突情境；又在第 7 點指出「`selected_delivery` 放進文件唯一全域 manifest，在允許分支或不同任務時會互相覆蓋」。
+
+* **正面交鋒：** 這兩點其實是同一個架構問題的兩面——**「文件版本樹（Document Version DAG）」是客觀的檔案資產，而「目前工作在哪個版本（Working Head）」與「打算交付哪個版本（Delivery Intent）」則是特定任務（Task / Thread Branch）的執行狀態！**
+* **最佳功能設計（SQLite 雙層隔離模型）：**
+1. **文件層（`document_versions` 表）：只管不可變的 Version DAG，沒有全域覆寫問題。**
+* 每一版記錄 `(version_id PK, parent_version_id, created_by_op_id UNIQUE, input_sha256, status: 'prepared' | 'committed')`。
+* 當操作 A（基於 V10）準備好 V11 資料夾但尚未提交就中斷，恢復時只要 V11 資料夾與雜湊完整，V11 本身作為「父版本為 V10 的分支節點」在文件層是完全合法的。
+
+
+2. **任務／分支層（`task_branches` 表）：各自擁有獨立的 `head_version_id` 與 `selected_delivery_version_id`。**
+* 操作 A 恢復並嘗試完成提交時，在 SQLite 短交易內檢查**所屬任務分支**的 `head_version_id` 是否仍為操作 A 預期的 `expected_base_version (V10)`：
+
+
+* **若仍為 V10：** 原子將 V11 標為 `committed` 並將該分支的 `head_version_id` 推進至 V11；
+* **若該分支已推進至 V12（如外部 CLI 介入或同任務其他操作先行完成）：** 拒絕覆寫 `head_version_id`！保留 V11 的準備成果（轉為可重用候選引用），並回傳明確的版本衝突（`expected_base: V10, current_head: V12, preserved_ref: ...`），交由 Agent 決定如何整合。
+
+
+
+
+
+
+
+
+
+---
+
+### 3. 交鋒三（針對第 1、2 點）：如何讓「語義歷史整理」擁有完整的請求身分、預算與恢復保障，且不新增隱藏模型呼叫？
+
+你在第 2 點指出：將大型證據換成輕量引用是確定性程式操作，但「判斷舊歷史哪些內容重要、產生繼續工作的摘要／筆記」是**模型工作**，必須有自己的請求身分、預算、完整回覆保存與恢復處理；而且**已經超限的完整歷史，不可能原封不動再送一次請模型壓縮**。
+
+* **最佳功能設計（雙階段減壓 ＋ 同一個 `model_step` 承載顯式 `compaction_turn`）：**
+我們不需要在 `prepare_step` 裡偷偷呼叫模型，也不需要寫兩套模型通訊邏輯，只需將 `prepare_step` 與 `model_step` 的互動明確分為兩種確定性模式：
+
+```mermaid
+flowchart TD
+    P["1. prepare_step (純確定性程式邏輯，零模型呼叫)"] --> Check{"檢查實際組裝輸入容量"}
+    Check -- "A. 單次新工具展開過大\n或剛收到上游 Overflow 拒絕" --> Retract["確定性降載 (Deterministic Retraction)\n將超大證據展開替換為『操作結果＋範圍清單＋讀取入口』\n保留有效要求、未解依賴與活躍候選"]
+    Retract --> Check2{"降載後是否已低於\n整理觸發水位？"}
+    Check2 -- "是" --> FreezeNormal["凍結 Normal Turn 請求\n(產生 model_step_id, step_kind='normal')"]
+    Check2 -- "否 (累積對話歷史過長)" --> FreezeCompact["凍結 Compaction Turn 請求\n(僅載入可容納之歷史範圍＋結構化交接提示)\n(產生 model_step_id, step_kind='compaction')"]
+    Check -- "B. 容量正常，但累積歷史\n已達預留整理水位" --> FreezeCompact
+    Check -- "C. 容量正常且未達整理水位" --> FreezeNormal
+    FreezeNormal --> M["2. model_step (唯一模型通訊邊界)\n- 統一記入任務總請求數、耗時、Attempt 預算與 Usage\n- 發送前持久化 attempt，完整回覆落盤後才返回"]
+    FreezeCompact --> M
+
+```
+
+* **這套設計直接滿足第 1、2 點的所有約束：**
+1. **絕不把已超限歷史送去壓縮：** 遇到超限（或單次大結果），`prepare_step` 必定**先用確定性程式邏輯撤回超大證據展開**，使請求體積降回安全視窗內；若還需要語義整理，送出的也是已經撤回大載荷、確定放得進視窗的 `compaction` 請求。
+2. **100% 共享預算與恢復：** `compaction` 請求走的是**同一個 `model_step**`，因此它擁有獨立的 `model_step_id`、發送前持久化 attempt（`agent.py:384`）、計入同一個任務的總回合／時間預算與已知 usage，絕不會因為換了 `model_step_id` 而重置任務預算或降載次數上限。
+
+
+3. **嚴格區分「某次請求被拒」與「模型真實規格」：** 在 SQLite 的 `route_capacity_observations` 表中，明確分欄記錄 `upstream_error_code`、`upstream_reported_limit`、`local_estimated_tokens`、`estimator_version` 與 `(route_url, model_alias, api_protocol)`，僅用於動態下調**該特定路由配置**的暫時安全預算，絕不混充為模型硬體規格或污染其他路由。
+
+
+
+---
+
+### 4. 交鋒四（針對第 5 點）：以「顯式生命週期狀態」管理活躍候選稿（Active Candidates）
+
+完全採納你對第 5 點的反駁：用「產生於最後一次成功提交之後」來篩選候選稿，會在「第 1 節候選 A 失敗未修 $\rightarrow$ 第 2 節 B 成功保存」時把仍有價值的候選 A 漏掉。
+
+* **最佳功能設計（基於明確處置關係的 `candidates` 狀態機）：**
+在 SQLite `candidates` 表中，每一筆被攔截保存的寫入候選記錄維護明確的 `lifecycle_status`：
+* **`active_unresolved`**：驗證失敗（或準備好但因基底衝突未提交），且尚未被後續操作處理。**無關章節的成功保存（如提交第 2 節 B）絕對不會改變候選 A 的 `active_unresolved` 狀態！**
+* **`adopted`**：後續某個成功提交的 `operation_id` 透過 `block_ops_from_candidate="cand_A"` 正式採納了此候選。
+* **`superseded`**：後續另一個針對相同目標區塊／頁碼範圍的候選 `cand_A2` 或正式提交明確取代了 `cand_A`。
+* **`abandoned`**：Agent 呼叫工具明確標記放棄此試改候選。
+* **效果：** 在 Context 整理與 `delivery_check_step` 中，系統只需查詢 `WHERE task_id = ? AND lifecycle_status = 'active_unresolved'`，就能精確保護那份少量的未決成果，既不漏掉第 1 節的候選 A，也不會讓已解決的歷史候選塞爆 Context。
+
+
+
+---
+
+### 5. 交鋒五（針對第 6 點）：工具「執行前版本解析鎖定」與「並行資格 vs. 重播安全」二維矩陣
+
+你指出的三個細節非常關鍵：（a）OCR 與 render 會寫檔與啟動程序，不是無副作用的純讀取；（b）省略 `version_id` 時若預設取 `working_version`，必須在開始執行時解析一次並持久化，恢復時不得重新解析；（c）持久索引必須包含任務與步驟身分。
+
+* **最佳功能設計：**
+1. **複合唯一鍵與執行前版本快照：**
+SQLite `tool_operations` 表的主鍵定為 `(task_id, model_step_id, call_index, tool_call_id)`。當工具準備開始執行時，派發器**先將所有動態預設值（例如未傳 `version_id` 時當下解析出的 `resolved_version_id = "V10"`、分配的獨立輸出子目錄 `output_dir`）寫入該筆記錄並設為 `status = 'running'**`。若中途崩潰重啟，恢復程序直接讀取已持久化的 `resolved_version_id = "V10"`，絕不重新查詢可能已變動的 `head_version_id`。
+
+
+2. **將「並行資格」與「崩潰重播策略」明確拆成兩個正交屬性：**
+
+
+
+| 工具類型 | 同批次並行資格（Stage 1 預設依序，後續按此開放） | 崩潰時處於 `running`（未完成）的恢復重播策略 |
+| --- | --- | --- |
+| **`inspect_pdf` / `read_evidence` / 固定版本 `reopen**` | 可並行（讀取不可變來源或已鎖定的 `resolved_version_id`） | **可安全自動重跑**（輸出為確定性證據或純讀取，重跑覆寫同一確定性路徑或建立新 attempt）。 |
+| **`render_pdf` / `view_preview`（綁定固定版本）** | 可在受控工作緒池（Semaphore）下並行，各自寫入獨立 `attempt_dir` | **可安全自動重跑**（清理未完成的 `attempt_dir` 後重新渲染相同版本與座標）。 |
+| **`ocr_pdf`** | 受 CPU/WASM 資源池限制並行，寫入獨立批次目錄
+
+ | **先對帳已完成頁面產出，僅在確認無外部殘留影響時按固定參數重跑，或按既有保守規則停機檢查**。
+
+ |
+| **`save_draft` / `edit_document` / `select_delivery` / `export**` | **強制依宣告順序串行** | **先查 SQLite 版本表與 подготовлен 資料夾對帳**（已提交則回傳收據；僅準備好且基底未變則補提交；基底已變則留作 Candidate 並回報衝突）。 |
+| **`run_script`（宿主權限腳本）** | **強制串行** | **禁止自動重跑**（標記為 `interrupted_uncertain_state`，保留輸出目錄並停機等待檢查）。
+
+ |
+
+---
+
+## 二、 全專案視角的額外審視：先前討論未充分觸及的兩個核心功能設計
+
+既然提示允許審視整個專案與先前未提及之處，對照 `PRODUCT_REQUIREMENTS.md` 與 `CURRENT_STATE.md`，若要讓這個 App（特別是邁向最終的 Electron 桌面應用）真正發揮最佳功能，還有兩件事應該在這次重構底層時一併到位：
+
+### 1. 終止狀態與「使用者可操作的恢復介面（Actionable Stop States）」
+
+你在第 7 點準確指出：「不可自動恢復不一定表示使用者需要回答問題。全部標成 `waiting_for_user_input`，會讓使用者不知道自己究竟要提供甚麼。」
+回顧專案歷史，13 頁 settlement-guard 測試曾因 180 秒 `ReadTimeout` 後無法確認上游狀態而停機；R1 則在本地注入故障後等待了 188.24 秒。在未來的桌面 UI 或 CLI 中，當任務停止時，SQLite 的 `tasks.terminal_state` 必須提供**機器可讀且對使用者意義明確的五種終止分類**，以及各自對應的續工動作：
+
+1. **`completed_verified_delivery`**：已針對 `selected_delivery` 版本完成一致性匯出，無未決候選與必要缺口。
+
+
+2. **`exported_honest_draft`**：已針對選定版本匯出可用草稿包，並在 manifest 中明確列出未處理頁面或存疑項目。
+
+
+3. **`waiting_for_user_clarification`**：Agent 明確提出範圍或要求疑問（附帶具體問題文字 `clarification_prompt`），使用者補充指令後從 `prepare_step` 繼續。
+4. **`stopped_operational_limit`**：因達到回合上限、累積活躍時間上限、網路重試耗盡或使用者主動 `cancel` 而停止（附帶已保存的最新版本與未決 `candidate_ref`），使用者可選擇「在原限制內顯式 Resume」或「直接匯出目前最佳版本」。
+
+
+5. **`stopped_unreconciled_effect`**：因未確認的腳本／OCR 中斷或模糊遠端結算而安全停機，明確列出待檢視的目錄或操作 ID。
+
+
+
+### 2. 為 Electron 桌面端預留「單向結構化進度流（Structured Progress Stream）」
+
+目前架構規劃中，Electron 與 Python 後端透過非同步 stdio JSON 通訊。既然我們在重構中引入了每任務獨立的 SQLite Metadata Store，**每一次 `prepare_step`（容量估算與選取）、`model_step`（發送、等待重試退避倒數、串流字元進度）、`tool_batch_step`（正在 OCR 第幾頁、哪個版本已提交、哪個候選被攔截保存）的狀態更新，都應該同步發出一則結構化的單向進度事件（Progress Event）**。這不需要增加任何複雜框架，卻能讓未來的 React 前端直接渲染出即時的頁面轉換地圖、退避倒數計時器與版本差異預覽，徹底擺脫黑盒等待體驗。
+
+---
+
+## 三、 收斂後的重構基準總結（Stage 1 實作定案）
+
+綜合以上修正，重構的第一階段基準已非常純粹：
+
+* **儲存核心：** 每工作區獨立的 **SQLite Metadata Store**（管理版本 DAG、任務分支指標 `head_version_id` / `selected_delivery`、顯式生命週期的 `candidates`、含預解析版本的 `tool_operations`、路由容量觀測與模型步驟帳本）＋ **外部不可變檔案**（原始證據、準備好的請求快照、區塊內容與匯出包）。
+
+
+* **執行核心：** 小型 **LangGraph `StateGraph**`（`prepare_step` 負責確定性容量檢視與撤回超量展開；需要語義整理時產生 `step_kind='compaction'` 交由**同一個 `model_step**` 執行並共享預算與恢復；`tool_batch_step` 透過 `intercept_tool_call`／前置攔截保存候選並執行依序／受控並行工具；`delivery_check_step` 對齊任務選定的交付版本自動完成打包並精確分類五種終止狀態）。
+* **編輯核心：** 分離 `save_draft`、`edit_document`（支援區塊 CRUD、唯一匹配 `patch`、`block_ops_from_candidate` 區塊級重用與按頁碼鍵合併的 `page_map_updates`）與 `select_delivery`。
+
+這個收斂後的基準是否已經完全消除了你指出的「恢復覆蓋新版本」、「時間戳漏掉活躍候選」、「重用候選時的欄位合併歧義」與「隱藏模型壓縮呼叫」？若確認無誤，下一步即可直接按此邊界撰寫模組介面與資料表定義。

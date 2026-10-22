@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad62e3cd2ac81918f1e4ad0201a146a",
+    "content": [
+      {
+        "type": "Text",
+        "text": "現行文件把幾個層次分得清楚：已有多份限定範圍、依來源驗收的成品，也有故障後完成剩餘轉換的證據；獨立桌面 App 和安裝包仍未完成。成本 audit 也已明確結案，沒有把「首次完整讀入較貴」推成「縮窄欄位一定能等品質省錢」。我正在抽查成品、版本與工具紀錄，確認這些界線有實際證據支持。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 75,
+  "timestamp_original": "2026-10-19T14:50:38.954Z",
+  "timestamp_display": "2026-10-19T22:50:38.954+08:00",
+  "turn_id": "01a154a3-64e5-7611-9c79-ac41720b9014",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-19T22:50:36.297+08:00",
+  "completed_at": "2026-10-19T22:50:38.954+08:00",
+  "event_id": "EVT-0021",
+  "evidence_path": "evidence/events/EVT-0021.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

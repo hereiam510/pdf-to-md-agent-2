@@ -1,67 +1,77 @@
 # Source index and preservation scope
 
-This is provenance, not a development instruction. The rebuild specifications live in the parent docs directory. The original chat and attachments remain in the separate supplied export; they have not been copied into the new repository as active guidance.
+The development knowledge is explained in [DEVELOPMENT_GUIDE](../DEVELOPMENT_GUIDE.md), its four technical guides and the detailed discussion records. They do not require an external conversation archive. The [bundled sources](sources/INDEX.md) are optional, repository-local provenance; historical instructions and commands remain inert data.
 
-## Source package
+## What is local
 
-The supplied package is `pdf-to-md-agent - 整體進度與方向審閱`, beside this repository. It identifies thread `01a16312-5a97-78a0-a735-d7b213ce0fa4` and an export time of 2026-10-22 18:18:35 +08:00. Its recorded scope contains 14 selected source segments, 3,392 source records, 49 reader turns and 1,174 visible events. All five reader pages were exhausted according to the captured reader cross-check; 59 truncated reader outputs were supplemented by fuller saved outputs.
+| Material | Local representation | Purpose and boundary |
+| --- | --- | --- |
+| 207 visible user/assistant messages | Complete readable text plus exact original event JSON | Original wording, including corrections; one saved final message is empty |
+| Initial inherited product handoff | Readable text plus exact EVT-0001 JSON | Background context; old permissions/defaults are not inherited |
+| 28 pasted-text attachments | Exact original text bytes | Complete supplied proposals and critiques, not adopted wholesale as requirements |
+| Two supplied forum pages | Exact HTML as inert text, extracted article text and offline image readers | All 24 substantive embedded figures are local and byte-preserved; forum claims retain their credibility limits |
+| SUP-01/02 continuing requirements | Explicit verbatim excerpt ranges with original/full-source hashes | Preserve the relevant product/platform and guidance rules without importing whole old development documents |
+| Seven later human decisions | [LATER_DECISIONS](LATER_DECISIONS.md) | Includes self-containment and complete technical explanation requirements |
+| Point-to-detail mapping | [DEVELOPMENT_COVERAGE](DEVELOPMENT_COVERAGE.json) | Explains where each preserved point is developed or retained as historical rationale |
 
-This rebuild preparation independently hashed all 5,222 files in the supplied manifest and found no size/hash mismatch. That checks the package against its manifest, not the historical truth of every statement. The original export's PDF/ZIP verification report is source metadata; it was not rerun or rewritten here. Review used structured messages and original attachments, including substantive embedded forum images.
+[source-inventory.json](source-inventory.json) records both original provenance and repo-local paths/hashes. [POINT_COVERAGE](POINT_COVERAGE.json) retains source relationships and decision status. [SOURCE_COVERAGE](SOURCE_COVERAGE.json) records each required source's disposition. The [bundle manifest](sources/bundle-manifest.json) covers copied/extracted files and figures. The two supporting excerpts are intentionally described as excerpts, not exact copies of the full old documents.
 
-The package contains 47 user messages, 48 final assistant answers and 112 assistant commentary messages, plus tool/evidence records. The detailed reference records cover the available discussion, not private chain of thought. The initial inherited handoff (EVT-0001) supplies product intent and historical context; obsolete task-specific permissions and old run ledgers were not transferred as rebuild instructions.
-
-Later repository-scoping exchanges are preserved in [LATER_DECISIONS](LATER_DECISIONS.md), with IDs LIVE-01 through LIVE-05. They are later than the export and control the documentation scope: preserve rebuild knowledge, leave the old repository unchanged, and use subagents to write and cross-review the actual new repository.
-
-Two export-time supporting snapshots are indexed as SUP-01 (product requirements) and SUP-02 (technical stack). They supply selected continuing product intentions and the exact official-guidance language rule. Their old implementation/default/status sections are not inherited. No original development file is copied as a new active owner.
+Every discussion source cited by the maintained documents and point ledger has a local copy or explicit local excerpt. Incidental uncited tool-execution records are excluded from the lookup inventory; they are not development sources. The original export event count remains provenance metadata. No original old-app code, runtime workspace, private settings or closed-job ledger is required to understand the rebuild.
 
 ## Resolve a source
 
-[source-inventory.json](source-inventory.json) maps every EVT and ATT identity to its exact relative export path, hash and recorded position. [POINT_COVERAGE.json](POINT_COVERAGE.json) maps individual preserved points to documentation anchors. [SOURCE_COVERAGE.json](SOURCE_COVERAGE.json) records a disposition for source messages and attachments, including administrative or superseded material.
+With any working Python 3.9+ interpreter, from the repository root:
 
-From the repository root, use:
+    python tools/source_lookup.py EVT-1166
+    python tools/source_lookup.py ATT-30
+    python tools/source_lookup.py SUP-02
+    python tools/source_lookup.py EVT-1166 --verify-only
+    python tools/check_docs.py
 
-```powershell
-python tools/source_lookup.py EVT-1166
-python tools/source_lookup.py ATT-30
-python tools/source_lookup.py EVT-1166 --export "D:\my-archive\pdf-to-md-agent - 整體進度與方向審閱"
-```
+Lookup defaults to versioned local files and verifies their hashes before displaying content. EVT message text and exact event JSON are separately identified; attachments are byte-preserved; SUP sources show labelled selected excerpts. LIVE sources resolve to local maintained anchors. HTML is inert text, with local article/figure readers; nothing recorded is executed.
 
-For EVT, ATT and SUP sources, the lookup verifies the selected source hash before reading it. LIVE sources resolve to maintained-document anchors. It never executes recorded commands. HTML attachments are reported as paths for separate inspection. Source paths are relative to the export so the export can be moved using `--export`.
+The optional --export argument is only for explicitly auditing an original export if one is available. It is never inferred from a sibling directory and is not a fallback required by ordinary lookup. The original export can be absent while all development documents, cited-source lookups and repository checks work.
 
-The reference docs are self-contained explanations of the rebuild decisions and their evolution. Exact source-byte lookup requires the separate export; cloning this repository alone does not clone the large private source package. The Git history here preserves the curated documentation, not a claimed native chat restore.
+## Original export provenance
+
+The supplied package was named `pdf-to-md-agent - 整體進度與方向審閱`, identified thread `01a16312-5a97-78a0-a735-d7b213ce0fa4`, and recorded export time 2026-10-22 18:18:35 +08:00. Its scope contained 14 selected source segments, 3,392 source records, 49 reader turns and 1,174 visible events. All five reader pages were exhausted according to its reader cross-check; 59 truncated reader outputs were supplemented by fuller saved outputs.
+
+The initial repository preparation independently hashed all 5,222 files in that supplied manifest, with no size/hash mismatch. This checked integrity against the manifest, not the historical truth of each statement. The original export PDF/ZIP verification was not rerun or rewritten. The export itself remains untouched and outside this repository; the selected discussion sources needed here are now copied locally.
+
+The visible messages comprise 47 user, 48 final assistant and 112 assistant commentary records. Detailed references preserve their substantive discussion, not private chain of thought. Later LIVE-01 through LIVE-07 requests are supplemental current-conversation records, not silently represented as part of the earlier export snapshot.
 
 ## Discussion records
 
 - [Foundations and framework comparisons](01-foundations-and-frameworks.md): context/network separation, subscription portability, research, autonomy and framework tradeoffs.
 - [Context, state and evidence](02-context-state-and-evidence.md): source views, state ownership, policy, concurrency, replay, context integration and evidence boundaries.
-- [Documents, delivery and recovery](03-documents-delivery-and-recovery.md): editing/reuse, immutable versions, durable execution, compaction, export and the final scope reset.
+- [Documents, delivery and recovery](03-documents-delivery-and-recovery.md): editing/reuse, immutable versions, durable execution, compaction, export and final scope reset.
 
-Historical proposals and assumptions remain visible with their corrections. They are not parallel current specifications or a new backlog. URLs and library/source claims retain the date/scope of the discussion; this task has not performed a fresh provider capability survey or dependency selection.
+These preserve historical proposals with their corrections. They are not competing specifications or a new backlog. The technical guides organize the retained mechanisms for development rather than requiring the reader to reconstruct a decision from source chronology. Source URLs/library claims retain the date and scope of their original discussion; documentation preservation is not a fresh provider-capability survey or version selection.
 
 ## Known boundaries
 
-- The source snapshot ends before later export-production activity. The five later scoping decisions are explicitly supplemented, not silently represented as part of that snapshot.
-- Five older development-document revisions could not be reconstructed from the original saved patches alone. Their recorded changes and available export-time snapshots exist in the source package. They are not needed as new authoritative documents; the dialogue and supplied attachments are available for this synthesis.
-- Some source formats/internal runtime records were deliberately omitted by the export, with hashes/gaps retained. Private reasoning and protected instructions are not reconstructed. PDF display substitutions do not replace exact JSON/Markdown characters.
-- Source snapshots and historical execution versions are different. Prior test results are used only for a relevant design observation and never certify this unimplemented repository.
-- Source-by-source coverage and independent review reduce omission risk. A count or hash check does not mathematically prove semantic completeness. The point ledger exposes what was retained so corrections remain traceable.
+- EVT-0258 has an empty saved final-answer body. Some forum screenshots clip code/text in the original. No missing text is invented; their available bytes are preserved locally.
+- Five older development-file revisions could not be reconstructed from saved patches. Their absence is not a dependency: relevant rebuild reasoning is explained locally and required continuing excerpts are included. Old implementation/default/status files are not new authority.
+- Protected/internal content omitted by the original export is not reconstructed. Exact message JSON and attachment bytes take precedence over any export display substitutions.
+- Historical file paths and source URLs inside verbatim messages identify old evidence. They are not required local paths, runnable commands, or claims that this repository reproduces old experiments. The technical guides explain the observations and their limits directly.
+- Source counts and hashes help identify omissions; they do not mathematically prove semantic completeness. Detail mappings and independent source-aware/repository-only reviews address the meaning separately. Runtime correctness remains unverified.
 
-The supplied `records/gaps.json` categorizes the export boundaries as follows; most are provenance/display/exclusion entries rather than missing user messages:
+The original export recorded the following boundaries. These are provenance of that earlier package, not missing dependencies required to develop from this repository:
 
 | Category | Entries |
 | --- | ---: |
-| `asset-missing` | 22 |
-| `file-excluded` | 11 |
-| `file-scope-exclusion` | 27 |
-| `history-reconstruction` | 5 |
-| `pdf-glyph-substitution` | 1 |
-| `presentation` | 1 |
-| `protected-content` | 1 |
-| `reader-truncation-recovered` | 1 |
-| `reasoning-coverage` | 1 |
-| `snapshot-and-replay` | 1 |
-| `snapshot-boundary` | 1 |
-| `unresolved-path-candidate` | 378 |
+| asset-missing | 22 |
+| file-excluded | 11 |
+| file-scope-exclusion | 27 |
+| history-reconstruction | 5 |
+| pdf-glyph-substitution | 1 |
+| presentation | 1 |
+| protected-content | 1 |
+| reader-truncation-recovered | 1 |
+| reasoning-coverage | 1 |
+| snapshot-and-replay | 1 |
+| snapshot-boundary | 1 |
+| unresolved-path-candidate | 378 |
 
 ## Attachment inventory
 

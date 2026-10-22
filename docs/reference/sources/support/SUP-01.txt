@@ -1,0 +1,84 @@
+SUP-01 — selected continuing requirements from an old-document snapshot
+
+Historical source excerpts only. Current owners are the freshly written documents in docs/.
+Old implementation status, defaults, validation results and closed-work permissions are excluded.
+Source line numbers and full-source hash identify extraction; the complete old document is not required or imported.
+
+--- Original lines 3-4 ---
+## Outcome and use
+
+
+--- Original lines 6-14 ---
+
+The agent completes conversion; the app provides reliable tools. The final product is an independent desktop app that starts its own agent, connects to configurable Chat Completions/Responses APIs and completes conversion without a Codex/ChatGPT interface. An external-chat/local-tool interface is also supported.
+
+The user supplies a native, scanned or mixed PDF, range and desired outcome. Receive complete, readable, reusable Markdown with meaningful source images, working relative links and explicit limitations. Do not require routine page instructions, repair approvals, intermediate file transfers or manual output assembly.
+
+Accept native/OCR text and image-only input without manual preprocessing in another app. The agent selects extraction, OCR, visual transcription, scripts and their combination, including OCR over corrupt or unhelpful text layers. It chooses useful scopes, regions, resolution, languages and reconstruction units. OCR is evidence, not authority over visible source content.
+
+The product should improve user effort, reliable delivery, source handling, useful recovery or justified time/cost compared with ad hoc chat conversion. More tools, tests or documents alone do not establish this benefit.
+
+
+--- Original lines 15-23 ---
+## Content boundary
+
+- Preserve substantive wording, names, values, units, punctuation, notation, meaningful emphasis, superscripts/subscripts and visible glyph distinctions. Do not silently correct source errors, paraphrase omissions, normalize Traditional/Simplified forms or invent uncertain text. Suggested corrections are separate.
+- Preserve headings, paragraphs, lists, footnotes, substantive sidebars, reading order and within-/cross-page relationships. Reflow columns, wraps, spacing and fonts where meaning survives.
+- Preserve table values, intentional blanks, headers, groups and meaningful merged-cell spans. No particular HTML/internal semantic schema is mandated; formatting limitations do not justify deleting relationships.
+- Preserve complete meaningful figures/panels, captions, important searchable labels and relationships. Searchable transcription is separate from the faithful source graphic.
+- Prefer omission of pure decoration, non-content colored furniture and redundant running headers/footers. Their omission alone must not trigger repair, model calls or delivery rejection. Unique headings, warnings, labels, footnotes and uncertain substantive marginal content are required or explicitly unresolved.
+- Preserve source-supported visible distinctions. Pixels may not establish original Unicode encoding; use faithful transcription and uncertainty without guessing or demanding unavailable proof.
+
+
+--- Original lines 24-31 ---
+## Source images and cropping
+
+Keep the supplied PDF unchanged. For complete extractable native images, preserve dimensions and original encoded data where available. Existing source JPEG is valid; do not add lossy recompression.
+
+Cropping is allowed. Raster crops preserve retained source pixels without unintended resizing, color/depth reduction, painting, cleanup or AI redraw. Newly saved raster crops use lossless encoding. Separate thumbnails cannot replace delivered full-quality artwork.
+
+Vector/composite figures and scanned-page regions may use faithful source renders/crops, identified as renders rather than byte-identical native files. Resolution must make required fine text/lines legible; PNG alone does not prove quality. Preserve source/page/region/render provenance. No arbitrary maximum pixel size, per-image approval or additional first-stage chart reconstruction requirement applies.
+
+
+--- Original lines 32-47 ---
+## Page markers
+
+Markdown includes English HTML comments. PDF page numbers are one-based positions in the supplied file; printed labels come from visible page pixels, not bookmarks/viewer labels/assumed offsets. Preserve Roman and other printed forms.
+
+```html
+<!-- PDF page: 1 | printed page: none | note: cover spread -->
+
+<!-- PDF pages: 5-6 | printed pages: unknown | section: preface -->
+
+<!-- PDF page: 7 | printed page: iii -->
+```
+
+These are syntax examples. `none` means visibly absent; `unknown` means unconfirmed/unreadable. Notes are source-supported. Map every input page, including outside-scope and unprocessed pages. Grouped content uses accurate ranges/lists without implying unused intervening pages contributed.
+
+Keep complete logical blocks intact; do not break sentences or tables to mark exact character-level boundaries. Comments are hidden in rendered reading and use the same correspondence as structured data.
+
+
+--- Original lines 48-57 ---
+## Saving and delivery
+
+Support initial composition and local or larger reconstruction, including related pages, sections and tables. Preserve unrelated correct work, original sources and useful versions. Markdown, structured JSON, simple safe HTML preview and assets come from one saved version. Deliver a portable complete package with relative links.
+
+The agent can inspect actual source/output images and saved reading. Task-workspace scripts support legitimate transformations ordinary operations cannot express, with documented execution/permissions. Isolate working data per document; export only intended content and referenced assets.
+
+Useful partial work is an honest draft. Distinguish unprocessed scope, content uncertainty and technical failure. Known material errors or required unexamined scope prevent a complete-acceptance claim. Human review is optional, not a routine gate.
+
+Record available elapsed time, usage and user/developer interventions. Unknowns are unknown. No telemetry framework or arbitrary cloud budget is a prerequisite; cancellation and declared operational limits are meaningful.
+
+
+--- Original lines 76-76 ---
+A document job may span selected working contexts without manual user splitting, restarts, file transfers or assembly. The runtime executes transitions while preserving task constraints, source/version identity, useful work and unresolved boundary relationships. Storage availability is not awareness or complete coverage.
+
+--- Original lines 80-80 ---
+The agent chooses useful scripts and available context actions from clear, discoverable tool guidance. Make evidence locations, shapes, fields/ranges and sizes understandable without requiring a document-specific product-code change. Scripts can process structured intermediates before model intake; only the controller constructs subsequent active input. Complete originals remain accessible, and working notes/summaries cannot replace them or certify coverage. This does not require every document to invoke scripts, selective history or checkpoint.
+
+--- Original lines 82-82 ---
+Working-state summaries, native/SDK compaction, retrieval/eviction, notes/checkpoints, logical tasks, scripts and selective subagents are eligible methods, not compulsory stages. No destructive pruning, sole-original summary, hidden discard authority or raw-access approval gate. No universal 30%/50% quality threshold, larger-window workaround, vector database or framework rewrite is required. A baseline without intervention is valid when justified.
+
+--- Original lines 90-90 ---
+The installed product includes needed Python/Node runtimes and does not depend on external chat control. Independent does not mean an offline model. Windows is the first validation environment; Windows x86_64, macOS Apple Silicon and Debian x86_64 are portability targets. Intel Mac, CUDA and Apple Vision are outside that target. Workflow graphs, engine management, migration infrastructure, arbitrary old-session restoration and broader reuse are deferred.
+

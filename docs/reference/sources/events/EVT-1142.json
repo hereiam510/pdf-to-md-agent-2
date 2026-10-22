@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9daac04d08191b1041a35dba0c8e4",
+    "content": [
+      {
+        "type": "Text",
+        "text": "另一個需要放寬的是「只有被新版取代的草稿才能退出 context」：最新版本也可能很大，未完成的候選稿也未必需要整份常駐。版本狀態適合決定如何取回內容；是否留在下一次輸入，仍應看當前工作需要與容量。「差集摘要」也要確保所依賴的錨點仍被帶入，否則換掉筆記後可能漏掉有效資訊。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 3302,
+  "timestamp_original": "2026-10-22T09:43:11.123Z",
+  "timestamp_display": "2026-10-22T17:43:11.123+08:00",
+  "turn_id": "01a162f7-602e-7a22-908c-32a6eb920464",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T17:43:10.605+08:00",
+  "completed_at": "2026-10-22T17:43:11.123+08:00",
+  "event_id": "EVT-1142",
+  "evidence_path": "evidence/events/EVT-1142.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

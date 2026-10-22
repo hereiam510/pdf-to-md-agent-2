@@ -1,0 +1,9 @@
+
+# Response annotations:
+Each item contains text selected from an earlier Codex response and may include a user comment. Treat items as Annotation 1, Annotation 2, and so on in array order. Use every selection as context and address every comment. For every annotation you address, include its inline directive `:codex-annotation{index="N"}`, where N is its one-based array position (for example, `:codex-annotation{index="1"}`). Do not use unstructured annotation labels.
+<response-annotations>
+[{"text":"Nexus 本身的能力還要另看一層。 官方文件顯示，CLI Proxy 是 Nexus 的其中一種 provider；Nexus 也支援 OpenAI、Anthropic 等其他 provider。Providers 文件","source":{"messageId":"msg_0c5633e5013375f9016ad71e9910788191b888d76090505d97","startOffset":748,"endOffset":859}}]
+</response-annotations>
+
+## My request:
+that is official API (Pay as you go). I use Nexus for the connector for my monthly subscription 

@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9844aa9388191bf979a50b23443ea",
+    "content": [
+      {
+        "type": "Text",
+        "text": "同批次收集局部意圖這個反駁有道理；我上一輪的一次提交主要解決競態，並不能保證語義正確。不過，「筆記引用了某份證據」也不代表那份原文必須一直留在 context，否則引用越多，反而越無法釋放容量。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2362,
+  "timestamp_original": "2026-10-22T03:34:36.827Z",
+  "timestamp_display": "2026-10-22T11:34:36.827+08:00",
+  "turn_id": "01a161aa-439a-7c43-b1cc-6c9991d823ef",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T11:34:36.791+08:00",
+  "completed_at": "2026-10-22T11:34:36.827+08:00",
+  "event_id": "EVT-0775",
+  "evidence_path": "evidence/events/EVT-0775.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

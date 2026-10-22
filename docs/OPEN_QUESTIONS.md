@@ -2,6 +2,8 @@
 
 The user explicitly stopped incremental design expansion (EVT-1148). EVT-1166 consolidated three unresolved contracts. Preserve the following distinction: the responsibilities and recommended tradeoffs are known; exact executable schemas and transition semantics still need a coherent specification and implementation. This file does not queue model experiments.
 
+The detailed engineering background is local in [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md) and its linked guides. These open choices are not permission to leave previously discussed mechanisms unexplained or send the next developer back to a conversation archive.
+
 ## Q1. Document update and candidate-reference contract
 
 **Observed:** a prior full page-map validation rejection left correct candidate prose available, but later regeneration changed `本文件` to `本文作`. Pure insertion/append and partial-map updates were identified as editing friction. This supports exact reuse and local correction; it does not prove compaction caused the typo or that previous conversions could never complete.

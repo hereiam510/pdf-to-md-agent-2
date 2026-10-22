@@ -1,0 +1,181 @@
+這份反駁非常紮實，特別是在**嚴格對齊既有證據邊界**與**區分「系統事實」和「Agent 語義判斷」**上，修正了我前一輪過度簡化的假設。為了讓討論完全聚焦於「如何設計出功能最強的 App」，我先明確承認你反駁中完全成立的修正點，接著針對你新提案中仍未解決的**四個深層設計盲點**進行交鋒，最後將雙方的共識收斂為可直接落地重構的系統規格。
+
+---
+
+## 一、 完全成立的反駁：應納入基線的四項修正
+
+你指出的以下四點比我上一輪的提議更嚴謹，應直接作為重構設計的約束條件：
+
+1. **證據邊界與快取原則的校準：** 本地紀錄確實只證明 `bdc032cac806419b9612c40927dbcf99` 該次執行有大量快取重用（636,591 總輸入中有 537,088 cached），以及記憶體內的 5,014 字元投影能縮小字元量，但並未證明該投影能維持同等轉換品質或降低總成本。將原則定為「保留有用的穩定前綴、避免無收益改寫，但在容量或延續品質需要時允許整理」，比硬性規定「嚴格 Append-Only」或「80% 命中率」更符合實際需求。
+
+
+2. **「只保留末兩個區塊」與「僅在存檔時記筆記」確有漏洞：** 若跨頁表格橫跨四頁，或後文依賴前文的術語定義，只留末兩塊必然掉資訊；而在尚未進入 `save`/`revise` 階段前（例如連讀五頁做版面探勘時），Agent 對字形瑕疵、廢棄 OCR 或印刷頁碼偏移的暫定判斷，若無獨立入口記錄，遇到容量整理就會遺失。
+3. **保存原件不應觸發未請求的額外運算：** 「工具產生結果時保存原件」應嚴格限制為**保存該次呼叫實際計算出的結構與像素**，絕不能為了填滿證據庫而在幕後強制執行未請求的 OCR、詞級拆分或全頁渲染。
+4. **保留使用者中途介入與變更要求的彈性：** 「不需例行逐頁指揮」不等於禁止使用者中途縮小範圍、修正目標或暫停任務；Context 延續狀態必須追蹤「最新有效要求（Effective Requirements）」而非僅死板重貼初始 Prompt。
+
+
+
+---
+
+## 二、 針對新提案的四個深度交鋒（聚焦 App 最佳功能設計）
+
+即便採納了上述修正，你目前提出的運作流程在面對真實 PDF 轉換時，仍有四個關鍵環節會卡住或退化：
+
+### 1. 交鋒一：「讓 Agent 在第一次呼叫就指定所需欄位或範圍」無法解決「盲人摸象悖論」
+
+你主張不要預設回傳精簡信封，而是「讓 agent 在第一次呼叫就能指定完整結果、所需欄位、範圍或圖片」。
+
+* **實測證據的反擊：** 在已結案的 Core Delivery 驗證（`bdc032cac806419b9612c40927dbcf99`）中，第一次請求**本來就已經暴露了完整的 `_select` 選擇器與欄位說明**！但為什麼模型在第一次呼叫 `inspect` 時依然選擇不帶 `_select`，直接把 191,662 字元塞進第 2 輪請求？
+
+
+* **原因在於「盲人摸象悖論」：** 在 Agent 看到某一頁的結構之前，它根本不知道該頁有沒有雙欄交錯、有沒有圖表標籤混入段落、或是哪個區塊有透明 `GlyphLessFont`。要求一個還沒看過頁面的 Agent 在第一次呼叫時就精準猜出該傳什麼 JSON Pointer（`_select`）或座標範圍，是不符合認知邏輯的；結果就是模型為了保險起見，永遠傾向不傳 `_select` 而拉取全量資料。
+
+
+* **真正的最佳設計（消除重疊粒度，而非刪除排版資訊）：**
+191,662 字元之所以如此龐大，不是因為保留了跨欄與排版關係，而是因為**單一輸出中同時塞入了「頁面全文 `text`」、「區塊/行級 `layout`」與「逐字座標 `words`」三種高度重疊的表示法**！
+要兼顧你的要求（保留跨欄、表格與字型關係）並解決首次讀入爆量，工具設計不應是「純文字摘要 vs. 19 萬字全量傾倒」的二選一，而應該是「依粒度分層（Granularity Tiering）」：
+
+
+* 當 Agent 呼叫 `inspect_pdf(pages=[12])` 未指定細節粒度時，預設產生並回傳「區塊與行級結構（Block/Line Layout + BBox + 字型/透明屬性統計 + 完整文字）」。這已經100% 包含跨欄順序、段落邊界與字型異常資訊，且體積僅有幾千字元。
+
+
+* 只有在處理圖表內嵌碎字（如 Figure 4-13 的 18 個標籤）或複雜無框線表格對齊時，Agent 才需要針對特定區域或區塊呼叫詞級／字元級矩陣（`granularity="words"`）或高 DPI 局部渲染圖。
+
+
+
+
+
+### 2. 交鋒二：把「工作筆記更新」與「整理觸發」交給 Agent 自發判斷，會再次撞上「自然不採用（0% Adoption）」的實測牆
+
+你將狀態分為三塊，其中第二塊「工作判斷、未解問題、文件慣例」交由 Agent 更新，且在流程第 3 點寫道「容量壓力或 agent 判斷需要時才整理」。
+
+* **實測證據的反擊：** 回顧專案在 9 頁自然採用測試（Jobs B、C）與最新 P 任務的紀錄：當工具箱裡放著選用的 Context 管理工具（`manage_evidence`、`checkpoint`）或腳本工具時，模型在自然轉換任務中的**主動呼叫率是 0%**！
+
+
+* **為什麼？** 因為 LLM 在執行長鏈路轉換時，注意力完全集中在「讀下一頁 $\rightarrow$ 寫 Markdown $\rightarrow$ 存檔」的主迴圈上。如果「記錄某個 OCR 為何被否定、某種字形只是暫定」需要 Agent 在日常步驟中主動呼叫筆記工具去維護，它十之八九不會記，直到容量觸頂被迫 Compaction 時，App 發現筆記是空的，最終又只能退回靠通用 LLM 摘要去猜歷史對話。
+* **真正的最佳設計（結構化伴隨記錄 ＋ 壓縮前強制交接握手）：**
+1. **日常零額外呼叫的「伴隨式筆記（Piggybacked Notes）」：** 不要讓 Agent 單獨呼叫「記筆記工具」。直接在它本來就必須呼叫的 `save` / `revise`（以及新增的 `stage_draft`）參數中，提供輕量的結構化欄位 `working_notes`（包含 `conventions`、`open_questions`、`unresolved_links`）。
+2. **容量觸頂時的「兩階段交接握手（Pre-Compaction Handshake）」：** 當 Agent 連讀多頁尚未存檔就撞上容量水位線（或使用者中途插話改要求）時，App **不要直接調用外部摘要模型硬砍歷史**；而是由 Runtime 攔截並向當前 Agent 發出一個專用的系統回合（System Handshake Turn）：*「即將進行 Context 整理。請立即輸出你目前已觀察到但尚未存檔的：1. 頁碼對應與排版慣例；2. 暫定或存疑的字形/OCR 判斷；3. 下一頁待續的段落或表頭引用；4. 下一步仍需保留在活躍視窗內的 `evidence_id` / `block_id`。」* 拿到這份由當前 Context 親自吐出的結構化交接單後，再結合 App 的確定性執行事實組裝新 Context，才能真正解決「未存檔前的重要發現被漏掉」的問題。
+
+
+
+### 3. 交鋒三：解決「末兩塊不足」的方法不是靠模糊摘要，而是「動態工作集釘選（Dynamic Working-Set Pinning）」
+
+你非常準確地指出：「只保留末兩個區塊沒有普遍充分性：需要延續的可能是一個完整表格、前面的術語定義，或跨多頁的註解。」
+
+* **設計推演：** 面對這個問題，如果退回去依賴「較舊歷史的延續摘要」，摘要一旦把前頁的六欄表格結構或專業術語微幅改寫（Paraphrase），後續頁面的表格欄位或專有名詞就會失真（違反產品要求中「不得擅自改寫或正規化字形」的規定）。
+
+
+* **真正的最佳設計（按 ID 釘選原文區塊與證據）：**
+既然所有已保存或候選的成果都已經是帶有唯一 `block_id` 的結構化區塊，且所有證據都有 `evidence_id`，為什麼要靠「摘要」去傳遞表頭或術語定義？
+在 Context 組裝器中，應該設計 **`Pinned Working Set（釘選工作集）`**：
+
+
+* 預設自動釘選最後一個未完章節／最後 $N$ 個連續區塊；
+* 同時允許 Agent（或在 Pre-Compaction Handshake 時）指定 **`pinned_block_ids`**（例如把第 3 頁的「術語縮寫表 `blk_012`」和第 14 頁的「跨頁表格起點 `blk_089`」釘選起來）以及 **`pinned_evidence_ids`**（例如把尚未對照完的原始圖表裁剪圖釘選起來）。
+* 當執行 Context 切換時，被釘選的 `block_id` 與 `evidence_id` 會**以 100% 原始無損內容（Exact Verbatim Blocks / Pixels）直接掛載到新 Context 的工作區**，直到 Agent 解除釘選為止。這樣既不用把整本書留在 Context 裡，又保證跨頁表格與前文定義**零失真**。
+
+
+
+### 4. 交鋒四：用「產品契約」檢驗 Deep Agents vs. Pi vs. 自建 Runtime 的真實基準
+
+我完全同意你的方法論：**「先定下這些產品契約，再選擇能最少侵入地實現它們的 runtime。」** 但如果我們把專案既有的硬性行為契約攤開來，不用靠主觀偏見，就能直接列出任何候選框架（包含 Deep Agents 與 Pi）必須通過的**四道「不侵入底層」試金石**：
+
+| 核心產品契約 | 具體技術要求（源自既有實戰與規格） | 框架評估試金石（若需改寫框架內部即扣分） |
+| --- | --- | --- |
+| **1. 雙協定真實圖片與狀態編碼** | Chat 協定須在 Tool Result 後緊接配對 User Image；Responses 協定須支援 Function Output 內嵌原生圖片與 Stateless Encrypted Reasoning 往返。
+
+ | 框架的 Message 抽象層是否會把 Responses API 的加密 reasoning items 或原生圖片結構洗掉？能否不透過 monkey-patch 直接控制 Wire Payload？ |
+| **2. 事務性 Context 切換（你的流程第 5 點）** | 「先建立並檢查新的 context，再切換；保存或整理失敗時保留原有狀態。」 | 框架的 Compaction / Middleware 是否支援 Dry-Run 預組裝、外部驗證器檢查、以及驗證失敗時的無損 Rollback？ |
+| **3. 單輪持久化重試與半截串流隔離** | 派發前持久化單輪重試預算（跨重啟不重置）、SSE 串流中斷絕不拼接或執行殘缺 JSON、重試前先對帳本地已提交的寫入 Token。
+
+ | 框架內建的 Retry / Stream 迴圈能否與本地 `Edit` 版本庫的收據對帳（Reconciliation）連動，確保網路超時重試時不會把已寫入的 `revise` 再執行一次？
+
+ |
+| **4. 候選稿攔截與局部映射合併** | 驗證失敗時不拋出純文字異常了事，而是必須在底層落盤生成 `candidate_id` 並回傳結構化修復引導。
+
+ | 工具執行層與狀態層能否緊密共享同一份 Document Transaction Lock，而不必跨越多層通用檔案抽象？ |
+
+只要拿這四條契約去實測 Deep Agents 與 Pi SDK，哪個框架是「真省力」、哪個是「表面現成但處處要繞路」，馬上就會有客觀答案。
+
+---
+
+## 三、 最佳功能導向的 App 完整重構設計藍圖（Synthesized Blueprint）
+
+結合你的六步核心流程與上述四項補強，這套系統若徹底重構，最能發揮極致功能的設計應由以下四大模組構成：
+
+### 1. 雙層桌面執行拓撲（Electron + 常駐有狀態 Handle 的單一權責架構）
+
+採納你對程序邊界的修正，兼顧效能與狀態一致性：
+
+* **Electron Main / UI Process：** 管理視窗、使用者中途指令變更（Pause / Narrow Scope / Update Constraints）與預覽呈現。
+
+
+* **獨立 Agent Runtime Process（Node UtilityProcess 或 Python 主控進程）：** **唯一擁有「任務狀態、Context 組裝與成果版本發布權（Single Publication Authority）」的核心**。
+* **常駐型 PDF / OCR Workers：**
+* Python PDF Worker **不必每次重啟**——它可以常駐記憶體並快取開啟的 `fitz.Document`（PyMuPDF Handle）與字型解析樹，以達到毫秒級的跨頁查詢與渲染速度；但它**不持有任何任務進度或版本狀態**，所有產出的證據檔（JSON / PNG）寫入磁碟後，統一由 Agent Runtime 登記至 Evidence Index。
+* **同源預覽與 DOM 級局部擷取：** 使用者 UI 預覽與 Agent 的 `view_preview` 共用同一套 HTML/CSS 渲染管線与鎖定的字型資源。為了克服 `capturePage()` 僅擷取可見視窗的限制，因為我們的 HTML 是由帶有 `id` 的結構化區塊生成，`view_preview` 支援傳入 **`target_block_ids` 或 `pdf_pages**`，由離屏渲染器透過 DOM `getBoundingClientRect()` 搭配 Chromium DevTools Protocol（`Page.captureScreenshot`）直接截取目標表格或圖片區塊的完整無損像素，免去笨重的長頁捲動拼接。
+
+
+
+
+
+### 2. 具粒度感知的證據工具契約（Granularity-Aware Evidence Contract）
+
+* **按需計算、原件即存：** 呼叫 `inspect_pdf`、`ocr_pdf` 或 `render_region` 時，僅計算該次請求所需的表示法並立即寫入 `Evidence Store`（附帶來源頁碼、範圍、SHA-256 與資料形狀）。
+
+
+* **智慧預設粒度（解決首次呼叫盲猜問題）：**
+* 首次呼叫 `inspect_pdf(pages)` 若未指定 `_select`，預設回傳 **`block_and_line` 粒度**（包含完整文字、區塊與行的 BBox 座標、字型名稱、透明/異常字元統計、內嵌圖片清單，以及可進一步讀取的 `words` / `chars` 指標與字元大小）。
+* 任何時候皆可直接請求原始無損圖片或局部高 DPI 裁剪圖，無須先經過文字摘要。
+
+
+* 當單次請求結果超過模型安全傳送容量時，自動攔截並只回傳結構目錄、範圍摘要與分段讀取指針，明確標示哪些範圍尚未進入模型輸入。
+
+
+
+### 3. 零摩擦增量編輯與三態成果管理（3-State Artifact Engine）
+
+嚴格區分「候選稿已保存（Candidate Staged）」**、**「版本已發布（Version Published）」**與**「內容已驗收（Source Verified）」：
+
+```mermaid
+stateDiagram-v2
+    [*] --> CandidateStaged : Agent 提交 save / revise (含區塊 CRUD + 局部 page_map + base_version)
+    CandidateStaged --> CandidateStaged : 結構或頁碼映射驗證失敗\n(保留內文，回傳 candidate_id 與具體錯誤)
+    CandidateStaged --> VersionPublished : 驗證通過 (或呼叫 commit_candidate 補齊 metadata)\n原子產生不可變 version_id + MD/JSON/HTML
+    VersionPublished --> SourceVerified : Agent 透過 reopen / view_preview 核對無誤後\n正式標記範圍完成並匯出 ZIP
+    SourceVerified --> [*]
+
+```
+
+* **支援完整區塊 CRUD：** 支援 `insert_after_id`、`append_blocks`、`replace_ids`、`delete_ids`（廢除舊版只能非空連續替換的限制）。
+
+
+* **局部頁碼映射合併（Partial Page-Map Merge）：** Agent 只需提交本次受影響頁面的映射（如 `{"14": {"printed_page": "015", "disposition": "converted"}}`），App 根據指定的 `base_version` 自動與既有完整映射表合併並檢查連貫性。
+
+
+* **內文免重寫保護：** 只要請求Payload 解析成功，內文區塊與伴隨的 `working_notes` 就會先寫入 `Candidate Store` 取得 `candidate_id`；若因 `base_version` 衝突或某頁漏填 `printed_page` 而未通過發布檢查，Agent 只需呼叫 `commit_candidate(candidate_id, patch_page_map=...)` 即可完成發布，零 Token 浪費。
+
+
+
+### 4. 三位一體的事務性 Context 引擎（Transactional Context Assembly）
+
+當面臨容量壓力、章節轉換邊界或使用者變更要求時，執行你提出的「先建立並檢查、再切換」流程：
+
+1. **收集三層狀態材料：**
+* **層一：App 確定性事實（Execution & Artifact Facts）：** 目前有效的任務要求（含使用者中途變更紀錄）、最新 `version_id`、全書頁碼映射進度表（已轉換／未處理／範圍外）、目前暫存未發布的 `candidate_id` 清單、已落盤的證據索引表。
+
+
+* **層二：釘選工作集與 Agent 伴隨筆記（Pinned Working Set & Agent Judgments）：** 100% 原文保留被釘選的 `pinned_block_ids`（如跨頁未完表格、前文術語表、最末續寫區塊）與 `pinned_evidence_ids`（使用中的參考圖），加上 Agent 記錄的「字形暫定解讀、否定某 OCR 的理由、排版慣例與待核對問題」。若觸發整理時距上次筆記已有多輪探索，則先執行一次 **Pre-Compaction Handshake** 讓 Agent 補齊筆記。
+* **層三：歷史延續摘要（Optional Continuation Summary）：** 針對已解除釘選且已發布的舊章節對話，僅在筆記未涵蓋時生成簡短摘要，並強制附帶原始 `evidence_id` / `version_id` 精確引用。
+
+
+2. **事務性預檢與原子切換（Transactional Switch）：**
+* Runtime 在記憶體中組裝出 `CandidateContext`，檢查：有效要求是否完整？未發布的 `candidate_id` 與未處理頁碼是否對齊？所有被釘選的跨頁依賴引用是否皆可解析？ Token 總量是否已降至目標水位以下？
+* **檢查通過**才正式將後續請求切換至新 Context（舊歷史完整封存於 Session Record）；**若生成或檢查失敗**，立即放棄本次切換並保留原有 Context 狀態，絕不發生「原件沒存好或表頭掉失卻已經把舊歷史洗掉」的不可逆損壞。
+
+
+
+---
+
+這套修正後的架構已經將雙方的分歧完全收斂為具體的工程機制。如果以這份「四大模組契約」作為重構標準，你希望下一步我們直接把「增量修改（含 `candidate_id` 與局部頁碼合併）」＋「三層式 Context 狀態結構（Execution Facts + Pinned Working Set + Agent Notes）」寫成精確的 JSON Schema 與 Tool 定義，還是先針對 Deep Agents 與 Pi SDK 進行上述四道試金石的接口映射檢查？

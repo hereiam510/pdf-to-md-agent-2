@@ -1,0 +1,29 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad64a9b9f08819196203dbe139f1cdf",
+    "content": [
+      {
+        "type": "Text",
+        "text": "這兩項確實直接影響「能否自主完成較長轉換，以及中途出事後能否繼續」。目前兩者都有實作，但仍有不同層面的缺口：\n\n| 領域 | 現況 | 核心未解問題 |\n|---|---|---|\n| Context management | 有精確讀取、選擇性釋放及 checkpoint；後兩者預設關閉 | 尚未證明能在長任務中穩定控制 context，同時保留完整品質並帶來淨效益 |\n| Network management | 有雙 transport、有限重試、保存與接續；自動重試預設關閉 | 一般使用時的恢復體驗、長故障適應性及遠端未知結果仍有限制 |\n\n我核對了最新 `182ea39`；最近的更新只涉及文件，以下 runtime 狀態仍沿用既有實作與證據。\n\n**Context management：目前已有三種不同用途的能力。**\n\n1. **控制首次讀入的資料。**  \n   Agent 可以選欄位、範圍、頁面及圖片，也能在啟用 scripts 後先處理中間資料。這能避免不需要的資料一開始就進入 context；已經進入歷史的內容則不會因此消失。\n\n2. **Selective history：釋放已看過的讀取結果。**  \n   啟用後，agent 可以讓指定來源文字／圖片不再出現在下一次輸入，並保留原始檔供精確取回。它只處理符合條件的讀取結果；agent 寫出的內容、工具參數、保存結果等歷史仍可能持續增加。\n\n3. **Checkpoint：開始新的工作 context。**  \n   啟用後，agent 可帶著原任務、續接筆記、保存版本識別及證據取回方法繼續。舊對話不會完整重播，因此筆記漏掉的關係可能需要重新查找。它沒有無損記憶保證。[實際合約](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/TOOLS.md:374)\n\n目前需要注意的問題是：\n\n- **整體增長尚未受到完整控制。** 預設 full history 持續累積文字、圖片、工具參數與結果；沒有自動 compaction 或容量觸發策略。Selective 也無法限制全部歷史。若真的超出服務容量，現行行為是停止並保留已存工作。\n- **過大的單次回傳可能先造成問題。** Agent 必須先收到結果才能決定下一步；一份大型 OCR／layout 結果可能在它有機會 checkpoint 前就超出容量。\n- **「存得到」與「記得取回」之間仍有缺口。** 原始證據完整保存很重要，但不能保證 agent 想到某個已釋放細節，或保留跨頁表格、未完成段落等依賴。\n- **實際效益仍未確立。** 指定使用的 selective／checkpoint 已有成功交付；普通九頁 B/C 沒有採用 optional transition，因此不能用它們較低的 token 數證明機制有效，也不能由未使用推斷它們無用。[驗證狀態](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/CURRENT_STATE.md:50)\n\n另外，**cache 主要涉及重用及成本，沒有消除邏輯 context 的容量需求**。最新小範圍 Breasts 任務的單次輸入最高已達 96,996 tokens，說明資料呈現方式確實能迅速增加輸入；但成本 audit 沒有證明縮窄欄位可以等品質省錢，所以沒有選擇改動。[既有分析](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/EVIDENCE.md:46)\n\n我認為這一領域最重要的問題是：**agent 能否在有實際累積與跨段依賴的工作中，適時保留、釋放及取回資料，並持續完成忠實成品。** 是否需要更自動的策略，應由這個交付問題決定。\n\n**Network management：有限恢復機制已相當具體，但預設使用體驗仍有落差。**\n\n目前 streaming／non-streaming 共用同一 controller、工具及保存路徑。明確啟用後，可對符合條件的暫時性連線、timeout、stream 中斷或服務錯誤進行有限重試，並具備：\n\n- 可取消的 backoff／jitter，以及適用的 `Retry-After`。\n- 跨接續保存的 attempt、時間與 turn 預算。\n- 重用已確認結果，以 receipt 核對保存是否已成功，避免重複 publication。\n- 完整驗證 response／tool arguments 後才執行；不同 attempts 的片段不會拼接。[恢復合約](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/TOOLS.md:257)\n\n目前的主要問題是：\n\n1. **自動重試預設為 0。**  \n   正常預設下，符合條件的暫時故障仍會停止任務，需要明確啟用恢復。若自動恢復關閉，而手動 resume 面對目前結果未知的模型請求，仍有 upstream settlement 確認限制；現時沒有遠端查詢功能可以自行完成這項確認。\n\n2. **等待策略仍需要配合故障長度。**  \n   僅啟用 retries、沿用其他預設時，初始 backoff 是 2 秒，兩次重試可能很快耗完。較長等待則增加恢復延遲：R1 注入約 90 秒不可用，實際到再次轉送用了約 188 秒，其中約 98 秒發生在服務恢復之後。這是已量到的使用負擔。\n\n3. **遠端結果仍可能未知。**  \n   Client timeout 或關閉連線後，無法確認遠端是否仍生成，也沒有取回原結果／驗證取消的能力。啟用 bounded replay 可以繼續，但可能重複推理或產生未知費用。Local OCR／scripts 若效果無法核對，也會停止供檢查。\n\n4. **故障覆蓋仍有限。**  \n   R1／R2 已證實：保存有用部分後，經局部注入的非串流不可用或串流中斷，仍能完成剩餘轉換。自然長時間 outage、長串流不可用及通用 hard-crash 恢復仍未驗證。[實際結果](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/EVIDENCE.md:126)\n\nTimeout 本身也要分清：預設 180 秒是網路 inactivity bound，整項任務另有累計時間限制。串流持續收到 chunks 與非串流等待完整結果，在相同 timeout 數值下仍可能有不同表現。現有證據不足以認定 streaming 普遍更可靠，或認定歷史 timeout 是 context 過大造成。\n\n這兩個領域會互相影響：大量輸入可能增加等待及重送負擔；network retry 又會重送原本的輸入。但處理方式需要分清——context 超限要調整有效輸入，暫時性網路故障要有限恢復，已保存的本地操作要核對 receipt。\n\n我的判斷是：**context 目前最缺的是長任務中有效管理工作記憶的交付證據；network 最需要關注的是如何把已有的有限恢復能力，形成合理等待、清楚狀態及少人工處理的正常使用體驗。** 兩者都有可沿用的基礎，尚未形成完整的長任務可靠性保證。"
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 229,
+  "timestamp_original": "2026-10-19T16:52:11.149Z",
+  "timestamp_display": "2026-10-20T00:52:11.149+08:00",
+  "turn_id": "01a15512-2ce8-7b41-82cd-1c865185e355",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T00:51:39.715+08:00",
+  "completed_at": "2026-10-20T00:52:11.149+08:00",
+  "event_id": "EVT-0068",
+  "evidence_path": "evidence/events/EVT-0068.json",
+  "supporting_paths": [
+    "supporting/workspace/docs/CURRENT_STATE.md",
+    "supporting/workspace/docs/EVIDENCE.md",
+    "supporting/workspace/docs/TOOLS.md"
+  ],
+  "embedded_paths": []
+}

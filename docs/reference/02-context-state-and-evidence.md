@@ -3,11 +3,28 @@
 <a id="scope-and-status"></a>
 ## Scope, authority, and reading status
 
-This is a **nonnormative reconstruction reference**, not an implementation specification, test backlog, or authorization to run models. It preserves the substantive reasoning in exported conversation events **EVT-0415–EVT-0826**, including the full inline attachments **ATT-07–ATT-20**. All 5,500 lines of the prepared segment were read, together with the later final consolidation. The raw export remains outside this repository. Event and attachment IDs resolve through [SOURCE_INDEX](SOURCE_INDEX.md) and [source-inventory.json](source-inventory.json). The consolidated [POINT_COVERAGE](POINT_COVERAGE.json) maps preserved points to stable anchors; prepared source packets are local review aids.
+This is a **nonnormative reconstruction reference**, not an implementation specification, test backlog, or authorization to run models. It preserves the substantive reasoning in exported conversation events **EVT-0415–EVT-0826**, including the full inline attachments **ATT-07–ATT-20**. All 5,500 lines of the prepared segment were read, together with the later final consolidation. The [repository-local source archive](sources/INDEX.md) provides discussion bodies and attachments as inert reference material. The complete external export remains an optional provenance archive; the explanations here do not require the old checkout or its development documents. Event and attachment IDs resolve through [SOURCE_INDEX](SOURCE_INDEX.md) and [source-inventory.json](source-inventory.json). The consolidated [POINT_COVERAGE](POINT_COVERAGE.json) maps preserved points to stable anchors; prepared source packets are local review aids.
 
 The segment repeatedly proposed Pi or LangChain `create_agent` with LangGraph persistence. **That is historical.** The later consolidated preference is a **small direct LangGraph `StateGraph`, a shared native Nexus request service/dispatcher, a document/evidence core, and SQLite short transactions with immutable files**. This is a priority design choice, not implemented functionality or proof of superiority. The final consolidation limits unresolved first-version work to three contracts: document editing and candidate references, context capacity and handoff, and persistence/recovery/stopping. Mechanisms below preserve knowledge for implementing those contracts; they do not reopen all the alternatives or make every mechanism mandatory.
 
 Status terms used here distinguish **observed-v1** (facts reported about the original implementation or saved runs), **settled-boundary** (a product or correctness constraint retained through correction), **proposal** (an implementation option), **corrected-proposal** (a useful idea with an explicitly withdrawn guarantee), **superseded** (an older approach displaced by later decisions), and **hypothesis** (an unverified causal explanation or benefit). “Source” references to official APIs below describe what was checked in the conversation, at the stated versions; this review did not perform fresh web research or execute recorded commands.
+
+The following vocabulary makes the historical discussion readable without its original thread. These are descriptions of the concepts already used below, not additional modules or prescribed data structures.
+
+| Term | Meaning in this reference |
+|---|---|
+| Evidence and evidence view | Evidence is a saved source/tool result, such as OCR, layout, an original embedded image, or a render. A view chooses a representation, page/range, fields, or region from that result. Saving the result and including a view in model input are separate events. |
+| Active input and retained history | Active input is the particular text, tool messages, and image content sent on one model call. Complete retained records may be much larger. Removing content from active input does not delete its original file or historical record. |
+| Context policy, projection, and hydration | Policy records small decisions about selection, pins, release, notes, and history boundaries. Projection applies those decisions to one request; hydration expands references into actual text/pixels. The later baseline keeps the small policy in Graph State and the large expansion transient. |
+| Input view and frozen request | An input view identifies what the app assembled, including fixed versions and omissions. A frozen request preserves that assembled request for attempts of the same logical model call; it does not look up newer draft or pin content midway through a retry. |
+| Candidate, working draft, and version | A candidate preserves proposed content, including a rejected or invalid submission. The working draft identifies usable in-progress content. An accepted edit creates a new immutable revision; a current-head pointer selects the working revision. Saved or committed does not by itself mean complete or source-verified. |
+| Base, head, and compare-and-swap (CAS) | A base is the explicitly named content an edit was prepared against; head is the currently selected revision. CAS means that the short commit step checks its expected current state before accepting a change, so another accepted edit is not silently overwritten. |
+| Accepted response, tool batch, and receipt | Only an accepted complete model response supplies tool calls eligible for dispatch. Its batch is the set of those calls. An operation receipt records an app effect/result tied to a stable operation identity; it is not a new instruction to execute that operation. |
+| Context handoff and framework checkpoint | A context handoff preserves effective requirements and work knowledge while changing active history. A LangGraph checkpoint persists execution state so the same execution can resume. The old app also called a context-reduction tool `checkpoint`; that name did not make it a LangGraph checkpoint. See [the original context gap](01-foundations-and-frameworks.md#p1-009). |
+
+For a developer tracing one working path, [candidate reuse](#p2-019), [capacity and delivery](#p2-037), [self-sufficient handoff](#p2-044), [request identity](#p2-059), and [commit/replay](#p2-078) supply the concrete examples. The framework API names later in this file explain historical integration arguments; the current small direct graph is not required to retain those hook names.
+
+The [context and evidence engineering guide](../design/CONTEXT_AND_EVIDENCE.md) connects these points into a repository-only implementation handoff. It explains exact result/view identities and native pixels, the single Graph State policy writer, transient input assembly, complete-request capacity, and the later rolling-compaction corrections. Read its [coverage and application sequence](../design/CONTEXT_AND_EVIDENCE.md#rolling-compaction), [continuation notes](../design/CONTEXT_AND_EVIDENCE.md#handoff-and-working-notes), [restart boundary](../design/CONTEXT_AND_EVIDENCE.md#failed-handoff-and-restart), and [cache/reuse distinctions](../design/CONTEXT_AND_EVIDENCE.md#prompt-cache-and-cost) together when implementing Q2. These are explanatory consolidations; the three open contracts remain open, and historical API sketches below remain version-specific reference material.
 
 <a id="p2-001"></a>
 <!-- P2-001 | Authority and final consolidation | settled-boundary | EVT-0415,EVT-0826,EVT-1148,EVT-1166 -->
@@ -77,6 +94,8 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <a id="p2-008"></a>
 <!-- P2-008 | Test count and fault-injection applicability | observed-v1 | EVT-0459,EVT-0826,ATT-08,ATT-20 -->
 **P2-008 — Existing tests are reusable evidence with boundaries.** The 228-test result and R1/R2 injected-failure records apply to a particular v1 code state and exercised behaviors. They support fixture and contract reuse; they do not certify the whole old controller, all hard crashes, natural prolonged outages, arbitrary old-job recovery, or a new framework composition. Saved-work continuation was observed. Installed desktop readiness and complete source-led delivery remain distinct from tests and mechanism use.
+
+Here R1 and R2 are historical test labels, not recovery modes to implement. R1 concerned an injected temporary outage; R2 concerned interruption before a streaming response completed. The [local historical network explanation](01-foundations-and-frameworks.md#p1-011) records their meaning and limits. Likewise, a run identifier elsewhere in this file identifies the observation behind a number; rebuilding the product does not depend on finding or rerunning that old job.
 
 *Sources: EVT-0459, EVT-0826, ATT-08, ATT-20. Status: observed-v1.*
 
@@ -150,6 +169,8 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <!-- P2-019 | Editing operations and partial page maps | settled-boundary | EVT-0826,ATT-20,EVT-1166 -->
 **P2-019 — Remove unnecessary regeneration and mapping friction.** The proposed document core supports insert/append, replace, delete, move, stable targets, candidate/file import, and whole-section reconstruction when useful. Local page-map updates merge into the existing map and validate the resulting whole document; the agent need not resend unchanged body text or the full 173-page map for every edit. Metadata-only fixes, new insertion, and reuse of a rejected candidate are the final contract's three concrete cases. This is method freedom, not a requirement that edits always be small.
 
+The three cases protect different work. In a metadata-only repair, the table's accepted text and assets stay the same while an incorrect or missing source-page association is corrected. In a new insertion, the prepared table enters at an identified document location without replacing unrelated blocks. In rejected-candidate reuse, the original candidate text is referenced directly and only the faulty fields are repaired; the model does not have to regenerate the table from memory. A page map associates source pages with their document treatment/content; changing one association should not require retransmitting every unchanged page entry. The exact patch syntax remains open, but the resulting version must reveal what changed and preserve unspecified content.
+
 *Sources: EVT-0826, ATT-20, EVT-1166. Status: settled-boundary.*
 
 <a id="p2-020"></a>
@@ -200,6 +221,8 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <a id="p2-027"></a>
 <!-- P2-027 | No implicit release from page state | settled-boundary | EVT-0459,EVT-0479,EVT-0507,EVT-0560,EVT-0826,ATT-08,ATT-09,ATT-10,ATT-12,ATT-20 -->
 **P2-027 — Unpinned, saved, old, or unflagged does not mean irrelevant.** P0–P3, Focus Decay, “saved with no issue,” and default release of evidence omitted from `keep_evidence_ids` were repeatedly rejected as hard semantic rules. A survey of 30 pages may precede reconstruction; keeping all uncommitted evidence resident punishes that valid method. Conversely, writing pages 10–11 does not prove pages 13–15 can leave: an abbreviation or table footnote may be there. Missing issue registration is not proof of no dependency. Pins are strong signals, not a requirement to label every useful item.
+
+The rejected P0–P3 proposal assigned P0 to the current requested focus and explicit pins, P1 to inspected-but-unwritten pages, P2 to the most recent one or two neighboring written pages, and P3 to older written pages without a registered issue. It attempted to make P0/P1 automatically resident and P3 eligible for release. The later “Focus Decay” proposal similarly inferred that writing pages 10–11 meant keeping only those pages and page 12, while replacing pages 13–15 with small indexes unless they were pinned or linked to a registered issue. Both used convenient work-state signals as though they established semantic need. The retained idea is to expose those signals as selection help; the rejected inference is that they prove what may disappear from the next input.
 
 *Sources: EVT-0459, EVT-0479, EVT-0507, EVT-0560, EVT-0826, ATT-08, ATT-09, ATT-10, ATT-12, ATT-20. Status: settled-boundary.*
 
@@ -267,17 +290,23 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <!-- P2-037 | Large-result envelopes | settled-boundary | EVT-0432,EVT-0459,EVT-0560,ATT-07,ATT-08,ATT-12 -->
 **P2-037 — Report execution and delivery separately.** A result can be successfully saved yet not fully expanded, or a multi-page operation can partly succeed. Keep per-part outcomes, evidence identity/hash/size, requested representation, actual loaded pages/fields/regions/images, omitted scope, warnings, and exact read methods. Define whether “full” means the requested representation or raw original. A navigation receipt is not proof the full evidence entered the request. Every formal tool call still receives a protocol-valid result before a handoff/model turn; incomplete pairings cannot be hidden in a compaction transition.
 
+For example, a request for OCR of pages 15–20 can finish and persist all six pages while only pages 19–20 are selected for the next model input. The tool outcome is successful for 15–20; the input view says that 19–20 were delivered and that 15–18 remain saved but unexpanded. If page 18 actually failed extraction, that is a separate execution failure and must not be described as merely an omitted view. A useful result envelope makes these facts visible together and provides an exact way to retrieve the saved pages. This is an explanation of the required distinctions, not a fixed envelope schema or a rule that only two pages may be loaded.
+
 *Sources: EVT-0432, EVT-0459, EVT-0560, ATT-07, ATT-08, ATT-12. Status: settled-boundary.*
 
 <a id="p2-038"></a>
 <!-- P2-038 | No mandatory stage ladder | corrected-proposal | EVT-0432,EVT-0459,ATT-07,ATT-08 -->
 **P2-038 — Capacity actions can be combined according to need.** Representation changes, releasing already-unneeded evidence, exact range reads, and history handoff are options, not a compulsory four-stage conversion process. Crossing a soft watermark alone need not force a handoff. A single result can exceed an otherwise empty window, so neither deferred admission nor compaction guarantees eventual full expansion. The 55% + 35% example usefully motivated preflight, but cannot establish “100% handshake space” for every input.
 
+In that example, a proposed early-handoff watermark was 65% of the window. Existing input used 55%, then one batch of four pages' images/layout added another 35%, taking the next input to 90% before allowing for a handoff request and output. The useful lesson was to save the whole batch and check its assembled contribution before exposing it to another model call. The proposal's guarantee was too strong: deferring the batch does not prove that old history plus control messages and handoff allowance fit, or that the deferred batch will fit a fresh context. A receipt/reference avoids an uncontrolled expansion; it does not create capacity.
+
 *Sources: EVT-0432, EVT-0459, ATT-07, ATT-08. Status: corrected-proposal.*
 
 <a id="p2-039"></a>
 <!-- P2-039 | Capacity components and actual requests | settled-boundary | EVT-0534,EVT-0560,EVT-0595,ATT-11,ATT-12,ATT-13 -->
 **P2-039 — Count the complete assembled request and required output reserve.** System instructions, tool schemas, roles/message wrappers, all active historical images, current evidence, working state, previous assistant output/tool calls, and output/handoff allowance affect capacity. JSON characters, bytes, image MB, and pixels are not interchangeable with tokens. Each selected route needs configurable capacity/output reserve; no universal percentage or optimal watermark study is required. “Previous usage + new text” only applies when the actual prior composition remains compatible; compaction, projection changes, route/image changes, and omitted history invalidate that shortcut.
+
+Three quantities answer different questions: stored evidence size says how much original material exists; active-input contribution says how much of it is selected, including any repeated appearances; estimated remaining room subtracts the whole assembled input and required output allowance from the chosen route's available capacity. Thus a large saved OCR file can contribute nothing when unselected, while a small passage repeated in several messages contributes repeatedly. A request also has a byte size independently of its token estimate. Unknown route limits or uncertain image accounting remain visibly unknown/estimated rather than being presented as an exact “safe remaining” count.
 
 *Sources: EVT-0534, EVT-0560, EVT-0595, ATT-11, ATT-12, ATT-13. Status: settled-boundary.*
 
@@ -303,11 +332,15 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <!-- P2-043 | Handoff failure and recovery context | settled-boundary | EVT-0560,EVT-0595,ATT-12,ATT-13 -->
 **P2-043 — Failed handoff preserves original records and has a finite outcome.** When old context remains usable, retain it and respond to the actual failure. If it is genuinely unavailable or cannot be made usable through normal capacity handling, a clearly labeled recovery context may carry effective requirements, current artifacts, valid notes, recent activity, candidates, and exact retrieval. It may require renewed source inspection; there is no guarantee of complete internal reasoning or lossless semantic continuation. If even required controls and a workable minimum do not fit, save work and stop with a concrete capacity blocker rather than retry forever. Process restart alone does not justify recovery-context replacement.
 
+The intended restart order is to load the original supported session/checkpoint, reconcile known document/tool effects, and resume from the original position if that state remains usable. A new recovery summary is a fallback for a specific unavailable/invalid context, not the default restart mechanism. Otherwise a normal process restart would itself discard recent useful details that the mature runtime already preserved. A failed compaction also needs capacity reassessment before the next normal send; preserving the originals and immediately resending their unchanged oversized projection does not solve the failure.
+
 *Sources: EVT-0560, EVT-0595, ATT-12, ATT-13. Status: settled-boundary.*
 
 <a id="p2-044"></a>
 <!-- P2-044 | Mechanical eviction rejection | corrected-proposal | EVT-0560,ATT-12,EVT-1166 -->
 **P2-044 — “Save all assistant text, evict saved pages” is not a safe universal fallback.** All assistant text, tool arguments, notes, and drafts may themselves overflow. A saved page with no flagged issue may still supply an unresolved table header/footnote. The app preserves observable records, not hidden mental state. Later consolidation prefers a self-sufficient handoff with effective requirements, unfinished work, and exact references over fragile delta notes. The latest draft and unfinished candidates may partially leave input while their originals remain retrievable; none is permanently pinned merely by being latest.
+
+A self-sufficient handoff states the current requested scope and fidelity constraints, identifies the selected draft/version and useful candidates, records decisions needed to interpret them, and names remaining work with exact retrieval references. For the cross-page-table example, it needs the finding that page 16's first row continues the preceding table and that a particular value remains uncertain and was not adopted; “continued table_02; see previous notes” is insufficient if those notes leave active history. The handoff can reference the complete table and source pixels instead of copying them all. It preserves the known relationship and retrieval path without claiming to preserve an unexpressed thought or to fit every handoff into one fixed-size summary.
 
 *Sources: EVT-0560, ATT-12, EVT-1166. Status: corrected-proposal.*
 
@@ -336,6 +369,8 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <!-- P2-048 | Stable prefix tradeoffs | corrected-proposal | EVT-0534,EVT-0560,EVT-0595,ATT-11,ATT-12,ATT-13 -->
 **P2-048 — Stable prefix is an optimization, not the highest rule.** Put stable instructions/schemas early when practical and use ordinary tool results for normal changes. Supplement current state on recovery, handoff, or a real gap rather than inject a duplicate full snapshot every turn. Replacing a dynamic tail can break the prior prefix; appending every snapshot accumulates duplicates. A fixed epoch baseline plus substantive append-only events and a freshly assembled current view are different legitimate strategies with different cache tradeoffs. They cannot both claim an unchanged prefix and freshly rewritten early state. Update user requirements immediately and explicitly; a revision number alone does not explain what changed.
 
+“Epoch” in the earlier proposal meant a period of work after one context consolidation, beginning with a fixed continuation baseline and then appending later events. It was proposed to preserve a reusable prompt prefix. A “dynamic tail” instead rebuilds current-state content near the end of each request. Moving or rewriting old prefix content can reduce prefix reuse; keeping every old snapshot can consume input with stale duplicates. Neither strategy changes the complete retained records. The product choice concerns the actual request projection and whole-task cost, not whether history must be permanently append-only everywhere.
+
 *Sources: EVT-0534, EVT-0560, EVT-0595, ATT-11, ATT-12, ATT-13. Status: corrected-proposal.*
 
 <a id="p2-049"></a>
@@ -353,6 +388,8 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <a id="p2-051"></a>
 <!-- P2-051 | Correct computation signatures | proposal | EVT-0759,EVT-0789,ATT-18,ATT-19 -->
 **P2-051 — Cache identity follows actual computation.** A useful signature includes fixed source hash, tool/implementation/engine version, resolved defaults, OCR model/language data and their order, DPI, PSM, bbox, annotations, and relevant settings. Tesseract language order can affect output. Whole-call hashes for pages 15–20 and 15–16 differ; overlap reuse needs an index at independently computable units. A later 19–21 request can reuse 19–20 and compute only 21 when semantics permit. Cross-page analyses cannot automatically be reduced to page cache units.
+
+This is why source hash plus raw user arguments can be insufficient: omitted defaults may resolve differently after an engine/configuration change, while the visible arguments stay identical. The signature represents the effective computation, including versions/settings that affect it. It is a computation identity, separate from the new call's operation identity and from the subset eventually selected into model input.
 
 *Sources: EVT-0759, EVT-0789, ATT-18, ATT-19. Status: proposal.*
 
@@ -405,6 +442,8 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <!-- P2-059 | View request attempt and batch identities | settled-boundary | EVT-0730,EVT-0789,EVT-0826,ATT-17,ATT-19,ATT-20 -->
 **P2-059 — A view is not a round, attempt, accepted batch, or activation event.** Identical frozen input may be retried under multiple attempts; changed pins/schema/messages/model settings require another view. Neither new view nor outer wrapper call resets the stable logical round's attempt/time budget. Usage belongs to each execution attempt, not a single mutable field on a reusable view. The accepted parent response/tool batch establishes which proposals are eligible for activation; querying every operation with the same input view can incorrectly include rejected attempts or other branches.
 
+An illustrative chain makes the identities concrete: logical request Q uses fixed input view V; transport attempt A fails or has an unknown outcome; an authorized bounded attempt B sends the same frozen Q/V; B yields the complete response R that is accepted locally; R contains tool calls T1 and T2, which form the accepted batch. Their operations and context-change intents belong to R and its call identities. V describes their input basis, but V alone does not distinguish attempt A's unaccepted response from R or identify which tools are eligible. Recording a new view to handle capacity still does not erase Q's existing attempts or the task's elapsed budget. These letters illustrate relationships, not a required identifier format or additional database tables.
+
 *Sources: EVT-0730, EVT-0789, EVT-0826, ATT-17, ATT-19, ATT-20. Status: settled-boundary.*
 
 <a id="p2-060"></a>
@@ -452,6 +491,8 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <a id="p2-066"></a>
 <!-- P2-066 | Orthogonal authorities | settled-boundary | EVT-0479,ATT-09 -->
 **P2-066 — A context manifest describes one input, not all committed reality.** If document revision 4 and its success receipt commit while a context manifest still references 3, a crash cannot make revision 4 nonexistent. Document/version receipts establish committed edits; evidence storage establishes saved results; session records establish exchanges; context manifests establish versions/content selected for an input. Recovery reconciles these roles. Unreferenced by one context means not included there, not unexecuted, unsaved, or valueless. Atomic replacement of a manifest pointer, including Windows `ReplaceFileW`, cannot create a transaction across independent stores.
+
+The historical “four-store reconciliation” phrase referred to those four logical questions: what the model/session exchanged, what the document service committed, what evidence was saved, and what the context selected. They can share physical storage where useful. The failed “single manifest authority” proposal would have treated writes absent from the active manifest as ineffective; that would discard knowledge of a real document commit merely because a later context update did not finish. The corrected design gives each fact one owner and reconciles references between them. An input snapshot can select an older version for comparison while the document service correctly reports a newer head.
 
 *Sources: EVT-0479, ATT-09. Status: settled-boundary.*
 
@@ -528,6 +569,8 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <!-- P2-078 | Idempotent receipts and current head | settled-boundary | EVT-0507,EVT-0534,ATT-10,ATT-11 -->
 **P2-078 — Replay returns what happened then without rolling current state backward.** Commit a document version and its receipt coherently. An identical replay returns the original result rather than inserting twice. A receipt saying “produced revision 4” may coexist with current head 5; report both as distinct facts. A new call with `expected_rev=3` after 4 exists is blocked by version checking, so it is a usability/reconciliation problem rather than proof of duplicate writing. Historical completion must not reset current pointers.
 
+Consider an accepted append operation prepared from revision 3. The document service saves revision 4 and its operation receipt, then the process stops before the graph records the tool completion. On resume, the framework may invoke the pending operation again; matching its stable identity and exact parameters returns the receipt for revision 4 instead of appending twice. If later valid work has already advanced head to revision 5, returning that historical receipt still does not set head back to 4. If the model creates a different call after restart, it is a new operation: its stale expected head can be rejected and its content retained for reconciliation. Neither receipt replay nor content-hash equality authorizes treating that new call as the old operation. This example explains the boundary, not a requirement to manually scan and reinject every past receipt.
+
 *Sources: EVT-0507, EVT-0534, ATT-10, ATT-11. Status: settled-boundary.*
 
 <a id="p2-079"></a>
@@ -569,6 +612,8 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <a id="p2-085"></a>
 <!-- P2-085 | Persistence modes and original budgets | settled-boundary | EVT-0560,EVT-0638,EVT-0730,ATT-12,ATT-14,ATT-17,EVT-1166 -->
 **P2-085 — State the persistence and budget boundaries explicitly.** A named SQLite checkpointer does not determine durability: `sync`, `async`, and `exit` have different crash protection. A complete accepted response, each tool effect, and graph progress may be durable at different times. Recovery retains original persistent attempts/time budgets and does not re-publish a saved version. Final consolidation asks for explicit behavior at four boundaries: request saved, response accepted, tool committed, and graph recorded; arbitrary hard-crash or all-old-job recovery is not assumed.
+
+These boundaries describe what is known at interruption. A saved request can supply frozen input and its existing budget, but does not by itself prove whether a remote attempt ran. An accepted response supplies the complete tool-call batch eligible for dispatch. A committed tool effect supplies its own durable result/receipt even if graph acknowledgement is missing. Recorded graph progress supplies the framework's continuation state, while earlier external effects remain facts that checkpoint rollback cannot undo. Synchronous, asynchronous, and exit-time checkpoint saving determine when that last record becomes durable; merely naming SQLite does not select the mode. The unresolved contract is finite behavior at these transitions, not a requirement to build a distributed transaction across the provider, database, and files.
 
 *Sources: EVT-0560, EVT-0638, EVT-0730, ATT-12, ATT-14, ATT-17, EVT-1166. Status: settled-boundary.*
 
@@ -630,11 +675,15 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <!-- P2-094 | Preview generation versus review | settled-boundary | EVT-0507,EVT-0534,ATT-10,ATT-11 -->
 **P2-094 — Producing a PNG is not passing a quality check.** A preview record identifies generated pixels for a fixed target revision. A review record identifies what was actually inspected, its source, scope, aspect, and unresolved issues. Do not auto-create a passing layout review because Chromium produced an image. Candidate/draft previews remain useful before final mapping or full document completion.
 
+For example, missing bold emphasis has at least three places to investigate: whether the source's emphasis was noticed, whether the saved Markdown encoded it, and whether the rendered preview displays it. A preview alone exposes only the rendering result; comparing the exact saved markup with the source region locates the failure. This explains why source, saved revision, and preview need compatible identities, while leaving the agent free to choose the necessary inspection method.
+
 *Sources: EVT-0507, EVT-0534, ATT-10, ATT-11. Status: settled-boundary.*
 
 <a id="p2-095"></a>
 <!-- P2-095 | Review history and aspect carry-over | settled-boundary | EVT-0459,EVT-0479,EVT-0507,ATT-08,ATT-09,ATT-10 -->
 **P2-095 — A v1 review remains a historical fact; applicability to v2 is a separate judgment.** Avoid marking an entire page and all dependencies invalid after any edit. Distinguish characters/numbers, meaningful styles, reading/cross-page relations, crop content, and rendered layout. Unchanged characters do not prove full text fidelity when superscripts, footnote placement, or emphasis changes. Adding table rows may alter shared header/unit/footnote scope. Preserve unaffected checks where justified and guide targeted reevaluation without a universal quality engine or compulsory review gate.
+
+For example, a check of a figure's labels can remain relevant after an unrelated paragraph edit, while an earlier review of a table's units may need reconsideration when a new row extends the same header's scope. Keep the original review attached to the version/aspect it actually examined and make any carry-over explicit. A global “reviewed” bit or automatic invalidation of every neighboring page loses those distinctions.
 
 *Sources: EVT-0459, EVT-0479, EVT-0507, ATT-08, ATT-09, ATT-10. Status: settled-boundary.*
 
@@ -746,6 +795,8 @@ Status terms used here distinguish **observed-v1** (facts reported about the ori
 <a id="p2-112"></a>
 <!-- P2-112 | Seven-step scenario is a fixture not workflow | settled-boundary | EVT-0479,EVT-0507,ATT-09,ATT-10 -->
 **P2-112 — The seven-step path was an example for integration checks.** Survey across pages, save an unfinished table, fix metadata/header, preview the same revision, compact, continue editing, and interrupt after a commit form a useful scenario. They do not prescribe how every PDF is converted. A scripted mock model may finish without reading the new context at all, so a successful sequence alone does not establish correct handoff, source fidelity, or agent autonomy.
+
+The scenario joins the contracts rather than testing seven unrelated buttons: the unfinished table survives its metadata repair without regeneration; the preview reads the revision actually produced; the handoff retains the relationship needed to continue the table; and a commit followed by interruption is reconciled without a duplicate append. A fixture can assert those identities, unchanged content, references, and receipts directly. To establish actual conversion quality, the saved/reopened/exported output still needs comparison with the relevant source. This is why the historical suggestion was useful as a bounded integration fixture but insufficient as a framework winner or universal conversion recipe.
 
 *Sources: EVT-0479, EVT-0507, ATT-09, ATT-10. Status: settled-boundary.*
 

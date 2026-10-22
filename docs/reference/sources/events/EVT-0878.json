@@ -1,0 +1,30 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad98c4a909c81918d71a1855c64d818",
+    "content": [
+      {
+        "type": "Text",
+        "text": "**這版有兩個值得採納的簡化：把小型 context policy 放回 LangGraph State，以及讓文件服務接受局部／稀疏更新。** 我也修正自己前幾輪的建議：對目前單一內建執行器，另外維護政策版本表與啟用收據，確實偏重。\n\n但提案仍把幾個「可降低問題發生機會的設計」說成「徹底消除問題」，尤其是完成判定、框架恢復與視覺解析度。這些界線需要留下。\n\n**1. Context policy 可以回到 Graph State，但不能把所有已發生的事情都交給 checkpoint。**\n\n我支持把以下小型資料放入 `AgentState`：\n\n- 證據選取、釋放與釘選政策；\n- 工作筆記或筆記引用；\n- 歷史整理邊界；\n- 已處理的 context 變更批次。\n\n不過，「問題根源是用了兩個資料庫」並不準確。之前 policy 8 覆蓋 policy 9，是**把舊結果重新當成目前狀態**的邏輯錯誤；同一資料庫也可能發生。\n\n另外，兩個並行工具直接回傳整份 `context_policy`，即使存於同一個 Graph State，仍可能互相覆蓋。Reducer 只負責按指定規則合併資料，不會自動判斷 `pin` 與 `release` 的衝突。[LangGraph 狀態更新與 Reducer](https://docs.langchain.com/oss/python/langgraph/graph-api)\n\n我會保留這個簡單流程：\n\n```text\n工具回報 context 變更意圖\n→ before_model 集中結算\n→ 一次更新 policy 與已處理批次\n→ wrap_model_call 按政策組裝本次輸入\n```\n\n這樣可以移除外部政策版本／啟用表，也保留單一結算點。\n\n但以下事實仍要由其服務記錄：\n\n| 資料 | 為甚麼不能只依賴可回退的 checkpoint |\n|---|---|\n| 已發出的模型請求與已消耗預算 | 回到舊 checkpoint 不會撤銷請求或恢復額度 |\n| 已提交的文件版本 | Graph 回退不會撤銷文件寫入 |\n| 已完成的外部工具操作 | 節點重跑時，需要辨認既有效果 |\n\nLangGraph 明確說明，節點可能從頭重跑，外部副作用需要冪等處理；time travel 也可能重新發出模型與 API 請求。[節點重執行](https://docs.langchain.com/oss/python/langgraph/graph-api#re-execution-and-idempotency)、[Time travel](https://docs.langchain.com/oss/python/langgraph/use-time-travel)\n\n**可以減少政策對帳，但不能因此移除文件收據與請求帳本。** 它們也不一定需要不同的實體資料庫。\n\n**2. 稀疏儲存合理；「每頁 converted 即任務完成」則會造成錯誤驗收。**\n\n應把三件事拆開：\n\n1. Agent 每次提交多少資料。\n2. App 如何儲存頁面資訊。\n3. 最終交付需要提供甚麼來源對應。\n\n我們可以讓 Agent 只提交變動頁面，底層使用稀疏記錄，再由 App 根據來源頁數、任務範圍及已知資訊產生完整映射。**不需要每次重新輸入 173 頁，仍然可以保留完整來源對應。**\n\n現行要求明確包括所有輸入頁面的對應；完整重構可以更換內部實作，不代表要一併取消這個交付要求。[頁碼對應要求](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/PRODUCT_REQUIREMENTS.md:44)\n\n提案中的完成檢查則太弱：\n\n> 每個 target page 都有區塊，或標為空白／省略 → 完成。\n\n同一頁有一段正文被轉換，不代表表格、註腳、圖說也完成。反過來，我們已有的 Breasts 任務只要求第 12 頁內的一個完整部分，明確排除前後其他內容；單靠 `target_pages=[12]` 無法表達這個範圍。[既有範圍紀錄](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/EVIDENCE.md:94)\n\n因此我會分開：\n\n- **來源事實**：物理頁、印刷頁碼、區域及其證據。\n- **任務範圍**：頁面、章節、圖表或其他有明確邊界的內容。\n- **產出對應**：哪些區塊來自哪些來源。\n- **工作與核對狀態**：已有草稿、尚待處理、已知問題及核對紀錄。\n\n`converted` 若只代表「有對應區塊」，就不能兼任品質結論。`source_blank_or_omitted` 也應拆開：來源確實空白，與 Agent 判斷某些裝飾可省略，是不同事情。\n\n另外，舊版本記錄「當時其餘頁面不在範圍」並不是過時錯誤；錯的是下一個任務不加區分地沿用它。\n\n**3. MCP 應提供可選的精確回傳，但「內容永遠焊死」和「精簡預設是唯一防線」都不成立。**\n\n我們無法從 MCP server 控制宿主歷史，不代表宿主自己不能整理或壓縮歷史。\n\n我同意將以下能力下沉至共用工具層：\n\n- 明確的結果形狀與大小；\n- 欄位、範圍、圖片選取；\n- 完整原件保存；\n- 實際回傳與未回傳內容的標示。\n\n但這不必推導成固定的文字優先或精簡首回傳。現有契約已容許**第一次呼叫直接選欄位，也能第一次取得完整結果**，沒有摘要前置關卡。[現有選取契約](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/TOOLS.md:330)\n\n較合適的是把這套能力一致地提供給內建 Agent、MCP 與 CLI，讓呼叫者選擇。若要更改預設回傳內容，那是另一項產品行為取捨，不能只用「MCP 無法事後刪歷史」當作必然理由。\n\n也不要把 `text`、`layout`、`words` 視為純粹重複資料：它們可能同時包含重複文字與不同的位置／字體證據。可以避免重複序列化，不能假定其中一份永遠足夠。\n\n**4. 行號定位與同一基底套用值得採用，但應作為定位選項。**\n\n這版對多 patch 的處理更具體：全部對齊同一版本、先驗證不重疊，再由後往前套用，能避免索引位移。這個方案可以採納。\n\n但行號不是完整答案：\n\n- 同一行可能有多個 `0`、空格或相同字詞。\n- HTML 表格可能整張只有一行。\n- 顯示換行與原始換行可能不同。\n- UI 與 Python 後端必須統一字元位置的計算方式；JavaScript 的字串索引以 UTF-16 code unit 為基礎，不能直接當成所有環境共通的字元位置。[MDN 說明](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/length)\n\n我建議支援：\n\n> 確切內容版本＋行／區間定位＋預期原文；必要時再使用區間內位置或工具返回的定位引用。\n\nAgent 不必每次手算完整 offset，也不必為取得唯一字串重傳整張表。整段替換與檔案匯入仍應保留。\n\n這能保證未指定的文字不被重新生成，**不能保證指定的修補在內容上正確**。空白改成破折號、`礪` 改成 `厲`，都必須由來源支持。\n\n提案說這能消除歷史上的八次工具錯誤，也超出了證據：當中還包括 OCR timeout 參數及成功操作後的結果選取錯誤，不全是修改介面與頁碼映射造成的。[八次錯誤分類](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/EVIDENCE.md:454)\n\n**5. 引用既有證據座標是好方向，但引用必須綁定那份證據。**\n\n`source_refs` 能減少 Agent 手寫座標，我支持。但 `p14_b03` 本身不足以唯一識別來源區域：重新 OCR、改變裁切範圍或換引擎，都可能產生另一個「第 14 頁第 3 區塊」。\n\n應由工具提供可直接沿用的引用，至少能解析到：\n\n> 不可變證據版本＋該證據內的區塊／欄位位置。\n\n頁碼、來源 PDF、座標系及渲染參數可由該證據帶出，不需要 Agent 重複填寫。現有 OCR 已分別保存 `bbox_pixels` 與轉換後的 `bbox_pdf`，可以重用這個區分。[OCR 座標處理](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/ocr.py:118)\n\n圖片方面，兩張獨立圖片通常是值得提供的選項，但**不保證各自保有完整原尺寸的模型解析度**。例如 Qwen 的官方處理器就會依像素設定縮放圖片；實際路由仍有自己的處理方式。[Qwen 官方圖片處理](https://github.com/QwenLM/Qwen3-VL)\n\n因此保留獨立圖片、局部裁切與拼圖的選擇較合適，不需要全面禁止拼圖，也不能把縮放認定為既有粗體錯誤的已證實原因。\n\n**6. 操作身分與容量恢復需要清楚命名，避免再次混合。**\n\n提案把 `parent_model_request_id` 直接等同 `input_view_id`，不宜這樣定義：\n\n- 同一輸入視圖可以被重送。\n- 同一模型回合可以先後使用不同視圖。\n- 只有被執行器接受的父回覆，才會產生要執行的工具批次。\n\n工具操作應有穩定的 App 身分，保留父回覆及分支關係；恢復同一操作時重用，新工具批次則產生新的操作身分。請求嘗試與輸入視圖另行關聯，無須靠同一個 ID 兼任全部角色。\n\n分開 `automatic_retries` 與容量重組 allowance 是合理的，但「每回合一次立即重送」只是待選政策：\n\n- 本地預檢重組沒有 HTTP 發送，仍會使用執行時間。\n- 實際重送必須記入共同帳本及總預算。\n- 只能處理已辨識的容量錯誤，且新視圖確實改善相應限制。\n- 不得為縮小輸入而默默刪除有效要求或必要工作。\n- 413 也可能帶 `Retry-After`，不能一律宣稱無須等待。[HTTP 413 規範](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.14)\n\n這些是 context 與請求層的接縫；完整網路恢復政策仍可稍後討論。\n\n**施工上，我會接受「獨立文件核心＋內建 LangGraph 執行器」的方向，但縮小 Slice 1 的內容。**\n\n目前 Slice 1 同時包含新框架、雙協定、持久化重試、新文件模型、完整章節及中斷恢復，仍偏大。可以先重用已有來源工具與編碼能力，接通目前實際使用的 Nexus 路由，完成一次有用的來源到成品流程；其他既有協定仍是產品能力，逐步接入同一契約。\n\n最小流程也應從第一天保存有用的候選內容。精細 patch 可以稍後加入，但「第一次驗證失敗就丟失正文」不應留到 Slice 2 才處理。\n\n對完整重構，我現在較明確的取捨是：\n\n- **簡化**：小型 context policy 留在 Graph State，移除不必要的外部政策版本機制。\n- **保留**：文件操作收據、實際請求帳本、完整原件與來源對應。\n- **改善**：局部更新、候選稿重用、精確讀取與可追溯的對照。\n- **避免**：用頁面旗標代替內容完整性、用固定精簡回傳限制證據、用框架持久化承諾所有副作用都能恢復。\n\n本輪為唯讀設計審閱，未修改專案、執行測試或發起 Nexus 模型呼叫。"
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 2633,
+  "timestamp_original": "2026-10-22T04:09:35.221Z",
+  "timestamp_display": "2026-10-22T12:09:35.221+08:00",
+  "turn_id": "01a161c9-405d-7140-a2cc-a0b7a44057fe",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T12:08:42.072+08:00",
+  "completed_at": "2026-10-22T12:09:35.221+08:00",
+  "event_id": "EVT-0878",
+  "evidence_path": "evidence/events/EVT-0878.json",
+  "supporting_paths": [
+    "supporting/workspace/docs/EVIDENCE.md",
+    "supporting/workspace/docs/PRODUCT_REQUIREMENTS.md",
+    "supporting/workspace/docs/TOOLS.md",
+    "supporting/workspace/src/pdf_to_md_agent/ocr.py"
+  ],
+  "embedded_paths": []
+}

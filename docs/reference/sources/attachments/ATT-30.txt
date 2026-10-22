@@ -1,0 +1,220 @@
+這份審閱意見展現了極高的系統工程水準，抓出了前一版藍圖中**五個真正的邏輯漏洞**：
+
+1. **滾動整理的死鎖條件**：若將「單輪整理後總容量低於目標水位」當成「套用該次整理」的前提，第一輪從 140k 降到 100k（目標 80k）的有效縮減就會被判定失敗，導致根本無法「滾動」。
+2. **`invalid_tool_calls` 繞過 `ToolNode**`：LangChain 會先解析工具 JSON；若模型輸出因長度截斷或引號未閉合導致 JSON 解析失敗，該呼叫會進入 `AIMessage.invalid_tool_calls`，根本不會觸發 `ToolNode` 的 `wrap_tool_call`。
+
+
+3. **Graph 邊界繞過頂層 Gate**：從 Checkpoint 恢復時，LangGraph 會直接從中斷節點繼續執行，且 `VerifyCompact -> AgentModel` 與 `DeliveryCheck -> AgentModel` 兩條邊繞過了頂層 Gate，因此預算、取消與容量檢查必須收歸底層**共用 Nexus 請求服務**。
+4. **`render` 與 `view_preview` 的輸入身分混淆**：`render` 處理的是來源 PDF（檔案身分、頁碼、區域、DPI），必須在尚未有任何草稿版本時就能呼叫；`view_preview` 才是渲染已保存版本或可渲染候選稿。
+
+
+5. **有界佇列不可能同時「零阻塞、不丟控制訊息、無限收新請求」**：在接收端無限期停讀時，這違反基本的流量控制定律。
+
+這些修正應100% 納入重構基線。但若站在「如何設計這個 App 才能發揮最佳轉換功能（且允許徹底重構）」 的全局高度，這份審閱在補洞的同時，也留下了五個會影響實際轉換體驗的邊界缺口，以及一個**關乎整個專案成敗的「第二系統過度設計（Second-System Effect）」風險**。以下逐一進行正面交鋒並給出最終收斂方案。
+
+---
+
+## 一、 五個深層交鋒：補齊審閱意見尚未解決的轉換痛點
+
+### 1. 交鋒一（針對第 3 點）：當長篇草稿因 JSON 截斷進入 `invalid_tool_calls` 時，「只保存原字串、不建立索引」仍會迫使模型重寫數千字！
+
+審閱正確指出：格式損壞的 JSON 會進入 `AIMessage.invalid_tool_calls`，因此應由「Nexus 接收層保留原生候選」、再對「能解析的內容才建立區塊索引與精確重用入口」。
+
+* **實戰痛點交鋒：**
+為什麼模型的工具呼叫會解析失敗進入 `invalid_tool_calls`？在長文件轉換中，最常見的原因不是模型突然不會寫 JSON，而是**模型一次提交了 15 個區塊（4,000 字 Markdown），結果在第 15 個區塊撞上單次輸出 Token 上限被截斷，或第 14 個區塊內文漏了一個雙引號轉義**！
+此時，前 13 個區塊（3,500 字）其實是結構完整、內容正確的 Markdown。如果因為整體 JSON `loads()` 失敗，系統就只把這坨殘缺字串存成原生候選檔、**完全不建立區塊索引**，那麼下一輪模型就無法使用 `content_from_candidate` 引用前 13 個區塊，還是得把 3,500 字重新生成一次！
+* **最佳功能設計（寬容前綴搶救索引 Best-Effort Salvage Indexing）：**
+1. **嚴守執行安全底線：** 任何進入 `invalid_tool_calls` 或原生 JSON 解析失敗的輸出，**絕對不執行**（嚴格遵守「不執行殘缺 JSON」的專案契約）。
+
+
+2. **對殘缺 JSON 執行區塊級搶救索引：** 當工具接收層保存原生失敗候選時，若發現它是針對 `save_draft` 或 `edit_document` 的呼叫，解析器會掃描 `blocks` 陣列中**在語法錯誤／截斷點之前已經完整閉合的區塊物件**，將它們存入該 `candidate_id` 的 `salvaged_blocks` 索引中（明確標記 `status: "salvaged_from_malformed_call"`）。
+3. **回報可重用清單：** 系統向模型回傳錯誤時明確告知：*「工具參數因第 14 區塊 JSON 未閉合而拒絕執行；但前 13 個完整閉合的區塊已搶救保存於 `cand_09`（索引 `0..12`，共 3,420 字）。你可透過 `content_from_candidate` 直接引用 `0..12` 並僅重寫第 14 區塊。」* 這才能真正保住模型的有效工作成果。
+
+
+
+---
+
+### 2. 交鋒二（針對第 1 點）：歷史中的草稿參數何時撤回？——用「滑動原文視窗（Sliding Verbatim Window）」兼顧即時微調與快取前綴
+
+審閱指出：「剛保存一段正文、下一輪準備修正其中兩個字，立即把全文撤回可能只會增加重新讀取。」同時提醒修改歷史可能影響 Nexus 路由協議與重播驗證。
+
+* **設計張力拆解：**
+如果剛存完就撤回，既妨礙下一輪微調，又會**立即改寫剛發送過的訊息，擊穿下一輪的 Prompt Cache 前綴**；但如果永遠不撤回，當 Agent 在 40 頁文件中歷經 15 次 `save_draft` / `edit_document` 後，歷史訊息中的 `AIMessage.tool_calls` 就會塞滿 V1 到 V14 的過時草稿參數。
+
+
+* **最佳功能設計（近期原文保留 ＋ 隨 Compaction 邊界一次性投影）：**
+1. **正常回合 100% 維持原文（不立即撤回）：** 在日常連續工作中，最近 $K$ 個回合（或當前尚未壓縮的活躍區段）內的 `AIMessage.tool_calls` **完全保持原始參數不變**。這帶來三個好處：
+* Agent 剛存完草稿要修兩個字時，原文就在眼前，零額外讀取；
+* 請求前綴保持純粹 Append-Only，最大化快取重用；
+
+
+* 若當前回合發生網路超時需執行有限重播（Bounded Replay），重播請求與原請求 100% 一致。
+
+
+
+
+2. **僅在「已被新版本取代」且「進入容量整理／投影」時縮減：** 只有當某次 `save_draft` / `edit_document` 產生的舊版本（如 V10）已經被後續提交的 V11 取代（或該被拒候選稿已處理完畢），且系統因容量壓力組裝新的投影／執行滾動整理時，才將早期歷史中已被取代的大體積草稿參數替換為結構化收據摘要（而原始未修改的請求／回覆依然完整保存在磁碟與 SQLite 中供重播核對）。
+
+
+
+
+
+---
+
+### 3. 交鋒三（針對第 2 點）：滾動整理的「雙層驗收條件」與「防止當前錨點污染早期摘要」
+
+審閱一針見血地指出了滾動整理的驗收矛盾（140k $\rightarrow$ 100k 雖未低於 80k 目標，卻是有效縮減），並提醒注入當前錨點時要「避免把後來完成的事情混成早期事件」。
+
+* **最佳功能設計（雙階段迴圈 ＋ 結構化差集提煉）：**
+1. **明確分離「單輪套用條件」與「退出整理迴圈條件」：**
+* **單輪套用條件（Can Apply Step）：** （a）基準 `context_revision` 未被並行修改；（b）被替換的訊息區間 $[M_a \dots M_b]$ 邊界完整保留 `tool_calls` / `ToolMessage` 配對；（c）新生成的交接區塊 Token 數嚴格小於被替換區間的原始 Token 數（$\Delta \text{Tokens} < 0$，具實質縮減）。滿足即原子提交新的 `context_revision`。
+* **恢復正常模型工作條件（Can Exit Compaction Loop）：** 套用後，檢查 `Assembled Request + Output Headroom <= Model Window`。若已低於門檻，進入主模型；若仍在 100k（目標 80k）且仍有可整理的後續歷史區間 $[M_{b+1} \dots M_c]$，則**繼續執行下一輪滾動整理**（設定最大滾動輪數上限，例如最多 2～3 輪，若仍超限則明確回報容量阻礙）。
+
+
+2. **由程式碼掌管事實與錨點，LLM 只負責「差集提煉」：**
+* 正如審閱所言，`compacted_message_ids`、`base_context_rev` 與 `anchor_version_id` 全部由程式碼直接記錄，不讓模型生成。
+* 為了徹底防止模型把「截至 V12 的當前狀態」混寫進「M1..M30 的早期摘要」裡，傳給整理模型的 Prompt 結構應明確區分：
+* `[唯讀背景：目前最新狀態錨點 (Version V12 & Active Notes)]`（供模型判斷哪些早期問題已經解決，無須再寫入摘要）；
+* `[待濃縮目標：早期歷史區間 M1..M30]`；
+* **輸出要求：** 嚴格要求模型**只輸出 M1..M30 期間發生、且尚未被最新狀態錨點涵蓋的「殘留有效觀察、被否定的 OCR／版面假設、以及跨頁未決線索」**。
+
+
+
+
+
+
+
+---
+
+### 4. 交鋒四（針對第 5 點）：當模型「無 `tool_calls` 且文件未完成」時，如何區分「詢問使用者 (`awaiting_user`)」與「模型偷懶／自言自語」？
+
+審閱指出：「沒有 tool calls，但文件未完成」可能是 Agent 正在詢問缺失資料，應有 `awaiting_user` 或明確停止狀態，不能只因還有額度就盲目再次呼叫模型。
+
+* **實戰行為交鋒：**
+這點需要非常小心地平衡。根據 `PRODUCT_REQUIREMENTS.md`，本產品的核心價值是讓使用者提供 PDF 與目標後，Agent 自主完成提取、OCR 與組裝，**「不需要例行的逐頁指令或修復審批」**。
+在真實模型運行中，當模型回傳一則沒有 `tool_calls` 的純文字訊息時，通常有三種可能：
+
+
+1. **真正遇到阻礙需詢問使用者**（例如：來源 PDF 第 5–10 頁加密損毀，詢問是否跳過）；
+2. **過渡性自言自語（Chatty Monologue）**（例如模型輸出：*「我已經看完了前 3 頁的版面結構，接下來我將開始呼叫 OCR 處理第 4 頁。」* 卻忘了在同一輪附上 `tool_calls`）；
+3. **漏頁早退（Premature Completion Claim）**（模型以為自己做完了，但實際上第 18 頁仍是 `unprocessed`，或寫了草稿卻忘了呼叫 `select_delivery`）。
+如果只要遇到「無 `tool_calls` ＋ 未完成」就一律直接停機進入 `awaiting_user`，那麼情況 2 與情況 3 就會導致長文件批次轉換在中途莫名其妙卡死！
+
+
+* **最佳功能設計（顯式停止原因分類 ＋ 單次確定性提醒反彈 One-Shot Reminder Bounce）：**
+1. **當 `AgentModel` 回傳無 `tool_calls` 時，`DeliveryCheck` 先檢查交付條件：**
+* 若已選定有效的 `delivery_version_id` 且必要範圍無未宣告缺口 $\rightarrow$ 正常完成（`completed_normal`）。
+
+
+2. **若未滿足交付條件，檢查是否已觸發過「未完成提醒」：**
+* **第一次發生（尚未提醒過）：** 若預算仍有餘額，系統注入一則簡短、確定性的系統核對訊息（僅限 1 次）：
+> `[Delivery Check: No tool call was emitted, and delivery conditions are not yet met (e.g., pages 14-15 remain unprocessed / no delivery version selected). If you intended to continue working, invoke the needed tool now. If you cannot proceed and need user input or wish to stop with a partial draft, state your exact question or stop reason clearly in your next reply.]`
+
+
+* **第二次連續無 `tool_calls`（或模型明確調用／宣告需要使用者介入）：** 立即停止迴圈，不再呼叫模型！將執行狀態設為 `awaiting_user`（或 `stopped_incomplete_with_reason`），並觸發獨立匯出機制保存現有草稿。這既防止了無限迴圈，又徹底消除了因模型一時漏發 Tool Call 而導致的假性停工。
+
+
+
+
+
+---
+
+### 5. 交鋒五（針對第 4 點）：釐清「重播既有請求（鎖定當時版本）」與「工具完成後續跑（推進至最新版本）」的邊界
+
+審閱引用了 `agent.py:623`，強調：「本次模型請求仍須保存『當時實際看到的版本與內容』。恢復既有請求時，不能偷偷換成最新 head。」
+
+* **精確邊界收斂：**
+這條規則完全正確，而且正好與我們前一輪的「SQLite 擁有分支 head」互補。在共用 Nexus 請求服務中，我們將恢復嚴格分為兩種互斥狀態：
+1. **狀態一：未完成模型請求的重播（In-Flight Model Request Replay）：**
+當第 $N$ 輪模型請求已組裝完畢（綁定 `input_view_id` 與請求雜湊 `request_sha256`）並發往 Nexus，卻遭遇 90 秒 Gate 超時或 SSE 串流中斷時——在有限重試（如 Attempt 2 / Attempt 3）或重啟恢復這一輪請求時，系統**直接讀取已保存的 `request-NNN.json` 快照，並強制核對 `request_sha256` 完全一致**，絕不重新查 SQLite 換入更新的 head。
+
+
+2. **狀態二：工具執行期崩潰的續跑（Post-Tool Execution Continuation）：**
+當第 $N$ 輪模型請求**已經成功收到完整回覆**，且在執行工具 `edit_document` 時已在 SQLite 提交了 `V12` 與收據，隨後在進入第 $N+1$ 輪前崩潰——重啟時，第 $N$ 輪模型請求早已結束（直接重用已保存的第 $N$ 輪模型回覆），系統透過收據補齊 `V12` 的工具結果後，**開始組裝全新的第 $N+1$ 輪模型請求**，此時自然讀取 SQLite 最新的 `V12`。
+將這兩者分開，就同時保住了 `agent.py:623` 的重播一致性檢查與最新已提交版本的延續性。
+
+
+
+
+
+---
+
+## 二、 全局審視：警惕「第二系統症候群」，以最精簡的核心實現最佳功能
+
+回顧我們從最初討論 Pi SDK / Deep Agents 到現在的整段歷程，有一件關於整個專案（Whole Project）的事值得直接提出來面對：
+
+現有的 Python 控制器（`agent.py`、`core.py`、`agent_tools.py`）已經通過了 **228 項離線測試**，並且在 Nursing、Gynecology、JRE 與 News Writing 上實際交付了多份通過獨立來源審查的成品包（包含 R1/R2 故障注入恢復與 Core Delivery 預覽截圖驗證）。
+在多輪架構推演中，為了防堵每一個極端邊界，設計不知不覺累積了大量新名詞與表結構。如果「徹底重構」變成了建立十幾張 SQLite 表與複雜的自訂排程器，反而會讓程式碼變得臃腫且難以維護。
+
+**要讓 App 達到最佳功能，重構應該做「減法與精準升級」：**
+直接保留 `core.py` 已驗證成熟的 PDF 抽取、來源渲染、無損圖片裁切、HTML 預覽與 ZIP 逐項校驗核心；僅將控制層重構為 **「4 個核心模組 ＋ 6 張精簡 SQLite 表」**，專門解決既有系統在 40 頁長文件測試中暴露的摩擦點。
+
+### 1. 修正後的執行架構與共用請求閘門（修正第 5、6 點）
+
+將預算、取消、容量與重播檢查從圖頂端移入**每次呼叫必經的「共用 Nexus 請求服務」**，並補上 `awaiting_user` 與獨立匯出路徑：
+
+```mermaid
+flowchart TD
+    Start(["啟動或 Resume\n(核對既有請求或對帳已完成工具收據)"]) --> Router{"檢查當前狀態"}
+
+    Router -- "有待執行工具呼叫" --> ToolDispatch["共用工具派發器\n1. Schema 驗證前先存 Raw Candidate\n2. 執行/重用來源工具或文件修改\n3. 短交易提交版本與當時收據"]
+    Router -- "需呼叫模型 (含續跑)" --> CtxCheck{"容量是否需整理？"}
+
+    CtxCheck -- "是：準備最舊前綴區間" --> CompactReq["執行整理請求\n(經由【共用 Nexus 請求服務】\n強制檢查預算/取消/容量/重播收據)"]
+    CompactReq --> VerifyCompact{"檢查單輪套用條件\n(基準有效 + 範圍精確 + 容量淨縮減)"}
+    VerifyCompact -- "套用成功，但總量仍超標" --> CtxCheck
+    VerifyCompact -- "套用失敗 (保留原 Context)" --> MainReq
+    VerifyCompact -- "套用成功且總量已合規" --> MainReq
+
+    CtxCheck -- "否：容量合規" --> MainReq["執行主模型請求\n(經由【共用 Nexus 請求服務】\n強制檢查預算/取消/容量/重播收據)"]
+
+    MainReq -- "收到 tool_calls\n(或攔截 invalid_tool_calls 搶救索引)" --> ToolDispatch
+    ToolDispatch --> Router
+
+    MainReq -- "無 tool_calls" --> DeliveryGate{"交付與停止判定"}
+    DeliveryGate -- "已選有效交付版且範圍完整" --> Done(["結束：completed_normal"])
+    DeliveryGate -- "未完成 (首次漏發工具且有餘額)" --> Bounce["注入單次核對提醒"] --> MainReq
+    DeliveryGate -- "Agent 詢問使用者或再次無工具" --> WaitUser(["結束：awaiting_user / stopped_incomplete"])
+    MainReq -- "預算耗盡 / 使用者取消 / 永久錯誤" --> Stopped(["結束：stopped_budget / cancelled / fault"])
+
+    Done & WaitUser & Stopped -. "持久化匯出意圖\n由宿主/CLI/UI 獨立執行或恢復匯出" .-> HostExport["獨立匯出與逐項檔案核對服務\n(Workspace.export + ZIP 成員驗證)"]
+
+```
+
+### 2. 高度收斂的四大模組職責與最小 SQLite 結構
+
+| 模組邊界 | 具體職責（保留既有已驗證能力，僅升級痛點） |
+| --- | --- |
+| **1. 來源與成果核心（保留並擴充 `core.py`）** | - **來源工具（無須版本身分）：** `inspect_pdf`、`ocr_pdf`、`render_pdf`（以來源 PDF 身分、頁碼、區域、DPI 運作與對帳）、原生圖片抽取與無損裁切。
+
+<br>
+
+<br>- **成果工具（綁定版本／候選身分）：** `save_draft`、`edit_document`（新增：純插入/附加、局部 `page_map` 更新、以及 `content_from_candidate` 局部區塊重用）、`select_delivery`、`view_preview`、`export`（保留逐項檔案與 ZIP 成員核對）。
+
+ |
+| **2. 共用工具派發器与收據庫（SQLite）** | - **兩階段候選保護：** Nexus 接收層保留原生 JSON 候選（含進入 `invalid_tool_calls` 的截斷輸出並執行寬容區塊搶救）；派發器在 Schema 驗證前保存完整原參數。
+
+<br>
+
+<br>- **歷史事實收據：** `operations` 收據永久綁定操作提交**當時**的結果（如 `produced_version_id: V12`），重播時原樣回傳當時收據，絕不因後續分支推進到 V13 而改變，也不把交付指標倒退回舊版。 |
+| **3. Context 組裝與滾動整理器** | - **滑動原文視窗：** 近期回合保留完整 `AIMessage.tool_calls` 原文以利即時微調與快取重用；僅在跨過整理邊界時將已被取代的舊草稿參數投影為引用。<br>
+
+<br>- **滾動前綴整理：** 程式記錄 `compacted_message_ids`、基準 `context_rev` 與錨點版本；單輪只要範圍正確且具淨縮減（$\Delta < 0$）即可套用，直至總組裝容量合規。 |
+| **4. 共用 Nexus 請求服務與宿主匯出器** | - **統一閘門：** 所有模型請求（含主模型與 Compaction）發送前必先查核可重用回覆、剩餘重試／回合／時間預算、取消信號與請求雜湊一致性（`agent.py:623`）。
+
+<br>
+
+<br>- **三維狀態與獨立匯出：** 持久記錄 `(execution_status, content_status, delivery_status)` 與匯出意圖；宿主程序可在零模型額度或重啟後獨立完成打包與驗證。 |
+
+### 3. 支撐全流程的 6 張精簡 SQLite 表（無多餘狀態機）
+
+不建立複雜的處置狀態機，僅用 6 張表即可完整支撐上述所有恢復與追溯要求：
+
+1. `branches (branch_id PK, head_version_id, selected_delivery_version_id, updated_at)`：持有當前可變指標；歷史事實則留給下面各表。
+2. `document_versions (version_id PK, branch_id, parent_version_id, blocks_json, page_map_json, created_by_op_id)`：不可變版本快照；目前存在哪些內容直接以指定 `version_id` 的 `blocks_json` 為準。
+3. `candidates (candidate_id PK, op_id, tool_name, raw_args_blob_path, parse_status, indexed_blocks_json, created_at)`：保存 Schema 驗證前原參數與 `invalid_tool_calls` 搶救出的區塊索引。
+4. `version_candidate_links (version_id, candidate_id, source_pointer, target_block_id)`：在提交版本的同一交易內寫入，單純記錄歷史引用血緣。
+5. `operations (op_id PK, tool_call_id, tool_name, input_Params_sha256, status, committed_result_json, created_at, completed_at)`：保存操作當時提交的確定結果（含來源渲染參數核對與版本收據）。
+6. `context_revisions (context_rev PK, branch_id, parent_context_rev, compacted_msg_ids_json, handoff_summary_text, anchor_version_id, active_notes_json, released_evidence_ids_json)`：記錄每次滾動整理的精確覆蓋範圍與工作狀態。
+
+這份修正將審閱意見中的八個點全部落實為無死鎖的工程規則，同時守住了既有程式碼的核心資產。你認為我們應該先針對「`save_draft` / `edit_document` 的局部區塊重用（含 `invalid_tool_calls` 搶救）與局部頁碼更新」**定義具體的資料結構，還是先確認**「共用 Nexus 請求服務與滾動 Compaction 的驗收條件」？

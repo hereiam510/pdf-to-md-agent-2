@@ -1,0 +1,1 @@
+let's discuss context management first, left network for later discussion

@@ -1,0 +1,31 @@
+递归自我改进（RSI）的概念可以追溯到 ，他在论文中将”超智能机器”定义为能够在所有智力活动上超越人类，并设计出更好的机器来改进自身的系统。 使用”递归自我改进”这个短语来描述一个特定的反馈循环：AI 使用其当前的智能来改进产生其智能的认知机制。
+本文将聚焦于 Harness 工程相关的研究及其对 RSI 的贡献。最近关于自动科研、自我改进 Agent 和进化程序搜索的许多工作都可以围绕这个问题来组织。关于模型自我对弈、合成数据、测试时训练和持续学习等更广泛主题的著作也符合 RSI 的愿景（例如 、、、），但这些将不是本文的重点。
+ACE 从轨迹中学习洞察的事实有助于我们走向自我管理的记忆，但更新规则和整体工作流仍然是手工制作的。为了走向更自我改进的循环，元上下文工程（MCE；）将机制（如何管理上下文）与产物内容（上下文中有什么）分离，在元优化层运行技能进化，在基础层优化上下文。
+ 
+更近的工作，自我 Harness（），依赖 LLM Agent 通过提出-评估-接受循环来改进自己的 Harness。
+ 
+与上述关注解决方案改进的方法不同，（DGM；）明确针对 LLM 编码 Agent 的可编辑 Harness-代码仓库的进化。准确地说，此 Agent 被允许修改自己的 Harness。关于 Hyperagents 的后续工作（）引入了元 Agent 来控制如何修改现有任务 Agent 以创建新 Agent。
+SIA 实验中的几个混杂选择使结果难以解释。例如，任务特定 Agent 比用于元 Agent 和反馈 Agent 的模型弱得多（ vs ），基线也太弱，无法与相关方法 clean 地交叉引用。我认为方向有趣，但证据尚不充分。然而许多挑战，如训练稳定性和古德哈特定律，仍然开放。
+
+📌 Agent Harness 作为 2026 年上半年 Agent 技术代名词，在讲到具体方法论的时候却又“说不清”。 
+🔥 这个系列会通过解析 Claude Code / DeepAgents / OpenHands 等框架，通过“了解Harness 工业做法” 学习 Harness。
+
+[Figure 01: images/ATT-02-01.webp]
+
+[Figure 02: images/ATT-02-02.webp]
+
+[Figure 03: images/ATT-02-03.webp]
+
+[Figure 04: images/ATT-02-04.webp]
+
+[Figure 05: images/ATT-02-05.webp]
+
+[Figure 06: images/ATT-02-06.webp]
+
+[Figure 07: images/ATT-02-07.webp]
+
+[Figure 08: images/ATT-02-08.webp]
+
+[Figure 09: images/ATT-02-09.webp]
+
+[Figure 10: images/ATT-02-10.webp]

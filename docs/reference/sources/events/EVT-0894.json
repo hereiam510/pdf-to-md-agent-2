@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9b468c5688191abf831ed483da523",
+    "content": [
+      {
+        "type": "Text",
+        "text": "目前最需要修正的是「為了方便編輯而自動改寫內容」：強制 NFC 正規化和 HTML 重新排版，都不能直接當作無損操作。另外，候選稿若只在文件服務內保存，可能接不到框架在參數驗證階段就拒絕的正文；現有程式其實已在更早的位置保存工具參數，重構應保留這項保護。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2678,
+  "timestamp_original": "2026-10-22T06:59:55.602Z",
+  "timestamp_display": "2026-10-22T14:59:55.602+08:00",
+  "turn_id": "01a16265-b33c-7390-b542-6a14e6703741",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T14:59:55.541+08:00",
+  "completed_at": "2026-10-22T14:59:55.602+08:00",
+  "event_id": "EVT-0894",
+  "evidence_path": "evidence/events/EVT-0894.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

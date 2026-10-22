@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9ce483e708191b8bd5a09456b8b27",
+    "content": [
+      {
+        "type": "Text",
+        "text": "這版已補上壓縮請求的身分與預算，但還缺兩個關鍵契約：壓縮結果究竟涵蓋哪些歷史，以及如何接回正常工作。另外，`block_ops` 包含刪除、重排等操作，不能直接當成「候選正文」；重用整組操作與重用其中的正確內容，需要分清楚。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 3101,
+  "timestamp_original": "2026-10-22T08:50:17.740Z",
+  "timestamp_display": "2026-10-22T16:50:17.740+08:00",
+  "turn_id": "01a162c9-a1f1-7a22-ab11-bdd73c3c5929",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T16:50:17.390+08:00",
+  "completed_at": "2026-10-22T16:50:17.740+08:00",
+  "event_id": "EVT-1060",
+  "evidence_path": "evidence/events/EVT-1060.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

@@ -3,3 +3,5 @@
 *.py text eol=lf
 .gitignore text eol=lf
 .gitattributes text eol=lf
+# Preserve copied event/attachment bytes and local source hashes on every OS.
+docs/reference/sources/** -text

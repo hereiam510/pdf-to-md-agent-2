@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad64f562be0819181a20c6a7ed636ea",
+    "content": [
+      {
+        "type": "Text",
+        "text": "查到的官方資料有兩個共同方向：context 通常結合按需取回、舊工具結果清理與 compaction／工作筆記；network 則把請求重試、遠端任務查詢和本地操作復原分開處理。\n\nOpenAI 和 Anthropic 現在都有服務端 compaction，OpenAI 也有可查詢／取消的 background response。不過這些功能有各自的 API 與平台條件，不能由 Nexus 的相容網址或 model alias 推定可用。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 315,
+  "timestamp_original": "2026-10-19T17:11:52.179Z",
+  "timestamp_display": "2026-10-20T01:11:52.179+08:00",
+  "turn_id": "01a15523-ec17-7972-9f0d-4532b1f04922",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T01:11:50.281+08:00",
+  "completed_at": "2026-10-20T01:11:52.179+08:00",
+  "event_id": "EVT-0090",
+  "evidence_path": "evidence/events/EVT-0090.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

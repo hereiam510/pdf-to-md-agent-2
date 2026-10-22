@@ -1,0 +1,1 @@
+已確認論壇有兩個重要誤解：按一般控制理論用法，會根據結果調整行動的是 closed loop；而目前 LangChain／LangGraph 都能讓模型動態選擇工具。Pi 則值得認真比較：它除了底層 agent loop，也提供可嵌入的 session、compaction 和擴充介面。

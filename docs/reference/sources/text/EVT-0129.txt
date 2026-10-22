@@ -1,0 +1,14 @@
+:codex-annotation{index="1"} 明白，你使用的是 **Nexus → CLIProxyAPI → 月費訂閱帳戶**，因此我先前引用 Nexus 的其他官方 API provider 能力，不能用來判斷你的連線是否支援這些功能。那段擴大了討論範圍。
+
+針對你使用的訂閱連線，目前查到的結論是：
+
+| 功能 | CLIProxyAPI 的實作與限制 |
+|---|---|
+| **獨立原生 compaction** | **Codex 訂閱路徑有實作**，會呼叫上游 `/responses/compact`。但尚未驗證你目前選用的 Nexus 模型路由能否完整轉送。 |
+| **自動 compaction** | Codex 路徑會移除 `context_management`，因此不能靠設定 compaction threshold 啟用上游自動壓縮。 |
+| **Background retrieval** | 沒有找到標準 `GET /responses/{id}` 路由，不能假設斷線後可以拿 response ID 查回結果。 |
+| **Cancellation** | 沒有標準 HTTP `/responses/{id}/cancel`；部分 Codex WebSocket 路徑支援 `response.interrupt`，但你的 app 目前沒有使用這條機制。 |
+
+所以，**你的判斷對 background retrieval 和一般 HTTP cancellation 基本成立；原生 compaction 則有一個值得保留的例外：Codex 訂閱的獨立 compact 呼叫。** 這個例外來自 CLIProxyAPI 的程式碼，不是付費 API provider 的文件。
+
+以上仍是程式碼層面的確認；你實際的 Nexus 訂閱路由是否可用，尚未做端到端驗證。

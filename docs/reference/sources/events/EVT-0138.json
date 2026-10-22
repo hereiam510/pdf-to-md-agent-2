@@ -1,0 +1,26 @@
+{
+  "item": {
+    "type": "UserMessage",
+    "id": "01a15859-a6a9-77b1-a476-e19ebacceabd",
+    "client_id": "f8ea59ed-cd17-4e53-8a16-d8601a1d5186",
+    "content": [
+      {
+        "type": "text",
+        "text": "can langchain or langgraph can be adapted to or app's context management\n",
+        "text_elements": []
+      }
+    ]
+  },
+  "source_line": 489,
+  "timestamp_original": "2026-10-20T08:07:12.822Z",
+  "timestamp_display": "2026-10-20T16:07:12.822+08:00",
+  "turn_id": "01a15859-a5fc-7062-b702-09b968b01526",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T16:07:12.821+08:00",
+  "completed_at": "2026-10-20T16:07:12.821+08:00",
+  "event_id": "EVT-0138",
+  "evidence_path": "evidence/events/EVT-0138.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

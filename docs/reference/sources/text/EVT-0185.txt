@@ -1,0 +1,46 @@
+**有用，值得參考。你對可信度的顧慮也合理：應逐項追查來源，而不是把整篇一起接受或否定。** 我讀了第一份正文及第二份的 **10 張內容圖片**，並核對了幾個關鍵來源。
+
+兩份的性質不同：
+
+| 文件 | 實際內容 | 我的評價 |
+|---|---|---|
+| **15:44:10 版本** | piggy 轉載、AI 輔助翻譯 Lilian Weng 的文章 | 原文確實存在，適合了解設計方向與研究；它是研究綜述，不能把其中所有方法當成成熟工業標準 |
+| **15:45:02 版本** | 「古希臘代碼之神」以圖片整理 Manus、Letta、Mem0、Claude Code、Deep Agents 等做法 | 工程例子比較具體，但混合產品經驗、研究結果、逆向分析及作者推論；程式細節需要核對版本 |
+
+第一份可以直接改讀 [Lilian Weng 原文](https://lilianweng.github.io/posts/2026-07-04-harness/)，減少翻譯造成的歧義。
+
+**對我們最有用的是以下幾點。**
+
+| 材料中的想法 | 對我們 app 的用途 |
+|---|---|
+| **完整資料放在持久儲存，需要時才讀入 context** | 保留原始 PDF、完整工具結果、圖片與歷史；active context 帶目前有用的內容及精確取回位置 |
+| **先處理可重新讀取的舊工具結果，再考慮歷史摘要** | 可以把「證據釋放」和「工作歷史 compaction」設成兩種可選動作，分別處理不同來源的膨脹 |
+| **模型選擇內容，harness 實際執行 context 變更** | Agent 判斷跨頁關係、疑問與重要證據；app 負責請求組合、容量資訊、保存及取回 |
+| **工作狀態應獨立保存** | 保存版本、未完成範圍、未解問題，不必每次從整段對話重新推斷 |
+| **從失敗軌跡找具體問題** | 區分超大回覆、摘要遺漏、錯誤讀取、模型理解錯誤及網路故障，避免全部歸因於 context |
+
+這些方向也能在 Anthropic 的一手工程文章中找到：按需讀取、外部筆記、compaction，以及清理舊工具結果。[Anthropic context engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
+
+**第二份有幾處需要收窄解讀。**
+
+1. **「可靠性由 harness 決定，而不是模型」說得太絕對。**  
+   LangChain 確實報告，在固定模型下把 Terminal-Bench 2.0 成績由 **52.8% 提高至 66.5%**。這證明 harness 能顯著影響結果，不能證明模型能力不重要，也不能直接推算 PDF 轉換會有相同收益。[原始實驗](https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering)
+
+2. **「cache 命中率最重要、歷史只追加不修改」有產品背景。**  
+   Manus 的原文確實提出這些建議，但它依據自己的工作負載及當時價格。對你的 Nexus 月費訂閱，命中率、額度消耗、延遲和實際成本之間的關係仍需分開看。保留穩定前綴值得參考，不能因此永遠禁止 compaction。[Manus 原文](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus)
+
+3. **程式截圖不能當成穩定規格。**  
+   例如 Claude Code 的 `13,000` buffer、內部函式名稱及清理順序，不能直接搬來當我們的通用設定。第二份對 Deep Agents 的待辦機制也有版本限制：目前官方文件說，從 **v0.7 起 task planning 改為 opt-in**。[Deep Agents 文件](https://docs.langchain.com/oss/python/deepagents/overview#task-planning)
+
+4. **「長 context 會退化」有研究支持，固定退化門檻則沒有。**  
+   Lost in the Middle 與 Context Rot 支持關注資訊位置及輸入長度，但不能推導出所有模型都應在某個百分比壓縮。[原始論文](https://arxiv.org/abs/2307.03172)、[Chroma 研究](https://www.trychroma.com/research/context-rot)
+
+還有一個措辭要釐清：**「context 管理由 harness 承擔」仍可以包含模型參與。** 模型生成摘要、判斷要保留甚麼；harness 負責觸發、保存、組合與實際移除歷史。兩者是合作關係。
+
+對我們目前的討論，這些材料支持把方案具體化為：
+
+- **完整來源與歷史**：持久保存，能精確取回。
+- **工作狀態**：記錄進度、版本、依賴和疑問。
+- **active context 管理**：協調證據釋放、重新讀取及歷史摘要，並提供容量資訊。
+
+至於採用 LangChain／LangGraph／LangMem，這些文章提供了候選實作，還不足以替我們作出框架選擇。它們對 **context management 的參考價值較高**；對重試預算、未知遠端結果和 Nexus cancellation 的討論較少。文中的「取消背景任務」也不能當作 Nexus 支援遠端取消的證據。

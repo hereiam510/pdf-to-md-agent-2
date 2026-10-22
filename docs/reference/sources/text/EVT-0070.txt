@@ -1,0 +1,1 @@
+我會搜尋 agent 系統在 context 與 network management 方面的現行做法，優先查官方文件和工程文章，再對照本專案的實作與缺口。

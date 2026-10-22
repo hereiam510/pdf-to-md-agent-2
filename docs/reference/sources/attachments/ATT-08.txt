@@ -1,0 +1,226 @@
+你這輪的核對抓出了幾個非常關鍵的工程瑕疵——特別是 **`layout` 僅 41 blocks / 446 spans 卻佔用 147,366 字元**的實測數據、**Handshake 更新筆記導致 CAS 自我衝突**的邏輯漏洞、**每個 Tool Call 必須先獲得協定有效結果**的限制，以及**釘選必須區分「固定快照（Snapshot）」與「跟隨最新成果（Follow Latest）」**。這些修正直接避免了重構後在邊界條件下發生死鎖或資料失真。
+
+同時，你在第 5、6 點提出的原則——**「避免 App 和框架各自維護互相競爭的活躍 Context，最終送入模型的內容需要單一決策入口」**，正是裁決框架邊界最客觀的尺。
+
+以下先針對你指出的四個核心機制進行無漏洞的工程收斂，接著正面回應「Runtime 與框架重用」的爭論，並用你指定的公開接口分類（直接重用、設定、薄轉接、需要重寫）完成 Pi SDK 與 Deep Agents 的實質對照。
+
+---
+
+## 一、 四個核心機制的工程收斂（消除近似失真與流程卡死）
+
+### 1. 446 個 Spans 為何高達 147,366 字元？用「100% 無損結構去重」取代「預設合併與量化」
+
+你核對出的數據非常關鍵：該頁 `layout` 只有 41 個 blocks、446 個 spans，卻佔了 **147,366 字元**（平均每個 span 高達 **330 字元**），而 `words` 佔 **39,324 字元**。
+
+* **為什麼 446 個 spans 會膨脹到 14.7 萬字元？**
+檢查 PyMuPDF `get_text("dict")` 的結構就會發現，問題不在於 span 數量破千，而在於**極度冗餘的鍵值重複與多層全文重複**：每一個 span 都在重複序列化 `"size"`、`"flags"`、`"font"`、`"color"`、`"ascender"`、`"descender"`、`"origin"`、`"bbox"`、`"text"` 等長鍵名與長浮點數，外加 block/line 層級的 `"wmode"`、`"dir"` 以及與 `text` 欄位完全重複的字串內容。
+
+
+* **最佳功能設計（預設採用「100% 無損緊湊表示」，不合併 Span、不損失座標精度）：**
+既然只有 446 個 spans，我們**完全不需要在預設視圖中冒險合併相鄰 span（避免誤傷表格欄位、公式或圖中標籤），也不需要做 0.5 pt 座標量化（避免在 600 DPI 下產生 2.08 像素的裁切偏差）**！
+只要在你的第二種表示法（**可精確還原的緊湊表示，Lossless Compact Representation**）中執行純結構去重：
+1. **提取頁面級樣式表（`style_table`）：** 將完全相同的 `(font, size, flags, color, alpha, ascender, descender)` 抽成頂層陣列（一頁通常不超過 10～15 種樣式），每個 span 只存整數索引 `style_id`。
+2. **緊湊元組編碼（Tuple Encoding）：** 將每個 span 由冗長的 JSON Object 轉為位置固定的 Tuple：`[style_id, [x0, y0, x1, y1], [ox, oy], "text"]`，並附帶單行 schema 說明。所有原始雙精度浮點數與全部 446 個 span 邊界 **100% 原值保留**，可透過純函數精確還原回原始 `dict`。
+3. **消除同次回覆中的重複全文：** 當回傳已包含完整文字的緊湊 `layout` 時，不重複附帶頂層 `text` 巨型字串。
+
+
+
+
+* **實質效果：** 光是消除 446 次重複的 JSON 鍵名、重複樣式字串與重複全文，就能在不丟失任何一個座標位數或 span 邊界的前提下，將 14.7 萬字元大幅壓縮；而「合併相鄰片段與近似座標」則嚴格退居為第三種**可選的簡化視圖（Opt-in Simplified View）**，僅在 Agent 顯式請求快速瀏覽版面概況時提供。
+
+
+
+---
+
+### 2. 批次工具容量分配與「四階漸進式調節（4-Stage Capacity Escalation）」
+
+你指出的四點修正（單份結果可能大於空白 Context、跨過軟水位線不應無腦強制交接、並行工具須統一核算、每個 Tool Call 必須有協定有效結果）非常關鍵。將這四點整合後，App 的單一輸入組裝器（Unified Input Assembler）在整批工具執行完畢後的標準流程應設計為：
+
+```mermaid
+flowchart TD
+    A["1. 批次工具執行完畢\n原件、操作狀態 (succeeded/failed) 與版本收據落盤"] --> B["2. 統一容量試算\n(現有活躍歷史 + 本批請求表示 + 必備系統/輸出餘量)"]
+    B --> C{"是否超過目標容量？"}
+    C -- "否" --> D["直接展開本批結果\n組裝下一輪請求"]
+    C -- "是" --> E["階梯一：釋放已解除釘選的舊證據\n或切換為無損緊湊表示"]
+    E --> F{"容量是否已足夠？"}
+    F -- "是" --> D
+    F -- "否" --> G{"是否因歷史累積過多\n而需整理舊 Context？"}
+    G -- "否 (單純本批結果超大)" --> H["階梯二：直接分段載入 (Chunked Delivery)\n回傳協定有效的完成收據 + 已載入範圍 + 未載入範圍讀取入口"]
+    G -- "是 (舊歷史佔用過高)" --> I["階梯三：執行整理前交接 (Pre-Compaction Handshake)\n本批工具先回傳協定有效的『已完成但待展開收據』\n待切換至新 Context 後，再按容量展開或分段讀取"]
+
+```
+
+* **嚴格分離三個狀態欄位，杜絕語義混淆：**
+每個工具回覆的結構固定分離為：
+1. `operation_status`: `"succeeded" | "failed"`（真實反映底層執行成敗，絕不用容量狀態掩蓋工具錯誤）；
+
+
+2. `evidence_ref`: 指向已落盤原件的 ID、雜湊與總大小；
+
+
+3. `delivery_scope`: `"full" | "range_loaded" | "deferred_for_compaction"`（明示本次送入模型的是完整內容、局部範圍，還是因等待 Context 整理而暫緩展開的收據，並附上精確的 `omitted_ranges` 查詢參數）。
+
+
+* **解決「單份結果大於空白 Context」：** 即使在階梯三完成 Context 整理後，重新評估要載入的內容時，依然走同一個容量分配器——放得下的展開，放不下的（例如一次請求了 20 頁完整 OCR）則自動轉為 `range_loaded`，載入前幾頁並明示剩餘頁面的分段讀取指令，絕不假設整理後一定能 100% 全量塞入。
+
+
+
+---
+
+### 3. 釘選（Pinning）的雙模態契約與「變更影響範圍檢查（Impact-Aware Rebase）」
+
+採納你對釘選與合併的修正，將規則定死在結構化欄位上，消除前後不一致：
+
+#### A. 釘選引用的兩種顯式模式（`pin_mode`）
+
+Agent 在建立釘選時選擇其一（預設為 `follow_latest` 用於結構延續，証拠比對則用 `fixed_snapshot`）：
+
+| 模式 | 適用場景 | 目標區塊／證據更新時的 App 自動行為 |
+| --- | --- | --- |
+| **`fixed_snapshot`** | 保留有問題的舊 OCR 結果、舊版草稿或特定渲染圖以供比對 | **永遠鎖定原版本（如 `blk_089@v1` 或 `ev_003`）。** 後續無論成果如何修改，始終載入當時的原始快照。 |
+| **`follow_latest`** | 跨頁延續中的表格表頭、前文定義的術語表或格式規範 | **僅在「單純文字微調且結構屬性未變」時跟隨新版，並附上變更提示。**<br>
+
+<br>若發生以下任一情況，**不自動靜默替換**，而是同時列出舊快照與新版本差異（標為 `pin_updated_verify_compatibility`）：<br>
+
+<br>1. 區塊被拆分、合併或刪除；<br>
+
+<br>2. 表格欄數、表頭文字或單位改變；<br>
+
+<br>3. 區塊類型改變（如從正文改為註解）。 |
+
+#### B. 候選稿（Candidate）與 Rebase 的關聯檢查
+
+* **Context 不自動掛載所有 Candidate：** 活躍工作集只放當前發布版本（`Published`）的相关區塊；若有未發布的 `Candidate`，只呈現一則輕量的 **「待處理候選稿摘要（含 `candidate_id`、失敗原因、影響頁碼與基於哪個 `base_version`）」**，避免多個草稿塞爆並混淆視窗。
+
+
+* **超越「Block ID 不重疊」的 Rebase 檢查：** 當 `cand_004`（基於 `v1`）準備合併至 `v2` 時，文件服務除了檢查 Block ID 是否重疊，還會自動檢查三個結構關聯：
+1. **頁碼映射重疊：** `v1 -> v2` 是否修改了 `cand_004` 涵蓋或相鄰頁面的 `page_map`？
+
+
+2. **資產引用連動：** `cand_004` 引用的圖片資產是否在 `v2` 中被刪除或替換？
+
+
+3. **釘選依賴連動：** `cand_004` 依賴的 `follow_latest` 釘選區塊（如表頭）是否在 `v1 -> v2` 中被修改過？
+只要上述任一項為真，就不允許盲目自動合併，而是回傳 `rebase_review_required` 與具體連動項目，交由 Agent 確認語義相容性。
+
+
+
+---
+
+### 4. 無自我衝突的 CAS 切換與「核對紀錄（Verification Record）」局部失效規則
+
+1. **修正 CAS 版本檢查邏輯（分離讀取基底與自身產出）：**
+* Handshake 啟動時記錄外部狀態快照：`expected_external = (req_rev: R1, published_ver: V1, candidate_head: C1, pre_handshake_notes_rev: N1)`。
+* Handshake 過程中產生的筆記先作為本次整理交易的 **`staged_notes_delta`**（不提前把外部 `notes_rev` 改掉再自己絆倒自己）。
+* 提交新 Context 的短交易內：檢查當前系統的 `(req_rev, published_ver, candidate_head, notes_rev)` 是否仍等於 `(R1, V1, C1, N1)`。若完全吻合，則在同一個原子操作內寫入 `notes_rev = N1 + 1` 與新的 `context_manifest`；若有外部變動（如使用者在此期間提交了 `R2`），則將 `R2` 的變更與 `staged_notes_delta` 重新組裝後再提交。
+
+
+2. **使用者暫停／取消擁有最高優先權：**
+* 若使用者發出 `pause` 或 `cancel` 指令，Runtime 在當下網路請求或工具結束的瞬間**立即停止**，直接將目前狀態落盤，**絕不為了「完成交接」而額外發起任何模型請求**。
+
+
+* 若使用者中途修改了要求（例如將第 15–20 頁改為範圍外，或更改標題格式），系統保留已落盤的來源證據（`Evidence`）與仍適用的來源觀察筆記，但自動將受影響範圍的「待發布 Candidate」與「下一步工作計畫」標記為 `invalidated_by_requirement_change`，要求 Agent 重新評估。
+
+
+3. **核對紀錄（Verification Records）的精確失效範圍：**
+* 核對紀錄以 `(version_id, pdf_pages, checked_aspects, unresolved_issues)` 儲存。當發布新版本 `v2` 時，未受修改影響且無跨頁釘選連動的頁面可沿用既有核對紀錄；但**凡是被修改的區塊、該區塊所在的頁面，以及將該修改區塊列為依賴的後續區塊**，其核對狀態一律自動降級為 `stale_needs_recheck`。
+
+
+
+---
+
+## 二、 回應第 5、6 點：以公開接口對照 Pi SDK vs. Deep Agents vs. 薄層自建
+
+我完全接受你在第 5 點的澄清：**「由 App 負責某項產品規則，不代表該項機制必須全部自行實作；可以使用框架的狀態、持久化、回合邊界與 middleware 來呼叫集中維護的 context policy。」**
+
+但請同時把你在第 5 點最後一句的關鍵約束放在一起看：**「尤其要避免 app 和框架各自獨立決定壓縮、各自維護一份互相競爭的活躍 context。最終送入模型的內容，需要一個明確的決策入口。」**
+
+當我們嚴格遵守「只用公開接口（不使用 Deep Agents 內部的 `_get_effective_messages`）」與「單一 Context 決策入口」這兩條標準時，把上述收斂後的產品契約映射到 **Pi SDK (1.3.0)** 與 **Deep Agents (0.7.29 / LangGraph)**，會得到以下客觀的工程對照表：
+
+| 核心產品機制 | Pi SDK (1.3.0 公開接口) | Deep Agents (0.7.29 公開接口) | 對「誰能真正省力」的客觀判斷 |
+| --- | --- | --- | --- |
+| **1. Agent 主迴圈、事件串流與 Session 基礎持久化** | **[直接重用]**<br>
+
+<br>內建 Node.js Agent Loop、Session JSONL 讀寫、回合事件與 AbortSignal 取消控制。
+
+ | **[直接重用]**<br>
+
+<br>底層即 LangGraph Pregel Loop、Streaming Events 與 Checkpointer 持久化。
+
+ | **平手。** 兩者都能免除手寫基礎 `while` 迴圈與狀態儲存。 |
+| **2. 批次工具結果統一容量核算與分級展開（Stage 1 & 2）** | **[薄轉接 + 重寫規則]**<br>
+
+<br>透過自訂 Tool Wrapper 保存原件；利用公開的 `context` 擴充點在發送請求前統一攔截並決定展開全文、緊湊視圖或收據。
+
+ | **[需替換內建 Middleware + 重寫規則]**<br>
+
+<br>公開的 `wrap_tool_call` 是**逐一包裝單個工具**，無法得知同批次其他並行工具的總容量；必須**停用／替換**內建 `OffloadingMiddleware`，改在 `wrap_model_call` 中統一核算整批 `ToolMessage` 並改寫當次請求輸入。 | **Pi 較順手；Deep Agents 的內建 Offloading 必須停用。** 因為內建 Offloading 是按單一訊息字元門檻無差別寫入虛擬檔案，若不關閉，就會與我們的 `Evidence Store` 和統一容量分配器形成「雙重壓縮衝突」。
+
+ |
+| **3. 整理前交接（Pre-Compaction Handshake）與雙模態釘選組裝** | **[薄轉接 + 重寫規則]**<br>
+
+<br>利用公開的 `session_before_compact` 攔截整理時機，注入自訂組裝結果；搭配 `context_edit` 寫入投影紀錄。**但 CAS 檢查與 Manifest 交易須由 App 自行實作。**
+
+ | **[需替換內建 Middleware + 重寫規則]**<br>
+
+<br>必須透過公開設定**替換內建的 `SummarizationMiddleware**`（因其預設以年齡/Token 觸發通用摘要，不認識 Handshake 與 `follow_latest` 釘選）。CAS 檢查與 Manifest 交易同樣須由 App 自行實作。
+
+ | **兩者都必須由 App 實作完整的 Context Policy。** 當你為了「單一決策入口」而替換掉 Deep Agents 的 `SummarizationMiddleware` 與 `OffloadingMiddleware` 後，**Deep Agents 的「現成 Context 管理優勢」實際上已歸零**，剩下的其實是底層的 LangGraph。 |
+| **4. 雙協定真實圖片配對與 Nexus 容錯（SSE 半截 JSON 隔離、單輪重試預算）** | **[公開設定 + 部分重寫]**<br>
+
+<br>可設定 `openai-completions` / `openai-responses` 與 reasoning 欄位；但針對 Nexus 實測過的「單輪持久化重試帳本、禁止拼接跨次殘缺 SSE、寫入收據對帳」仍需外掛 Adapter 或攔截傳輸層。
+
+ | **[需薄轉接至重寫 Provider 層]**<br>
+
+<br>公開的 `wrap_model_call` 可攔截輸入輸出，但底層 `ChatOpenAI` 轉接器對 Responses 協定的 Stateless Encrypted Reasoning、Function Output 原生圖片配對，以及防止 SDK 私自重試倍增，需要自訂 `BaseChatModel` 或直接接管現有的 Python HTTPX2 編碼器。
+
+ | **現有 Python HTTPX2 Controller 在這一項最成熟**（已通過 228 項測試與 R1/R2 故障注入驗證）。若換用 Pi 或 Deep Agents，都必須確保這層傳輸與對帳契約不被框架預設的 SDK 行為稀釋。
+
+ |
+| **5. 桌面端 Electron 整合與跨語言邊界** | **[直接重用同語言環境]**<br>
+
+<br>與 Electron Main / UtilityProcess、Tesseract.js (Node) 同屬 TypeScript/Node.js 生態，僅需透過 stdio RPC 呼叫常駐的 Python PyMuPDF Worker。
+
+ | **[需維護跨進程邊界]**<br>
+
+<br>Agent Runtime 在 Python，Electron 在 Node.js，Tesseract.js 又在 Node.js；必須透過 stdio JSON 橋接 Electron $\leftrightarrow$ Python Runtime，並由 Python 管理或回呼 Node OCR 與 Chromium 預覽。
+
+ | 若目標是獨立 Electron 桌面版，Pi（Node 端 Runtime）能減少一層跨語言往返；若留在 Python，則 Deep Agents / LangGraph 較自然。
+
+ |
+
+### 對框架選型的關鍵結論（破除「Deep Agents 現成功能多所以比較省工」的迷思）
+
+從這張嚴格基於**公開接口**的對照表可以看出一個非常清楚的架構事實：
+
+1. **為什麼 Deep Agents 看似功能最多，實際上卻省不了 Context 的工？**
+因為 Deep Agents 在 LangGraph 之上封裝的兩大核心賣點，就是預設的 `OffloadingMiddleware`（大結果自動轉虛擬檔案）與 `SummarizationMiddleware`（超限自動摘要）。但正如你自己指出的：**「要避免 App 和框架各自獨立決定壓縮、各自維護一份互相競爭的活躍 Context，最終送入模型的內容需要一個明確的決策入口。」**
+為了實現我們的「無損緊湊 `layout`、整批工具統一容量分配、整理前交接 Handshake、雙模態釘選（`fixed_snapshot` / `follow_latest`）與 CAS Manifest 切換」，我們**必須透過公開入口把 Deep Agents 預設的 Offloading 與 Summarization 替換成我們自己的 Context 模組**。一旦替換掉這兩塊，Deep Agents 就退化成了普通的 **LangGraph**！
+
+
+2. **因此，真正的決策並不是「Pi vs. Deep Agents」，而是依據你們對「語言核心」的選擇，在以下兩條最乾淨的路徑中二選一：**
+* **路徑一（以 Python 為 Runtime 核心）：直接沿用並重構現有的 Python Controller（或僅引進底層 LangGraph 管理狀態與迴圈），不套 Deep Agents 外殼。**
+這樣可以直接保留已經千錘百鍊的 **HTTPX2 雙協定原生圖片編碼器、SSE 串流安全組裝、單輪重試帳本與操作收據對帳**，只需將我們上面收斂好的「文件服務（含 Candidate / 局部映射 / 核對紀錄）」與「統一 Context 組裝模組」寫進 Python 即可。
+
+
+* **路徑二（以 Electron / TypeScript 為 Runtime 核心）：採用 Pi SDK 作為輕量 Session 與迴圈宿主，將 Python 降為常駐的 PDF 檢視／渲染服務。**
+利用 Pi 的 `context`、`session_before_compact` 與 `context_edit` 公開擴充點掛載我們的 Context 模組，讓 Electron 預覽、Tesseract.js OCR 與 Agent Runtime 統一在 Node.js 側運作，但必須把 Python Controller 裡那套嚴格的 Nexus 傳輸容錯與收據對帳契約完整移植過去。
+
+
+
+
+
+---
+
+## 三、 建議的下一步：用一個「最小可驗證切片（Vertical Slice）」做最終拍板
+
+為了不再停留在紙上爭論，建議下一步直接在本地（不需發起付費模型呼叫，用離線 Fixture 即可）做一個 **2 小時內可完成的接口驗證實驗**：
+
+1. **驗證無損緊湊 `layout` 的真實壓縮率：**
+直接讀取本地已保存的 `bdc032cac806419b9612c40927dbcf99` 第 1 輪 `inspect` 原始輸出（191,662 字元，其中 `layout` 147,366 字元、446 spans），寫一個純函數將其轉為 **「提取 `style_table` ＋ Span Tuple 編碼 ＋ 移除頂層重複 `text`」**，並寫一個反函數 `decode()` 驗證能否 **100% 精確還原每個 span 的文字、屬性與原始雙精度 `bbox**`。直接看字元數從 191,662 降到多少——這能立刻給出有實證支持的預設表示法。
+
+
+2. **驗證單一 Context 決策入口的公開 Hook 侵入度：**
+用假訊息（Fake Messages）模擬一次 **「並行 3 個工具回傳超量 $\rightarrow$ 統一分配容量並將第 3 個轉為 `deferred_for_compaction` 收據 $\rightarrow$ 觸發 Handshake $\rightarrow$ 執行 `(req_rev, art_ver, notes_rev)` 無自我衝突 CAS 切換」**，分別套進 Pi 的 `context` / `session_before_compact` 與 Deep Agents 的 `wrap_model_call`，直接比較兩邊需要寫多少轉接程式碼。
+
+你是否同意先拿本地現成的 191,662 字元 `inspect` 紀錄實測「100% 無損結構去重」的真實字元壓縮率，並以此作為新工具契約的第一塊基石？

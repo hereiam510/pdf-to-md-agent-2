@@ -1,0 +1,210 @@
+這份審閱展現了極高的工程敏銳度——特別是抓出 PyMuPDF `span flags = 12` 的位元定義錯誤（`4 + 8` 為 `serifed` 與 `monospaced`，而非 PDF FontDescriptor 的 `symbolic`）、將檔案匯入調整為「鎖外固定快照與解析驗證 $\rightarrow$ 短交易檢查 revision 並提交」、用 **SQLite 單一 Metadata Store ＋ 不可變原件檔案** 取代四套獨立儲存系統，以及將崩潰恢復的核心從「硬改框架內部 Session」轉向「文件服務的操作冪等性（`operation_id`）」。這些修正直接砍掉了大量脆弱的自製狀態同步程式碼，讓架構大幅收斂。
+
+但若以「讓 App 發揮最佳功能、保留 Agent 自主性且維護最少程式碼」為標準，將這套修正後的設計放到真實長文件轉換與異常恢復場景下進行壓力測試，仍有**五個深層的設計張力與邊界漏洞**需要正面交鋒與補強。
+
+---
+
+## 一、 對這份修正方案的五個深度交鋒（Confrontations & Refinements）
+
+### 1. 交鋒一（針對第 6 點）：「每次 Context 組裝確保工作狀態最新」若直接改寫前綴，會再次擊穿 Prompt Cache
+
+你指出推進 `last_disclosed_revision` 不能證明模型已處理該變更，因此建議改為：**「每次 context 組裝確保目前工作需要的狀態是最新的；diff 只作為幫助理解變更的補充。」**
+
+* **潛在的架構衝突：** 在長文件轉換中，Agent 可能每隔一兩輪就呼叫一次 `update_draft`（使 `draft_revision` 從 `1 -> 2 -> 3 -> 4` 遞增）。如果 Context 組裝器為了「確保目前工作狀態最新」，在每一輪請求發送前都去更新放在 Context 前段（Prefix）的「當前草稿狀態／釘選表頭快照」，那麼**每一次修改草稿都會改變第一個變動點之後的所有訊息前綴**。這會直接破壞穩定前綴（Stable Prefix），使原本在 `bdc032cac806419b9612c40927dbcf99` 實測中高達 84%（636,591 總輸入中 537,088 cached）的快取重用優勢在頻繁草稿迭代中大幅流失。
+
+
+* **最佳功能設計（Epoch 穩定前綴 ＋ 尾端狀態掛載）：**
+要同時達成「不依賴脆弱的 `last_disclosed_revision` 水位」與「保護 Prompt Cache 前綴」，Context 組裝必須區分 **「基準快照（Epoch Baseline）」** 與 **「尾端即時視圖（Tail Working View）」**：
+1. **前綴固定不動：** 在任務開始或每次執行 Compaction 切換（建立新 Epoch）時，將當下的最新有效要求、活躍草稿摘要與釘選表頭放在 Context 開頭，並在整個 Epoch 期間**完全保持唯讀（Append-Only）**。
+
+
+2. **尾端注入最新狀態：** 在同一個 Epoch 內，後續的草稿修改自然存在於尾端的 Tool Call / ToolResult 歷史中；若發生外部要求變更、重啟恢復，或需要讓模型在當下回合看到跨頁表頭的最新合成狀態，組裝器一律將這份「當前最新工作狀態檢視（Current Working State View）」**附加在當次請求訊息列表的最尾端（緊接在模型推理之前）**。這樣既能 100% 保證模型拿到最新狀態，又完全不污染前綴快取。
+
+
+
+
+
+### 2. 交鋒二（針對第 4 點）：只靠 `operation_id` 處理「同一操作重放」，擋不住「模型重試產生新 `tool_call_id`」的重複寫入
+
+你將恢復核心定為文件服務契約：每個寫入有穩定的 `operation_id`（對應 `tool_call_id`），相同操作再次送達時回傳原收據，並坦承「模型另行產生的新操作，不會自動獲得同樣保證」。
+
+* **真實故障場景的漏洞：** 回顧 R2 串流中斷測試或程序崩潰場景：假設模型發出了 `update_draft`（`tool_call_id="tc_01"`, `expected_rev=3`），文件服務已在 SQLite 短交易內成功提交 `draft_revision=4` 並寫入收據，但就在此時程序崩潰，或框架的 Session 尚未將這筆 `ToolResult`（甚至尚未將這個未完成的回合）持久化落盤。
+當系統重啟並透過框架的公開接口恢復時，若框架退回到上一輪狀態並**重新呼叫模型（Model Replay）**，模型並不知道 `rev=4` 已經落盤，它會再次生成一個內容幾乎相同、但帶有全新 `tool_call_id="tc_02"`（即新的 `operation_id`）的 `update_draft(expected_rev=3)` 呼叫！
+此時，單靠 `operation_id` 對帳會失效，文件服務會因為當前已是 `rev=4`（不等於 `expected_rev=3`）而拋出版本衝突錯誤，迫使模型額外花費回合去處理自己剛剛其實已經成功的寫入。
+
+
+* **最佳功能設計（雙層冪等保護 ＋ 請求前未結收據自動揭露）：**
+既然我們已經改用 SQLite 集中管理文件 revision 與操作收據，只要多做兩小步，就能連「模型重跑產生新呼叫」也一併保護：
+1. **組裝請求前自動對帳未結收據：** 每次 `wrap_model_call` 或 Pi `context` 準備發送請求給模型前，先查詢 SQLite 中是否有 **「已提交成功、但尚未出現在當前 Session `ToolResult` 歷史中」** 的最新操作收據。若有（例如 `draft_revision=4` 已存在），直接在當次請求尾端注入系統狀態提示：`[System Notice: Operation from previous interrupted turn already committed draft_revision=4 (blocks blk_10..blk_12). Do not re-submit; continue from revision 4.]`。
+
+
+2. **內容雜湊去重（Intent-Hash Idempotency）：** 文件服務的收據表除了索引 `operation_id` 外，同時索引 `(base_revision, payload_sha256)`。若收到一個新的 `operation_id` 請求 `base_revision=3`，但當前已是 `rev=4`，且 `rev=3 -> 4` 的收據擁有完全相同的 `payload_sha256`（例如引用了同一個工作區檔案快照或相同區塊內容），文件服務可直接識別為重複提交並幂等回傳 `rev=4` 的原收據。
+
+
+
+
+
+### 3. 交鋒三（針對第 1 點）：「鎖外解析驗證 $\rightarrow$ 短交易提交」的跨區塊驗證時序，以及檔案匯入的圖片合規漏洞
+
+你調整後的實作順序非常漂亮：`取得固定內容快照 → 計算 hash、解析及驗證 → 在短交易內檢查草稿 revision → 提交新 revision 和操作收據`。
+
+* **需要補足的兩個工程細節：**
+1. **鎖外驗證如何確保對齊基底版本？** 語法解析與計算 Hash 可以獨立完成，但「結構驗證」（例如檢查 `insert_after` 的目標區塊是否存在、合併局部頁碼映射表）必須依賴目標 `expected_draft_revision` 的內容。為確保鎖外驗證 100% 安全，SQLite 中的每一個 `draft_revision` 都必須設計為**不可變快照記錄（Immutable Revision Row）**，而非原地覆寫同一筆草稿。如此一來，工具可以在鎖外無阻塞地讀取 `rev=3` 的快照、與匯入檔案合併並完成所有驗證與新快照預計算；進入 SQLite `BEGIN IMMEDIATE` 短交易後，只需檢查 `current_rev == 3`、插入已算好的 `rev=4` 記錄與收據即可，持鎖時間可壓在 1 毫秒以內。
+
+
+2. **工作區檔案引用匯入（Workspace File Import）不能繞過圖片 Provenance 檢查：** 產品規格明確要求保留原始內嵌圖片編碼與尺寸，或使用可追溯來源頁碼／區域／DPI 的無損裁切圖，禁止新增有損壓縮（如重新壓成 JPEG）或未驗證的繪圖。當允許 Agent 用腳本在工作區產生成果並透過檔案引用匯入 `update_draft` 時，若該 Markdown 引用了腳本自行在工作區切出的圖片檔，文件服務不能直接照單全收。**規則應定為：匯入文字與表格結構完全開放，但內容中引用的任何圖片資產，必須指向經 App 資產工具登記（具備驗證過的來源頁、座標、DPI 與無損格式 Metadata）的 `asset_id` 或受管路徑**，否則草稿會自動標記 `unverified_asset_provenance` 待修正，阻止未經驗證的圖片直接進入正式發布版本。
+
+
+
+
+
+### 4. 交鋒四（針對第 2 點）：要讓「App 提候選、Agent 決定釋放」真正好用，釋放後應留下「結構化殘影（Persistent Stub）」
+
+你反駁了按頁號自動淘汰的 `Focus Decay`（指出第 15 頁可能有全表註腳、第 13 頁可能有縮寫定義），並維持「App 觀察容量提出可釋放候選 $\rightarrow$ Agent 決定保留哪些並記筆記 $\rightarrow$ App 重組輸入並保留取回能力」的分工。
+
+* **操作摩擦的考驗：** 在長文件中，如果 Agent 讀了 20 頁詳細 `layout` 與高解析渲染圖，當容量吃緊時，若讓 Agent 面對一張冷冰冰的清單（`ev_001`..`ev_020`），全憑記憶判斷哪一頁有跨頁註腳或縮寫定義，Agent 仍有可能因為遺忘而誤釋放，或者為了安全起見乾脆全部保留（如同先前 9 頁自然測試 B/C 選擇不做任何釋放）。
+
+
+* **最佳功能設計（釋放巨量本體，但在原位或索引區保留「帶候選線索的輕量殘影」）：**
+當某份大型證據（如第 13 頁的 14 萬字元 `layout` 或 4MB 圖片）經 Agent 同意退出活躍輸入時，App **不要把該頁的資訊刪成空白**，而是自動將其壓縮為一則約 100 字元的 **「持久殘影收據（Evidence Stub）」**：
+> `[Released Evidence ev_013 | PDF Page 13 | Printed: "014" (candidate) | Contains: 2 candidate table blocks, 1 bottom footnote-sized span (size 8pt), 446 spans | Call read_evidence("ev_013") to restore]`
+
+
+這完美結合了你的第 2 點與第 3 點：工具在首次抽取時就把「疑似小字註腳、候選表頭、印刷頁碼候選」等衍生觀察記錄在 SQLite 的證據 Metadata 中；當龐大的原始座標與像素退下時，這行輕量殘影依然留在 Context 裡提醒 Agent：「第 13 頁底部有 8pt 的疑似註腳文字」，Agent 一眼就能看出是否需要重新取回，徹底消除盲目釋放的風險。
+
+
+
+### 5. 交鋒五（針對第 3 點）：補正 PyMuPDF 物理屬性與衍生判斷的設計——把「上下標與強調線索」結構化暴露
+
+你精準指出了附件的技術錯誤：PyMuPDF 的 `span["flags"]` 中，`12 = 4 (serifed) + 8 (monospaced)`（而 `1` 是 superscript、`2` 是 italic、`16` 是 bold），不能跟 PDF FontDescriptor flags 混為一談；同時你也指出，在 `GlyphLessFont`（flags 全為 12、alpha 全為 0）的案例中，雖然字型與 flags 欄位無法區分強調格式，但「座標、大小和基線仍可能提供線索」。
+
+* **最佳功能設計（雙層證據呈現：原始屬性 ＋ 可追溯的幾何衍生提示）：**
+這正是讓工具幫上大忙、又不誤導模型的最佳切入點。在 SQLite 證據庫與 `inspect` 輸出中，我們可以將資料明確切為兩個欄位：
+1. **`observed_properties`（純觀測事實）：** 原樣報告 PyMuPDF span 的 `font`、`size`、`flags`（並附上正確的 PyMuPDF 位元名稱：`bit0=superscript, bit1=italic, bit2=serifed, bit3=monospaced, bit4=bold`）、`alpha`、`bbox` 與基線起點 `origin: [x, y]`。若整頁 spans 的 `font/flags/alpha` 完全一致（如全頁皆為 `GlyphLessFont, flags=12, alpha=0`），在此欄位明確列出該統計事實。
+
+
+2. **`derived_hints`（標明為推測的輔助線索，附帶原始 span 索引）：**
+* **上下標幾何候選（`geometry_sub_sup_candidates`）：** 即使 `flags` 沒有標示 `superscript`（bit 0），工具可自動比對同一行內相鄰 span 的 `size` 與基線 `origin[1]`（Y 座標）——若某個短字串字級明顯較小（例如主文字 10pt、該片段 6.5pt）且基線向上或向下偏移，即產出一筆衍生提示：`{"type": "candidate_superscript", "span_id": "s_42", "text": "2", "basis": "size 6.5pt vs line 10.0pt, baseline dy -3.1pt"}`。
+* **版面角色候選（`layout_role_candidates`）：** 標示候選標題、頁碼邊界或疑似表格區域，並強制附上 `confidence: "heuristic"` 與對應的 `bbox` / `span_ids`。
+這樣既不封殺工具的實用輔助能力，又嚴格遵守了「不把衍生推測包裝成確定事實」的界線。
+
+
+
+
+
+
+
+---
+
+## 二、 徹底重構後的 App 核心架構：單一 SQLite Metadata Store ＋ 不可變檔案庫
+
+採納你在第 4 點與第 7 點的收斂建議，我們不再維護四套各自為政的 JSON 狀態檔，而是將整個 App 的狀態協調收斂為 **「一個 SQLite 資料庫（WAL 模式）＋ 一個不可變大物件檔案庫（Immutable Blob Store）」**。
+
+### 1. 系統分層與資料流向
+
+```mermaid
+flowchart TD
+    subgraph Runtime["Agent Runtime 層 (Pi SDK 或 LangChain create_agent)"]
+        Loop["Agent Loop / 工具調度 / 框架原生 Session"]
+        Hook["薄層 Context & Tool Middleware\n(請求前組裝輸入 + 收據轉換)"]
+    end
+
+    subgraph AppCore["App 核心服務層 (與框架無關的獨立核心)"]
+        DocSvc["文件與草稿服務\n(鎖外快照驗證 + 1ms 短交易提交)"]
+        EvSvc["證據與視覺服務\n(PyMuPDF / OCR / 預覽渲染 / 衍生線索)"]
+        CtxPol["Context Policy 引擎\n(容量觀測 + 釋放候選建議 + 工作集組裝)"]
+    end
+
+    subgraph Storage["統一持久化層 (Single Authority Storage)"]
+        SQLite[("SQLite Metadata Store (WAL)\n- draft_revisions / published_versions\n- operation_receipts (operation_id + payload_hash)\n- evidence_index & derived_hints\n- verification_records & working_notes\n- context_epochs")]
+        Blobs[("Immutable Blob Files\n- 原始 PDF / 抽取 JSON\n- 無損 PNG / JPEG 資產与預覽圖\n- 已封存的大型區塊快照")]
+    end
+
+    Loop <--> Hook
+    Hook <-->|"公開模型介面 (保留圖片與 Tool Pairing)"| Nexus["Nexus Adapter"]
+    Hook --> CtxPol
+    Hook --> DocSvc
+    Hook --> EvSvc
+    DocSvc --> SQLite
+    DocSvc --> Blobs
+    EvSvc --> SQLite
+    EvSvc --> Blobs
+    CtxPol --> SQLite
+    CtxPol --> Blobs
+
+```
+
+### 2. SQLite 核心資料表設計（消除跨儲存不一致）
+
+將原本分散的狀態收進同一個 SQLite 資料庫後，所有關鍵狀態轉移都能透過單一 `BEGIN IMMEDIATE ... COMMIT` 短交易原子完成：
+
+| 資料表 | 核心欄位與綁定關係 | 解決的工程問題 |
+| --- | --- | --- |
+| **`draft_revisions`** | `rev_id (PK)`, `parent_rev_id`, `blocks_manifest_json`, `page_map_json`, `open_issues_json`, `created_by_op_id` | 每次修改產生不可變的新 `rev_id`；容許 `page_map` 或跨頁關係處於 `unconfirmed` 待確認狀態。支援鎖外 MVCC 驗證與固定修訂號預覽。
+
+ |
+| **`operation_receipts`** | `operation_id (PK)`, `tool_call_id`, `op_type`, `expected_rev`, `payload_sha256`, `status`, `produced_rev_id`, `result_envelope_json`, `acknowledged_in_turn` | 與 `draft_revisions` 在同一交易提交。相同 `operation_id`（或相同 `expected_rev + payload_sha256`）重放時直接回傳 `result_envelope_json`；同 ID 異內容明確拒絕。
+
+ |
+| **`evidence_records`** | `evidence_id (PK)`, `source_pages`, `kind`, `blob_path`, `sha256`, `byte_size`, `observed_stats_json`, `derived_hints_json`, `retention_state` | 保存完整原件路徑與雜湊；將「觀測事實」與「衍生推測（候選標題／上下標幾何線索）」分欄儲存，支援釋放後生成輕量殘影（Stub）。
+
+ |
+| **`verification_records`** | `record_id (PK)`, `target_track`, `target_rev_id`, `scope_pages_or_blocks`, `checked_aspect`, `observation_type`, `status`, `notes` | 嚴格區分 `preview_generated`（僅產生預覽圖）與 Agent 實際確認的 `char_check` / `layout_check` / `table_relation_check`，不因截圖成功自動算核對通過。
+
+ |
+| **`working_state`** | `state_rev (PK)`, `requirements_json`, `agent_notes_json`, `pinned_refs_json`, `active_epoch_id` | 集中保存有效要求、Agent 筆記與釘選引用，供每次 Context 組裝時直接讀取最新狀態，無須依賴 `last_disclosed_revision` 歷史差集。 |
+
+---
+
+## 三、 修正後的框架接入方式與測試判準
+
+採納你在第 5 點與第 7 點對 **Pi v1.3.0** 與 **LangChain `create_agent` / LangGraph** 的接口修正，我們徹底放棄「直接去改 Pi 的 JSONL 檔案」或「在 LangGraph `get_tuple()` 裡硬塞 `update_state()`」的做法，改用最乾淨的公開邊界：
+
+### 1. 兩大候選 Runtime 的公開接口接入契約
+
+* **在 Pi SDK (v1.3.0) 上的標準做法：**
+* **Session 啟動與恢復：** 使用官方公開的 `SessionManager.open()` 載入 Session，再傳入 `createAgentSession()`。
+* **文件操作安全重試：** 當框架重啟或重跑某個已落盤的工具呼叫時，工具執行層先將 `tool_call_id` 映射為 `operation_id` 查詢 SQLite 的 `operation_receipts`；若已提交，直接將收據轉為 Pi 標準的 `type: "message", role: "toolResult"` 回傳給框架，零副作用完成恢復。
+
+
+* **Context 組裝與容量控制：** 透過公開的 `context` 與 `session_before_compact` 擴充點，由 App 的 Context Policy 讀取 SQLite 最新工作狀態並套用 Agent 的釋放選擇。
+
+
+
+
+* **在 LangChain `create_agent` 上的標準做法：**
+* **工具與模型攔截：** 使用官方公開的 Custom Middleware 邊界（`wrap_tool_call` 與 `wrap_model_call`）。
+
+
+* **文件操作安全重試：** 在 `wrap_tool_call` 中攔截寫入呼叫，以 `tool_call["id"]` 對應 SQLite 的 `operation_id`；若 SQLite 已有成功收據，直接短路（Short-circuit）回傳對應的 `ToolMessage`，不必觸碰底層 Checkpointer 的 `get_tuple()` 或 `as_node` reducer 邏輯。
+
+
+* **Context 組裝與重用：** 在 `wrap_model_call` 中組裝送給模型的當次訊息（確保包含最新草稿狀態、有效要求、未解問題與輕量殘影）；若同時重用 Deep Agents 的輔助元件，則將其納入同一套 Context Policy 決策，關閉各自為政的預設卸載。
+
+
+
+
+
+### 2. 將「七步路徑」轉化為真正的機制與自主性雙重檢驗
+
+如你在第 7 點所指出，固定順序的 Mock Model 只能測試「工具串接與狀態轉移」，不能證明模型看懂了 Compaction 後的輸入，而拋出 Python/JS 例外也不等於強制終止程序（因為 `finally` 與緩衝區 flush 仍會執行）。因此驗證應分為兩層：
+
+1. **確定性機制與硬崩潰測試（Deterministic & Hard-Kill Checks）：**
+* **直接斷言組裝後的 Request Payload：** 在 Compaction 後攔截即將送往模型的請求結構，直接檢查其中是否包含最新 `draft_revision`、有效要求、未解問題與已釋放證據的取回引用（而非只看 Mock Model 有沒有跑完）。
+* **真實程序終止測試：** 在子進程執行文件服務寫入（提交 SQLite 交易）正完成、尚未回傳給框架時，從父進程直接發送 `TerminateProcess` / `SIGKILL`（或拔除 IPC 通道），再重啟驗證 `operation_id` 冪等收據回傳與訊息配對完整性。
+
+
+
+
+2. **小型真實模型自主性抽查（Scoped Live Autonomy Check）：**
+* 待離線機制通過後，在授權範圍內用真實來源頁（例如含跨頁表格與 `GlyphLessFont` 的小範圍頁面），觀察真實 Agent 是否能利用檔案引用匯入、自主決定釋放候選，以及在預覽後做出真正的排版修正判斷。
+
+
+
+
+
+---
+
+這套修正後的架構已經將儲存收斂為 **SQLite + Immutable Blobs**、將恢復收斂為 **文件服務 `operation_id` 冪等契約＋公開 Middleware 短路回傳**，並消除了所有越權代替 Agent 做語義決定的自動化規則。
+
+在進入實作對照前，你有沒有特定的主控語言偏好（例如傾向用 **Python + `create_agent` + SQLite** 直接重用現有的 PyMuPDF 生態，還是傾向用 **TypeScript + Pi SDK + `better-sqlite3**` 作為桌面端主控）？確認這一點後，我們就可以直接定義 SQLite 的這五張核心表與 `update_draft`（支援 inline / artifact / workspace file 三種來源）的精確接口規格。

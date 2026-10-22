@@ -1,0 +1,27 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad72166a1bc8191a23874f0179cefb4",
+    "content": [
+      {
+        "type": "Text",
+        "text": "**可以適配，而且不需要 Nexus 支援原生 compaction。** LangChain／LangGraph 可以在 app 端管理歷史、呼叫模型生成摘要，再組合下一次請求。但它們對你提出的兩部分，幫助程度不同。\n\n我查過目前官方文件；對我們現有 app，我比較傾向**先評估局部採用摘要組件，保留現有 controller 與證據讀取工具**。整體遷移到 LangGraph 則是較大的架構選擇。\n\n**它們各自能提供甚麼**\n\n| 選項 | 能幫忙的部分 | 對我們的適配程度 |\n|---|---|---|\n| **LangChain** | 現成 agent loop、摘要 middleware、訊息處理與模型接口 | 如果採用它的 agent runtime，摘要整合方便；現有 controller 不能直接加一個設定就使用 |\n| **LangGraph** | 自訂工作流程、共享狀態、條件轉移、持久化與恢復 | 適合讓整個 agent 工作流程由 graph 管理；context 策略仍需我們設計 |\n| **LangMem**，同一生態的獨立套件 | `summarize_messages`、持續更新的摘要及 `SummarizationNode` | 可作為局部接入的候選，未必需要搬遷整個 controller |\n\nLangChain 的 `SummarizationMiddleware` 支援設定觸發條件及保留近期訊息；LangGraph 提供狀態持久化；LangMem 則直接提供摘要函式。[LangChain 摘要](https://docs.langchain.com/oss/python/langchain/short-term-memory#summarize-messages)、[LangGraph persistence](https://docs.langchain.com/oss/python/langgraph/persistence)、[LangMem API](https://langchain-ai.github.io/langmem/reference/short_term/)\n\n**對你提出的兩部分，應這樣使用**\n\n**1. 一般對話／工作歷史 compaction：有直接可用的組件。**\n\n可以實作成：\n\n> 現有歷史 → 判斷容量與安全邊界 → 模型摘要較舊內容 → 原始要求＋工作狀態＋摘要＋必要近期內容 → 下一次請求\n\n摘要使用一般模型呼叫，因此符合你希望跨 provider 運作的方向。實際仍需接好 Nexus 模型接口、訊息格式及容量設定，不能因為用了框架就假設所有模型相容。\n\n我們也需要自訂摘要內容，保留 PDF 任務的特殊資訊，例如：\n\n- 已完成與未完成的來源範圍。\n- 保存版本、尚未保存的正確內容。\n- 跨頁表格、圖文關係及未解字詞。\n- 精確證據位置和下一步。\n\n**2. 檔案 retrieval context management：框架提供接線方式，核心規則仍要由 app 負責。**\n\n我們已有的 `read_evidence`、欄位／範圍讀取、原圖讀取及 `manage_evidence`，可以包成 LangChain tools，或由 LangGraph 節點呼叫。現有能力記載於 [ARCHITECTURE](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/ARCHITECTURE.md:56)。\n\n但以下問題不會因安裝框架而自動解決：\n\n- 哪些文字、版面或圖片現在需要留在 context？\n- 哪些可以釋放，之後如何精確取回？\n- 一個過大工具回覆如何在進入 context 前處理？\n- 如何確認完整來源範圍已處理，沒有漏掉沒有被搜尋命中的內容？\n\n對完整 PDF 轉換，我會保留**按頁／區域／欄位精確讀取及覆蓋記錄**作為基礎。語意搜尋可以輔助定位，但搜尋命中不能證明整個章節已完成。\n\n**有幾個預設行為不能直接照搬**\n\n- **LangGraph checkpoint 是執行狀態快照。** 它本身不會縮短模型輸入，與我們目前「整理狀態後開新 context」的 `checkpoint` 不同。[Checkpointers](https://docs.langchain.com/oss/python/langgraph/checkpointers)\n- **LangMem 有超限裁切行為。** 官方文件說，待摘要訊息超出指定容量時，可能只取其中最後一部分供摘要。因此必須處理分段及覆蓋資訊，才能符合我們不隱藏截斷的要求。[LangMem 摘要參數](https://langchain-ai.github.io/langmem/reference/short_term/)\n- **摘要會產生額外模型請求。** 目前 LangChain 摘要 middleware 文件也記載內建暫時性錯誤重試；接入時必須納入我們既有的時間、取消、用量及重試預算，避免兩層各自重試。[Summarization middleware](https://reference.langchain.com/python/langchain/agents/middleware/summarization)\n- **訊息轉換需要核對。** 我們目前保留 native tool-call 配對、圖片及 Responses 項目，轉成框架訊息再轉回時，需要確保這些資訊仍正確。\n\n**我的建議是把三條路線放在同一個選擇中：**\n\n| 路線 | 主要收益 | 主要代價 |\n|---|---|---|\n| 現有 controller 自行補足 context 政策 | 最容易沿用目前的原始記錄、圖片、預算和恢復規則 | 摘要與容量管理需要自行維護 |\n| **局部引入 LangMem／LangChain 組件** | 重用摘要等通用能力，遷移範圍較小 | 仍需訊息 adapter、預設行為調整及完整記錄 |\n| 整體改用 LangGraph | 統一工作流程、狀態和持久化結構 | 要重新整合現有執行、保存、恢復和 context 邊界 |\n\n**以目前需求，我會優先比較前兩條。** 如果後續希望連整個工作流程、分支和恢復機制都交由框架統一管理，LangGraph 才有更充分的採用理由。這次查核支持「可以接入」，尚未證明引入框架比擴充現有 controller 更省成本或更可靠。"
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 512,
+  "timestamp_original": "2026-10-20T08:08:52.346Z",
+  "timestamp_display": "2026-10-20T16:08:52.346+08:00",
+  "turn_id": "01a15859-a5fc-7062-b702-09b968b01526",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T16:08:06.828+08:00",
+  "completed_at": "2026-10-20T16:08:52.346+08:00",
+  "event_id": "EVT-0146",
+  "evidence_path": "evidence/events/EVT-0146.json",
+  "supporting_paths": [
+    "supporting/workspace/docs/ARCHITECTURE.md"
+  ],
+  "embedded_paths": []
+}

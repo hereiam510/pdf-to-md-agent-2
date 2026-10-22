@@ -1,0 +1,22 @@
+核對後，**獨立 compaction 已有實作；自動 compaction、background 查詢和取消則需要分開判斷。**
+
+我也讀取了本機正在運行程式的 build metadata：CLIProxyAPI 是 **`v8.0.29+dirty`**，基底 commit 為 `5fc580b`。以下已對照該 commit，並非只看最新主分支。`+dirty` 表示建置含修改，公開 commit 仍不能完整代表本機 binary。
+
+| 功能 | CLIProxyAPI 的實際情況 |
+|---|---|
+| **獨立原生 compaction** | **有實作。** 提供 `POST /v1/responses/compact`；Codex executor 會呼叫上游 `/responses/compact`。成功與否仍取決於上游／模型。[路由](https://github.com/router-for-me/CLIProxyAPI/blob/5fc580b1d72d87a7bcfe5cfb6f479c1aea5625b3/internal/api/server_routes.go#L85-L87)、[上游執行](https://github.com/router-for-me/CLIProxyAPI/blob/5fc580b1d72d87a7bcfe5cfb6f479c1aea5625b3/internal/runtime/executor/codex_executor_execute.go#L222-L269) |
+| **隨普通請求自動 compaction** | **Codex 路徑不保留 OpenAI 的 `context_management` 設定。** Translator 明確刪除該欄位，註解說上游不接受它。因此不能期待加上門檻設定就會自動壓縮。[實作](https://github.com/router-for-me/CLIProxyAPI/blob/5fc580b1d72d87a7bcfe5cfb6f479c1aea5625b3/internal/translator/codex/openai/responses/codex_openai-responses_request.go#L256-L270) |
+| **Background response 查詢** | **標準內建路由沒有完整支援。** 沒有 `GET /v1/responses/{id}`；現有 `GET /v1/responses` 是 WebSocket 入口。[路由表](https://github.com/router-for-me/CLIProxyAPI/blob/5fc580b1d72d87a7bcfe5cfb6f479c1aea5625b3/internal/api/server_routes.go#L85-L87) |
+| **按 response ID 的 HTTP cancellation** | 標準內建路由沒有 `POST /v1/responses/{id}/cancel`。[路由表](https://github.com/router-for-me/CLIProxyAPI/blob/5fc580b1d72d87a7bcfe5cfb6f479c1aea5625b3/internal/api/server_routes.go) |
+| **WebSocket 中斷** | **有條件支援。** `response.interrupt` 可轉送至目前活動的 Codex upstream socket；它依賴活動 session，不是任意時候按 ID 查詢／取消的服務，也不能一概保證遠端已停止。[實作與限制](https://github.com/router-for-me/CLIProxyAPI/blob/5fc580b1d72d87a7bcfe5cfb6f479c1aea5625b3/internal/runtime/executor/codex_websockets_executor.go#L179-L260) |
+
+**Nexus 本身的能力還要另看一層。** 官方文件顯示，CLI Proxy 是 Nexus 的其中一種 provider；Nexus 也支援 OpenAI、Anthropic 等其他 provider。[Providers 文件](https://docs.msty.ai/nexus/providers)
+
+Nexus gateway 文件確實列出 compact、response retrieval、input-items retrieval 和 cancellation 端點，但同時明確說明：**不是每個 provider／model 都支援每條路由**，應以本機 `GET /v1/capabilities` 合約為準。[Gateway 文件](https://docs.msty.ai/nexus/gateway)
+
+對我們專案的實際含義是：
+
+- **Context：** 不應把原生 compaction 全面排除。獨立 compact API 是存在的，但目前 `cliproxy/gpt-6.1-sol` 經 Nexus 的完整路徑尚未驗證可用；Codex 路徑也不會保留上述自動 compaction 設定。
+- **Network：** 目前仍不能依賴這條 CLI Proxy 路徑提供 background 原結果取回或通用 HTTP 取消。WebSocket interrupt 是額外且有條件的能力；本專案現行 Chat Completions 路徑沒有使用它。
+
+本輪只核對公開原始碼、官方文件及本機版本 metadata，沒有發出生成／compaction 請求、讀取憑證內容或更改設定。因此這些是能力與合約證據，尚非目前模型路由的端到端驗證。

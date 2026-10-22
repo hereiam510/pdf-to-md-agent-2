@@ -1,0 +1,174 @@
+這份修正將討論從「概念架構」推進到了真正的「系統狀態機與邊界條件」，特別是你透過核對原始碼抓出 `layout` 獨佔 **147,366 字元**的事實、將「成果發布」與「來源核對」拆成正交維度、提出 Context 切換的樂觀鎖 Manifest，以及將文件鎖限縮在 App 的短交易服務內，這些判斷都比前一版藍圖更精確。
+
+為了讓這套設計真正達到「發揮 App 最佳功能」並可直接進入介面實測，以下先確認這版最關鍵的四個突破，接著針對其中仍隱藏的**四個深層工程盲點**進行交鋒，最後直接給出你文末五個具體情境的**失敗與更新行為規範**。
+
+---
+
+## 一、 這版修正最具價值的四個工程突破（直接納入基線）
+
+1. **揪出 191,662 字元的真正元兇（`layout` 佔 147,366 字元）：** 實測證據顯示在 `bdc032cac806419b9612c40927dbcf99` 的首次 `inspect` 中，單是 `get_text("dict")` 產生的 `layout` 就高達 147,366 字元，而 `words` 僅約 39,324 字元。這直接證明單靠「不回傳 `words`」根本無法把讀入量降到幾千字元，必須從資料表示法（如抽離重複樣式表、消除重複全文表示）與明示「已計算 vs. 需新運算」的讀取入口著手。
+
+
+2. **「成果狀態」與「來源核對紀錄」雙維度解耦：** 將儲存狀態（`Candidate` vs. `Published`）與品質核對紀錄（針對哪個版本、哪個頁碼範圍、哪項要素完成了核對）拆開，並允許隨時匯出標明為草稿的成果，完全契合產品要求中「有用的部分成果即是誠實草稿（honest draft）」與「不設強制全書審批關卡」的原則。
+
+
+3. **Context 切換的樂觀並發控制（Optimistic Concurrency Manifest）：** 以 `requirements_revision + artifact_version + notes_revision + evidence_refs` 作為 Context 組裝快照的基底，並在原子切換前二次核對版本，同時避免將全書頁碼表與所有歷史索引整包塞入模型輸入，精準堵住了長文件狀態膨脹的漏洞。
+4. **短交易文件鎖（Short-Transaction Document Service）：** 明確規定框架不持有跨回合的 Document Lock，僅在呼叫文件服務寫入時由底層執行毫秒級短交易驗證與發布，避免了將模型推理或耗時 OCR 綁進同一把鎖的死鎖風險。
+
+
+
+---
+
+## 二、 四個深層交鋒：要發揮最佳功能，還必須補上的關鍵機制
+
+### 1. 交鋒一：為什麼單頁 `layout` 會膨脹到 147,366 字元？單靠「抽離字型表」還不夠！
+
+你抓出了 `get_text("dict")` 佔用 147,366 字元的事實，並建議「把重複的字型、樣式抽成表，由文字片段引用」。這個方向正確，但如果我們深入看 Nursing 第 12 頁的來源特性，會發現**只抽離樣式表仍然會留下數萬字元的垃圾結構**：
+
+* **底層原因（OCR 透明字層的 Span 碎裂化）：** 根據成本審閱紀錄，Nursing PDF 帶有預先處理的 Adobe OCR 文字層，裡面充滿了均勻透明的 `GlyphLessFont` spans。這類隱藏 OCR 層為了對齊掃描影像的字距，往往會把每一個單字、音節甚至單一字元拆成獨立的 `span`！在 PyMuPDF 的 `get_text("dict")` 中，每個 `span` 都帶有雙精度浮點數座標陣列 `bbox: [x0, y0, x1, y1]`、`origin: [x, y]` 等欄位；當一頁有上千個碎裂的 `span` 時，光是個別 `span` 的 JSON 外殼與長浮點數座標就會塞爆 10 萬字元。
+
+
+* **最佳功能設計（同質 Span 合併 ＋ 座標精度量化）：**
+為了在不犧牲「局部樣式差異位置」與「跨欄區塊結構」的前提下把 14.7 萬字元壓下來，App 的 `inspect` 結構化轉換器除了建立 **`Style Lookup Table`（樣式字典）** 外，還必須在產生預設 `layout` 視圖時執行兩項無損語義的緊湊化（原始未合併 dict 仍可留存磁碟供指標查詢）：
+1. **相鄰同質 Span 合併（Homogeneous Span Coalescing）：** 在同一行（`line`）內，若相鄰的 `spans` 具有相同的 `style_id`（同字型、同大小、同透明/粗斜體屬性）且水平間距屬於正常字距／空白，則自動合併為單一連續字串 Span，並保留首尾合成的 `bbox`。只有當局部樣式改變（例如句中出現粗體、上下標或切換為 `GlyphLessFont`）時才切分新的 Span。這能精確保留局部樣式差異的位置，同時消滅 80% 以上的碎裂 OCR 節點。
+
+
+2. **座標量化（Coordinate Quantization）：** 將 JSON 中的 `bbox` 浮點數從小數點後 6～8 位統一四捨五入至 **0.1 pt 或 0.5 pt**（對排版與區域裁切而言，0.1 pt 的精度已遠超肉眼與渲染需求），光這一步就能砍掉近半的座標字元數。
+
+
+
+### 2. 交鋒二：「預留整理空間」遇到「單次巨量工具回傳」會瞬間破功——必須加入「工具結果兩階段納管（Pre-Admission Gate）」
+
+你在第 2 點敏銳地指出：「交接本身需要一次模型請求及輸出空間。如果 context 已經塞滿，『先請目前 agent 整理』可能根本無法執行。」因此建議提前預留整理空間。
+
+* **邊界漏洞：** 假設我們把 Context 硬上限設為 100%，並提前在 **65%（軟水位線）** 觸發整理交接。如果當前 Context 處於安全的 **55%**，但 Agent 在這一輪同時呼叫了 4 個頁面的高解析圖片與版面檢查工具，這批工具執行完畢產生的結果佔了 **35%**——如果 Runtime 直接照慣例把這 35% 的 Tool Results 塞進對話歷史，Context 會直接從 55% 暴衝到 **90%**，當場吃光預留給 Pre-Compaction Handshake 的空間，甚至因圖片與文字過大直接觸發 API 拒絕！
+* **最佳功能設計（兩階段納管與 Pending Buffer）：**
+Context 模組不能只在「組裝下一輪請求時」才被動檢查容量，而必須在「工具執行完成、準備寫入活躍歷史之前（Pre-Admission）」設卡：
+1. 工具執行完畢後，完整原件與圖片先寫入 `Evidence Store` 並取得收據。
+
+
+2. Context 模組試算：`現有 Context + 新工具結果完整表示 + Handshake 預留空間`。
+3. **若未超標：** 正常將新工具結果放入活躍歷史。
+4. **若超標（跨越軟水位線）：** 新工具結果**暫不展開進入當前 Context**，而是先在當前回合塞入一張極輕量的「待納管收據（Deferred Intake Receipt，僅數百字元，列明 `evidence_id` 已保存完成並準備在整理後載入）」，立即利用剩餘的充裕空間與當前 Agent 完成 **Pre-Compaction Handshake**，切換至乾淨的新 Context 後，再把剛剛那批新工具結果正式展開掛載進新工作集！這樣無論單次工具回傳多大，Handshake 永遠有 100% 安全的執行空間。
+
+
+
+### 3. 交鋒三：釘選記錄（Pinning Record）若全靠 Agent 維護，會引發「元資料管理稅」與指針懸空
+
+你在第 3 點提出了非常完整的釘選欄位（`精確引用`、`保留理由`、`依賴狀態`、`解除條件`、`輸入成本`），並點出了一個致命場景：**「假設 `blk_089` 的表頭剛被修正，釘選時究竟應保留舊版本還是新版本？」**
+
+* **交鋒點：** 如果把這五個欄位的計算與生命週期更新都交給 Agent 手動維護，Agent 每修改一次表格就得記得去更新釘選表，一旦忘記更新就會發生「引用過時區塊」或「忘記解除釘選導致容量塞爆」。
+* **最佳功能設計（由 App 自動執行「版本血緣推進」與「成本核算」）：**
+我們應該把釘選欄位嚴格拆分為 **「Agent 負責的語義意圖」** 與 **「App 自動維護的系統屬性」**：
+* **Agent 只需提供兩個欄位：** `target_ref`（區塊 ID 或證據範圍）與 `reason_and_unpin_hint`（保留理由與預計何時不再需要，例如：「跨頁表頭，待表 1.2 結束後解除」）。
+* **`輸入成本（Token / 像素容量）` 由 App 自動計算：** App 的文件服務與證據庫完全知道該區塊或圖片的精確 Byte / Token 估算值，無須 Agent 填寫。
+* **`版本更新時的血緣自動推進（Automatic Lineage Forwarding）`：** 當 Agent 呼叫增量修改（例如將 `base_version: v1` 的表頭區塊 `blk_089` 修改並發布為 `v2` 的 `blk_089_v2`）時，App 的文件服務本身就握有這次修改的 `Mutation Receipt`（知道哪個舊 ID 被哪個新 ID 取代或拆分為哪些新 ID）：
+
+
+* **若為 1 對 1 或連續替換：** App 自動將釘選引用從舊版本平滑推進（Forward-Migrate）至最新發布版本的對應區塊，並在下一次 Context 快照中註明 `(auto-updated from v1)`。
+* **若該區塊被直接刪除（`delete_ids`）：** App 自動將該釘選狀態改為 `target_deleted_needs_review`，在下一輪提示 Agent 確認該依賴是否已解決或需改釘其他區塊，絕不悄悄沿用過時內容，也不會無聲崩潰。
+
+
+
+
+
+### 4. 交鋒四：看清第 7 點「責任劃分表」背後的真相——別讓框架反客為主
+
+你在第 7 點列出的「責任與建議擁有者」表格非常清楚：
+
+* `App 的文件服務` 擁有：證據、候選稿、版本、發布收據；
+
+
+* `App 的 context 模組` 擁有：工作集、容量預算、context 組裝規則；
+
+
+* `Provider adapter` 擁有：Nexus 協定編碼與能力差異；
+
+
+* **`選定的 runtime` 只擁有：模型／工具回合與事件生命週期。**
+* **正面交鋒：** 請仔細看這張你自己定義的責任表——當你把「文件服務」、「Context 組裝與容量管理模組」和「Nexus Provider Adapter」都確立為 App 自己的核心模組之後，**那個「選定的 Runtime（Pi 或 Deep Agents）」到底還剩下什麼工作？**
+它只剩下一個「呼叫 Context 模組拿 `messages` $\rightarrow$ 呼叫 Provider Adapter 發送請求 $\rightarrow$ 若有 Tool Calls 則分發給文件服務與工具 $\rightarrow$ 發送進度事件給 Electron UI」的回合執行器（Turn Loop）！
+* 這正是為什麼在對照 Pi 與 Deep Agents 的公開介面時，**千萬不要把我們獨立的 `App Context 模組` 拆碎塞進 Deep Agents 預設的 `SummarizationMiddleware` 或虚拟檔案系統裡**。評估框架的唯一標準應該是：**哪個框架能以最薄、最不干擾的方式，當好這個「回合與事件生命週期宿主」，並讓我們的 `Context 模組`、`文件服務` 與 `Provider Adapter` 無損接管？**
+
+---
+
+## 三、 五個核心情境的失敗與更新行為規範（Behavioral Spec）
+
+順應你文末的建議，在凍結 JSON Schema 與實測 Pi／Deep Agents 接口前，我們先把那五個關鍵情境的**正常路徑、衝突／失敗路徑與狀態更新規則**明確定義如下，作為重構與框架驗證的行為基準：
+
+| 情境 | 觸發條件與正常更新行為 | 邊界失敗／衝突時的退避與保護行為 |
+| --- | --- | --- |
+| **1. 未存稿的跨頁發現經整理後繼續使用** | 1. Agent 在探勘期可隨時透過獨立的 `update_notes` 工具（或在讀取／草稿工具夾帶參數）寫入發現（如「物理第 18 頁印刷頁碼為 `019`、`勞工福利部部長` 跨行重複屬實」），立即遞增 `notes_revision`。
+
+<br>
+
+<br>2. 若未手動記筆記就因連續讀取觸發軟水位線，Context 模組啟動 **Pre-Compaction Handshake**，要求 Agent 將未存稿發現轉為結構化筆記與釘選引用，寫入成功後才切換 Context。 | - **若 Handshake 回合本身因網路超時或格式錯誤失敗：** 原有 Context 與已落盤的 `Evidence` 保持不變，不覆寫活躍 Context 指標。<br>
+
+<br>- **若 Agent 在 Handshake 後仍漏記某項細節：** 新 Context 的 Manifest 會自動保留「本次整理前已讀取但尚未寫入發布版本的頁面範圍與對應 `evidence_id` 清單」，確保 Agent 看到這些頁面處於「已讀未存（Inspected but Unpublished）」狀態，可零成本按 ID 重取。 |
+| **2. 修正表頭後，釘選引用會否過時？** | 1. 釘選記錄綁定邏輯區塊 ID 與版本號（如 `blk_089@v1`）。<br>
+
+<br>2. 當 Agent 提交增量修改將 `blk_089` 修正並成功發布為 `v2` 時，文件服務根據此次修改的區塊映射關係，**自動將釘選指標推進至 `blk_089@v2**`。<br>
+
+<br>3. 下一次組裝 Context 時，工作集直接載入 `v2` 的最新表頭原文。 | - **若修改僅存為 `Candidate`（因頁碼 metadata 驗證失敗而尚未發布為 `v2`）：** 釘選主指標仍維持已發布的 `blk_089@v1`，但 Context 模組同時在工作集旁附上 `cand_xxx` 中的待決修正版表頭，明確標示 `(Staged Candidate - Pending Publication)`，防止 Agent 以為修改已生效或誤用舊表頭。<br>
+
+<br>- **若 `blk_089` 被拆分為多個區塊或被刪除：** 系統自動將釘選狀態標為 `stale_requires_repin`，並保留最後已知快照直到 Agent 顯式更新。 |
+| **3. 候選稿 metadata 出錯能否重用內文？** | 1. Agent 呼叫增量寫入時，Payload 一旦通過基礎語法解析，文件服務立即將內文區塊寫入 `Candidate Store`（產生 `candidate_id`），並將隨附的 `working_notes` 獨立提交至 `notes_revision`（筆記不因稿件驗證失敗而回滾）。<br>
+
+<br>2. 接著驗證頁碼映射與完整性；若僅缺漏某頁 `printed_page`（或應標為 `unknown`），回傳結構化錯誤與 `candidate_id`。
+
+<br>
+
+<br>3. Agent 呼叫 `commit_candidate(candidate_id, metadata_patch)` 直接完成發布，無須重傳內文。 | - **若發生 `base_version` 衝突（例如提交的 `base_version` 是 `v1`，但當前最新已是 `v2`）：** 拒絕直接覆蓋。文件服務比對 `candidate_id` 修改的區塊範圍與 `v1 -> v2` 的變更集：<br>
+
+<br>  - 若修改範圍無重疊（Disjoint）：提供 `rebase_preview` 讓 Agent 確認後直接合併發布為 `v3`。<br>
+
+<br>  - 若修改到了同一個區塊（Conflict）：保留 `candidate_id` 原文，回傳衝突的區塊 ID 與 `v2` 現況，讓 Agent 讀取 `candidate_id` 內容做局部調整。 |
+| **4. 整理期間收到新要求，能否避免切換到舊狀態？** | 1. 啟動整理（Handshake 開始）時，Context 模組記錄當下的 `base_manifest = (req_rev: 1, art_ver: 2, notes_rev: 5)`。<br>
+
+<br>2. 若在 Handshake 模型推理期間，使用者透過 UI 更新了轉換範圍或格式要求，系統將使用者原話與時間戳寫入要求紀錄，使 `req_rev` 變為 `2`。<br>
+
+<br>3. Handshake 完成並準備提交新 Context 時，系統執行原子 CAS（Compare-And-Swap）檢查，發現 `req_rev` 已從 `1` 變為 `2`。 | - **發現版本漂移（Version Drift）時的處理：** 放棄直接切換。Context 模組保留剛剛 Handshake 產出的有效工作筆記（更新至 `notes_rev: 6`），但**重新將 `req_rev: 2` 的最新使用者要求與差異比對注入 `CandidateContext**`。<br>
+
+<br>- 若新要求與剛整理好的工作集衝突（例如使用者把第 15–20 頁改列為 `outside_scope`），系統在切換後的第一個回合頂部插入顯式系統提示：`[Requirement Updated: rev 1 -> rev 2]`，確保新要求優先級高於舊筆記。
+
+ |
+| **5. 超大結果能否完整保存、明示未載入範圍，並直接取回必要內容？** | 1. 當工具（如多頁 OCR 或複雜頁面 `inspect`）產出結果時，100% 原始結構與無損圖片立即落盤至 `Evidence Store`（附 SHA-256 與結構目錄）。
+
+<br>
+
+<br>2. 經過「同質 Span 合併＋座標量化」後，若結果仍在單次輸入預算與軟水位線內，直接回傳請求的表示法。<br>
+
+<br>3. 若超出單次傳送容量或觸發軟水位線，執行**截斷／延遲納管**。 | - **超出容量時的精確明示契約：** 回傳給模型的 `ToolResult` 絕不靜默刪減，必須包含：<br>
+
+<br>  1. `status: "saved_partially_loaded"` 與 `evidence_id`；<br>
+
+<br>  2. `loaded_scope`（例如：「已載入第 12–13 頁之 `text` 與合併後 `layout`」）；<br>
+
+<br>  3. `omitted_scope_manifest`（明確列出未進入本次輸入的頁面／欄位、各自字元數與讀取方式，如：`pages 14-16 omitted due to 40k char budget; call read_evidence(id, pages=[14,15])`）；<br>
+
+<br>  4. 若因觸發軟水位線而被攔截，自動排入 **Pre-Compaction Handshake**，待整理完畢後再按序載入。 |
+
+---
+
+## 四、 下一步具體建議：用「五情境最小閉環」對照 Pi 與 Deep Agents 公開介面
+
+既然我們已經把這五個情境的失敗與更新行為完全收斂，且確立了「App 文件服務、App Context 模組、Provider Adapter」的獨立邊界，下一步對照 **Pi SDK** 與 **Deep Agents** 公開介面時，建議不要只看文件描述，而是直接針對以下三個具體擴充點（Extension Hooks）做接口映射檢查：
+
+1. **工具結果進場攔截點（Tool-Result Pre-Admission Hook）：**
+* 當工具已經把超大結果存入 `Evidence Store`、且 `Context 模組` 判定直接放入會跨越軟水位線時，**Pi**（例如透過自訂 Tool 執行器包裝與 `context` 事件）與 **Deep Agents**（透過自訂 Middleware 攔截 `ToolMessage`）各自要如何做到「先回傳輕量收據、緊接著在同一輪或下一輪強制插入 Pre-Compaction Handshake Prompt」？
+
+
+2. **原子切換與 CAS 檢查點（Transactional Context Swap Hook）：**
+* 當 Handshake 完成、準備把舊歷史替換為 `Manifest + 釘選工作集 + 伴隨筆記 + 可選摘要` 時，兩者各自的公開 API（Pi 的 `session_before_compact` / `context_edit` vs. Deep Agents 的 `_get_effective_messages` / `SummarizationMiddleware` 替換）能否在不污染原始 Session 紀錄的前提下，執行上述的 `req_rev + art_ver + notes_rev` CAS 檢查並在失敗時無損放棄切換？
+
+
+
+
+3. **Nexus 雙協定原生 Payload 保護點（Native Wire Pass-Through）：**
+* 當 `Context 模組` 把被釘選的原始 PNG 像素與過去的 Tool Results 組裝好交給 Runtime 時，兩者的模型介面會不會強制把訊息轉成框架自己的統一格式，從而破壞我們在 Chat Completions（Tool Result 後緊接 User Image）與 Responses API（Function Output 帶圖＋Stateless Encrypted Reasoning）的精確配對契約？
+
+
+
+
+
+你希望我接下來直接針對這三個 Hook，分別列出 **Pi SDK (1.3.0)** 與 **Deep Agents (0.7.29)** 的公開 API 簽名與需要撰寫的轉接程式碼結構，來完成這次的框架對照嗎？

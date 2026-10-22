@@ -4,6 +4,50 @@ This reference preserves the substantive discussion in source segment 3, includi
 
 The source range is EVT-0827–EVT-1168, with attachments ATT-21–ATT-30. EVT-1166 is the final narrowing of the discussion. EVT numbers identify exported conversation events; ATT numbers identify attachments catalogued in the [source index](SOURCE_INDEX.md). Anchors below are stable destinations in the [point coverage ledger](POINT_COVERAGE.json). “Observed” means reported in the historical record, not reverified in this new repository. “Effective design” identifies a retained responsibility or constraint; “proposal” remains a choice; “superseded” preserves a rejected or narrowed approach; “hypothesis” is not a demonstrated fault.
 
+The explanation below includes the practical reasons, counterexamples, and historical labels needed to read it independently. The [bundled discussion archive](sources/INDEX.md) supplies original messages and attachments for checking exact wording. Source IDs are provenance, not prerequisites for understanding a rule. The larger original export is an optional audit source. The active owners remain [ARCHITECTURE](../ARCHITECTURE.md), [CONTRACTS](../CONTRACTS.md), and [OPEN_QUESTIONS](../OPEN_QUESTIONS.md); the final three-contract section below explains how earlier proposals were narrowed.
+
+For the retained behavior arranged by implementation responsibility, use [Document engine](../design/DOCUMENT_ENGINE.md) and [Execution and delivery](../design/EXECUTION_AND_DELIVERY.md). They explain reference resolution, full-result validation, commit visibility, frozen requests, whole-batch recovery, stop states, and publication as local sequences. This record preserves why those boundaries were chosen and which earlier alternatives remain merely historical or optional.
+
+<a id="terms-used-in-this-record"></a>
+## Terms used in this record
+
+These definitions unpack existing responsibilities; they do not finalize the open tool schemas or add a subsystem. Their governing distinctions come from EVT-0878, EVT-0914, EVT-0942, EVT-0968, EVT-1005, EVT-1040, EVT-1107, and EVT-1166.
+
+| Term | Meaning in this discussion |
+|---|---|
+| Nexus and route | Nexus is the configurable model-access layer used by the intended app, including the user's subscription connection. A route identifies the selected model/access/protocol configuration; its capabilities, input limit, image handling, and failure behavior cannot be inferred from another route. Chat Completions and Responses are the two native protocol families discussed. |
+| Native reply / journal | The reply in the provider protocol, including message items, tool-call IDs/arguments, images or image references, reasoning items where applicable, and completion/error information. The journal preserves received originals. A framework's display message can be a projection of that record. |
+| Candidate | Received proposed document content or writing arguments retained before validation. It can contain correct prose with invalid page metadata, or incomplete raw arguments. Saving it preserves work; it does not make the failed call executable. |
+| Draft | A usable working document state that can be read, repaired, previewed, and exported with incomplete or unknown facts identified. A draft can have an immutable saved version. “Draft” describes completion status, while immutability describes how a saved version is addressed. |
+| Committed version, working head, delivery selection | A committed version has a durable identity and content. The working head points to the current working version. Delivery selection identifies the version and task scope chosen for export. These can differ: a newer experiment does not replace an earlier selected deliverable automatically. |
+| Content reference | An exact address into preserved content, such as candidate identity plus a JSON pointer to one block, or evidence identity plus its internal region. It permits reuse without regenerating the text. Reusing content does not automatically replay the old edit/delete operations around it. |
+| Context policy and settlement | Small state describing selected evidence, pin/release choices, useful notes/references, compaction coverage, and processed batches. Settlement applies accepted context-change intents once at a defined sequential boundary. It is state coordination, not proof of source coverage or semantic correctness. |
+| Model-input view / hydration | The actual selected content assembled for a particular model call. Hydration resolves references into the requested text, fields, or images. Saving an artifact makes it retrievable; selection determines whether it enters this input. |
+| Frozen request | A prepared request whose selected content, route/model settings, generation parameters, and tool schemas are fixed for recovery of that same decision. Resolving `latest` again or adding a newer image would change it. A later decision may prepare another request. |
+| Logical step / physical attempt | A logical step is one intended model judgment. An attempt is an actual send for that step. Recovery retains the prepared step and its consumed budget; new user input or deliberate regeneration creates a new intended decision even if its input happens to be byte-identical. |
+| Accepted reply / tool batch | A complete reply accepted by the executor, and the full declared list of tool calls for which it takes responsibility. The batch must retain all call identities, order where required, results, and unfinished work. One successful call is not evidence that the rest of the batch has settled. |
+| Operation receipt | The durable outcome of one accepted operation, bound to its original identity and input. A receipt can say “created V12” after the current head becomes V13. Replaying the receipt reports that past outcome and must not select V12 again. |
+| Graph checkpoint | A saved graph state/progress boundary used by the runtime to continue execution. Restoring it does not undo a sent request, restore spent budget, delete a committed version, or cancel an external process. Domain receipts and request records cover those effects. |
+| Compaction / handoff | Compaction reorganizes selected conversation/work history to fit a later input. A handoff carries effective requirements, useful decisions, unfinished work, and exact references needed to continue. It is potentially lossy semantic work and uses the shared model-request accounting when a model generates it. |
+| Scope / source mapping / acceptance | Scope states which complete section or other bounded content the user requested. Source mapping relates output to physical pages, printed labels, and regions. Acceptance concerns faithful, usable content for that scope. A complete map or a valid schema does not establish acceptance. |
+
+<a id="historical-case-labels"></a>
+## Historical labels and what their observations support
+
+The labels below identify earlier exercises. They are not active presets, queued jobs, or evidence that the rebuild already works. The local [earlier evidence account](02-context-state-and-evidence.md#p2-005) preserves the comparison qualifications; EVT-0855, EVT-0878, EVT-0942, and EVT-1166 supply the late corrections used here.
+
+| Label used below | Context and useful inference |
+|---|---|
+| 13-page A/C | A used full history and C used the checkpoint variant in a historical comparison. Their delivered drafts still contained emphasis/glyph defects: A's final emphasis issues were on pages 16/18/24; C also included page 14 and the `礪`/`厲` distinction. This motivates source inspection and exact editing, without proving one context strategy caused those defects. |
+| 40-page comparison | Larger historical attempts used a 3,600-second/100-round configuration. Their recorded endings included HTTP 408/incomplete streaming and a separate timeout on request 57. A page-27 candidate had correct `本文件` before rejection, while later regeneration produced `本文作`. Candidate reuse addresses that observed regression; OCR volume alone does not diagnose the network endings. |
+| 9-page B/C and P | Earlier natural-use exercises were cited when discussing whether agents spontaneously use optional mechanisms. P had selective/checkpoint features disabled. Its non-use therefore cannot show that enabled context tools would be ignored. These labels provide no universal natural-adoption rate. |
+| Breasts / Figure 4–13 / Core Delivery | A source-accepted Nursing subsection at physical page 12, printed page 68, excluded adjacent content. It demonstrates why a task can cover only part of a page. Its first inspect produced 191,662 characters, so a heavy input can coexist with successful scoped delivery. |
+| R1/R2 | Bounded injected-failure recovery exercises. R1 included an injected outage and roughly 188 seconds before forwarding; R2 interrupted a streaming response before completion. Their completed deliveries support those tested boundaries, not arbitrary process-crash or natural prolonged-outage recovery. |
+| Nursing, Gynecology, JRE, News Writing | Names of earlier source/example packages with particular accepted outputs. The names are historical evidence labels, not a requirement to rerun those packages or reproduce old APIs and storage formats. |
+| 228 checks | A historical offline test result against particular old modules. It can guide selective reuse of behavior and fixtures; transferring a module into a new graph does not transfer that verification result. |
+
+Read these cases as motivation for the corresponding contract. The examples using V10/V11, policy 7/8/9, page 12/13, or an 80k capacity target are explanatory boundary scenarios; they do not claim those exact events occurred in a production run.
+
 <a id="local-patching"></a>
 ## Local editing and candidate preservation
 
@@ -16,7 +60,9 @@ The source range is EVT-0827–EVT-1168, with attachments ATT-21–ATT-30. EVT-1
 - **ATT-21 example caveat:** `<td>厲行節約</td>` → `<td><strong>礪行節約</strong></td>` with `expected_matches: 1` demonstrates mechanics only. A unique match does not prove semantic location or authorize the glyph change. Every textual correction must be supported by the PDF.
 - **ATT-22 refinement:** repeated cells (`0`, empty cells, `是`, `12.4`) can make whole-block exact search ambiguous. An optional raw-line range plus expected text, within-range occurrence/position, or a tool-generated location reference can reduce retransmission. Line numbers are not sufficient for repeated items on one line or a one-line HTML table. Visual wrapping differs from raw newlines; JavaScript UTF-16 indexes and backend character indexes need an explicit common convention.
 - **Retained batch option:** align all nonoverlapping patches to the same unchanged base snapshot, validate them first, then replace from the greatest offset backward. This prevents one edit shifting another's coordinates. Explicit sequential semantics are an alternative only when clearly defined; accidental anchor creation/destruction must not be implicit. Whole-block replacement and file import remain available.
-- **Evidence limit:** ATT-22's claim that this removes all eight historical tool errors is unsupported. The eight included OCR timeout-parameter and post-success result-selection failures, beyond editing and page-map friction.
+- **Evidence limit:** ATT-22's claim that this removes all eight historical tool errors is unsupported. The eight included OCR timeout-parameter and post-success result-selection failures, beyond editing and page-map friction. ATT-23/ATT-24 described the breakdown as six underlying rejections and two post-success projection errors. That source-record classification illustrates why a returned error does not establish that an operation failed to commit; it is not a new verification of the old runs. ATT-24 also cited R2's rejection of an empty `remove_ids` list as concrete insertion friction, supporting a pure insertion/append capability without requiring a dummy deletion.
+
+For example, suppose the saved table contains the same `12.4` in three cells and only one source cell is bold. A replacement of the first matching `12.4` is ambiguous even though it leaves every other character untouched. The usable edit describes the fixed table version, a returned cell/range location or sufficiently precise surrounding text, the expected old content, and the intended markup. The app can reject a stale or ambiguous target before publishing a version. The agent must still inspect the source to decide whether that particular cell is bold. This is the practical difference between preserving untouched bytes and proving a correction right. The locator and operation schema remain open choices.
 
 <a id="source-output-comparison"></a>
 ## Source, output, and visual comparison
@@ -35,7 +81,7 @@ The source range is EVT-0827–EVT-1168, with attachments ATT-21–ATT-30. EVT-1
 
 **Sources:** EVT-0827, ATT-21; EVT-0853, EVT-0855; EVT-0856, ATT-22; EVT-0878.
 
-- **Historical figures:** the 40-page record carried 1,865,411 OCR characters from eight full page objects; the 13-page C request read nine objects totaling 1,976,466 characters and the next input reached 796,420 tokens. The 40-page run was configured for 3,600 seconds/100 rounds and ended after HTTP 408 and the 57th request timing out. These observations do not prove OCR weight, rereading, or tool friction caused the timeout.
+- **Historical figures:** the 40-page record carried 1,865,411 OCR characters from eight full page objects; the 13-page C request read nine objects totaling 1,976,466 characters and the next input reached 796,420 tokens. The 40-page comparisons were configured for 3,600 seconds/100 rounds; their separate endings included HTTP 408/incomplete streaming and a timeout on request 57. These observations do not prove OCR weight, rereading, or tool friction caused the timeout.
 - **Corrected evidence misuse:** P ran with selective/checkpoint disabled. Its non-use cannot establish failure of natural adoption, lack of capacity awareness, or need for a particular mechanism. Small 9-page B/C jobs' non-use likewise does not by itself explain the cause. ATT-21's claim that agents did not release evidence because they could not see capacity is a hypothesis.
 - **Retained capacity information:** distinguish original evidence size, selected content's actual contribution to this assembled input (including duplicates), and remaining capacity under the configured route and output reserve. An OCR original may be huge while a selected `text` field is small; repeated images must count as repeated input. Include system content, tool definitions, ordinary dialogue, work state, and images. Track request bytes separately from tokens; unknown limits remain unknown and estimates are labeled.
 - **Placement:** compute the global footprint at the built-in input-assembly boundary, tied to `input_view_id`. Individual tools can expose their own sizes. A permanent heavy-item leaderboard in every tool result is optional and can itself add history. ATT-21's 60–70% thresholds and 200,000-token denominator were illustrative/configurable, not universal limits or quality boundaries. `drafted` does not imply evidence is dispensable.
@@ -52,7 +98,7 @@ The source range is EVT-0827–EVT-1168, with attachments ATT-21–ATT-30. EVT-1
 - **Historical scope example:** converting pages 1–10 today does not make pages 11–173 permanently outside all future tasks. A historical version's `outside_scope` designation can correctly describe that task; the error is blindly inheriting it into a later full-book task.
 - **Retained update direction:** accept partial/sparse page changes and merge them against the base. Internal sparse storage and full output mapping are compatible: derive the complete mapping from source page count, task scope, and known facts. Do not force the model to retransmit 173 entries to correct one page, but do not remove the full source-correspondence outcome.
 - **Superseded completion test:** ATT-22 proposed only `converted`, `source_blank_or_omitted`, and `drafting`, then completion when every target page is converted or blank/omitted. One paragraph on a page does not account for its tables, footnotes, or captions. The Breasts case requested one complete portion of page 12 and excluded adjacent content, so `target_pages=[12]` alone cannot express the scope. A section, figure, table, or other bounded content may define the task.
-- **Required distinctions:** source facts (physical and printed pages, regions, evidence), task scope, output-to-source relationships, and progress/review status remain separate. `converted` can report a relation but cannot certify quality. Confirmed blank source and a decision to omit decoration are different facts. Keep `none` and `unknown` printed-page states distinct. Complete source mapping does not imply every page must have body content.
+- **Required distinctions:** source facts (physical and printed pages, regions, evidence), task scope, output-to-source relationships, and progress/review status remain separate. `converted` can report a relation but cannot certify quality. Confirmed blank source and a decision to omit decoration are different facts. Keep `none` and `unknown` printed-page states distinct: `none` records that no printed label is present, while `unknown` means it has not been determined. Physical page order still identifies the page. Complete source mapping does not imply every page must have body content.
 
 <a id="continuity-and-state-ownership"></a>
 ## Continuity, state ownership, and replay identity
@@ -79,6 +125,8 @@ The source range is EVT-0827–EVT-1168, with attachments ATT-21–ATT-30. EVT-1
 - **Retained increment principle:** connect a small useful source→save→reopen→export flow using shared tools and the actually used Nexus route, preserve candidates from the first increment, then add precision and context continuity where needed. ATT-22's first slice bundled new framework, both protocols, persistent retries, sparse document model, full chapter, and interruption recovery and was judged too large. Other product protocols remain capabilities to integrate, not grounds to expand the first slice. Candidate loss on first validation failure must not be deferred to a second slice.
 - **No automatic work authorization:** these reviews explicitly described read-only analysis, with no project edits, tests, or Nexus model calls. Vertical slices are retained reasoning about implementation order, not a queued execution request in this reference.
 
+Here a **vertical slice** means connecting enough of the actual path to deliver a bounded useful result: choose a source/scope, obtain needed evidence, save correct candidate content, repair a rejected metadata field, reopen the saved version, and export that version. It does not prescribe those as mandatory model steps on every conversion. It was preferred over finishing every editing feature, then every context feature, then all transport machinery before testing whether the parts work together. SSE means the streamed server-sent-event fragments assembled by the request service; a fragment must not be mistaken for a complete accepted tool call.
+
 <a id="unaltered-text-and-locators"></a>
 ## Raw text fidelity and edit views
 
@@ -100,6 +148,8 @@ Saving candidates only inside `DocumentService.save()` misses input rejected ear
 The reviewed `wrap_tool_call` position ran before tool validation, but its `args` were an already-parsed dictionary, not raw response bytes. The adapter separately preserves the complete native reply. A truncated reply may be diagnostic evidence; it does not authorize executing a partial tool call. If a write committed and later response-field selection failed, retain the successful receipt and distinguish that from an unperformed write.
 
 ATT-24 proposed `write_blocks` with optional page maps and a later `publish_version` gate. Saving incomplete metadata is useful, but export cannot be gated on completion: a draft must be previewable, snapshotted, and exportable with gaps explicitly identified. A single edit can atomically include body plus optional page changes; separating validation responsibilities does not force two model calls.
+
+With candidate references, “validate” has more than one boundary: first check the received tool/reference form after capture, then resolve the referenced content and explicit changes, then validate the complete merged draft/map before conditional commit. A reference envelope cannot establish the resulting document's validity, and requiring inline body text before reference resolution would defeat exact reuse. The [worked repair](../design/DOCUMENT_ENGINE.md#candidate-repair-sequence) makes that distinction without choosing a final tool schema.
 
 <a id="draft-export-and-claims"></a>
 ## Draft usability, completion claims, and revisable observations
@@ -171,6 +221,8 @@ ATT-26 proposed four nodes: `prepare_step → model_step → tool_batch_step →
 
 Prepare freezes route/model configuration, generation parameters, tool schemas, and actually selected content, not merely text messages or evidence filenames. Save the full request in immutable files and small IDs/references/fingerprint plus policy in Graph state. Do not resolve `latest` or swap images after prepare. Before sending, durable attempt consumption must already be recorded. No accepted reply does not mean no request was sent; inspect attempt status and original remaining budgets before bounded recovery. Only a complete durable reply for the same logical request is directly reusable.
 
+Consider a prepared request Q that selected document V10 and a particular OCR image. While Q's response is uncertain, another legitimate action makes V11 the current head. A permitted retry of Q must retain V10, the same image, settings, and schemas, and consume another attempt under the original budget. Replacing V10 with V11 changes the decision input and requires a new logical request. If Q's complete accepted reply was already saved, recovery reads that reply and settles its whole tool batch before considering the next model request. This separates a historical input snapshot from the current document pointer without requiring generalized branch management.
+
 <a id="commit-and-receipt-boundary"></a>
 ## A committed version and its operation receipt
 
@@ -220,6 +272,8 @@ A no-tool model answer can be a question, blocker report, or early stop, not com
 
 ATT-26's automatic export of the newest version was narrowed to explicit delivery intent `(version_id, scope_rev)`. Example: V10 is good, V11 is a trial table edit, and the agent chooses V10. Automatically shipping latest V11 overrides that choice. A known selected version can be packaged by the app without spending another model turn or routinely asking the user. Preserve consistent Markdown/JSON/HTML/assets/ZIP for that selected version.
 
+EVT-1040 further places that intent with the current task, not one global document manifest entry that other tasks could overwrite. Committed versions/provenance remain document facts. A direct selection of existing V10 must be possible without manufacturing an edited successor merely to select it; selecting a newly committed version can remain a convenience. This ownership rule does not require general branch management.
+
 An exported version and abandoned experimental candidate can coexist. Only candidates still belonging to unfinished current work merit follow-up; their mere existence must not trigger rewriting. A real request for user clarification enters waiting-input state rather than looping through prepare without new information. Practical first-version editing includes append/insert/delete/reorder, local page/provenance updates, and candidate-body reuse with repaired metadata; substring patching alone is insufficient.
 
 <a id="incremental-edit-and-reference-contract"></a>
@@ -236,6 +290,17 @@ ATT-28 proposed avoiding implicit parameter inheritance by importing `block_ops_
 The correction separated **content reuse** from **operation reuse**. `block_ops` can include deletion, reordering, or context-sensitive patches; adopting a correct paragraph must not force those old effects. A failed `save_draft` may contain `blocks` rather than `block_ops`. Support references such as immutable `candidate_id + JSON pointer` or a selected block list wherever content is accepted; separately allow whole-operation reuse only after validation of its current intent and base. ATT-29's `from_candidate`, `select`, `block_indices`, and `override_meta` were illustrative shapes, not finalized JSON schemas. Raw capture precedes best-effort indexing; an indexing failure must not erase the saved raw candidate.
 
 The final narrowing keeps complete-candidate exact reuse, insertion/append, and partial page updates in the first contract. It requires clear answers to which original is referenced, which fields change, what omitted fields preserve, and when commit succeeds. It does not require malformed-JSON salvage first.
+
+The page-12/page-13 example can be read as a concrete contract exercise, rather than a finalized API:
+
+| Stage | Preserved information and required decision |
+|---|---|
+| Receive candidate C | Retain C's complete body and the proposed page-12 and page-13 metadata even if page 12 is invalid. Report the actual metadata rejection; do not discard the body. |
+| Prepare repair | Identify C and the exact body fields to reuse. Supply the correction for page 12. For a broader candidate merge, define that omitted page-13/body fields remain unchanged unless explicitly replaced. For content-only import, explicitly carry any desired page-13 candidate metadata; it was not committed into the base by the rejected call. The implementation must not guess between these intentions. |
+| Validate and commit | Build a complete effective submission against the named base, validate the merged structure, and commit only when the expected base/head condition still holds. Preserve C and the repair's parentage if validation or concurrency checks fail. |
+| Return or replay | Return the new version and its operation receipt. Repeating that same accepted operation returns its original outcome. Changing the repair's input creates a new operation identity. |
+
+Likewise, reusing a paragraph from C's `blocks` array means retrieving that paragraph. Reusing C's `block_ops` means asking to run a sequence that might delete or move other blocks. Keeping those two intentions separate is what lets a later task use good prose without inheriting a stale edit plan.
 
 <a id="candidate-relationships"></a>
 ## Useful candidates, partial adoption, and lineage
@@ -259,11 +324,24 @@ The preferred simplification became SQLite metadata for version registration, un
 
 Persist resolved defaults when an operation starts: a missing version resolved to V10, selected parameters, and its output/attempt directory remain V10 on recovery. Dynamic defaults are still dynamic until resolved. Operation keys need app task/accepted-reply or step identity, not provider `tool_call_id` alone. An old Graph snapshot can describe what an earlier request saw but must not overwrite SQLite's later committed head.
 
+The start boundary matters for a sequential batch: `save`, then `preview` with no version, should resolve the preview's default after its required earlier save under that declared ordering contract. Resolving every omitted version at batch acceptance could bind preview to the old head instead. Retain the accepted arguments and the later effective values as related records; recovery checks the recorded values rather than resolving “current” again. [Hash and identity distinctions](../design/EXECUTION_AND_DELIVERY.md#hashes-and-identity) explain why equal content, one accepted operation, and present applicability are separate facts.
+
 **Historical receipt rule:** A produced V12 and B later produced V13; replay A returns the original V12 receipt while retaining V13. C selected V10 and a later selection chose V11; replay C returns its historical selection result without resetting delivery to V10. Receipts are facts at commit time, not assertions that today's pointer still equals that result. Recovering a frozen model request still uses its original input rather than silently inserting today's head.
 
 Operation-specific reconciliation is necessary: save/edit checks original commit and expected base; select-delivery checks the historical selection and valid target/scope; export checks the specified version and destination package independently of current head; render/preview checks existing artifacts and parameters and can create a new independent attempt. Export V10 while editing V12 is valid. Incomplete draft export must not acquire a hidden “full scope complete” precondition from selection validation.
 
 The accepted model reply may contain A (edit to V12) and B (preview still unfinished). Finding A's receipt is insufficient to start the next model round. Reconcile the **entire accepted tool-call list**, restoring completed results/intents and handling remaining calls or their stop reason. Only after whole-batch completion can the next new request be assembled from current committed work. The former controller's `next_call`/pending-operation state was evidence for this responsibility, not proof that a new graph already provides it.
+
+This example has four different recovery boundaries:
+
+| Last known durable fact | What remains to decide or recover |
+|---|---|
+| Request saved, complete reply absent | Check whether an attempt was sent, its consumed allowance, cancellation, and the configured bounded replay policy. Missing reply is not proof of an unsent request. |
+| Reply accepted with A and B | Resume responsibility for those same two calls. Generating a new reply would risk replacing accepted intent or duplicating A. |
+| A committed; B unfinished | Reuse A's original receipt, preserve any necessary current-batch context effect, and reconcile B. A later V13 head stays V13. An unknown local effect of B cannot be treated as permission for a blind rerun. |
+| Whole batch settled; graph continuation absent | Restore the supported deterministic continuation effects and then assemble a new request. That later request may see the current committed version. |
+
+The table explains the already-selected ownership problem; exact records and transitions remain the third open V1 contract. A crash gap is a boundary to specify, not evidence that every historical run lost work.
 
 <a id="operation-attempts-and-concurrency"></a>
 ## Operation attempts, concurrency, and useful partial files
@@ -324,6 +402,8 @@ ATT-30 proposed “best-effort salvage” of 13 closed blocks before a truncated
 
 The historical offline example was `{"blocks":[{"id":"b1","text":"A"},{"id":"b2","text":"B","page":`. Pydantic `allow_partial=True` returned b2 without its unfinished field, despite b2 never closing; LangChain's partial parser can add closure characters. Neither output proves exact original completeness. Say “13 syntactically complete subobjects saved; remainder uncertain,” not “13 correct blocks” or “only rewrite block 14”; later ungenerated blocks may be missing too.
 
+In that example, `{"id":"b1","text":"A"}` is an original closed object. The b2 object has an unfinished `page` value and no closing brace. Returning `{"id":"b2","text":"B"}` would silently drop received but unfinished structure. Optional extraction may retain b1 as an exact addressed fragment, while the complete failed call remains inert. Even b1 still needs the normal domain and source checks before adoption; syntactic closure proves neither required metadata nor correct PDF transcription. No extraction feature is needed to reference a candidate whose original arguments were already complete.
+
 A historical record saved 8,419 characters of incomplete arguments during a streaming/service failure. It does not establish output-token truncation as the usual cause. Autonomous smaller saves/append/insert can also reduce giant-submission risk without a fixed page/block cadence. Final scope explicitly removes automatic malformed-block extraction from the V1 prerequisites; preserve the raw data and establish complete-candidate references first.
 
 <a id="stop-state-and-independent-export"></a>
@@ -341,12 +421,16 @@ Host/CLI/UI-callable specified-version export independent of model quota is reta
 
 ATT-29's all-exit deterministic finalizer guarantee was withdrawn: hard termination, shutdown, or cancellation may prevent any graph finalizer running. Cancel first stops new model/tool work; continuing a large package operation depends on the task policy. An automatically exported newest draft stays explicitly draft and must not replace the selected delivery. Actual files and ZIP members must match the selected version; a manifest hash alone is insufficient. Directory and ZIP publication are not one universal atomic replacement, and unrelated existing output must not be overwritten. “Every exit automatically packages” is not a V1 prerequisite.
 
+For example, if an export published its directory before interruption but did not publish its ZIP, re-entry first checks that directory's identity and bytes, preserves the matching useful output, and handles the remaining archive effect. It does not erase the directory or claim that both outputs already succeeded. The [publication sequence](../design/EXECUTION_AND_DELIVERY.md#export-publication-sequence) explains the build/member-check/publication boundaries; final path naming and replay rules remain Q3 choices.
+
 <a id="progress-and-ipc-limits"></a>
 ## Structured progress and IPC limits
 
 **Sources:** EVT-1041, ATT-28; EVT-1068; EVT-1069, ATT-29; EVT-1083, EVT-1107; EVT-1108, ATT-30.
 
 A structured progress stream was proposed for the eventual Electron/React desktop: capacity/preparation, request/attempt/backoff, streamed-character progress, OCR pages, candidate preservation, and committed versions. Historical asynchronous stdio JSON was a chosen direction with message framing still open and no desktop integration yet. Durable state is authoritative; events are notifications after commit. Reconnection starts from a snapshot with sequence/revision; high-frequency updates can coalesce. An OCR page completion means evidence extraction, not page conversion or source acceptance. Version diffs read explicit immutable versions rather than reconstructing body from progress events.
+
+IPC means communication between the desktop process and Python backend. In the stdio proposal, standard input/output pipes carry framed JSON messages; diagnostics need a distinct channel so a library's printed text cannot corrupt a protocol message. A pipe has finite buffering: if the receiver stops reading, an unbounded producer eventually blocks or needs another declared limit. Coalescing “OCR reached page 5, then page 6” into the latest progress notification can be safe because committed results remain queryable. Dropping the only durable success receipt is different. These distinctions explain the queue warning without prescribing a transport implementation.
 
 ATT-29 proposed first-line `os.dup2` OS-level stdout redirection plus a ring buffer/watermark to preserve control replies and never block even if UI reading stops. That was narrowed: bounded memory, arbitrary non-droppable controls, producers that never wait, and unlimited new requests cannot all hold during indefinite receiver failure. Keep ordinary progress off the conversion core's critical path, persist important results for request-ID lookup, coalesce notifications, recover via snapshots, and reject/limit new work at declared queue/storage limits. Both protocol and diagnostics pipes need draining. Separate diagnostics from protocol, but mandatory first-line `dup2` is withdrawn; exact Windows/MCP/packaging wiring requires the selected implementation context, not a universal recipe.
 

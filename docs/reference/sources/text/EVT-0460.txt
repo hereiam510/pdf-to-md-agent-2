@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "這份回應抓出了幾個極具價值的產品設計盲點——特別是指出「程式能精確解碼的 Tuple，不代表模型更容易理解」**、**「`mg` 變 `μg` 或多一個『不』…": C:\Users\laichungling\.codex/attachments/b9ec35ca-9f50-4a63-8f3f-9b7d596a7f43/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

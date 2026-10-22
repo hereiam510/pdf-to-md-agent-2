@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "將 `MCP SDK 2.3.0` 的 `Extension.intercept_tool_call` 找出來作為驗證前候選保存入口、指出 `core.py:…": C:\Users\laichungling\.codex/attachments/c6f7888b-f60d-491e-917a-8a93a3635f3e/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following, or the whole project, or previously mentioned/not mentioned, if you find anything worth mentioning
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

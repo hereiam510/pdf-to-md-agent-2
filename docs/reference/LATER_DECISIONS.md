@@ -53,3 +53,20 @@ The user selected the planned subagent review of the rebuild discussion and clar
 > but also check the new repo created, writing new docs, etc.
 
 Subagents therefore read assigned full source ranges, author detailed reference documents and point ledgers, and cross-review the actual new active/reference files. Structural/link checks supplement that semantic review. Neither source counts nor hash verification alone certify every semantic interpretation.
+
+<a id="live-06"></a>
+## LIVE-06: Make the new repository self-contained
+
+> i want the new repo to be self-contained
+> it seems that there are many info needs to refer to the conversation export
+
+The initial repository's external source-lookup dependency was insufficient. The new repository must include the development knowledge and the relevant local provenance so that moving/cloning it does not require the old checkout, the supplied export folder or private review scratch. The original repository and original export stay unchanged. Optional historical sources do not become active development instructions.
+
+<a id="live-07"></a>
+## LIVE-07: Explain the technical details, not only preserve sources
+
+> arent there are numerous technical details missing?
+> the new repo be not able to refer to the exported, original conversation i given
+> so i need the docs record or explain everything related to the development in detail
+
+Source counts, point mappings and a local transcript are not sufficient. Maintained development documents must explain the discussed mechanisms, data/state ownership, interface semantics, sequences, failure handling, rationale, concrete examples and unresolved choices in detail. Original messages are optional audit material. The work elaborates and preserves the existing discussion; it does not invent final schemas or reopen unrelated architecture decisions. Settled requirements, recommendations, historical alternatives and the three genuinely open contracts remain distinguishable.

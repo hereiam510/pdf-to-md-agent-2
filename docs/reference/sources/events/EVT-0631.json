@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad8ffa76b908191a13e8eead48c76a7",
+    "content": [
+      {
+        "type": "Text",
+        "text": "我回查了提案引用的八輪實測。Token 數字正確，但前七輪原始回應的 `assistant.content` 都是 `null`。因此，保留 assistant 文字可以輔助恢復，卻不能假定它已記錄所有重要判斷；這項證據會影響工作筆記與恢復視圖的設計。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1990,
+  "timestamp_original": "2026-10-21T18:08:39.881Z",
+  "timestamp_display": "2026-10-22T02:08:39.881+08:00",
+  "turn_id": "01a15fa1-646f-7522-8458-fb8c1dd38259",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T02:08:38.930+08:00",
+  "completed_at": "2026-10-22T02:08:39.881+08:00",
+  "event_id": "EVT-0631",
+  "evidence_path": "evidence/events/EVT-0631.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

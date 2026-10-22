@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad7293eb2088191b1c605c6a6d7f722",
+    "content": [
+      {
+        "type": "Text",
+        "text": "找到兩個很貼近的參考：Deep Agents 明確採用「先把可取回內容移出 context，空間仍不足才摘要」；JetBrains 的研究則比較了舊工具結果遮蔽與模型摘要。不過，研究主要測試程式修復，不能直接把其節省幅度套用到我們的 PDF 轉換。"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 704,
+  "timestamp_original": "2026-10-20T08:41:41.944Z",
+  "timestamp_display": "2026-10-20T16:41:41.944+08:00",
+  "turn_id": "01a15877-4ef9-73c0-aeba-cd98f5ede19e",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T16:41:41.682+08:00",
+  "completed_at": "2026-10-20T16:41:41.944+08:00",
+  "event_id": "EVT-0201",
+  "evidence_path": "evidence/events/EVT-0201.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

@@ -1,0 +1,214 @@
+這份審閱意見非常精準地鎖定了決定系統成敗的六個工程邊界——特別是指出**撤回大型證據後歷史仍可能因長篇草稿與工具往返而超量**、**`save_draft` 失敗時保存的是 `blocks` 而非 `block_ops**`、**多分支下候選稿（Candidate）的部分採用關係**、**匯出舊版本（如在 V12 匯出 V10）的合法性**，以及**終止狀態的三維度正交拆解（執行、內容聲明、交付一致性）**。這些修正直接對應了過往實測（如 40 頁測試中第 27 頁 `本文件` 在被拒候選稿中正確、重寫後卻變成 `本文作` 的慘痛教訓）的核心痛點。
+
+若以「徹底重構、讓 App 發揮最佳轉換功能」為唯一標準，這份審閱雖然抓出了問題，但在**為什麼撤回 OCR 後歷史仍會超量**、**LangChain 工具驗證攔截時序**、**Checkpoint 與 SQLite 的反向腦裂**，以及**預算耗盡時的零 Token 交付機制**上，仍有六個深層實作陷阱需要正面交鋒與補齊。
+
+---
+
+## 一、 對這六點審閱的直接交鋒與深層補強（Confrontations & Refinements）
+
+### 1. 針對第 1 點（Compaction 範圍與路徑）：抓出「歷史超量」的真正元兇，並嚴防「切片失憶」
+
+審閱意見敏銳指出：「歷史可能主要由長篇使用者要求、agent 草稿和大量工具往返組成；即使撤回 OCR，剩餘內容也可能超量。」並建議只載入可容納的歷史範圍進行整理。
+
+* **交鋒一（為什麼「Agent 草稿」還留在對話歷史裡佔空間？）：**
+前幾輪我們用 `Delivery Ticket` 將龐大的 `ToolMessage`（OCR／Layout／圖片）外置化，卻忽略了對稱的另一半：**當 Agent 呼叫 `save_draft` 或 `edit_document` 提交數千字的 Markdown 區塊時，這些巨量文字是寫在 `AIMessage.tool_calls` 的參數裡！** 若某次初稿或修改因頁碼映射錯誤被退回兩三次，光這幾次 `AIMessage.tool_calls` 就會在歷史中累積數萬 tokens。
+
+
+* **最佳設計：** 一旦某次 `save_draft` 或 `edit_document` 的原始參數已由系統完整落盤為不可變的 `candidate_id`（或已提交為 `version_id`），Context 組裝器在後續回合組裝歷史時，**應同步將舊回合 `AIMessage.tool_calls` 中已落盤的龐大 `blocks` / `block_ops` 載荷投影為輕量引用摘要**（同時保留完整的 `tool_call_id` 與操作意圖說明，且當前活躍版本與待處理候選稿仍可透過工作集或指標直接讀取）。這能從根源消滅 90% 的「Agent 草稿歷史膨脹」，大幅降低被迫做局部歷史切片的機率。
+
+
+* **交鋒二（「僅載入可容納之歷史範圍」必須禁止切尾，強制採用「帶當前錨點的滾動前綴整理」）：**
+審閱正確警告了 LangMem 超量時「只取末端部分（Tail-slicing）」的風險。試想：若未整理的歷史是 $M_1 \dots M_{100}$，若只取末端 $M_{50} \dots M_{100}$ 去摘要，前面的 $M_1 \dots M_{49}$ 若留在歷史中則容量根本沒降，若丟棄則造成未整理失憶；反之，若只取最舊的前段 $M_1 \dots M_{50}$ 送給摘要模型，摘要模型因為看不見 $M_{51} \dots M_{100}$ 的最新進展，根本不知道第 10 頁的表頭在第 50 頁是否已經結束！
+* **最佳設計（Prefix-First Rolling Compaction with Current-State Anchor）：**
+當撤回已釋放證據與投影舊草稿參數後，若待整理歷史 $M_1 \dots M_n$ 仍超出單次整理容量，系統永遠只切取最舊的連續前綴區間 $[M_1 \dots M_k]$（強制對齊完整的 `AIMessage.tool_calls` 與 `ToolMessage` 配對邊界）送交整理；但同時在該次整理請求中，**以唯讀參考區段注入「當前最新已提交版本摘要與活躍筆記（Current Head & Notes Anchor）」**。
+如此一來：
+1. 整理模型在濃縮 $[M_1 \dots M_k]$ 時，能清楚知道哪些早期資訊對當前進度仍有意義；
+2. 整理驗證通過後，新產生的 `Handoff Summary` **只精確取代 $[M_1 \dots M_k]$**，而尚未整理的 $[M_{k+1} \dots M_n]$ 原封不動保留在活躍歷史尾端：
+
+$$\text{New Active History} = [\text{Handoff}(M_1 \dots M_k)] + [M_{k+1} \dots M_n]$$
+
+
+3. 若總容量仍高，下一輪再對剩餘前綴執行第二次滾動整理，保證歷史時間線 100% 連續、無空洞、無盲目丟棄。
+
+
+
+
+* **交鋒三（用獨立 Graph 節點消除「無 tool calls $\rightarrow$ delivery check」的路由歧義）：**
+審閱指出圖裡缺少 Compaction 回覆後的明確路徑。在小型 LangGraph 中，**絕不能讓 Compaction 與正常轉換共用同一個 `agent_node` 的出口條件**。應將圖結構明確定為獨立的 **`prepare_compaction` $\rightarrow$ `compaction_model_call` $\rightarrow$ `verify_and_apply_compaction` $\rightarrow$ `agent_node**` 閉環：
+* `verify_and_apply_compaction` 以純程式碼檢查四項硬指標：（1）回覆非空白且未被拒絕；（2）結構符合交接 Schema；（3）明確宣告覆蓋的 `compacted_message_id_range` 與請求一致；（4）基準 `context_revision` 未發生衝突且套用後總容量低於目標水位。檢查失敗則保留原 Context 並退回安全減壓或重試，絕不會誤入 `delivery_check`。
+
+
+
+---
+
+### 2. 針對第 2 點（`block_ops` vs. 純內容重用）：小心 LangChain 的 Pydantic 驗證攔截陷阱！
+
+審閱指出了本版最關鍵的人體工學缺陷：`save_draft` 失敗時保存的是 `blocks` 而非 `block_ops`，且 Agent 不應為了取回一段正確正文而被迫重用包含過時刪除操作的整組 `block_ops`；同時強調「前置保存應先完整保存原參數，再建立索引；索引失敗不能導致原候選保存失敗」。
+
+* **致命實作陷阱（Pydantic Schema 會在進入工具前直接攔截失敗輸入）：**
+在 LangChain / LangGraph 的預設機制中，如果你將 `save_draft` 與 `edit_document` 定義為帶有嚴格 Pydantic Schema 的 `@tool`，當模型少傳了一個必填欄位、或某個區塊型別不符時，**LangChain 的工具調度層會在呼叫你的 Python 函數之前就直接拋出 `ValidationError`！** 你的工具函數連一行程式碼都不會執行到，所謂的「前置保存原參數」根本無從發生！
+
+
+* **最佳設計（外層 Raw Interceptor ＋ 雙層索引）：**
+1. **攔截點必須在 Schema 驗證之前：** 候選稿的「原件落盤（Raw Candidate Capture）」必須放在 **`wrap_tool_call` 最外層（對原始 `tool_call["args"]` dict 甚至底層原生 JSON candidate 直接計算 SHA-256 並寫入 Blob 與 SQLite `candidates` 表）**，然後才執行結構與業務驗證。即使結構局部損壞或索引器解析失敗，`candidate_id` 依然 100% 成功產生並附在錯誤訊息中回傳給 Agent。
+
+
+2. **在三個固定工具表面（`save_draft`、`edit_document`、`select_delivery`）下統一「內容區塊引用」與「操作重用」：**
+不增加第 4 個工具，而是直接在 `save_draft` 與 `edit_document` 的區塊輸入契約中支援兩種明確語法：
+* **純內容引用（`content_from_candidate`）：** 可在任何需要傳入 `block` 或 `blocks` 的地方，使用 `{"from_candidate": "cand_04", "select": "/blocks/2", "override_meta": {...}}` 或批次切片 `{"from_candidate": "cand_04", "block_indices": [0, 1, 2]}`。這讓 `save_draft` 初稿失敗時保存的 `blocks`，能直接被下一次 `save_draft` 或 `edit_document` 零重寫取回！
+* **整組操作重用（`replay_ops_from_candidate`）：** 僅在 `edit_document` 中，當原編輯意圖完全成立、只需修正 `base_version` 或補齊 `page_map` 時，才傳入 `replay_ops_from_candidate="cand_05"`。
+
+
+
+
+
+
+
+---
+
+### 3. 針對第 3 點（分支與部分採用狀態）：用「版本血緣樹（Version Lineage）」取代獨立的處置狀態機
+
+審閱精準指出：單靠 `WHERE task_id = ? AND lifecycle_status = 'active_unresolved'` 無法處理同一任務的多個分支，也無法表達「3 個區塊只採用 2 個」的部分採用。
+
+* **交鋒與收斂（別讓「未採用區塊」變成阻止完工的官僚枷鎖）：**
+將「不可變候選原件」與「處置關係」拆開是完全正確的；但我們必須追問一步：如果某份候選稿有 3 個區塊，Agent 採用了前 2 個，第 3 個其實是 Agent 檢查後決定捨棄的「重複頁眉／裝飾文字」，系統該怎麼辦？
+如果系統要求每個候選區塊都必須被顯式標記，否則就視為「未解決工作」，Agent 就會被迫為每一個放棄的垃圾片段寫處置報告。
+
+
+* **最佳設計（綁定於版本提交交易的血緣採用帳本）：**
+1. **候選原件表（`candidates`）：** 只存不可變原件與可辨識的子項目索引（`candidate_id`, `tool_name`, `raw_blob_sha256`, `indexed_items_json`），**不設全局的 `lifecycle_status` 欄位**。
+2. **版本採用關聯表（`version_candidate_links`）：** 在提交新版本 `version_id`（屬於某個 `branch_id`）的**同一個 SQLite 交易**內，自動記錄本次操作實際引用了哪些 `(candidate_id, item_pointer)`，以及 Agent 選填的 `explicitly_discarded_pointers`。
+3. **按分支動態推導狀態：** 由於每個分支的 `head_version_id` 都有明確的 `parent_version_id` 血緣鏈，查詢某個分支下某份 `candidate_id` 的採用程度時，只需沿該分支的版本祖先鏈查詢 `version_candidate_links`，即可精確算出：**哪些區塊已被該分支採用（Adopted in V10）、哪些尚未被該分支使用（Unadopted / Available for Reuse）、哪些已被顯式放棄（Discarded）**。分支 A 與分支 B 互不干擾，且如審閱第 5 點所言，未採用的候選內容僅作為可重用資產提示，絕不作為阻擋交付的硬門檻。
+
+
+
+
+
+---
+
+### 4. 針對第 4 點（操作專屬恢復規則與 `attempt_dir`）：防範「Checkpoint 落後於 SQLite」的反向腦裂
+
+審閱將 `save/edit`、`select_delivery`、`export` 與 `render/preview` 的恢復核對條件拆開（例如允許在工作 head 為 V12 時合法匯出 V10），並指出：「Graph checkpoint 中若也保留工作版本引用，應把它當作當時的執行上下文；恢復時不能直接用它覆寫 SQLite 中已提交的較新分支狀態。」
+
+* **正面交鋒（只防「Checkpoint 覆寫 SQLite」還不夠，還必須防「Agent 讀到落後的 Checkpoint 版本」）：**
+假設崩潰發生在：`edit_document` 已經在 SQLite 提交了新版本 `V12` 並更新了分支 head，但 LangGraph Checkpoint 還沒寫入該輪結果，仍停留在 `state.working_version = V11`。
+重啟時，我們遵守審閱規則，不拿 Checkpoint 的 `V11` 去覆寫 SQLite 的 `V12`。但接下來 LangGraph 恢復執行時，如果圖的 State 裡還存著 `working_version = V11`，且沒有把 SQLite 已完成的 `V12` 收據對帳同步回框架訊息流，Agent 下一輪看到的上下文就會以為現在還是 `V11`，進而發出 `edit_document(base_version="V11")`，當場撞上版本衝突！
+
+
+* **最佳設計（單一權威指標 ＋ 四類操作獨立對帳表）：**
+1. **LangGraph State 只存 `branch_id`，不存可變的 `head_version_id`：** 分支的最新工作版本（`head_version_id`）與選定交付版本（`selected_delivery_version_id`）永遠以 SQLite 的 `branches` 表為唯一事實來源。
+2. **重啟時的雙向對帳：** 當工具重播或回合恢復時，直接根據 `tool_call_id` / `operation_id` 查核下表的操作專屬規則；若 `V12` 已在 SQLite 提交，直接向 LangGraph 補入 `V12` 的成功收據，讓模型視圖瞬間與 SQLite 的 `V12` 對齊：
+
+
+
+
+
+| 操作類別 | 合法前置條件（正常執行） | 中斷恢復時的對帳與補提交判準（Reconciliation Rule） |
+| --- | --- | --- |
+| **`save_draft` / `edit_document**` | `expected_base_version` 必須等於目標 `branch_id` 當前的 `head_version_id`（或明確指定從舊版本開新分支）。 | 查核該 `operation_id` 是否已產生 `produced_version_id` 且更新了目標分支 head。若已提交，直接回傳原收據；若未提交且目標分支 head 未變，可安全重用已落盤的 `candidate_id` 完成驗證與提交。 |
+| **`select_delivery`** | 指定的 `target_version_id` 必須存在、結構完整，且其頁面映射涵蓋當前任務要求的有效範圍（無未宣告之必要缺口）。 | **不檢查該版本是否等於當前工作 `head_version_id**`（允許在 V12 選擇 V10 作為交付版）。僅核對 `branches.selected_delivery_version_id` 是否已更新為該版本並記錄收據。 |
+| **`export`** | 指定的 `version_id`（預設取已選定的交付版，或顯式指定的草稿版）存在且外部資產完整。 | 核對目標匯出目錄與 ZIP 包的 `manifest.json` 雜湊是否已與該 `version_id` 完全一致；若已一致則直接回傳完成收據，若未完成則在臨時目錄重建後原子替換，不影響任何草稿或分支指標。 |
+| **`render` / `view_preview**` | 指定明確的 `version_id`（或 `candidate_id`）與目標頁面／區塊範圍。 | **嚴禁先刪除未完成的 `attempt_dir`。** 恢復時先掃描既有 `attempt_dir` 中已產出且雜湊完整的圖片／診斷檔並直接重用；僅針對未完成部分建立新的獨立 `attempt_no` 目錄執行渲染，保留舊 attempt 供診斷追溯。 |
+
+---
+
+### 5. 針對第 5 點（三維終止分類與預算耗盡）：匯出（Export）必須具備「零模型額度」的宿主直通能力
+
+審閱將終止狀態拆解為**執行狀態（Execution）**、內容聲明（Content Claim）**與**交付狀態（Delivery）三個正交維度，並明確規定：「預算耗盡後，Resume 不會產生新額度……可以匯出已有成果，或在使用者另行授權後建立新的續工作業。」
+
+* **關鍵工程缺口（若 `export` 只能由 LLM 呼叫，預算耗盡時要如何匯出已有成果？）：**
+試想：當任務在第 40 回合因為達到 `turn_limit`、`active_seconds` 上限、使用者按下 Cancel，或遭遇未對帳的本地腳本錯誤而停止時，**剩餘的模型呼叫額度是 0**。此時如果Agent 在第 38 回合已經成功存了 `V10` 草稿，但還沒呼叫 `export`，若匯出動作依賴 LangGraph 繼續跑模型節點，這份草稿就永遠無法打包成交付物！
+
+
+* **最佳設計（宿主直通匯出服務 Host-Callable Deterministic Export）：**
+1. **將 `export_package(version_id, destination, delivery_label)` 設計為文件服務的純確定性底層 API**，同時暴露給：（a）Graph 內的交付節點、（b）CLI 指令（如 `--export-version V10`）、以及（c）Electron UI 的「匯出指定版本／當前草稿」按鈕。
+2. **圖終止收尾節點（Deterministic Finalizer Node）：** 無論 LangGraph 的執行迴圈是因為正常完成、使用者取消、預算耗盡還是未對帳錯誤而離開 `agent_node`，都會經過一個**不呼叫任何 LLM、零 Token 消耗的純程式收尾節點 `finalize_run_node**`：
+* 若已有 `selected_delivery_version_id` 且尚未匯出，自動將其打包匯出，標記 `delivery_status = "exported_verified_package"`（代表包與該選定版本 100% 一致）。
+* 若尚未完成全範圍（例如中途取消或預算耗盡），但當前分支已有已提交的 `head_version_id`，系統自動（或依任務設定）將該最新可用版本匯出至草稿交付區，並在三維狀態單中誠實標記：
+* `execution_status`: `"stopped_budget_exhausted"` | `"cancelled_by_user"` | `"stopped_unreconciled_local_effect"` | `"completed_normal"`
+* `content_status`: `"partial_draft_with_gaps"` | `"scope_claimed_complete"`（附帶已核對範圍與未解問題依據）
+* `delivery_status`: `"exported_package_verified_against_version"`（明確定義 `verified` 僅指匯出包之 MD/JSON/HTML/Assets/ZIP 與指定 `version_id` 完全一致，絕不冒充來源語義已獲批准）。
+
+
+
+
+
+
+
+
+
+
+
+---
+
+### 6. 針對第 6 點（非阻塞 stdio 進度與版本預覽）：防範 C 函式庫污染 `stdout` 與高頻事件反壓
+
+審閱指出 `stdio` 管道可能因 UI 未持續讀取而阻塞 Python 模型／工具執行，並要求「重要狀態提交後才發事件、UI 重連先取快照、高頻進度可合併、診斷與協議分開」。
+
+* **兩項必須寫死在底層的系統工程防護：**
+1. **啟動時立即在 OS 層隔離 `fd 1 (stdout)`：** 在 Python 程序啟動的第一行，必須透過 `os.dup2` 將原始的標準輸出（`fd 1`）複製到專用協議管道，並將全局的 `sys.stdout` 與 C 層級的 `fd 1` 重導向至 `stderr`（或診斷日誌檔）。否則只要 PyMuPDF、Pillow 或某個第三方套件在底層 C 程式碼印出一行 Warning 到 `stdout`，就會當場撞毀 Electron 端的 JSON 訊息解析器！
+
+
+2. **基於 Ring-Buffer 與水位標記（Watermark）的零阻塞發送器：**
+* Python 端的協議發送器運行於獨立的非同步 Task，維護一個有界記憶體佇列（Bounded Queue）。
+* **控制與快照訊息（不可丟棄）：** 任務啟動、終止分類結果、使用者請求回應。
+* **狀態水位與進度事件（可合併 Coalescable）：** 每次 SQLite 交易提交後，產生遞增的 `state_seq`。若檢測到 `stdout` 寫入緩衝區高於水位（代表 Electron UI 忙碌或暫時阻塞），發送器**立即在記憶體中合併所有未發出的中間進度**（如逐字串流 delta、逐頁 OCR 百分比），只保留最新一筆 `{"type": "state_watermark", "state_seq": 42, "branch_head_ver": "V12", "latest_candidate": "cand_08", "dropped_intermediate_events": 15}`。
+* **嚴格語義分界：** 進度事件明確區分 `evidence_extracted`（如「第 12 頁 OCR 識別完成，產出 `ev_012`」）與 `version_committed`（如「版本 V12 已提交，涵蓋第 12 頁草稿」）。UI 的版本差異預覽（Diff Preview）永遠透過傳入兩個明確的 `version_id`（如 `diff(V11, V12)`）直接讀取不可變區塊檔案來渲染，絕不依賴進度事件拼湊內文。
+
+
+
+
+
+---
+
+## 二、 整體重構藍圖：小型 LangGraph 拓撲與四大可觀察驗收閉環
+
+綜合以上所有修正，這個 App 最乾淨、最能發揮極致轉換功能的完整重構架構如下：
+
+### 1. 修正後的 LangGraph 明確路徑拓撲（消除 Compaction 與 Delivery 路由混淆）
+
+```mermaid
+flowchart TD
+    Start(["啟動或 Resume\n(載入 SQLite 分支狀態 + 對帳未結收據)"]) --> Gate{"預算 / 取消 / 容量預檢\n(Pre-Model Gate)"}
+
+    Gate -- "已取消 / 預算耗盡 / 本地效果未對帳" --> Finalizer["確定性收尾與匯出節點\n(finalize_run_node：零 Token 打包可用版本)"]
+    Gate -- "容量跨過整理門檻" --> PrepCompact["準備整理請求\n(計算可容納之最舊連續訊息前綴 + 注入當前版本錨點)"]
+    Gate -- "容量安全" --> AgentModel["主模型推理節點\n(組裝實際輸入檢視 + Nexus 雙傳輸/有限重試)"]
+
+    PrepCompact --> CompactModel["整理模型呼叫\n(產生結構化交接摘要)"]
+    CompactModel --> VerifyCompact{"驗證交接結果\n(檢查覆蓋 IDs、格式、容量、基準 revision)"}
+    VerifyCompact -- "通過：僅替換已處理前綴\n保留未整理尾端與工具配對" --> AgentModel
+    VerifyCompact -- "失敗：保留原 Context\n記錄診斷並降級釋放或中止" --> Gate
+
+    AgentModel -- "含 tool_calls" --> ToolExec["工具執行與收據層\n(外層先存 Raw Candidate -> 執行 PDF/OCR/Edit -> 短交易提交)"]
+    ToolExec --> Gate
+
+    AgentModel -- "無 tool_calls (Agent 宣告完成或停頓)" --> DeliveryCheck{"交付範圍檢查\n(是否已選定有效 delivery version\n且無未宣告之必要範圍缺口？)"}
+    DeliveryCheck -- "尚未選定或仍有必要缺口\n(且預算仍有餘額)" --> AgentModel
+    DeliveryCheck -- "已滿足交付條件" --> Finalizer
+    Finalizer --> End(["輸出三維終止狀態單\n(Execution + Content + Delivery)"])
+
+```
+
+### 2. 第一版重構的四個核心驗收指標（對應審閱文末的四個可觀察結果）
+
+為了確保重構聚焦於這四個可觀察結果，建議將第一版（V1 Baseline）的實作直接鎖定在以下四個具體契約驗證上：
+
+1. **保存被拒後的精確局部重用（Candidate Content Slice Reuse）：**
+* **實測標準：** 模擬 `save_draft`（含 `blocks`）與 `edit_document`（含 `block_ops`）因單一頁碼映射缺失或某個刪除 ID 無效而被拒。驗證外層攔截器在 Schema 驗證失敗時仍成功保存原始參數與 `candidate_id`；下一輪 Agent 透過 `content_from_candidate` 引用其中正確的區塊正文、僅修正頁碼或移除錯誤操作即可成功提交新版本，無須重新生成內文。
+
+
+2. **多分支與中斷恢復不互蓋（Branch-Isolated Lineage & Non-Destructive Resume）：**
+* **實測標準：** 在分支 A 採用候選稿的部分區塊提交至 `V12`，驗證分支 B 查詢同一候選稿時仍顯示未採用，且允許在工作 head 為 `V12` 時合法執行 `select_delivery(V10)` 與 `export(V10)`。模擬 `render/preview` 中途斷線，驗證重啟後保留原 `attempt_dir` 已完成的圖片並建立新 attempt 續跑。
+
+
+3. **具精確覆蓋範圍的滾動 Compaction（Range-Tracked Rolling Compaction）：**
+* **實測標準：** 構造一段「撤回 OCR 後仍超出整理視窗」的長對話歷史（包含前段已整理的舊摘要、中段待整理的完整工具配對，以及尾端未載入的近期對話）。驗證 Compaction 成功後**僅替換實際送入整理的訊息 ID 範圍**，未載入的尾端歷史與工具配對 100% 保留；同時驗證空白、格式錯誤或 `context_revision` 過時的交接摘要會被攔截丟棄，不會污染原有 Context 或誤觸 `DeliveryCheck`。
+
+
+4. **三維透明狀態與非阻塞進度（3D Status & Non-Blocking Watermark IPC）：**
+* **實測標準：** 驗證在「正常完成」、「使用者中途取消（已存草稿）」、「預算耗盡（剩餘額度為 0）」與「遠端結果未知觸發有限重播 vs. 本地腳本未對帳停機」四種情境下，系統皆能產出獨立準確的 `(execution_status, content_status, delivery_status)`，且即使將 UI 接收端 `stdout` 管道故意暫停讀取（模擬 UI 卡頓），後端模型推理、OCR 與草稿提交依然零阻塞完成。
+
+
+
+這套收斂方案是否已經把審閱中的六點要求與潛在的底層陷阱全部對齊？如果確認無誤，我們可以直接列出 **SQLite 最終核心表結構（含分支、版本、候選稿處置關聯與 Compaction 範圍紀錄）** 與 **`save_draft` / `edit_document` / `select_delivery` 三個工具的精確輸入／輸出 JSON Schema**。

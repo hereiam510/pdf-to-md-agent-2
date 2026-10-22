@@ -1,0 +1,204 @@
+將優先比較範圍收斂至 **Pi SDK** 與 **LangChain `create_agent**`（並以 Deep Agents 作為可重用機制對照），同時以你最後提出的「跨頁探勘 $\rightarrow$ 保存未完成表格 $\rightarrow$ 修正 metadata $\rightarrow$ 預覽同一草稿 revision $\rightarrow$ 整理 context $\rightarrow$ 繼續修改 ＋ 提交後中斷恢復」完整路徑作為驗收基準，是至今最務實、最貼近產品本質的推進方式。
+
+你這輪指出的四個工程漏洞——**硬性保留所有已讀未存頁會懲罰「先探勘 30 頁再重建」的策略**、**`context_manifest` 不能抹殺已落盤的 `draft_revision=4**`、**字元未變不等於語義強調（如上下標、粗體）未變**，以及**Deep Agents v0.7+ 的 `write_todos` 已改為選用且工作區通用檔案工具可作為合法草稿輔助**——全部切中要害。
+
+為了讓這條「七步完整工作路徑」在重構後達到最佳功能表現，以下先針對你新方案中仍潛藏的**四個實作瓶頸**進行正面交鋒與補強，最後將這條完整路徑轉化為具體的**系統行為規格與雙框架接口對照表**。
+
+---
+
+## 一、 四個深層交鋒：打通「完整工作路徑」的關鍵瓶頸
+
+### 1. 交鋒一：開放「通用檔案工具寫草稿」若缺乏橋接，會製造「雙倍 Output Token 消耗」陷阱
+
+你在第 1 點提出了一個很好的觀點：通用檔案工具（或 Python 腳本）可以用來「保存長篇草稿與工作筆記、整理抽取結果、準備稍後交給文件服務驗證的內容」，只要不把工作目錄的任意檔案直接當成已發布成果即可。
+
+* **潛在瓶頸（雙軌草稿的重複輸出稅）：**
+試想 Agent 寫了一個腳本或用檔案工具，在工作區組裝好一張橫跨 4 頁、包含 200 個儲存格的巨型表格（假設存為 `workspace/scratch/table_1_2.md` 或 `.json`）。當它準備把這張表格放進 App 的 `Working Draft` 時，如果文件服務的 `update_draft` 工具只接受在 Tool Call JSON 參數裡直接傳入 `blocks: [{"content": "..."}]` 字串，**模型就必須在輸出端把這幾千字的表格原封不動再吐（Echo）一次！** 這不僅浪費最昂貴的 Output Tokens（以參考基準計每百萬 $10），還極易觸發單次輸出長度截斷或 JSON 轉義錯誤。
+
+
+* **最佳功能設計（支援「檔案指標零拷貝匯入」的 Working Draft 契約）：**
+既然允許 Agent 利用工作區檔案與腳本準備材料，文件服務的 `update_draft` 契約就應該原生支援 **`content_from_file`（檔案路徑引用）**：
+
+
+* Agent 可以直接在工具參數中傳入本地生成的結構化區塊檔或 Markdown 片段路徑（例如 `{"op": "insert_after", "target_id": "blk_05", "source_path": "scratch/table_1_2.json", "expected_sha256": "..."}`）。
+
+
+* 文件服務在底層短交易內直接讀取該檔案、執行 Schema 與安全性驗證，並原子寫入 `Working Draft` 產生新的 `draft_revision`。這讓「工作區自由處理」與「受控版本服務」真正無縫接軌，實現**零重複生成**。
+
+
+
+---
+
+### 2. 交鋒二：要真正支援「先探勘 30 頁、再分段重建」，光靠放寬保留規則還不夠——需要「探勘模式（Survey View）」與「焦點衰減（Focus Decay）」
+
+你在第 3 點一針見血地指出：若 Agent 先探勘 30 頁來掌握章節結構、表格延續與圖片位置，硬性保留所有「已讀未完成頁」的完整證據會瞬間塞爆 Context。
+
+* **進階問題：** 就算我們允許事後釋放，當 Agent 在第 1 步想要「先探勘 30 頁」時，如果它對這 30 頁呼叫一般的 `inspect`，哪怕是去重後的 `model_layout`，30 頁的正文與座標加起來依然高達數十萬字元！更糟的是，探勘結束進入第 2 步「開始重建第 1～3 頁」時，Context 模組該依據什麼訊號，把第 4～30 頁從活躍輸入中退下，同時又不讓 Agent 忘記第 14 頁有一張跨頁大表？
+* **最佳功能設計（雙層探勘入口 ＋ 探勘發現自動轉化為範圍索引用途）：**
+1. **原生提供多頁輕量探勘視圖（`inspect_pdf(pages="1-30", mode="survey")`）：**
+當 Agent 進行大範圍探勘時，工具不傾倒全頁內文與全部 spans，而是回傳每頁僅約 100～200 字元的「頁面骨架摘要（Page Skeleton）」：
+* 頁面尺寸、是否有文字層、透明字元比例（如 `alpha=0: 100%`）；
+
+
+* 頁面頂部／底部邊緣的候選印刷頁碼與頁眉／頁腳文字；
+
+
+* 字級顯著較大的候選標題行（Headings）與疑似表格／多欄區塊的座標範圍；
+* 內嵌原圖（Native Images）與大型向量圖的數量及尺寸。
+這樣 Agent 一次掃描 30 頁只需不到 5,000 tokens，就能建立全書地圖！
+
+
+
+
+2. **從「探勘」進入「局部重建」時的自動降級（Scout-to-Focus Transition）：**
+當 Agent 讀完多頁詳細證據（例如讀了第 10～15 頁），接著呼叫 `update_draft` 明確只寫入第 10～11 頁時，Context 模組在保留收據與檢索入口的前提下，**只將當前正在編輯頁（10–11）及緊鄰下一頁（12）的詳細證據留在活躍輸入**；第 13～15 頁若無顯式釘選或未解依賴登記，自動退回為「已讀索引＋骨架摘要（隨時可零運算成本重新展開）」。
+
+
+
+---
+
+### 3. 交鋒三：「不猜測視覺事實」的 `model_layout` 應該怎麼設計？——只報告客觀物理屬性，並提供「視覺核對提示訊號」
+
+你在第 2 點的批評非常準確：在 Nursing 案例（`bdc032cac806419b9612c40927dbcf99`）中，全頁 446 個 spans 都是 `GlyphLessFont`、`flags: 12`、`alpha: 0`，文字層屬性根本無法反映原頁上的粗體或斜體；如果工具自己把 flags 轉成 `"bold"` 或猜測 `"这是連續正文"`，反而會誤導模型。
+
+* **最佳功能設計（零推測原則：客觀物理事實 ＋ 確定性資訊缺口標示）：**
+工具**絕不輸出任何推測性的語義標籤**（不必猜是不是 OCR 層、也不必猜是不是正文），而是嚴格輸出兩類確定性資料：
+1. **100% 客觀的物理報告：**
+* 字型原名（如 `"GlyphLessFont"`）、字級數值、原始 `flags` 數值及其在 PDF 規範中的字面位元定義（例如 `flags: 12 -> bits: [serif, symbolic]`，明確聲明這只是字型表位元，不代表視覺渲染結果）、透明度 `alpha: 0`。
+
+
+* 若使用簡化合併視圖（如將同行同屬性片段合併），明確標示 `view_type: "simplified_coalesced_lines"`，並附上 `source_span_range: [12, 17]` 供隨時查閱原始獨立 `bbox`，絕不宣稱該視圖保留了內部精確結構。
+
+
+2. **確定性的「表示法能力邊界提示（Representation Limitation Notice）」：**
+* 程式不用猜「這是不是 OCR」，但程式可以 100% 確定地告訴模型：**「觀測事實：本頁 446/446 個文字片段之 `alpha` 均為 `0`（完全透明）且使用單一 `GlyphLessFont`、`flags=12`；結論：本頁文字層不包含任何可見的粗體、斜體或字型差異資訊。若需確認視覺強調格式或上下標，必須檢視頁面渲染像素。」**
+
+
+這完全基於確定性觀測，既不越權做語義判斷，又能精準防止模型盲信透明文字層而漏掉粗體（如歷史 13 頁測試 A/C 因漏標粗體而被退回的教訓）。
+
+
+
+
+
+
+
+---
+
+### 4. 交鋒四：破解「文件已提交 `draft_revision=4`，但 Context 更新前崩潰」的跨儲存對帳難題
+
+你在第 5 點舉出的崩潰情境（1. 文件服務保存 `draft_revision=4` 並產生收據；2. `context_manifest` 仍在 `revision=3`；3. 程序崩潰），是檢驗架構健壯度的終極考題。
+
+* **深層工程分析：**
+為什麼我們在重啟時，能安全地知道 `draft_revision=4` 是有效成果、而且不會在恢復對話時引發「模型不知道自己已經存了第 4 版，結果又重複呼叫一次 `update_draft`」的混亂？
+關鍵在於現有專案已經驗證過的一個核心概念：**將 `tool_call_id`（或 `operation_token`）寫入文件服務的收據中，作為四大儲存的唯一對帳鍵（Reconciliation Join Key）**！
+
+
+* **完整的四方對帳恢復流程（Deterministic 4-Store Reconciliation）：**
+當系統從崩潰或中斷中重啟時，依序讀取 **Session 紀錄**、**文件版本與操作收據**、**證據儲存** 與 **Context Manifest**，會遇到以下兩種精確分支：
+
+
+
+```mermaid
+sequenceDiagram
+    participant S as Session 紀錄 (模型/工具交換)
+    participant D as 文件服務收據 (Draft/Version)
+    participant C as Context Manifest (輸入快照)
+    participant R as Runtime 恢復協調器
+
+    Note over S,C: 崩潰後重啟：開始跨儲存對帳 (Reconciliation)
+    R->>S: 1. 讀取最後一筆 Assistant Tool Call (例如 call_id="tc_08")
+    R->>D: 2. 查詢最新文件狀態：發現 draft_revision=4 (receipt 記錄來源為 "tc_08")
+    R->>C: 3. 讀取最新 Context Manifest：發現仍停留在 draft_revision=3
+
+    alt 分支 A：Session 尚未記錄 tc_08 的 ToolResult (寫入完成後瞬間崩潰)
+        R->>S: 根據文件收據直接補齊 tc_08 的成功 ToolResult (不重複執行寫入！)
+        R->>C: 將 Context Manifest 的草稿指標推進至 draft_revision=4
+    else 分支 B：Session 已記錄 ToolResult，但在 Compaction 切換 Manifest 前崩潰
+        R->>C: 捨棄未完成的半截切換，保留舊歷史並將活躍草稿指標同步至 draft_revision=4
+    end
+
+```
+
+* **這個設計保證了三個不變量：**
+1. **成果絕不遺失：** 只要文件服務的短交易提交了 `draft_revision=4`，它就永遠有效；
+
+
+2. **絕不重複寫入：** 透過收據上的 `tool_call_id` 對帳，即使模型回合未走完就崩潰，恢復時也是直接從收據合成 `ToolResult` 回填給 Session，不會把增量插入再執行一次；
+
+
+3. **預覽與釘選差異不重貼：**
+* `view_preview` 強制綁定明確的 `target_ref`（例如 `draft_revision: 4` 或 `published_version: "v1"`），渲染器只讀取該修訂號的不可變快照，杜絕「邊改邊截圖」的撕裂畫面；
+* 釘選記錄除了標明 `target_track: "working_draft" | "published"` 外，還記錄 **`last_disclosed_revision`**——只有當目標區塊的修訂號大於 `last_disclosed_revision` 時，才在當次請求附上 `before/after` 差異，一旦送入模型即將水位推進，徹底消除每輪重貼歷史 diff 的膨脹問題！
+
+
+
+
+
+---
+
+## 二、 針對「七步完整工作路徑」的系統規格與雙框架公開接口對照
+
+現在，我們直接把你最後定義的七步完整工作路徑（外加面向級核對紀錄）作為標尺，檢視 App 各模組的精確互動，並對照 **Pi SDK (1.3.0)** 與 **LangChain `create_agent` (搭配選用 Middleware / Deep Agents 組件)** 在每一步需要做什麼：
+
+### 1. 七步完整路徑的 App 內部狀態流轉
+
+| 驗證步驟 | App 文件／證據／Context 服務的精確行為 | 保護的產品價值 |
+| --- | --- | --- |
+| **Step 1：跨頁探勘**<br>
+
+<br>（例如先掃描第 10–25 頁） | Agent 呼叫 `inspect_pdf(pages="10-25", mode="survey")` 或逐頁讀取。完整原始資料落盤至 `Evidence Store`；回傳輕量骨架、物理字型/透明度事實與檢索入口。
+
+ | 支援「先全局探勘、後局部組織」，不因未落稿頁過多而塞爆 Context。 |
+| **Step 2：保存未完成表格**<br>
+
+<br>（建立跨頁表格初稿） | Agent 呼叫 `update_draft(expected_draft_rev=0, ops=[...], working_notes=...)`。文件服務建立 `draft_revision=1`（允許第 12–25 頁仍標為 `unprocessed` 或頁碼待確認），並將跨頁表頭釘選於 `track="working_draft", rev=1`。 | 不完整工作可立即獲得受版本保護的持久身分；格式錯誤的嘗試獨立保存錯誤收據，不污染 `draft_revision=1`。 |
+| **Step 3：修正 Metadata 與表頭** | Agent 補齊印刷頁碼或微調表頭（提交 `expected_draft_rev=1`），文件服務原子產生 `draft_revision=2`。因表頭修訂號從 `1 -> 2` 大於 `last_disclosed_revision(1)`，下輪自動揭露一次變更差異。 | 局部修正無須重傳整份表格；差異僅揭露一次，不造成後續每輪膨脹。 |
+| **Step 4：預覽固定草稿 Revision** | Agent 呼叫 `view_preview(target={track: "working_draft", draft_revision: 2}, scope={block_ids: ["tbl_01"]})`。Electron/Chromium 渲染器鎖定讀取 `draft_revision=2` 快照並回傳真實 PNG 像素，同時寫入一筆針對 `draft_rev=2` 的 `rendered_layout` 核對紀錄。
+
+ | 預覽與內容版本 100% 鎖定對齊；草稿階段即可進行視覺排版核對，不必等正式發布。 |
+| **Step 5：整理 Context**<br>
+
+<br>（Compaction） | 預留餘量觸發整理前交接（Handshake）。組裝新 Context 時：載入有效要求、目前活躍的 `draft_revision=2` 相關區塊、釘選表頭、未解問題與已讀頁檢索入口；已完成的舊頁長文退回磁碟。提交新 `context_manifest`。 | 整理後 Agent 仍直接看見最新 `Working Draft` 的表格與未完依賴，無縫銜接下一頁。 |
+| **Step 6：整理後繼續修改並檢查核對沿用性** | Agent 續寫下一頁表格（產生 `draft_revision=3`）。App 檢查核對紀錄：若僅新增下方列且未動到上方段落文字，上方段落的 `char_and_value` 核對維持有效；若動到了上下標或跨頁表格結構，則將 `semantic_style` / `rendered_layout` 標為需重評。 | 避免盲目認為「字元沒變就不用重看」，同時避免無差別作廢所有歷史核對。 |
+| **Step 7：異常中斷與跨儲存對帳恢復** | 模擬 `draft_revision=3` 已寫入文件服務並產生收據（綁定 `tool_call_id`），但在 `context_manifest` 或 Session 更新前強制終止程序。重啟後對帳器根據收據補齊 `ToolResult` 並將 Context 同步至 `draft_revision=3`。
+
+ | 證明 `context_manifest` 落後時絕不丟失已提交的文件成果，且完美維持 API 的 Tool Call 配對契約。
+
+ |
+
+---
+
+### 2. Pi SDK vs. LangChain `create_agent` 在這條路徑上的公開接口映射
+
+當我們把上述七步路徑放到 **Pi SDK** 與 **LangChain `create_agent**` 上實作時，兩者的分工與改動成本如下：
+
+| 路徑關鍵環節 | Pi SDK (1.3.0, TypeScript) 實作方式 | LangChain `create_agent` (Python / TS) 實作方式 |
+| --- | --- | --- |
+| **A. 掛載 PDF 工具集與工作區輔助工具（Step 1–4）** | 直接註冊 App 的文件服務工具（`inspect`、`update_draft`、`view_preview`）；若開放工作區草稿檔，可選擇性啟用限制在 `task_workspace/scratch` 目錄下的安全檔案讀寫工具。
+
+ | 直接將 PDF 工具集傳入 `create_agent(model, tools=...)`；若需借用 Deep Agents 的工作區檔案處理或規劃能力，可按需掛載限制在 scratch 目錄的 `FilesystemMiddleware(tool_token_limit_before_evict=None)`。 |
+| **B. 每次請求前組裝 `Working Draft`、揭露未讀 Diff 與分配容量（Step 3, 5, 6）** | 使用公開的 **`context` / `context_with_system` extension hook**：在每次送出模型請求前，由 App 的 Context 模組讀取當前 `draft_revision`、計算 `last_disclosed_revision` 差集、依保留傾向（Signals）篩選活躍證據，動態產生當次請求訊息。
+
+ | 使用公開的 **`wrap_model_call` middleware hook**：在每次呼叫模型前，攔截 State 中的訊息列表，呼叫同一個 App Context 模組組裝含當前 `draft_revision`、未讀 Diff 與篩選後證據的請求輸入，不直接污染底層持久 State。 |
+| **C. 整理前交接（Handshake）與持久化投影（Step 5）** | 使用公開的 **`session_before_compact` hook** 與 **`context_edit` entry**：攔截壓縮事件，先完成 Handshake 筆記更新，再寫入 `context_edit` 與 App 的 `context_manifest`，將舊頁大證據替換為檢索入口。
+
+ | 組合自訂 Handshake 節點／Middleware 與選用的 **`SummarizationMiddleware`**（自訂觸發條件與範圍）：先讓模型輸出交接筆記，再將壓縮標記（如 summarization event）與 App 的 `context_manifest` 同步落盤。 |
+| **D. Step 7 崩潰重啟時的「跨儲存對帳（Reconciliation）」** | **需在呼叫 Pi `Session.load()` 前執行 App 對帳器：** 檢查 Pi JSONL 最後一筆 `tool_use` entry 是否已有對應的文件服務收據（`draft_revision=3`）；若有且缺 `tool_result`，先向 Session JSONL 補入該筆收據結果，再更新 `context_manifest` 並啟動迴圈。 | **需在讀取 LangGraph `checkpointer.get_tuple()` 時執行 App 對帳器：** 若 Checkpoint 停在 pending tool call，而文件服務收據顯示該 `tool_call_id` 已提交 `draft_revision=3`，則用 `update_state` 注入收據結果，避免 LangGraph 重跑該工具導致版本號衝突。 |
+
+---
+
+## 三、 具體建議：如何啟動這個七步路徑的最小接口驗證
+
+這套設計已經移除了所有僵硬的預設限制（不強迫單一表示法、不把 P0–P3 當死板規則、不把 `context_manifest` 當全系統唯一真相、不盲目假設字元不變即語義不變），同時保留了最能幫助 Agent 發揮能力的**版本化 `Working Draft`、零推測物理視圖與四方收據對帳**。
+
+在下一步實作這條「七步路徑＋中斷恢復」的接口對照時，我建議：
+
+1. **先寫好與框架無關的「App 文件與草稿服務原型（支援 `draft_revision`、失敗隔離與 `tool_call_id` 收據）」**——因為無論選 Pi 還是 `create_agent`，這套狀態與收據機制都是 100% 共用的核心資產。
+2. **用同一個腳本化 Mock Model（固定依序發出這 7 步的 Tool Calls，並在 Step 7 的文件寫入完成瞬間拋出模擬崩潰）**，分別跑在 **Pi SDK** 與 **`LangChain create_agent`** 上。
+3. **直接觀察兩個關鍵指標：**
+* 在 **Step 5（整理 Context 後繼續修改 `draft_revision=2 -> 3`）**，哪一邊的 Hook（Pi 的 `session_before_compact` / `context` vs. `create_agent` 的 `wrap_model_call` / Middleware）能最清楚地控制「送給模型的訊息」而不與框架內建歷史打架？
+* 在 **Step 7（文件已提交 `rev=3` 但 Session/Context 未更新就中斷）**，哪一邊的持久化結構（Pi 的 JSONL Session Tree vs. LangGraph 的 Checkpointer State）更容易安全地插入對帳後的收據並恢復執行？
+
+
+
+你想先針對這條七步路徑中 **「`Working Draft` 的增刪改查與失敗隔離契約」** 進行細節確認，還是直接開始設計 **Step 5（Context 整理）與 Step 7（跨儲存崩潰對帳）** 在 Pi 與 `create_agent` 上的對照測試？

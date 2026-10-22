@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "你這輪的核對抓出了幾個非常關鍵的工程瑕疵——特別是 **`layout` 僅 41 blocks / 446 spans 卻佔用 147,366 字元**的實…": C:\Users\laichungling\.codex/attachments/f95b5043-2b3b-4d89-a41e-1cbd2c358196/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

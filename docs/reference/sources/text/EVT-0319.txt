@@ -1,0 +1,4 @@
+then please compare Pi, Deep Agents and LangGraph against our actual context management requirements. Which fits our app best andwhile preserving agent autonomy and supporting Nexus?
+而且所需修改最少
+we do not need to consider backward compatibility
+we may reconstruct the whole thing if needed 

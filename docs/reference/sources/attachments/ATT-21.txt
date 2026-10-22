@@ -1,0 +1,228 @@
+將設計重心拉回「證據看得清楚、正確內容容易保存與局部修正、長任務能可靠接續」**，並把**文件編輯與既有候選內容重用排在像素推測演算法之前，是整場討論中最符合產品本質的優先級排序。
+
+你這輪指出的幾個具體事實與技術漏洞——特別是 **`settlement_key` 若把 `current_policy_rev` 納入雜湊會導致 `7 -> 8` 後二次結算推進為 `9**`、**舊程式碼中 `Provider.pending_images`（第 798 行）與 `Agent.model_round`（第 384 行）帶有實例暫存狀態而不能直接當成無狀態函數封裝**，以及 **40 頁試驗第 27 頁 `本文件` 在被拒候選稿中原本正確、卻在重組重寫時退化為 `本文作**`——直接點出了重構時最關鍵的成敗細節。
+
+以下先針對你提出的技術指正完成定案收斂，接著從「整個專案與過往實測尚未解決的痛點」出發，提出**四個正面交鋒與全局補強**，最後收斂為優先級明確的重構架構。
+
+---
+
+## 一、 完全成立並立即定案的四項技術修正
+
+### 1. 修正 `settlement_key` 的二次結算漏洞（改以「已接受工具批次身分」為主鍵）
+
+你抓出了一個極為關鍵的狀態機 Bug：若用 `hash(current_policy_rev, proposal_ids)` 作為冪等鍵，當 `before_model` 將政策從 `7` 更新為 `8` 後，若因重啟或重入而再次看到同一批工具結果，系統會用新的 `current_policy_rev = 8` 算出不同的雜湊值，導致同一批提案被重複套用並錯誤推進至 `policy 9`！
+
+* **修正後契約：**
+* 在 SQLite `policy_settlements` 表中，以「當前分支已接受的工具批次身分」（例如 `batch_id = SHA256(thread_id, checkpoint_ns, parent_ai_message_id, sorted(proposal_ids))`）作為唯一主鍵（PK）。
+* 記錄欄位為 `(batch_id PK, base_policy_rev, produced_policy_rev, applied_deltas_json, conflicts_json)`。
+* 當 `before_model` 執行時，**先單獨以 `batch_id` 查表**：若已存在記錄，直接讀出 `produced_policy_rev`（例如 `8`）並確保 `State["active_policy_rev"] == 8`，絕不再用變更後的版本號重新計算雜湊或重複套用提案。
+
+
+
+### 2. 解開 `Provider.pending_images` 與 `Agent.model_round` 的有狀態耦合
+
+正如你核對原始碼所見，現有 Python 控制器將單輪重試帳本放在 `Agent.model_round`，並依賴 `Provider.pending_images` 與 `flush_images` 的可變實例狀態來配對 Chat Completions 的工具結果與後續 User 圖片訊息。若在 LangGraph 中直接共用該物件，並行分支或重組請求會立即發生圖片錯位或狀態洩漏。
+
+* **修正後契約（完全無狀態的單次請求轉換器）：**
+* **圖片配對改為純函數轉換：** 在 `wrap_model_call` 組裝出當次請求的訊息列表後，交由**無狀態（Stateless）的 `WirePayloadEncoder**` 處理——針對 `chat_completions` 協定，在單次請求轉換期間掃描帶有圖片資產的 `ToolMessage`，動態在該批次 `ToolMessage` 之後生成配對的原生圖片訊息；針對 `responses` 協定，則直接將圖片編碼進對應的 `function_call_output` 項目中。`NexusWireChatModel` 本身不保存任何跨呼叫的 `pending_images` 佇列。
+
+
+* **重試帳本顯式綁定 `(thread_id, model_turn_id)`：** 單輪 `1 + automatic_retries` 的持久化計數器以明確的模型回合識別碼存入工作區 SQLite。當 `wrap_model_call` 內部因容量超限進行受控縮減重組，或傳輸層因網路超時進行有限重試時，皆傳入同一個 `model_turn_id` 扣減同一份配額，確保重組或重試不會倍增配額。
+
+
+
+
+
+### 3. `salvage_attempt` 移除隱式殺程序行為
+
+採納你的修正：檢視（`inspect_attempt`）與救回（`salvage_attempt`）都不應預設暗中終止仍在工作的子程序。
+
+* 若子程序仍在運行而 Agent 呼叫 `salvage_attempt` 嘗試救回某個已完成輸出的檔案，系統僅嘗試以 `FILE_SHARE_READ` 取得穩定快照；若檔案仍被寫入鎖定則明確回報衝突，除非 Agent 顯式呼叫 `terminate_attempt` 或傳入明確參數 `terminate_running_process=True`。
+
+### 4. 保存工具的 `context_delta` 採顯式選填，並為「普通對話訊息」建立對等整理契約
+
+採納你的設計：不在 `update_draft` 中因為省略欄位就把未釘選證據暗中轉為可釋放，而是提供結構化的選填參數 `context_delta: {"release_when_needed": [...], "pin": [...]}`。同時，將普通對話中的使用者修訂、未落稿推理結論、決策理由與待解問題納入同一套 Context Policy 保護，不讓證據庫掩蓋對話脈絡。
+
+---
+
+## 二、 四個全局交鋒：針對專案痛點與未提及盲點的深度補強
+
+### 1. 交鋒一（深化第 2 點）：為什麼單靠「區塊級（Block-Level）增刪改」仍擋不住 `本文件 -> 本文作` 的退步？——必須補上「區塊內精確字串／儲存格修補（Intra-Block Surgical Patch）」
+
+你引用的 40 頁試驗第 27 頁案例非常關鍵：`本文件` 在被拒絕的候選稿中原本是對的，但在隨後的重組過程中變成了 `本文作`。
+讓我們再結合 13 頁試驗的 C 分支（第 14 頁 `礪 -> 厲`，以及第 14/16/18/24 頁漏標粗體）與產品要求的一條核心規則來看：
+
+* `PRODUCT_REQUIREMENTS.md` 明確規定：**「Keep complete logical blocks intact; do not break sentences or tables to mark exact character-level boundaries.」**
+
+* 這意味著一張橫跨兩頁的 50 行複雜表格，或一個包含 25 個條目的完整清單（如 P 任務），在草稿中**必須是一個完整的單一邏輯區塊（單一 `block_id`）**。
+
+
+* **問題來了：** 當 Agent 透過預覽或核對，發現這張 4,000 字的完整表格區塊中，只有第 14 行的一個字把 `礪` 寫成了 `厲`，或者有兩個詞漏加了 `**粗體**` 標記，如果文件服務只提供「以 `block_id` 為單位替換整個區塊（`replace_block`）」，**Agent 為了改這 1 個字，依然被迫在 Tool Call 中重新輸出整張 4,000 字的表格！** 而只要重新生成 4,000 字，模型就有極高機率在表格的另一處產生新的錯字（重演 `本文件 -> 本文作`）或耗費大量 Output Tokens。
+
+
+* **最佳功能設計（支援區塊內與候選稿內的精確局部修補 `patch_block_content`）：**
+在重構的文件核心中，除了支援按 `block_id` 插入、替換、刪除、移動與從檔案匯入外，應原生提供「零重寫風險的區塊內局部修補操作」：
+```json
+{
+  "op": "patch_block",
+  "block_id": "blk_table_1_2",
+  "patches": [
+    {
+      "find_exact": "<td>厲行節約</td>",
+      "replace_with": "<td><strong>礪行節約</strong></td>",
+      "expected_matches": 1
+    }
+  ]
+}
+
+```
+
+
+* **這項設計的威力：** 同樣的 `patch` 能力也適用於**被拒絕的候選稿（Staged Candidates）**！當一份包含 10 個區塊的候選稿因為第 3 區塊有個小錯或頁碼映射問題被攔下時，Agent 不但可以只修補 metadata，還可以對候選稿內的單一字詞或單一表格儲存格進行精確替換後直接提交。**「不強迫模型重寫未變動的文字」不能只停在區塊級，延伸到區塊內部才能徹底根除重寫退步！**
+
+
+
+### 2. 交鋒二（深化第 2、3 點）：如何把「來源區域 vs. 已保存區塊的對照」做成真正降低認知負荷的利器？
+
+你在第 2 點提出了一個極具洞察力的建議：**「預覽能力應支援直接比較『某個來源區域』與『對應的已保存區塊』。粗體問題可能來自來源判讀，也可能來自 Markdown 標記或實際渲染；兩側都容易取得，才能定位問題。」**
+
+* **為什麼這一點是突破 13 頁試驗品質瓶頸的關鍵？**
+在 13 頁試驗的 A 與 C 中，Agent 自己宣告全部完成，但獨立審查卻在 14、16、18、24 頁抓出多處實質強調格式（粗體）錯誤。原因在於：當 Agent 在第 3 回合看過來源頁圖片，到了第 10 回合才呼叫 `view_preview` 看渲染後的 HTML 截圖時，**跨回合依賴記憶比對兩張分離的圖片，視覺模型極容易漏看局部的粗細差異**。
+
+
+* **最佳功能設計（原生「來源 vs. 渲染草稿」同框對照檢視 `render_comparison`）：**
+既然我們已經為草稿區塊建立了穩定的 `block_id` 與頁碼／來源區域映射，我們可以在預覽與渲染服務中提供一個選用的高信噪比工具（或 `view_preview` 的對照模式）：
+* 當 Agent 呼叫 `view_preview(version_ref, block_ids=["blk_08"], include_source_comparison=True)` 時，系統自動取出 `blk_08` 對應的來源 PDF 頁面／區域渲染圖，與 `blk_08` 在當前草稿版本中的安全 HTML 渲染截圖，**可以選擇返回成對的獨立圖片，或並排生成一張左源右稿（Side-by-Side）的對照圖**（標籤與分隔線置於內容像素外）。
+* Agent 在同一個視覺輸入中同時看到「左側原頁的粗體／字形／表格線」與「右側自己寫出的 Markdown 渲染結果」，任何漏標的 `**bold**`、錯別字（`礪/厲`）或跨欄錯位都能一眼看出。這完全不依賴不可靠的 `pixel_ink_ratio` 演算法，卻能最直接地解決強調格式與字形核對問題！
+
+
+
+### 3. 交鋒三（針對第 1、5 點）：40 頁試驗累積 186 萬字元 OCR 的真正教訓——需要在工具回傳中內建「活躍工作集水位計（Working-Set Pressure Gauge）」
+
+你在第 1 點正確指出：40 頁試驗設定為 3,600 秒／100 回合，最終因 HTTP 408 與第 57 次請求逾時結束，不能把工具摩擦與重讀直接當成逾時的唯一原因；同時在第 5 點指出，不能因為 Agent 在 `update_draft` 省略了 `context_delta` 就自動把未釘選證據標為可釋放。
+
+* **需要正視的系統性問題：**
+雖然 186 萬字元（8 個完整 OCR 頁面物件）不一定直接導致了第 57 次請求的網路逾時，但 `CURRENT_STATE.md` 明確記載了這 1,865,411 個字元被一路攜帶在活躍歷史中（carried through active history），而在 13 頁 C 試驗中也發生了單次拉取 9 個完整 OCR 物件（1,976,466 字元）使下一輪輸入暴增至 **796,420 tokens** 的事實。
+如果我們完全依賴 Agent「自發記得」在 `update_draft` 填寫 `context_delta: {"release_when_needed": [...]}`，為什麼過去所有自然任務（9 頁 B/C、P 任務）中 Agent 從來不主動呼叫釋放工具？
+**因為模型在預設情況下根本看不見自己當前的 Context 水位，也不知道哪個歷史 `evidence_id` 佔用了多少空間！** 模型不像人類工程師有 Task Manager 可以看記憶體佔用率；在撞上硬上限之前，它對自己背著 186 萬字元的包袱是完全無感的。
+
+
+* **最佳功能設計（尊重自主權的「透明容量水位計 ＋ 大載荷清單提示」）：**
+我們完全遵守你的原則：**不因省略欄位而自動釋放任何證據**；但 App 應該在每次 `update_draft` 或大型讀取工具的回傳摘要中，附上一行極輕量的「工作集水位與重型證據排行（Active Working-Set Footprint）」：
+```json
+"context_footprint": {
+  "estimated_active_tokens": "142,500 / 200,000 (71%)",
+  "top_heavy_items": [
+    {"id": "ev_ocr_p10_17", "chars": 1865411, "pages": "10-17", "draft_status": "all_pages_drafted"},
+    {"id": "ev_img_p12", "bytes": 3420100, "pages": "12", "draft_status": "drafted"}
+  ],
+  "hint": "Pass context_delta.release_when_needed in update_draft or call manage_context to free completed heavy items while retaining exact re-read access."
+}
+
+```
+
+
+* **為什麼這樣設計最好？**
+1. 當任務只有 9 頁、水位只有 20% 時，它不會干擾 Agent，Agent 也確實不需要釋放；
+
+
+2. 當長文件累積了幾十萬字元的舊頁 OCR、水位突破 60%–70% 時，Agent 在存檔收據裡一眼就能看到：「原來 `ev_ocr_p10_17` 佔了 186 萬字元，而且第 10–17 頁我都已經寫完草稿了！」這時它就能在完全自主、知情的情況下填入 `context_delta` 釋放舊包袱。
+
+
+
+
+
+### 4. 交鋒四（整個專案先前未深入討論的關鍵維度）：終極目標是「獨立 Electron 桌面應用 ＋ 外部 MCP 雙介面」——重構必須建立「多端對等的文件與預覽核心」
+
+回顧 `PRODUCT_REQUIREMENTS.md` 與 `DECISIONS.md`：本專案的最終產品形態是**獨立的 Electron/TypeScript/React 桌面應用**，同時支援外部 MCP/CLI 介面，並共享同一個 Python 來源／成品核心。
+在先前的討論中，我們大多從「單一 Agent 內部迴圈」的角度設計 SQLite 與文件服務，卻忽略了桌面應用與多端協作的兩個核心場景：
+
+1. **場景 A（桌面 UI 即時觀測與雙向編輯）：**
+當使用者在 Electron 介面看著 Agent 轉換一份 100 頁的文件時，React 前端需要即時顯示「目前哪些頁面已轉換、哪些頁面有 `open_issues`、最新草稿的渲染預覽與來源 PDF 的同步捲動對照」。如果使用者在 UI 上直接幫忙修正了一個拼寫錯誤或確認了一個印刷頁碼（產生新的 `draft_rev`），正在執行的 Agent 下一輪呼叫 `update_draft(base_version=...)` 時，正是靠你在第 2 點提出的「檢查所依據的文件版本；若使用者或其他工作已修改相關內容，回報差異並保留候選修改」來無縫接軌！
+
+
+2. **場景 B（長任務的分段與跨會話續工）：**
+你在第 4 點精闢地指出：長文件的核心問題是*「做完一部分後，如何帶著必要資訊進入下一部分，而不反覆攜帶全部中間過程，也不遺失跨段關係」*，這既可以由同一 Agent 切換工作範圍（Scope Transition），也可以由專責子 Agent（Episode）完成。
+若我們將 **「文件版本、可重用候選稿、未完成頁碼映射、工作筆記與跨頁未決依賴（Open Issues / Links）」** 全部收斂在與執行緒無關的工作區 SQLite 服務中，那麼：
+* 無論是**同一個 Agent 執行一次 Context 整理切換至下一章**；
+* 還是**主 Agent 派發一個章節子圖（Subgraph Episode）**；
+* 甚至是**第一天轉換了第 1–50 頁後關閉桌面 App，第二天使用者重新打開 App 要求繼續轉換第 51–100 頁**；
+三者讀取與交接的都是**完全相同的結構化工作狀態快照（Document Continuity Snapshot）**！這讓「單一 Agent 跨階段整理」、「子代理章節交接」與「跨日重啟續工」自然統一為同一個機制，無須維護三套不同的狀態轉移邏輯。
+
+
+
+---
+
+## 三、 以「發揮 App 最佳功能」為核心的重構優先級與架構總覽
+
+綜合全部討論與歷史實測證據，若現在進行完整重構，我們不應把精力花在複雜的自動語義推測器或過度封裝的框架魔改上，而應按以下**四個明確的優先級階層**建立乾淨的系統：
+
+### 第一優先（P0）：零摩擦文件編輯、候選稿重用與精確視覺對照核心（直接決定轉換品質與成敗）
+
+這是與 Agent 框架無關、同時服務內建 Agent、MCP 與未來 Electron UI 的底層核心：
+
+1. **全方位草稿與版本引擎（`DocumentService`）：**
+* **多粒度編輯：** 同時支援章節／整段重建、按穩定 `block_id` 的區塊級增刪改移（CRUD & Move）、**區塊內精確字串／儲存格修補（`patch_block`）**，以及工作區檔案引用匯入（免重複輸出長表格）。
+
+
+* **局部頁碼映射合併：** 支援只提交受影響頁面的 `page_map` 更新，由服務自動與基底版本合併並驗證全書物理頁覆蓋完整性（保留 `none` 與 `unknown` 的嚴格區分）。
+
+
+* **版本衝突保護與候選稿零損失重用：** 每次修改綁定 `base_draft_rev`；驗證失敗或遇外部修改衝突時，100% 保存提交內容為 `candidate_id`，支援對候選稿直接修補 metadata 或局部文字後再次提交。
+
+
+
+
+2. **高信噪比來源與對照視覺引擎（`EvidenceAndPreviewService`）：**
+* **多區域裁切與對照（`render_regions`）：** 支援一次傳入多個 `{page, bbox, label}`（標籤置於來源像素外、保留上下文邊距），可由 Agent 選擇返回獨立無損圖片陣列或合成對照拼圖，同時保留原圖與來源座標可追溯性。
+* **源稿同框比對（`view_preview` 對照模式）：** 針對指定版本與區塊／頁面，提供「來源 PDF 區域像素」與「已保存草稿 HTML 渲染像素」的同框或成對比較，直接攻克粗體漏標、表格跨欄與字形誤判問題。
+
+
+* **單元級運算快取索引：** 對單頁渲染與單頁 OCR 按 `(來源雜湊, 工具與引擎版本, 語言資料雜湊, 正規化參數, 頁碼/區域)` 建立 SQLite 索引，支援重疊範圍切片重用與 `force_recompute` 顯式重算，而不強制將多頁結果拆成碎檔。
+
+
+
+
+
+### 第二優先（P1）：透明可控的 Context 組裝與長文件延續機制（保障長書不崩潰、不失憶）
+
+1. **三段式無污染生命週期（基於 `create_agent` + LangGraph Checkpointer）：**
+* **`wrap_tool_call`：** 依 `(thread_id, checkpoint_ns, tool_call_id)` 與輸入雜湊執行操作收據重播；新產出寫入不可變 Blob，僅將輕量憑證與 `proposal_id` 放入 `ToolMessage.artifact`。
+
+
+* **`before_model`：** 以穩定的 `batch_id`（而非變動的 `current_policy_rev`）作為冪等鍵結算本批 `context_delta`，更新分支唯一的 `State["active_policy_rev"]`。
+
+
+* **`wrap_model_call`：** 依 `active_policy_rev` 暫態水合所需的文字切片與原圖（不寫回持久 State）；在內部以有限次數（共用單輪嘗試預算）處理 HTTP 413 Byte 超限與 Token 超限；將最終實際送出的 `input_view_id` 寫入被接受的 `AIMessage.response_metadata`。
+
+
+
+
+2. **透明水位計與雙軌壓縮（證據 ＋ 普通對話）：**
+* 在工具回傳中附帶輕量的 `context_footprint`（當前估算水位與佔用最大的已完成頁面證據清單），讓 Agent 知情自主地透過 `context_delta` 標記 `release_when_needed` 或 `pin`。
+* 當執行歷史整理或跨階段切換（含選用的章節 Episode 子代理）時，同時保護**結構化文件／證據引用**與**普通對話中的使用者修訂、未落稿推理、決策理由與待解問題**。
+
+
+
+### 第三優先（P2）：無狀態隔離的 `NexusWireChatModel` 與受控子程序執行器（保障傳輸與執行穩定）
+
+1. **抽出無狀態雙協定編碼器與回合預算帳本：**
+* 消除舊 `Provider.pending_images` 的實例狀態，將 Chat Completions（Tool Result 後配對圖片）與 Responses（Function Output 內嵌圖片與加密 Reasoning）抽為每次請求獨立運行的轉換器，並沿用 Attempt-local SSE 完整組裝與安全診斷過濾。
+
+
+
+
+2. **意圖明確的子程序與救援服務：**
+* 以 Windows Job Object 管理 OCR、預覽與腳本子程序生命週期；分開提供唯讀 `inspect_attempt`、顯式 `terminate_attempt` 與驗證範圍的 `salvage_attempt`（採 `FILE_SHARE_READ` 穩定快照與完整解碼驗證，誠實區分局部救回與整體完成）。
+
+
+
+
+
+### 第四優先（P3，選用實驗性質）：衍生光學提示與雙層子代理調度
+
+* 諸如 `pixel_ink_ratio`（局部墨跡密度異常提示）或自動化的章節子代理（Sub-agent Episodes），全部列為**不阻擋核心交付的可選擴充**，待 P0–P2 基線穩定後，僅在有明確對照證據支持時才按需啟用。
+
+---
+
+這套將 **P0（區塊內精確修補＋候選稿重用＋源稿視覺對照）** 與 **P1（修正 `batch_id` 冪等結算＋透明容量水位計＋三段式無污染水合）** 置於首位的重構順序，完全呼應了你「優先改善文件操作與證據使用、讓正確內容更容易保存與修正」的判斷。你是否同意以這個 **P0 $\to$ P1 $\to$ P2** 的優先級作為完整重構的實作藍圖？

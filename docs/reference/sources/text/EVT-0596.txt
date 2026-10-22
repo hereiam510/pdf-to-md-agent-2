@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "將優先設計基準收斂至 **LangChain `create_agent` ＋ 持久化 LangGraph Checkpointer**，並將「一般程序重啟（…": C:\Users\laichungling\.codex/attachments/3a9d6dd5-d910-4bdd-ba01-9f2b8a33b2b5/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

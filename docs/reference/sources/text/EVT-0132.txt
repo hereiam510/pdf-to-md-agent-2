@@ -1,0 +1,1 @@
+我會以「所有模型都不依賴原生 compaction、background retrieval 或遠端 cancellation」作為共同設計前提，對照現有的歷史管理與檔案讀取機制，整理 context management 的討論方案。

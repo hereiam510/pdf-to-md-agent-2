@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad97a8b2ed88191891f13c0092bdec0",
+    "content": [
+      {
+        "type": "Text",
+        "text": "Schema 裡還有一個實質問題：`operations.event_seq` 在操作開始時取得，完成時只更新同一列，因此它不能同時充當完成事件的時間線。若較早開始的 OCR 較晚完成，單靠序號水位可能漏掉它。我會建議用每次請求的輸入清單記錄實際交付範圍，操作狀態則留在操作紀錄中管理。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2079,
+  "timestamp_original": "2026-10-22T02:53:00.010Z",
+  "timestamp_display": "2026-10-22T10:53:00.010+08:00",
+  "turn_id": "01a1617f-dd27-73c1-9cbc-28c8a2759583",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T10:52:58.642+08:00",
+  "completed_at": "2026-10-22T10:53:00.010+08:00",
+  "event_id": "EVT-0670",
+  "evidence_path": "evidence/events/EVT-0670.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

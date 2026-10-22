@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad896fc4704819182d30a4dc443ba2f",
+    "content": [
+      {
+        "type": "Text",
+        "text": "我找到一個會影響排序的遺漏：Deep Agents 的摘要實作也會保留原始訊息，再另行組裝模型可見的 context。我上次把這點主要算作 Pi 的優勢，低估了 Deep Agents；因此「Pi 所需修改最少」目前沒有足夠證據支持。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1266,
+  "timestamp_original": "2026-10-21T10:42:03.674Z",
+  "timestamp_display": "2026-10-21T18:42:03.674+08:00",
+  "turn_id": "01a15e0c-9f24-7d21-9dee-d71fc5622f8e",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-21T18:42:03.616+08:00",
+  "completed_at": "2026-10-21T18:42:03.674+08:00",
+  "event_id": "EVT-0358",
+  "evidence_path": "evidence/events/EVT-0358.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

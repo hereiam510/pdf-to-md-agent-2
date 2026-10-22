@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad8f5c9bfb88191a429248536279782",
+    "content": [
+      {
+        "type": "Text",
+        "text": "這版的改進包括：把最新工作狀態放到較後的位置、恢復前揭露已提交成果，以及保留證據的取回線索。不過，有兩個核心界線仍要守住：hash 能辨認完全相同的操作，不能辨認模型的「意圖」；SQLite 能一起提交資料庫內的記錄，不能連外部圖片檔和框架 session 都自動變成同一交易。這些會直接影響重複寫入防護及復原可靠性。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1718,
+  "timestamp_original": "2026-10-21T17:26:33.336Z",
+  "timestamp_display": "2026-10-22T01:26:33.336+08:00",
+  "turn_id": "01a15f7e-189e-77d2-b394-8f38f4b4af1d",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T01:26:33.132+08:00",
+  "completed_at": "2026-10-22T01:26:33.336+08:00",
+  "event_id": "EVT-0525",
+  "evidence_path": "evidence/events/EVT-0525.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

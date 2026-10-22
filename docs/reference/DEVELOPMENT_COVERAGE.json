@@ -1,0 +1,1862 @@
+[
+  {
+    "point_id": "P1-001",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#product-and-runtime-boundary",
+    "treatment": "explained",
+    "note": "Explains the complete conversion outcome, the agent/app division, autonomy, low handling, and why component counts do not establish product delivery."
+  },
+  {
+    "point_id": "P1-002",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#product-and-runtime-boundary",
+    "treatment": "explained",
+    "note": "Explains the independent Electron/TypeScript/React app, one Python control layer, configurable Nexus protocols, and the difference between headless behavior and installed readiness."
+  },
+  {
+    "point_id": "P1-003",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#source-access-and-fidelity",
+    "treatment": "explained",
+    "note": "Carries source wording, meaningful characters/form, table/figure relationships, reflow limits, and links document mechanics without substituting readability for fidelity."
+  },
+  {
+    "point_id": "P1-004",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#page-maps-and-provenance",
+    "treatment": "explained",
+    "note": "Explains physical/printed labels, none/unknown and scope accounting; linked rendering/evidence and export sections preserve faithful images and explicitly selected same-version outputs."
+  },
+  {
+    "point_id": "P1-005",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#source-access-and-fidelity",
+    "treatment": "explained",
+    "note": "Explains method autonomy, first/full/raw/field/range/pixel access, requested versus presented content, real image input, and the finite-request capacity boundary."
+  },
+  {
+    "point_id": "P1-006",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#scripts-and-partial-work",
+    "treatment": "explained",
+    "note": "Explains opted-in trusted-host scripts, preserved full files/logs despite bounded returns, useful partial work, inert source instructions, and why scripts do not remove prior context."
+  },
+  {
+    "point_id": "P1-007",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-007",
+    "treatment": "historical-reference",
+    "note": "Preserves the specific Breasts/Figure 4–13 old delivery, labels and pixels evidence with bounded acceptance; the integration guide explains why it is not rebuild readiness."
+  },
+  {
+    "point_id": "P1-008",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-008",
+    "treatment": "historical-reference",
+    "note": "Retains exact old token arithmetic, conditional cost and unsent projection limits without reopening the closed audit or treating it as a new saving claim."
+  },
+  {
+    "point_id": "P1-009",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#motivation-and-evidence",
+    "treatment": "explained",
+    "note": "Explains the old accumulation/intake gap and distinction between precise reads, optional release/checkpoint mechanisms, and an automatic capacity policy; old defaults remain historical."
+  },
+  {
+    "point_id": "P1-010",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#versions-and-acceptance-limits",
+    "treatment": "explained",
+    "note": "Explains availability, prescribed use, actual input consumption, natural adoption, content quality and net benefit as separate claims; non-use is not causal proof."
+  },
+  {
+    "point_id": "P1-011",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-011",
+    "treatment": "historical-reference",
+    "note": "Retains the exact injected-outage/stream scope, old recovery defaults and timing limits, without treating them as new defaults or universal recovery proof."
+  },
+  {
+    "point_id": "P1-012",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-012",
+    "treatment": "historical-reference",
+    "note": "Preserves the historical industrial survey and first-party trail as a repertoire of practices, including retrieval/summary costs and the separation of storage, capacity and recovery."
+  },
+  {
+    "point_id": "P1-013",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#nexus-subscription-and-portability",
+    "treatment": "explained",
+    "note": "Explains why native compaction/background/counting features and compatible endpoints do not establish route availability; no research-derived universal threshold is selected."
+  },
+  {
+    "point_id": "P1-014",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#integration-failure-cases",
+    "treatment": "scope-note",
+    "note": "Explains retained classified execution boundaries while keeping circuit breakers, shared traffic controls and wider network feature design deferred."
+  },
+  {
+    "point_id": "P1-015",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#nexus-subscription-and-portability",
+    "treatment": "explained",
+    "note": "Preserves the inspected dirty CLIProxyAPI version, standalone compact path, removed automatic setting, HTTP retrieval/cancel absence and session WebSocket interruption limits."
+  },
+  {
+    "point_id": "P1-016",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#nexus-subscription-and-portability",
+    "treatment": "explained",
+    "note": "Explains the user's Nexus-to-CLIProxyAPI monthly-subscription premise and why unrelated metered-provider documentation cannot prove this route."
+  },
+  {
+    "point_id": "P1-017",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#nexus-subscription-and-portability",
+    "treatment": "explained",
+    "note": "States the explicit portable baseline without native compaction/retrieval/cancellation and its multi-model rationale; aliases do not establish capabilities or cost."
+  },
+  {
+    "point_id": "P1-018",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#objects-and-identities",
+    "treatment": "explained",
+    "note": "Separates evidence presentation/retrieval, history handoff, native journal, compact policy and request input so a saved summary alone is not mistaken for changed context."
+  },
+  {
+    "point_id": "P1-019",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#capacity-accounting",
+    "treatment": "explained",
+    "note": "Explains app-owned complete-request capacity/reserves and unknown estimates, combined with agent-owned relevance and continuation judgment rather than automatic semantic eviction."
+  },
+  {
+    "point_id": "P1-020",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#pins-links-and-release",
+    "treatment": "explained",
+    "note": "Explains release choices, exact retrieval and dependency-aware retention; saved/processed does not imply dispensable, and release-first is not compulsory cleanup."
+  },
+  {
+    "point_id": "P1-021",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#handoff-and-working-notes",
+    "treatment": "explained",
+    "note": "Explains self-sufficient continuation content with requirements, saved work, unfinished relationships and exact references instead of only a next-page counter."
+  },
+  {
+    "point_id": "P1-022",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#objects-and-identities",
+    "treatment": "explained",
+    "note": "Distinguishes mechanically recorded identities/existence/operations from source correctness, relevance, semantic interpretation and unrecorded understanding."
+  },
+  {
+    "point_id": "P1-023",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-023",
+    "treatment": "historical-reference",
+    "note": "Preserves Complexity Trap, Deep Agents, MemGPT, ACE and Lost in the Middle as historical supporting research with domain, threshold and equal-quality cost limits."
+  },
+  {
+    "point_id": "P1-024",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-024",
+    "treatment": "historical-reference",
+    "note": "Retains preprint/benchmark status, autonomous adoption and retrieval/cost/latency cautions, without promoting code-task results into PDF policy."
+  },
+  {
+    "point_id": "P1-025",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#versions-and-acceptance-limits",
+    "treatment": "explained",
+    "note": "Explains source-led complete work, price-weighted task accounting, subscription versus benchmark pricing, unknown fees and the difference between cumulative input and one context."
+  },
+  {
+    "point_id": "P1-026",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-026",
+    "treatment": "historical-reference",
+    "note": "Preserves the prior documentation request and transition to redesign without importing the old discussion file, defaults, or session prompts as current authority."
+  },
+  {
+    "point_id": "P1-027",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-027",
+    "treatment": "historical-reference",
+    "note": "Retains the five illustrative early context concepts, stable identities and the filesystem-only preference with its later SQLite supersession."
+  },
+  {
+    "point_id": "P1-028",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#evidence-representations",
+    "treatment": "explained",
+    "note": "Explains immutable evidence versus selected views, actual produced content, exact retrieval rather than recomputation, and distinct image presentation."
+  },
+  {
+    "point_id": "P1-029",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#handoff-and-working-notes",
+    "treatment": "explained",
+    "note": "Explains small structured state and free notes with provenance and independent updates while leaving illustrative revisions/field names and full dependency graphs unselected."
+  },
+  {
+    "point_id": "P1-030",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#native-protocol-and-adapter",
+    "treatment": "explained",
+    "note": "Explains selected input versus native encoding, complete call/result pairing, real images and route-native items, with input manifests distinct from wire protocol."
+  },
+  {
+    "point_id": "P1-031",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#route-profile-and-model-switching",
+    "treatment": "explained",
+    "note": "Explains effective route capacity, output reserve, counting confidence, image costs and model-switch calibration without alias-derived or universal numeric defaults."
+  },
+  {
+    "point_id": "P1-032",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#oversized-results",
+    "treatment": "explained",
+    "note": "Explains successful computation versus full presentation, accumulated-context versus object-alone overflow, preserved originals and explicit precise-read options."
+  },
+  {
+    "point_id": "P1-033",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#failed-handoff-and-restart",
+    "treatment": "explained",
+    "note": "Explains preservation on failed/stale handoff, structural versus semantic checks, concurrent corrections, and progressive reduction rather than all-or-nothing target fitting."
+  },
+  {
+    "point_id": "P1-034",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-034",
+    "treatment": "historical-reference",
+    "note": "Retains context_status/select/update/compact and evidence tools as adjustable capability examples, not mandatory named APIs or per-round rituals."
+  },
+  {
+    "point_id": "P1-035",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Explains LangChain/LangGraph/LangMem layers and the initial custom-controller preference followed by the user's reliability/maintenance correction."
+  },
+  {
+    "point_id": "P1-036",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#shared-responsibilities",
+    "treatment": "explained",
+    "note": "Explains what framework persistence/loop machinery supplies and why exact evidence, source meaning, fidelity, compaction and durable domain effects remain app responsibilities."
+  },
+  {
+    "point_id": "P1-037",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Explains historical summary truncation and wrapper-field concerns; native adapter and execution links retain shared budgets/cancellation and no inherited defaults."
+  },
+  {
+    "point_id": "P1-038",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Preserves reliability and remaining maintenance as the user's selection criteria, without claiming maturity automatically proves integration or source quality."
+  },
+  {
+    "point_id": "P1-039",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Explains the provisional high-level-first/create_agent ranking and the final small-StateGraph preference; no fallback ladder remains an active obligation."
+  },
+  {
+    "point_id": "P1-040",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Explains dynamic agent graphs versus fixed PDF workflows, ReAct as a pattern, and why graph persistence cannot undo external effects."
+  },
+  {
+    "point_id": "P1-041",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Corrects forum loop terminology and the three-line-runtime claim while preserving the distinction between task autonomy and execution responsibilities."
+  },
+  {
+    "point_id": "P1-042",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-042",
+    "treatment": "historical-reference",
+    "note": "Preserves competing forum experiences and named alternatives as unverified anecdotes, with no multi-agent/container/monitoring requirement."
+  },
+  {
+    "point_id": "P1-043",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Compares API clients, agent runtimes, graph primitives, memory components and custom controllers at their actual layers instead of code/download counts."
+  },
+  {
+    "point_id": "P1-044",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Explains Pi's embeddable SDK and public context/compaction hooks, historical defaults, Node/Python coordination cost and unverified least-work claims."
+  },
+  {
+    "point_id": "P1-045",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Explains Deep Agents offloading, summaries and customization, corrects the text-only claim, and preserves offload-failure/storage caveats."
+  },
+  {
+    "point_id": "P1-046",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Separates the OpenAI API client from Agents SDK, configurable endpoint from billing choice, and provider-native memory examples from the portable baseline."
+  },
+  {
+    "point_id": "P1-047",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#nexus-subscription-and-portability",
+    "treatment": "explained",
+    "note": "Explains per-route native tool/image/reasoning compatibility and why Pi baseUrl/plugins or OpenAI-shaped APIs do not prove Nexus fit."
+  },
+  {
+    "point_id": "P1-048",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Documents the explicit withdrawal of Pi-first/least-modification reasoning and its correction about competing frameworks preserving state and projections."
+  },
+  {
+    "point_id": "P1-049",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Explains equal accounting of customization/maintenance on both sides, public versus private adaptation, and domain work that no framework removes."
+  },
+  {
+    "point_id": "P1-050",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-050",
+    "treatment": "historical-reference",
+    "note": "Retains the concrete old candidate-evaluation scenarios and total lifecycle/IPC/maintenance burden without scheduling new PoCs or reopening framework ranking."
+  },
+  {
+    "point_id": "P1-051",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-051",
+    "treatment": "historical-reference",
+    "note": "Preserves the two forum sources' authorship/type, mixed evidence confidence and independently recorded review limits rather than blanket credibility judgments."
+  },
+  {
+    "point_id": "P1-052",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-052",
+    "treatment": "historical-reference",
+    "note": "Preserves useful forum themes and their limits: exact originals, evidence-first release, model judgment, working state and differentiated failures; not Nexus cancellation proof."
+  },
+  {
+    "point_id": "P1-053",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-053",
+    "treatment": "historical-reference",
+    "note": "Retains the harness/self-improvement framing and its product-relevant simplicity lesson without authorizing a self-modifying PDF agent."
+  },
+  {
+    "point_id": "P1-054",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-054",
+    "treatment": "historical-reference",
+    "note": "Preserves the survey's loop/files/delegation/tool examples without making all general coding, scheduling or multi-agent interfaces product requirements."
+  },
+  {
+    "point_id": "P1-055",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-055",
+    "treatment": "historical-reference",
+    "note": "Retains ACE/MCE/Meta-Harness mechanisms, comparisons and Pareto interpretation as research background rather than an implementation selection."
+  },
+  {
+    "point_id": "P1-056",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-056",
+    "treatment": "historical-reference",
+    "note": "Retains AI Scientist, ScientistOne, Autodata, ADAS and AFlow workflow-search mechanisms and their non-conversion benchmark scope."
+  },
+  {
+    "point_id": "P1-057",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-057",
+    "treatment": "historical-reference",
+    "note": "Retains STOP/Self-Harness mechanisms, model-strength dependence and evaluator/permission cautions without adding an automatic optimization cycle."
+  },
+  {
+    "point_id": "P1-058",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-058",
+    "treatment": "historical-reference",
+    "note": "Retains evolutionary/weight-update research, confounds and limits without treating self-play, continual learning or model training as the product roadmap."
+  },
+  {
+    "point_id": "P1-059",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-059",
+    "treatment": "historical-reference",
+    "note": "Preserves the research-failure taxonomy and long-horizon evaluation cautions without imposing repeated review or a general research platform."
+  },
+  {
+    "point_id": "P1-060",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-060",
+    "treatment": "historical-reference",
+    "note": "Retains the benchmark appendix, counts and bibliography context as background without setting PDF acceptance thresholds or required benchmark suites."
+  },
+  {
+    "point_id": "P1-061",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-061",
+    "treatment": "historical-reference",
+    "note": "Preserves the correction to harness-determines-performance claims, exact benchmark example and its inability to predict PDF gains."
+  },
+  {
+    "point_id": "P1-062",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-062",
+    "treatment": "historical-reference",
+    "note": "Retains the seven-part taxonomy, memory tiers and long-context rationale while rejecting a universal degradation/trigger threshold."
+  },
+  {
+    "point_id": "P1-063",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#prompt-cache-and-cost",
+    "treatment": "explained",
+    "note": "Explains stable-prefix benefits with route/pricing/cache limits, permits necessary context changes, and rejects universal hit-rate/logit-masking requirements."
+  },
+  {
+    "point_id": "P1-064",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-064",
+    "treatment": "historical-reference",
+    "note": "Preserves the Letta/MemGPT memory-warning and explicit-edit examples as explanatory research, not selected prompts/functions/counters."
+  },
+  {
+    "point_id": "P1-065",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-065",
+    "treatment": "historical-reference",
+    "note": "Retains the Mem0 contrast and source-code confidence limits without selecting automatic fact extraction, vector databases or semantic-search-only coverage."
+  },
+  {
+    "point_id": "P1-066",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-066",
+    "treatment": "historical-reference",
+    "note": "Preserves version-specific/reverse-engineered Claude Code instruction and cleanup examples while rejecting inherited 13,000-token buffers, hook names and fixed counts."
+  },
+  {
+    "point_id": "P1-067",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-067",
+    "treatment": "historical-reference",
+    "note": "Retains Deep Agents planning/filesystem examples and their corrections, including optional planning and state-dictionary versus disk durability."
+  },
+  {
+    "point_id": "P1-068",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Explains the useful API/graph/domain layering of ATT-03 and why its premature final verdict, fixed policies and budgets were not adopted."
+  },
+  {
+    "point_id": "P1-069",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#native-protocol-and-adapter",
+    "treatment": "explained",
+    "note": "Explains native image/tool representations, reasoning type/provenance and replay rules, and the unrelated meanings of model_extra and SDK retry settings."
+  },
+  {
+    "point_id": "P1-070",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-070",
+    "treatment": "historical-reference",
+    "note": "Preserves the exact rejected ATT-03 schema/stage/active-pages/75%/three-attempt assumptions and their corrections without converting them into current design."
+  },
+  {
+    "point_id": "P1-071",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#recovery-transitions",
+    "treatment": "explained",
+    "note": "Explains graph checkpoints versus external file/metadata effects, original receipts, no duplicate commit/head regression and the remaining finite recovery specification."
+  },
+  {
+    "point_id": "P1-072",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history",
+    "treatment": "explained",
+    "note": "Corrects Pi/runtime-language and wrapper dismissals; describes package layouts and internal MCP/IPC as options while retaining the final Python control baseline."
+  },
+  {
+    "point_id": "P1-073",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-073",
+    "treatment": "historical-reference",
+    "note": "Preserves ATT-05's useful product-first candidate/edit/preview proposals and rejected under-100-line/port-preserves-reliability/framework-exclusion guarantees."
+  },
+  {
+    "point_id": "P1-074",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#prompt-cache-and-cost",
+    "treatment": "explained",
+    "note": "Explains why one selective run, checkpoint-following rereads and unsent projections cannot prove universal cache policy or equal-fidelity savings."
+  },
+  {
+    "point_id": "P1-075",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#source-access-and-fidelity",
+    "treatment": "explained",
+    "note": "Explains optional concise views without a mandatory minimal first read, legitimate layout/style evidence and preservation of only actually requested computation."
+  },
+  {
+    "point_id": "P1-076",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#layout-and-visual-evidence",
+    "treatment": "explained",
+    "note": "Explains observed extractor attributes versus derived warnings/uncertainty, retained local locations and lack of automatic reading-order/fidelity certification."
+  },
+  {
+    "point_id": "P1-077",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#edit-semantics",
+    "treatment": "explained",
+    "note": "Explains insertion/append, local metadata merging, base versions, preservation of unchanged content and full-result validation without freezing historical CRUD schemas."
+  },
+  {
+    "point_id": "P1-078",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-reuse-and-lineage",
+    "treatment": "explained",
+    "note": "Explains received candidate preservation, complete exact reuse, stale-base conflicts, quality/commit distinction and optional incomplete-JSON salvage."
+  },
+  {
+    "point_id": "P1-079",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#handoff-and-working-notes",
+    "treatment": "explained",
+    "note": "Explains why a deterministic ledger cannot preserve unrecorded understanding, why last-two-block/save-only notes fail and why optional summaries remain useful."
+  },
+  {
+    "point_id": "P1-080",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#handoff-and-working-notes",
+    "treatment": "explained",
+    "note": "Explains scope/provenance of working conventions, provisional interpretations and unresolved relationships without turning them into global certified facts."
+  },
+  {
+    "point_id": "P1-081",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#illustrative-integration-sequence",
+    "treatment": "explained",
+    "note": "Explains low-handling autonomy alongside effective later user corrections, intervention and preserved work rather than forbidding user changes mid-task."
+  },
+  {
+    "point_id": "P1-082",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#desktop-process-boundary",
+    "treatment": "explained",
+    "note": "Explains the superseded Node-led topology, its lifecycle/resource rationale, Electron's separate responsibilities and the retained single Python control layer."
+  },
+  {
+    "point_id": "P1-083",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#desktop-process-boundary",
+    "treatment": "explained",
+    "note": "Explains persistent worker caches and independently written evidence under one publication authority without zero-latency/stateless-worker claims."
+  },
+  {
+    "point_id": "P1-084",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#native-protocol-and-adapter",
+    "treatment": "explained",
+    "note": "Explains actual configurable transport/wrapper boundaries, native preservation and single retry ownership without assuming unavoidable monkey patches or inherited old guarantees."
+  },
+  {
+    "point_id": "P1-085",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#p1-085",
+    "treatment": "historical-reference",
+    "note": "Preserves ATT-06's four explicitly accepted corrections separately from its subsequent optional mechanisms and unsupported guarantees."
+  },
+  {
+    "point_id": "P1-086",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#tool-discovery-and-dispatch",
+    "treatment": "explained",
+    "note": "Explains discoverable shapes/representations and the unknown reason for the original full inspect, without asserting inevitable full reads or a fixed preset."
+  },
+  {
+    "point_id": "P1-087",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#source-access-and-fidelity",
+    "treatment": "explained",
+    "note": "Retains the observed layout/word size facts and explains why block granularity did not establish the proposed small size or justify reopening the audit."
+  },
+  {
+    "point_id": "P1-088",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#evidence-representations",
+    "treatment": "explained",
+    "note": "Explains reversible/discoverable raw and compact representations, avoiding duplicate text, style factorization, and honesty about uncomputed views/sizes."
+  },
+  {
+    "point_id": "P1-089",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#notes-coverage-and-order",
+    "treatment": "explained",
+    "note": "Explains optional piggybacked and independent note updates, preservation despite metadata rejection, and why old non-adoption did not predict note failure."
+  },
+  {
+    "point_id": "P1-090",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#failed-handoff-and-restart",
+    "treatment": "explained",
+    "note": "Explains early safe-boundary handoff, capacity reserves, fallibility, original preservation and finite stop instead of guaranteed losslessness or endless retry."
+  },
+  {
+    "point_id": "P1-091",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#pins-links-and-release",
+    "treatment": "explained",
+    "note": "Explains exact versioned retention with reasons/dependencies/release, stale references and oversized working sets without imposing last-N or perfect-selection claims."
+  },
+  {
+    "point_id": "P1-092",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#failed-handoff-and-restart",
+    "treatment": "explained",
+    "note": "Explains candidate/revision/reference/native/capacity checks and their inability to prove semantic preservation, retaining originals and progressive reduction."
+  },
+  {
+    "point_id": "P1-093",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#indexes-and-unfinished-evidence",
+    "treatment": "explained",
+    "note": "Explains durable complete indexes versus relevant active projections, including latest drafts and unfinished candidates without repeated full inventories."
+  },
+  {
+    "point_id": "P1-094",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#review-and-version-dependencies",
+    "treatment": "explained",
+    "note": "Explains scoped source checks on explicit versions as distinct from storage/render/reopen state, review invalidation and labeled partial export."
+  },
+  {
+    "point_id": "P1-095",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#rendering-and-preview",
+    "treatment": "explained",
+    "note": "Explains same-version rendering, resources/viewport/crop conditions, whole-document semantics and bounded captures without mandating one screenshot method."
+  },
+  {
+    "point_id": "P1-096",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#tool-discovery-and-dispatch",
+    "treatment": "explained",
+    "note": "Explains runtime/context/document/adapter ownership, common capture and appropriate short transactions rather than one universal lock around inference/OCR."
+  },
+  {
+    "point_id": "P1-097",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#three-contracts-and-scope",
+    "treatment": "scope-note",
+    "note": "Preserves useful mechanism directions but keeps exact contracts open and stops indefinite framework/schema/testing expansion under the final consolidation."
+  },
+  {
+    "point_id": "P1-098",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#shared-responsibilities",
+    "treatment": "explained",
+    "note": "Explains the final small-StateGraph/Python/shared-Nexus/dispatcher/document-core boundaries and authority split without claiming implementation or proof."
+  },
+  {
+    "point_id": "P1-099",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#q1-closure-and-scenarios",
+    "treatment": "explained",
+    "note": "Keeps Q1 open and makes candidate reuse, insertion and map-only repair concrete, including original identity, unchanged fields and commit visibility."
+  },
+  {
+    "point_id": "P1-100",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#verification-and-open-contracts",
+    "treatment": "explained",
+    "note": "Keeps Q2 open with configurable capacity, self-sufficient incremental handoff, unprocessed history and preserved originals; no universal K/percentage/pass count."
+  },
+  {
+    "point_id": "P1-101",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#q3-closure-and-implementation-order",
+    "treatment": "explained",
+    "note": "Keeps Q3 open at saved-request/accepted-reply/committed-tool/graph-recorded boundaries, with frozen replay, original receipts, finite stopping and independent draft export."
+  },
+  {
+    "point_id": "P1-102",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#three-contracts-and-scope",
+    "treatment": "scope-note",
+    "note": "Explains closure and proportional implementation/delivery continuation; historical mechanisms, old allowances and framework/platform matrices do not create an automatic backlog."
+  },
+  {
+    "point_id": "P2-001",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#verification-and-open-contracts",
+    "treatment": "scope-note",
+    "note": "Preserves product outcomes, the final three-contract limit, and the distinction between explaining prior mechanisms and reopening implementation scope."
+  },
+  {
+    "point_id": "P2-002",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#motivation-and-evidence",
+    "treatment": "explained",
+    "note": "States measured layout/word/text sizes and span count, then separates the actual pressure from unsupported fragmentation and reduction claims."
+  },
+  {
+    "point_id": "P2-003",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#layout-and-visual-evidence",
+    "treatment": "explained",
+    "note": "Explains uniform GlyphLessFont/flags/alpha limits, geometry clues, reported versus derived values, and the need for original pixels."
+  },
+  {
+    "point_id": "P2-004",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#motivation-and-evidence",
+    "treatment": "explained",
+    "note": "Distinguishes cumulative input from peak request size and null assistant prose from explicit notes or hidden reasoning; accounting consequences are developed later."
+  },
+  {
+    "point_id": "P2-005",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-005",
+    "treatment": "historical-reference",
+    "note": "Keeps the exact thirteen-/forty-page observations, corrected time/round allowance, specific failure endings, and causal limits locally; guide explains their design implication."
+  },
+  {
+    "point_id": "P2-006",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#drafts-and-content-references",
+    "treatment": "explained",
+    "note": "Uses the retained-candidate regression to explain exact reuse and metadata-only repair, without attributing the typo to compaction."
+  },
+  {
+    "point_id": "P2-007",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#model-switching-and-long-work",
+    "treatment": "explained",
+    "note": "Explains why short-run timing and optional-tool non-use do not prove motives, whole-book failure, or a required subagent architecture."
+  },
+  {
+    "point_id": "P2-008",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#verification-and-open-contracts",
+    "treatment": "scope-note",
+    "note": "Retains old test/fault-injection evidence as scoped history and distinguishes it from source fidelity and readiness of the new implementation."
+  },
+  {
+    "point_id": "P2-009",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#evidence-representations",
+    "treatment": "explained",
+    "note": "Defines raw, reversible compact, simplified, and survey views and preserves first/full/raw/field/range access without a summary gate."
+  },
+  {
+    "point_id": "P2-010",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#evidence-representations",
+    "treatment": "explained",
+    "note": "Explains unsafe same-style merging, lost internal geometry, and the 600-DPI coordinate-rounding counterexample."
+  },
+  {
+    "point_id": "P2-011",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#evidence-representations",
+    "treatment": "explained",
+    "note": "Covers tuple/style-table reversibility, full hierarchy and missing-value preservation, and separate equality/token/usability evaluations."
+  },
+  {
+    "point_id": "P2-012",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#layout-and-visual-evidence",
+    "treatment": "explained",
+    "note": "Preserves the PyMuPDF bitmask correction and shows why extractor-reported and app-derived are more accurate labels than factual versus inferred."
+  },
+  {
+    "point_id": "P2-013",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#layout-and-visual-evidence",
+    "treatment": "explained",
+    "note": "Explains geometric superscript examples, rotation, heuristic method labels, and why grouped outer boxes need exact original subspan access."
+  },
+  {
+    "point_id": "P2-014",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#evidence-representations",
+    "treatment": "explained",
+    "note": "Describes survey fields, detection limitations, unproved size targets, and saved-evidence reread costs without requiring survey-first work."
+  },
+  {
+    "point_id": "P2-015",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#drafts-and-content-references",
+    "treatment": "explained",
+    "note": "Explains useful unfinished working drafts and independent candidate/commit, completeness, and source-review facts."
+  },
+  {
+    "point_id": "P2-016",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-016",
+    "treatment": "explained",
+    "note": "Retains the complete revision/error-isolation explanation and later pre-validation capture correction; exact document mechanics remain with Q1."
+  },
+  {
+    "point_id": "P2-017",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#drafts-and-content-references",
+    "treatment": "explained",
+    "note": "Uses the four-page 200-cell script-prepared table to explain inline/reference/file input and the nonliteral zero-copy claim."
+  },
+  {
+    "point_id": "P2-018",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#drafts-and-content-references",
+    "treatment": "explained",
+    "note": "Describes a fixed validated snapshot, short conditional commit, mutable-file race, and separation from semantic source coverage."
+  },
+  {
+    "point_id": "P2-019",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-019",
+    "treatment": "explained",
+    "note": "Provides three concrete cases: metadata-only repair, pure insertion, and rejected-candidate reuse, including unchanged-map/body preservation and open syntax."
+  },
+  {
+    "point_id": "P2-020",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#drafts-and-content-references",
+    "treatment": "explained",
+    "note": "Explains why a rejected active table candidate can be the correct continuation basis without loading every candidate permanently."
+  },
+  {
+    "point_id": "P2-021",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#objects-and-identities",
+    "treatment": "explained",
+    "note": "Distinguishes stable logical table/block identity from immutable content hashes and avoids imposing a storage/chunk size."
+  },
+  {
+    "point_id": "P2-022",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-022",
+    "treatment": "explained",
+    "note": "Keeps the header-unit/row, reordering/map, and asset/reference conflict cases; preserves stale-base conflict and rejects automatic semantic independence."
+  },
+  {
+    "point_id": "P2-023",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-023",
+    "treatment": "explained",
+    "note": "States immutable files as body authority and SQLite registration/pointers/receipts, while treating old full-JSON/block storage sketches as options."
+  },
+  {
+    "point_id": "P2-024",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#pins-links-and-release",
+    "treatment": "explained",
+    "note": "Separates agent pin intent/purpose from app-maintained version, lineage, byte/dimension, and uncertain cost bookkeeping."
+  },
+  {
+    "point_id": "P2-025",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#pins-links-and-release",
+    "treatment": "explained",
+    "note": "Defines fixed versus following references and uses mg-to-microgram/negation/digit changes to show why structural continuity is not semantic compatibility."
+  },
+  {
+    "point_id": "P2-026",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#pins-links-and-release",
+    "treatment": "explained",
+    "note": "Explains last-disclosed revision as delivery only, fixed resolution per request, exact diff availability, and post-compaction current-content access."
+  },
+  {
+    "point_id": "P2-027",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#retention-signals",
+    "treatment": "explained",
+    "note": "Reconstructs P0-P3 and Focus Decay with counterexamples, rejecting saved/unpinned/no-issue status as semantic release proof."
+  },
+  {
+    "point_id": "P2-028",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#retention-signals",
+    "treatment": "explained",
+    "note": "Explains capacity signals as assistance to agent relevance decisions, without fixed windows, mandatory pin registers, or routine human approval."
+  },
+  {
+    "point_id": "P2-029",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#pins-links-and-release",
+    "treatment": "explained",
+    "note": "Separates provenance linkage, unresolved dependency, and explicit residency using the large cited-image example."
+  },
+  {
+    "point_id": "P2-030",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#pins-links-and-release",
+    "treatment": "explained",
+    "note": "Separates evidence release from semantic history compaction and preserves omitted context-delta behavior without a new model call per release."
+  },
+  {
+    "point_id": "P2-031",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#pins-links-and-release",
+    "treatment": "explained",
+    "note": "Explains when-needed versus next-view immediate release, cache tradeoffs, and preservation of originals while leaving API spellings illustrative."
+  },
+  {
+    "point_id": "P2-032",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#indexes-and-unfinished-evidence",
+    "treatment": "explained",
+    "note": "Defines stubs as navigation, retains complete indexes and original retrieval, and rejects fixed-size guarantees against lost meaning."
+  },
+  {
+    "point_id": "P2-033",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#indexes-and-unfinished-evidence",
+    "treatment": "explained",
+    "note": "Uses alternating completion ranges and 25-page buckets to explain why indexes are not constant-size or fixed active-scope limits."
+  },
+  {
+    "point_id": "P2-034",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#precise-read-semantics",
+    "treatment": "explained",
+    "note": "Separates extraction success, actual supplied fields/pages, drafted citations and comprehension, with per-part warnings and concrete envelopes."
+  },
+  {
+    "point_id": "P2-035",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#indexes-and-unfinished-evidence",
+    "treatment": "explained",
+    "note": "Explains saved-but-unseen range manifests, retained unfinished scope, usable prior notes, and no permanent residency for every unhydrated directory."
+  },
+  {
+    "point_id": "P2-036",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#oversized-results",
+    "treatment": "explained",
+    "note": "Separates complete persistence from shared whole-batch admission and explains why per-tool capacity claims cannot independently allocate the same room."
+  },
+  {
+    "point_id": "P2-037",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#precise-read-semantics",
+    "treatment": "explained",
+    "note": "Gives pages 15-20 saved versus 19-20 supplied, distinguishes page failure from omission, and preserves formal result pairing and exact retrieval."
+  },
+  {
+    "point_id": "P2-038",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#oversized-results",
+    "treatment": "explained",
+    "note": "Explains the 55% plus 35% example and why deferred admission creates no guaranteed handoff space or compulsory stage ladder."
+  },
+  {
+    "point_id": "P2-039",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#capacity-accounting",
+    "treatment": "explained",
+    "note": "Enumerates complete-request contributors and distinguishes stored size, active repeated contribution, token estimates, byte limits and output allowance."
+  },
+  {
+    "point_id": "P2-040",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#capacity-accounting",
+    "treatment": "explained",
+    "note": "Preserves route-specific uncertainty and concrete rejected calibration shortcuts, without inventing an upper bound or requiring paid probes."
+  },
+  {
+    "point_id": "P2-041",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#rolling-compaction",
+    "treatment": "explained",
+    "note": "Adds complete rolling application mechanics, fitting partial requests, 140k-to-100k progress toward 80k, whole-view overhead, and no fixed K/pass count."
+  },
+  {
+    "point_id": "P2-042",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#transient-hydration",
+    "treatment": "explained",
+    "note": "Shares exact resolution between normal reasoning and compaction while explaining why either opaque tickets only or compulsory full hydration can fail."
+  },
+  {
+    "point_id": "P2-043",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#failed-handoff-and-restart",
+    "treatment": "explained",
+    "note": "Explains preserved originals, normal-state resume before recovery summaries, finite capacity failure, renewed inspection limits, and no unchanged oversized resend."
+  },
+  {
+    "point_id": "P2-044",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#handoff-and-working-notes",
+    "treatment": "explained",
+    "note": "Describes self-sufficient continuation with concrete cross-page-table knowledge and exact references, rejecting permanent latest-draft residency and fragile delta dependence."
+  },
+  {
+    "point_id": "P2-045",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#oversized-results",
+    "treatment": "explained",
+    "note": "Separates HTTP bytes from model tokens, rejects unverified nominal limits, and keeps capacity reselection outside silent transport mutation."
+  },
+  {
+    "point_id": "P2-046",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#oversized-results",
+    "treatment": "explained",
+    "note": "Explains zero-fit results, noncontiguous useful pages, capacity envelopes, and why neither first-K nor largest-item removal is mandatory."
+  },
+  {
+    "point_id": "P2-047",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#oversized-results",
+    "treatment": "explained",
+    "note": "Assigns capacity recovery an explicit bounded controller path and preserves original budgets and distinction from frozen same-input transport retry."
+  },
+  {
+    "point_id": "P2-048",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#prompt-cache-and-cost",
+    "treatment": "explained",
+    "note": "Explains fixed epoch baseline versus dynamic current tail, prefix breakage, duplicate snapshots, immediate requirement updates, and recent-call timing."
+  },
+  {
+    "point_id": "P2-049",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#prompt-cache-and-cost",
+    "treatment": "explained",
+    "note": "Limits the observed cache ratio and explains whole-task price-weighted cost, extra reads/compaction, latency, unknown fees and precedence of fidelity/capacity."
+  },
+  {
+    "point_id": "P2-050",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#computation-reuse",
+    "treatment": "explained",
+    "note": "Separates exact reads, same-operation receipt replay, and a new call reusing evidence with its own result pairing and provenance."
+  },
+  {
+    "point_id": "P2-051",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#computation-reuse",
+    "treatment": "explained",
+    "note": "Explains effective computation signatures, version/default/language-order changes, overlap reuse at independent units, and cross-page exceptions."
+  },
+  {
+    "point_id": "P2-052",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#computation-reuse",
+    "treatment": "explained",
+    "note": "Separates computation units, one-blob storage, indexed fields/pages and selected input scope without requiring one file per page."
+  },
+  {
+    "point_id": "P2-053",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#computation-reuse",
+    "treatment": "explained",
+    "note": "Preserves explicit recomputation, old evidence and fixed note references; newest cache selection is a declared policy rather than a quality claim."
+  },
+  {
+    "point_id": "P2-054",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#transient-hydration",
+    "treatment": "explained",
+    "note": "Explains durable references and inline small results, fresh native message/image hydration, artifact carrier limits, and avoiding persistent expanded messages."
+  },
+  {
+    "point_id": "P2-055",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#transient-hydration",
+    "treatment": "explained",
+    "note": "Rejects fixed checkpoint-size claims, preserves original native image formats, and connects successful reuse to the requested supplied view."
+  },
+  {
+    "point_id": "P2-056",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#input-view-and-causality",
+    "treatment": "explained",
+    "note": "Uses selected events 20/40 to distinguish exact input manifests from a maximum-sequence assertion and model comprehension."
+  },
+  {
+    "point_id": "P2-057",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#input-view-and-causality",
+    "treatment": "explained",
+    "note": "Lists reconstruction data and limits the claim to the app assembly boundary, retaining exact bytes and optional safe wire diagnostics."
+  },
+  {
+    "point_id": "P2-058",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#input-view-and-causality",
+    "treatment": "explained",
+    "note": "Explains response-bound input identity, namespaced metadata, preserved provider fields, and multi-handler/multi-message adapter association hazards."
+  },
+  {
+    "point_id": "P2-059",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#input-view-and-causality",
+    "treatment": "explained",
+    "note": "Provides Q/V/attempt/R/batch causal chain and separates usage, accepted tools, view changes and original task/step allowances."
+  },
+  {
+    "point_id": "P2-060",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#transient-hydration",
+    "treatment": "explained",
+    "note": "Keeps compressed activity as inert reference text, preserves native originals, and forbids truncated historical calls from becoming dispatch/replay inputs."
+  },
+  {
+    "point_id": "P2-061",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#handoff-and-working-notes",
+    "treatment": "explained",
+    "note": "Uses the continued-table/uncertain-value example to distinguish mechanical activity from recorded knowledge and avoids a second independent ledger."
+  },
+  {
+    "point_id": "P2-062",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#handoff-and-working-notes",
+    "treatment": "explained",
+    "note": "Explains ordinary finding preservation without mandatory note rituals, including schema/replay costs and multiple tools within one model response."
+  },
+  {
+    "point_id": "P2-063",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#notes-coverage-and-order",
+    "treatment": "explained",
+    "note": "Reconstructs event-100 input/OCR-101/note-save race and separates note write time, actual supporting input and compacted history scope."
+  },
+  {
+    "point_id": "P2-064",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#notes-coverage-and-order",
+    "treatment": "explained",
+    "note": "Explains why later completion of operation 100 is lost by a greater-than-101 query and keeps operation/message/input/coverage order distinct."
+  },
+  {
+    "point_id": "P2-065",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#handoff-and-working-notes",
+    "treatment": "explained",
+    "note": "Covers expected note versions, recoverable historical note content, same-note conflicts, and separation of user requirements from judgments."
+  },
+  {
+    "point_id": "P2-066",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#compact-policy-authority",
+    "treatment": "explained",
+    "note": "Keeps context selection separate from service-owned committed document/request/effect facts; a graph rollback cannot reverse those facts."
+  },
+  {
+    "point_id": "P2-067",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#intent-settlement",
+    "treatment": "explained",
+    "note": "Explains read basis versus staged self-produced note revision versus external drift, without asserting a cross-store transaction."
+  },
+  {
+    "point_id": "P2-068",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-068",
+    "treatment": "explained",
+    "note": "Preserves concrete scope-removal example, requirement revisions, useful unaffected work, reevaluation and immediate pause/cancel precedence."
+  },
+  {
+    "point_id": "P2-069",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#compact-policy-authority",
+    "treatment": "explained",
+    "note": "Explains the policy-7 to 8/9 branch example and rejects maximum revision or timestamp as a semantic merge/authority rule."
+  },
+  {
+    "point_id": "P2-070",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#compact-policy-authority",
+    "treatment": "explained",
+    "note": "Explains serialized SQLite versus competing graph Commands and the final small Graph State policy/single settlement writer correction."
+  },
+  {
+    "point_id": "P2-071",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#intent-settlement",
+    "treatment": "explained",
+    "note": "Maps historical tool/settlement/model middleware responsibilities to the direct graph without requiring those hooks or persisting hydrated evidence."
+  },
+  {
+    "point_id": "P2-072",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#intent-settlement",
+    "treatment": "explained",
+    "note": "Explains coherent and conflicting same-batch intents, declaration rather than I/O order, explicit conflict outcomes, and no general semantic rebase prerequisite."
+  },
+  {
+    "point_id": "P2-073",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#intent-settlement",
+    "treatment": "historical-reference",
+    "note": "Explains the old activation interruption/key problem and preserves stable once-only batch settlement while explicitly superseding external activation tables."
+  },
+  {
+    "point_id": "P2-074",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#input-view-and-causality",
+    "treatment": "explained",
+    "note": "Freezes resolved following references per request and rejects assembling independently newest components or treating recovery as fresh selection."
+  },
+  {
+    "point_id": "P2-075",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-075",
+    "treatment": "historical-reference",
+    "note": "Preserves shared SQLite logical ownership, external-file/checkpoint boundaries, WAL/durability tradeoffs and unmeasured sub-millisecond/schema claims."
+  },
+  {
+    "point_id": "P2-076",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-076",
+    "treatment": "explained",
+    "note": "Keeps blob-before-reference preparation, recoverable unreferenced work, renewable lease caveat and simpler no-background-cleanup option."
+  },
+  {
+    "point_id": "P2-077",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-077",
+    "treatment": "explained",
+    "note": "Provides full scoped operation identity, accepted parent linkage, stable recovery identity and same-ID/different-effective-input rejection."
+  },
+  {
+    "point_id": "P2-078",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-078",
+    "treatment": "explained",
+    "note": "Walks revision-3 append, revision-4 commit/receipt, missing checkpoint and later revision-5 head, distinguishing replay from new stale calls."
+  },
+  {
+    "point_id": "P2-079",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-079",
+    "treatment": "explained",
+    "note": "Preserves optional deduplication scope, base/target/complete-change identity and identical text at distinct positions as different valid operations."
+  },
+  {
+    "point_id": "P2-080",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-080",
+    "treatment": "historical-reference",
+    "note": "Explains full completion beyond ToolMessage, historical external-policy supersession, supported Command forms and no newer-state regression."
+  },
+  {
+    "point_id": "P2-081",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#failed-handoff-and-restart",
+    "treatment": "explained",
+    "note": "Explains why stable IDs can resurrect compacted messages and limits reconciliation to actual pending accepted-batch/runtime work."
+  },
+  {
+    "point_id": "P2-082",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-082",
+    "treatment": "historical-reference",
+    "note": "Retains public framework resume/pending-write reasoning and actual Send/PregelTask boundaries without inventing a second scheduler."
+  },
+  {
+    "point_id": "P2-083",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#computation-reuse",
+    "treatment": "explained",
+    "note": "Explains reusable expensive evidence across effect/checkpoint gaps with source/settings/completeness checks and no universal subprocess requirement."
+  },
+  {
+    "point_id": "P2-084",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#failed-handoff-and-restart",
+    "treatment": "explained",
+    "note": "Separates return, hook observation, durable persistence, input inclusion and understanding; lazy timestamps are observations rather than joint commits."
+  },
+  {
+    "point_id": "P2-085",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#failed-handoff-and-restart",
+    "treatment": "explained",
+    "note": "Explains request/reply/tool/graph durability boundaries, persistence-mode limits, persistent budgets and finite rather than universal crash recovery."
+  },
+  {
+    "point_id": "P2-086",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#scripts-and-partial-work",
+    "treatment": "explained",
+    "note": "Preserves opt-in autonomous host-user scripts and explains why working-directory separation is organization, not an OS sandbox."
+  },
+  {
+    "point_id": "P2-087",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#scripts-and-partial-work",
+    "treatment": "explained",
+    "note": "Explains launch/completion marker gaps, useful nonzero-exit outputs, honest unknown states and physical-attempt versus logical-operation identity."
+  },
+  {
+    "point_id": "P2-088",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-088",
+    "treatment": "historical-reference",
+    "note": "Keeps detailed Windows Job Object handle/assignment/launch-gap and descendant limitations as optional implementation facts, not V1 requirements."
+  },
+  {
+    "point_id": "P2-089",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#scripts-and-partial-work",
+    "treatment": "explained",
+    "note": "Makes safe reuse/rerun depend on actual effects and reconciliation, not built-in/script labels or missing success receipts."
+  },
+  {
+    "point_id": "P2-090",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#scripts-and-partial-work",
+    "treatment": "explained",
+    "note": "Separates diagnostic reading, identified termination and fixed-copy adoption without forcing a ritual or killing attempts during inspection."
+  },
+  {
+    "point_id": "P2-091",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-091",
+    "treatment": "historical-reference",
+    "note": "Preserves exact GENERIC_WRITE/FILE_SHARE_WRITE and ERROR_SHARING_VIOLATION corrections with snapshot-stability limits."
+  },
+  {
+    "point_id": "P2-092",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#scripts-and-partial-work",
+    "treatment": "explained",
+    "note": "Distinguishes exact bytes, full decoding, consistent acquisition and requested coverage; salvage success does not erase original operation uncertainty."
+  },
+  {
+    "point_id": "P2-093",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#layout-and-visual-evidence",
+    "treatment": "explained",
+    "note": "Explains image-type-specific source/processing identity, native encoding, crops/renders/scripts and absence of one universal provenance field preset."
+  },
+  {
+    "point_id": "P2-094",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#review-and-version-dependencies",
+    "treatment": "explained",
+    "note": "Separates preview generation from inspected source/version/aspect review and traces missing emphasis across source interpretation, markup and rendering."
+  },
+  {
+    "point_id": "P2-095",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#review-and-version-dependencies",
+    "treatment": "explained",
+    "note": "Explains historical review truth versus current applicability with independent character/style/table-header/figure cases and no global review gate."
+  },
+  {
+    "point_id": "P2-096",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#review-and-version-dependencies",
+    "treatment": "explained",
+    "note": "Explains produced-version dependencies, implicit-latest preview races, separate commit/preview outcomes and rejection of a mandatory generic batch scheduler."
+  },
+  {
+    "point_id": "P2-097",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#review-and-version-dependencies",
+    "treatment": "explained",
+    "note": "Describes precise source/saved-output comparison, independent regions/contact sheets, labels outside pixels and exact native rereads."
+  },
+  {
+    "point_id": "P2-098",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#layout-and-visual-evidence",
+    "treatment": "explained",
+    "note": "Explains contact-sheet tradeoffs and why ink/stroke density is an optional difference hint rather than certified boldness or mandatory numeric output."
+  },
+  {
+    "point_id": "P2-099",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#framework-and-native-boundary",
+    "treatment": "explained",
+    "note": "Separates product policy ownership from framework mechanism reuse and evaluates integration by real maintained state/exception responsibilities."
+  },
+  {
+    "point_id": "P2-100",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#framework-and-native-boundary",
+    "treatment": "explained",
+    "note": "Explains one policy authority across components, rejects competing compressors, and requires actual native-preservation validation rather than hook-name inference."
+  },
+  {
+    "point_id": "P2-101",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-101",
+    "treatment": "historical-reference",
+    "note": "Preserves checked Deep Agents offloading/summarizer/configuration/planning corrections as version-specific facts, not current dependencies."
+  },
+  {
+    "point_id": "P2-102",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#scripts-and-partial-work",
+    "treatment": "explained",
+    "note": "Keeps generic workspace/script freedom while separating prepared work files from formal document-version validation/storage."
+  },
+  {
+    "point_id": "P2-103",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-103",
+    "treatment": "historical-reference",
+    "note": "Retains precise public/private Deep Agents and Pi API corrections, actual tool/session result forms, and rejection of direct JSONL surgery."
+  },
+  {
+    "point_id": "P2-104",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-104",
+    "treatment": "historical-reference",
+    "note": "Keeps actual LangGraph update_state/reducer/as_node semantics, public reads and Pi continue limitation without claiming universal runtime equivalence."
+  },
+  {
+    "point_id": "P2-105",
+    "destination": "docs/reference/02-context-state-and-evidence.md#p2-105",
+    "treatment": "historical-reference",
+    "note": "Preserves the provisional create_agent preference and its later supersession by the small direct StateGraph baseline."
+  },
+  {
+    "point_id": "P2-106",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#framework-and-native-boundary",
+    "treatment": "explained",
+    "note": "Explains retained native Nexus protocols, images/reasoning, complete responses, attempt-local streaming and shared ordinary/compaction budget boundary."
+  },
+  {
+    "point_id": "P2-107",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#framework-and-native-boundary",
+    "treatment": "historical-reference",
+    "note": "Explains old controller retry versus provider image-pairing responsibilities and why a thin HTTP wrapper or old test count does not inherit every guarantee."
+  },
+  {
+    "point_id": "P2-108",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#framework-and-native-boundary",
+    "treatment": "explained",
+    "note": "Keeps frozen transport replay distinct from capacity reselection, one retry owner, attempt usage/unknown fees and no new defaults from old retry examples."
+  },
+  {
+    "point_id": "P2-109",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#model-switching-and-long-work",
+    "treatment": "explained",
+    "note": "Explains route/capability transition and preservation of unresolved visual needs, allowing useful supported work without an arbitrary font-based visual gate."
+  },
+  {
+    "point_id": "P2-110",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#model-switching-and-long-work",
+    "treatment": "scope-note",
+    "note": "Fully describes optional visual delegation input/provenance/uncertainty while retaining raw source evidence and no V1/model-call requirement."
+  },
+  {
+    "point_id": "P2-111",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#model-switching-and-long-work",
+    "treatment": "scope-note",
+    "note": "Describes episode/subagent continuity, exact outputs, unresolved cross-section relations and shared budgets without a fixed two-level architecture or page threshold."
+  },
+  {
+    "point_id": "P2-112",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#verification-and-open-contracts",
+    "treatment": "explained",
+    "note": "Explains why the seven-step fixture joins identity/content/recovery boundaries but cannot prescribe conversion or prove model use of context."
+  },
+  {
+    "point_id": "P2-113",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#verification-and-open-contracts",
+    "treatment": "explained",
+    "note": "Lists meaningful mechanism assertions and their limits for hard crashes, live reasoning, fidelity, cost and framework superiority."
+  },
+  {
+    "point_id": "P2-114",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#verification-and-open-contracts",
+    "treatment": "explained",
+    "note": "Separates source-led saved/reopened/exported acceptance, natural adoption, scoped mechanism checks and runtime/desktop readiness."
+  },
+  {
+    "point_id": "P2-115",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#verification-and-open-contracts",
+    "treatment": "scope-note",
+    "note": "Keeps Q1-Q3 open with their exact remaining choices and retained boundaries; rejects turning historical caveats into added prerequisites."
+  },
+  {
+    "point_id": "P2-116",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#verification-and-open-contracts",
+    "treatment": "scope-note",
+    "note": "Explains specified-version outputs, model-independent saved export, draft labeling and separate stop/content/package/installed-product facts."
+  },
+  {
+    "point_id": "P3-001",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#edit-semantics",
+    "treatment": "explained",
+    "note": "Exact local edits preserve untouched content; logical output blocks do not dictate storage size or guarantee semantic correctness."
+  },
+  {
+    "point_id": "P3-002",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#edit-semantics",
+    "treatment": "explained",
+    "note": "Version-bound expected text, nonoverlapping same-base patches, descending offsets, sequential alternatives, locators and cross-language position conventions are explained."
+  },
+  {
+    "point_id": "P3-003",
+    "destination": "docs/reference/03-documents-delivery-and-recovery.md#local-patching",
+    "treatment": "historical-reference",
+    "note": "The 本文件/本文作 and emphasis/glyph observations retain their scope; eight historical errors included failures outside patching."
+  },
+  {
+    "point_id": "P3-004",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#rendering-and-preview",
+    "treatment": "explained",
+    "note": "Version-bound source/output images, optional montages, pixel preservation and resolution/crop/causal limits are explained."
+  },
+  {
+    "point_id": "P3-005",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#evidence-and-exact-access",
+    "treatment": "explained",
+    "note": "Immutable evidence plus internal location resolves coordinates; page-only and multiple-region references remain valid without mandatory per-word boxes."
+  },
+  {
+    "point_id": "P3-006",
+    "destination": "docs/reference/03-documents-delivery-and-recovery.md#capacity-visibility-and-access",
+    "treatment": "explained",
+    "note": "Historical sizes are distinguished from selected repeated input contribution and configurable route/output capacity; timeout causality is not inferred."
+  },
+  {
+    "point_id": "P3-007",
+    "destination": "docs/reference/03-documents-delivery-and-recovery.md#capacity-visibility-and-access",
+    "treatment": "historical-reference",
+    "note": "P's disabled selective/checkpoint configuration and the limits of non-use as natural-adoption evidence are retained."
+  },
+  {
+    "point_id": "P3-008",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#evidence-and-exact-access",
+    "treatment": "explained",
+    "note": "Shared full/raw/field/range/native access, actual return coverage and the external MCP host's independent context responsibility are explained."
+  },
+  {
+    "point_id": "P3-009",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#context-work-and-frozen-input",
+    "treatment": "explained",
+    "note": "Explicit optional context intents do not imply omission-triggered release; small policy and effective ordinary-dialogue requirements remain protected."
+  },
+  {
+    "point_id": "P3-010",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#page-maps-and-provenance",
+    "treatment": "explained",
+    "note": "Sparse updates merge into complete correspondence, preserve task-specific scope and agree with page markers without resending every page."
+  },
+  {
+    "point_id": "P3-011",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#page-maps-and-provenance",
+    "treatment": "explained",
+    "note": "Subpage/section scope and completeness differ from per-page flags; blank, omitted, unprocessed, none and unknown remain distinct."
+  },
+  {
+    "point_id": "P3-012",
+    "destination": "docs/reference/03-documents-delivery-and-recovery.md#continuity-and-state-ownership",
+    "treatment": "explained",
+    "note": "Same-run context handoff, new/delegated task scope and same-execution recovery share data but require different authority, pending work and budget state."
+  },
+  {
+    "point_id": "P3-013",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#accepted-batch-execution",
+    "treatment": "explained",
+    "note": "Accepted-batch identity, single context settlement and historical-result replay preserve later policy rather than reactivating an old revision."
+  },
+  {
+    "point_id": "P3-014",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#ownership-and-entry-points",
+    "treatment": "explained",
+    "note": "Ownership separates graph policy from durable attempts/budgets/document/external effects; physical database placement alone is not correctness."
+  },
+  {
+    "point_id": "P3-015",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#request-and-attempt-identity",
+    "treatment": "explained",
+    "note": "Input view, logical step, physical attempt, accepted parent reply, tool batch and operation identities are individually defined."
+  },
+  {
+    "point_id": "P3-016",
+    "destination": "docs/reference/03-documents-delivery-and-recovery.md#transport-salvage-and-slices",
+    "treatment": "explained",
+    "note": "Request-local native image encoding replaces residual provider queues; controller budgets cannot be inherited by a nominally stateless wrapper."
+  },
+  {
+    "point_id": "P3-017",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#budgets-cancellation-and-stop",
+    "treatment": "explained",
+    "note": "Local preflight, transport retry and capacity re-preparation use distinct policy eligibility with common totals; recognized errors and Retry-After remain qualified."
+  },
+  {
+    "point_id": "P3-018",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#process-and-progress",
+    "treatment": "explained",
+    "note": "Read-only inspection, explicit termination and salvage are separate; snapshot stability, full decoding and Job Objects remain optional mechanisms."
+  },
+  {
+    "point_id": "P3-019",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#q3-closure-and-implementation-order",
+    "treatment": "explained",
+    "note": "A useful source/save/reopen/export increment includes early candidate preservation and capacity; product priority is not rigid layer-by-layer construction."
+  },
+  {
+    "point_id": "P3-020",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#edit-semantics",
+    "treatment": "explained",
+    "note": "Raw fidelity and mapped read/edit views avoid blanket NFC/HTML rewriting; U+2F800 and UTF-16/code-point examples explain the limits."
+  },
+  {
+    "point_id": "P3-021",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#edit-semantics",
+    "treatment": "explained",
+    "note": "Repeated values, occurrence selection and rowspan/colspan require explicit version-bound locations; cell references can reuse a patch engine."
+  },
+  {
+    "point_id": "P3-022",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-capture",
+    "treatment": "explained",
+    "note": "Native and decoded capture precede their rejection boundaries; reference resolution/full-result validation precede commit, while projection failure remains separate."
+  },
+  {
+    "point_id": "P3-023",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#page-maps-and-provenance",
+    "treatment": "explained",
+    "note": "Drafts remain readable, previewable and exportable with honest gaps; metadata/body changes can share an operation without a completion gate."
+  },
+  {
+    "point_id": "P3-024",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#page-maps-and-provenance",
+    "treatment": "explained",
+    "note": "Completion binds scope and version, printed-page/provenance observations can be corrected, and copyright content is not automatically decorative."
+  },
+  {
+    "point_id": "P3-025",
+    "destination": "docs/reference/03-documents-delivery-and-recovery.md#draft-export-and-claims",
+    "treatment": "historical-reference",
+    "note": "The accepted task's 191662-character inspect and A/C defect locations remain correctly scoped; interface-friction causality is unproven."
+  },
+  {
+    "point_id": "P3-026",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#accepted-batch-execution",
+    "treatment": "explained",
+    "note": "Trusted declaration order settles context intents, while actual tool dependencies/version changes require their own execution contract."
+  },
+  {
+    "point_id": "P3-027",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#accepted-batch-execution",
+    "treatment": "explained",
+    "note": "The in-memory lock counterexample, parallel Send behavior, explicit versions and durable whole-batch progress explain the small sequential-node preference."
+  },
+  {
+    "point_id": "P3-028",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#rendering-and-preview",
+    "treatment": "explained",
+    "note": "Whole-document CommonMark resolution, token/DOM relationships, independent source/output geometry and screenshot coverage limits are explained."
+  },
+  {
+    "point_id": "P3-029",
+    "destination": "docs/reference/03-documents-delivery-and-recovery.md#adapter-integration-boundaries",
+    "treatment": "historical-reference",
+    "note": "The under-150-line and inherited-228-test guarantees are retracted; native tool/image ordering and integration responsibilities remain explicit."
+  },
+  {
+    "point_id": "P3-030",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#request-and-attempt-identity",
+    "treatment": "explained",
+    "note": "Durable app-step lookup recovers an accepted reply before another send across the graph-checkpoint gap; encoding obeys frozen evidence selection."
+  },
+  {
+    "point_id": "P3-031",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#q3-closure-and-implementation-order",
+    "treatment": "explained",
+    "note": "Useful complete sections and observable saved/reopened/exported outcomes guide increments without arbitrary page cuts or new authorized trials."
+  },
+  {
+    "point_id": "P3-032",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#ownership-and-entry-points",
+    "treatment": "explained",
+    "note": "Whole-batch/recovery/input ownership motivates a small StateGraph; fixed node counts and a mandatory BaseChatModel wrapper are not selected."
+  },
+  {
+    "point_id": "P3-033",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#request-and-attempt-identity",
+    "treatment": "explained",
+    "note": "New input or deliberate regeneration creates a new judgment even with identical input; recovery retains identity and cannot assume prepare is revisited."
+  },
+  {
+    "point_id": "P3-034",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#request-and-attempt-identity",
+    "treatment": "explained",
+    "note": "Frozen request content/configuration/schemas and pre-send durable attempts cover missing-reply/checkpoint gaps without exactly-once remote claims."
+  },
+  {
+    "point_id": "P3-035",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#commit-visibility",
+    "treatment": "explained",
+    "note": "Prepared files differ from commit; short metadata transactions bind registration, promised pointers and operation/adoption facts while unknown effects keep their own records."
+  },
+  {
+    "point_id": "P3-036",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-capture",
+    "treatment": "explained",
+    "note": "The historical MCP 2.3.0 interception finding illustrates pre-validation entry wiring without inheriting its version or weakening all schemas."
+  },
+  {
+    "point_id": "P3-037",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#rendering-and-preview",
+    "treatment": "explained",
+    "note": "Raw HTML tokens, many-to-many DOM mapping, configured footnotes and normal versus expanded reading views retain the parser/viewport qualifications."
+  },
+  {
+    "point_id": "P3-038",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#q3-closure-and-implementation-order",
+    "treatment": "explained",
+    "note": "Basic capacity belongs in the first usable runtime because even one inspect can be large; long-task history handling is not gated on forty pages."
+  },
+  {
+    "point_id": "P3-039",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#explicit-version-export",
+    "treatment": "explained",
+    "note": "Task-owned explicit version/scope selection permits older versions and independent export; completion/waiting are separate and unused candidates do not force repair."
+  },
+  {
+    "point_id": "P3-040",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-repair-sequence",
+    "treatment": "explained",
+    "note": "The worked page-12/page-13 repair distinguishes base preservation, content-only import and candidate merge, with final Q1 merge/ordering semantics still open."
+  },
+  {
+    "point_id": "P3-041",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-reuse-and-lineage",
+    "treatment": "explained",
+    "note": "Exact candidate prose/block references work independently of stale deletion/reorder operations; raw preservation survives indexing failure."
+  },
+  {
+    "point_id": "P3-042",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-reuse-and-lineage",
+    "treatment": "explained",
+    "note": "Unrelated later commits do not dispose of earlier candidates; partial adoption and useful work are scoped without mandatory per-fragment disposition."
+  },
+  {
+    "point_id": "P3-043",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-reuse-and-lineage",
+    "treatment": "explained",
+    "note": "Ancestor adoption records historical usage; current content comes from the selected version and unfinished necessary work from task state."
+  },
+  {
+    "point_id": "P3-044",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#commit-visibility",
+    "treatment": "explained",
+    "note": "The V10/prepared-V11/current-V12 case explains conditional completion, preserved conflicts, SQLite preference and file/checkpoint durability limits."
+  },
+  {
+    "point_id": "P3-045",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#operation-replay",
+    "treatment": "explained",
+    "note": "Old version and delivery-selection receipts report historical outcomes while newer pointers remain advanced; frozen model inputs remain historical."
+  },
+  {
+    "point_id": "P3-046",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#accepted-batch-execution",
+    "treatment": "explained",
+    "note": "The full accepted list includes completed, rejected and pending calls; restore results/intents and resolve outstanding work before a new model decision."
+  },
+  {
+    "point_id": "P3-047",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#operation-replay",
+    "treatment": "explained",
+    "note": "Each operation has specific recovery conditions; omitted defaults bind at the declared sequential start, and old-version export is independent of current head."
+  },
+  {
+    "point_id": "P3-048",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#operation-replay",
+    "treatment": "explained",
+    "note": "Concurrency, reuse and rerun safety are distinct; output/source/settings/attempt facts determine reconciliation and useful files survive interruption."
+  },
+  {
+    "point_id": "P3-049",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#rendering-and-preview",
+    "treatment": "explained",
+    "note": "Source render works before any draft using source/page/region/render settings; output preview uses a saved version and explicit view parameters."
+  },
+  {
+    "point_id": "P3-050",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#budgets-cancellation-and-stop",
+    "treatment": "explained",
+    "note": "Route-local rejection observations retain local-estimate and upstream-limit uncertainty; new step identities do not reset original totals."
+  },
+  {
+    "point_id": "P3-051",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#send-boundary-sequence",
+    "treatment": "explained",
+    "note": "Compaction and normal sends share durable identity/budgets/cancellation; accepted-result lookup precedes fresh-send accounting and remains possible at zero allowance."
+  },
+  {
+    "point_id": "P3-052",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#context-work-and-frozen-input",
+    "treatment": "explained",
+    "note": "Actual supplied ranges, prior handoff, uncovered history and base revision constrain application; invalid/stale results preserve originals and complete pairs."
+  },
+  {
+    "point_id": "P3-053",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#context-work-and-frozen-input",
+    "treatment": "explained",
+    "note": "Intermediate reduction can apply before normal-request readiness; assess full replacement overhead and stop within original limits on no useful progress."
+  },
+  {
+    "point_id": "P3-054",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#context-work-and-frozen-input",
+    "treatment": "explained",
+    "note": "The changing-header-anchor counterexample motivates self-sufficient continuation content while exact Q2 handoff semantics remain open."
+  },
+  {
+    "point_id": "P3-055",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#context-work-and-frozen-input",
+    "treatment": "explained",
+    "note": "Authoring arguments count alongside tool results; original pending operations remain intact while irrelevant latest/candidate portions may leave the model view."
+  },
+  {
+    "point_id": "P3-056",
+    "destination": "docs/reference/03-documents-delivery-and-recovery.md#authoring-history-and-cache",
+    "treatment": "historical-reference",
+    "note": "Fixed recent K, supersession-only release and 90-percent/max-cache claims are withdrawn; frozen snapshots protect replay independently."
+  },
+  {
+    "point_id": "P3-057",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-capture",
+    "treatment": "explained",
+    "note": "Native malformed arguments, decoded schema-invalid calls and optional indexing have different capture boundaries and honest failure outcomes."
+  },
+  {
+    "point_id": "P3-058",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#candidate-reuse-and-lineage",
+    "treatment": "explained",
+    "note": "The partial JSON example explains exact same-attempt closed-span extraction and tolerant-parser limits; automatic salvage remains optional and outside V1 prerequisites."
+  },
+  {
+    "point_id": "P3-059",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#completion-and-waiting",
+    "treatment": "explained",
+    "note": "Execution, content claim and package consistency remain independent; cancellation/limits/local unknown effects differ from true questions and remote bounded replay."
+  },
+  {
+    "point_id": "P3-060",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#completion-and-waiting",
+    "treatment": "explained",
+    "note": "Optional persisted one-shot reminders follow explicit stop/question/cancel precedence and cannot turn every no-tool stall into awaiting-user state."
+  },
+  {
+    "point_id": "P3-061",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#export-publication-sequence",
+    "treatment": "explained",
+    "note": "Specified-version host export builds and checks actual members, reconciles directory and ZIP separately, preserves unrelated output and avoids all-exit guarantees."
+  },
+  {
+    "point_id": "P3-062",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#process-and-progress",
+    "treatment": "explained",
+    "note": "Durable results, snapshot/revision reconnect and coalesced progress respect finite-pipe limits; OCR progress is not conversion and mandatory first-line dup2 is withdrawn."
+  },
+  {
+    "point_id": "P3-063",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#identities-and-canonical-data",
+    "treatment": "explained",
+    "note": "Immutable files own body content; SQLite owns defined metadata/receipts rather than an independently mutable duplicate. Table/module counts and old tests do not prove completeness."
+  },
+  {
+    "point_id": "P3-064",
+    "destination": "docs/reference/03-documents-delivery-and-recovery.md#final-three-contracts",
+    "treatment": "scope-note",
+    "note": "The controlling final narrowing retains Q1-Q3 and separates design closure from implementation, observed evidence from hypotheses and optional ideas from prerequisites."
+  },
+  {
+    "point_id": "P3-065",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#evidence-and-exact-access",
+    "treatment": "explained",
+    "note": "Optional computation reuse keys source/engine/language/parameters/page-region, supports overlap/recompute and does not force page-per-file storage or prove savings."
+  },
+  {
+    "point_id": "R-001",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#outcome-and-product-surface",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Complete source-faithful usable Markdown/images, autonomous app with Python backend and Electron UI, no manual preprocessing/assembly."
+  },
+  {
+    "point_id": "R-002",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#outcome-and-product-surface",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Bundle required runtimes; Windows first, wider Windows x86_64/macOS Apple Silicon/Debian intent is not a universal first-version matrix."
+  },
+  {
+    "point_id": "R-003",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#content-fidelity",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Preserve substantive text, tables, meaningful typography, glyph distinctions, sections/footnotes, cross-page relationships; distinguish decorative omissions."
+  },
+  {
+    "point_id": "R-004",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#content-fidelity",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: No blanket NFC/Traditional-Simplified conversion, silent source correction or destructive HTML reflow; pixels do not prove original Unicode."
+  },
+  {
+    "point_id": "R-005",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#images-and-source-coordinates",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Native images/crops retain fidelity/provenance; display previews are separate; coordinate frames/rotation and model readability matter."
+  },
+  {
+    "point_id": "R-006",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#page-identity-and-logical-structure",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Physical/printed identity, none versus unknown, all-page map and partial-page scope; preserve logical blocks and whole-document references."
+  },
+  {
+    "point_id": "R-007",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#agent-autonomy-and-source-access",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Full first/later/raw/field/range/native pixels, transparent warnings/coverage and no compulsory method or quota."
+  },
+  {
+    "point_id": "R-008",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#agent-autonomy-and-source-access",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Process-opt-in/off, host-user permissions rather than OS sandbox; autonomous own-task use after enabling; full logs remain."
+  },
+  {
+    "point_id": "R-009",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#acceptance-and-cost",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Distinguish saved, executed, accepted, delivered; scoped source-led review and no matching answer contamination in formal comparisons."
+  },
+  {
+    "point_id": "R-010",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#acceptance-and-cost",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Include all management/retrieval/recovery; preserve unknowns and overlapping usage semantics; no token/cache/character-only saving claim."
+  },
+  {
+    "point_id": "R-011",
+    "destination": "docs/ARCHITECTURE.md#responsibilities",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Small Python StateGraph, shared Nexus/dispatcher, document/evidence core and SQLite metadata with immutable files."
+  },
+  {
+    "point_id": "R-012",
+    "destination": "docs/ARCHITECTURE.md#provider-portability",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Do not substitute direct API route or depend on native compact/retrieval/cancel; preserve native protocols and vision."
+  },
+  {
+    "point_id": "R-013",
+    "destination": "docs/CONTRACTS.md#1-document-updates-and-candidate-references",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Prevalidation native retention, exact complete candidate reuse, patch/merge and historical receipt identities."
+  },
+  {
+    "point_id": "R-014",
+    "destination": "docs/CONTRACTS.md#partial-content-salvage-boundary",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Retain received originals; exact subobjects may be useful later but tolerant repair and cross-attempt combination are not execution."
+  },
+  {
+    "point_id": "R-015",
+    "destination": "docs/CONTRACTS.md#2-context-capacity-and-handoff",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Agent relevance with app capacity, evidence release/history compaction, protected requirements/dependencies/useful work."
+  },
+  {
+    "point_id": "R-016",
+    "destination": "docs/CONTRACTS.md#release-and-rolling-compaction",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Budget full payload, exact range coverage, permit partial progress, self-sufficient handoff, retain raw history and safe failure."
+  },
+  {
+    "point_id": "R-017",
+    "destination": "docs/CONTRACTS.md#state-and-caching",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Small context policy in Graph State with one settlement writer, transient hydration and separate durable external effects; no external activation/version subsystem, max-revision merge or awareness inference."
+  },
+  {
+    "point_id": "R-018",
+    "destination": "docs/CONTRACTS.md#3-persistence-recovery-and-stop-behavior",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Singular owners, freeze same-request input, accepted complete batch before next step, historical receipts without head rollback or budget reset."
+  },
+  {
+    "point_id": "R-019",
+    "destination": "docs/CONTRACTS.md#shared-limits-and-transport-behavior",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Shared attempts/time/cancel limits for normal+compaction, no partial execution or nested retries, remote state/cost unknown."
+  },
+  {
+    "point_id": "R-020",
+    "destination": "docs/CONTRACTS.md#stop-task-completion-and-export",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Separate execution reason/content completeness/package consistency; host export without inference; protect partial useful work."
+  },
+  {
+    "point_id": "R-021",
+    "destination": "docs/CONTRACTS.md#desktop-progress-and-process-boundary",
+    "treatment": "explained",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Durable results with coalescible progress; no lossless/unbounded/nonblocking guarantee or universal dup2; reconnect from committed state."
+  },
+  {
+    "point_id": "R-022",
+    "destination": "docs/OPEN_QUESTIONS.md#scope-of-closure",
+    "treatment": "scope-note",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Document refs/updates, context capacity/handoff, persistence/recovery; classify evidence/hypotheses and explicit closure conditions."
+  },
+  {
+    "point_id": "R-023",
+    "destination": "AGENTS.md#product-and-implementation",
+    "treatment": "scope-note",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Retrieve actual applicable official guidance before framework coding; no automatic upgrades or invented mandated architecture; retain exact Chinese rule."
+  },
+  {
+    "point_id": "R-024",
+    "destination": "docs/reference/LATER_DECISIONS.md#live-04",
+    "treatment": "scope-note",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Independent local Git history, preserve old repo; create docs from full conversation/attachments rather than copy old status/test/closed-work owners."
+  },
+  {
+    "point_id": "R-025",
+    "destination": "docs/reference/LATER_DECISIONS.md#live-05",
+    "treatment": "scope-note",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Delegate source reading, writing reference docs and cross-check actual new repo/active docs, not only discussion."
+  },
+  {
+    "point_id": "R-026",
+    "destination": "docs/DEVELOPMENT_GUIDE.md#detail-and-source-coverage",
+    "treatment": "scope-note",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Development and source lookup must work from repository files without the original export, old checkout or private scratch."
+  },
+  {
+    "point_id": "R-027",
+    "destination": "docs/DEVELOPMENT_GUIDE.md#reading-by-implementation-concern",
+    "treatment": "scope-note",
+    "note": "Effective owner states this requirement/boundary and links the detailed technical handoff where relevant: Explain discussed state/data ownership, interfaces, sequences, failures, rationale, examples and open choices; a source index or copied transcript is insufficient."
+  }
+]

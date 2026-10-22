@@ -1,0 +1,1 @@
+我會先用官方文件核對論壇中幾個關鍵說法，再比較 Pi、LangChain／LangGraph、Deep Agents、OpenAI SDK 和自製方案對我們 app 的適配度。這裏先把 Pi 理解為 `badlogic/pi-mono`；OpenAI SDK 則會區分 API client 與 Agents SDK。我會用 openai-docs 技能核對後者。

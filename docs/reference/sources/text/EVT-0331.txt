@@ -1,0 +1,1 @@
+目前的差異已較清楚：Deep Agents 提供較多現成的卸載與摘要功能；Pi 也有完整 session／compaction，並提供 context 修改入口；LangGraph 則仍要自行補上大部分 context policy。我還發現兩個會影響選型的細節：圖片處理有預設限制，而 CLIProxyAPI 的 Pi 插件使用特定路由，不能直接視為 Nexus 相容證明。

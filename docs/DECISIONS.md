@@ -24,6 +24,8 @@ This is the effective rebuild decision record. Detailed proposals, evidence limi
 
 ## Consequential alternatives and corrections
 
+The repository is a self-contained technical handoff (LIVE-06/07). [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md) and its module guides explain the development details directly, including mechanisms, examples and limits. The local source bundle supports audit; neither a source ID nor a transcript replaces a technical explanation. No separate old checkout/export is required, and old instructions remain inert.
+
 - A filesystem-only custom context manager was an early proposal. It is superseded by the preferred SQLite/StateGraph direction, not a permanent no-database rule.
 - Pi-first and LangChain `create_agent`-first rankings were interim judgments. Claims about least modification were withdrawn where the comparison omitted competing mechanisms. No framework eliminates document/evidence/context-domain work.
 - A dynamic agent loop is compatible with a graph. Forum claims that LangGraph inherently prevents autonomy, that modern LangChain only provides static chains, or that feedback-driven action is necessarily "open loop" were corrected. Popularity and a maintained framework do not prove fit.

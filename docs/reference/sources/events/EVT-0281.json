@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad8641e3f4c81919f5194c6c0e696cf",
+    "content": [
+      {
+        "type": "Text",
+        "text": "已確認論壇有兩個重要誤解：按一般控制理論用法，會根據結果調整行動的是 closed loop；而目前 LangChain／LangGraph 都能讓模型動態選擇工具。Pi 則值得認真比較：它除了底層 agent loop，也提供可嵌入的 session、compaction 和擴充介面。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1005,
+  "timestamp_original": "2026-10-21T07:05:04.434Z",
+  "timestamp_display": "2026-10-21T15:05:04.434+08:00",
+  "turn_id": "01a15d46-06ae-7610-a493-7d0bb69e17dc",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-21T15:05:01.589+08:00",
+  "completed_at": "2026-10-21T15:05:04.434+08:00",
+  "event_id": "EVT-0281",
+  "evidence_path": "evidence/events/EVT-0281.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

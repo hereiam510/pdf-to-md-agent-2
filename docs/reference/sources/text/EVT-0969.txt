@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "直接採用「小型 `LangGraph StateGraph` ＋ 抽離後的 Nexus 請求服務 ＋ 共用工具派發器 ＋ 文件／證據核心」，並省去多餘的 `c…": C:\Users\laichungling\.codex/attachments/10f3da9c-7ff9-466d-b532-7c4cf0cc2723/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following, or the whole project, or previously mentioned/not mentioned, if you find anything worth mentioning
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

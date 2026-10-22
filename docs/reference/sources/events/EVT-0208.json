@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad72aff3f6481919a8fc87be3bf848d",
+    "content": [
+      {
+        "type": "Text",
+        "text": "我會再查「整理後如何可靠接續工作」：哪些資訊需要保留、如何找回已移出的證據，以及現有研究指出哪些容易遺漏的情況。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 740,
+  "timestamp_original": "2026-10-20T08:49:05.750Z",
+  "timestamp_display": "2026-10-20T16:49:05.750+08:00",
+  "turn_id": "01a1587f-e77b-7c40-bc36-fc08c725252c",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T16:49:03.587+08:00",
+  "completed_at": "2026-10-20T16:49:05.750+08:00",
+  "event_id": "EVT-0208",
+  "evidence_path": "evidence/events/EVT-0208.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

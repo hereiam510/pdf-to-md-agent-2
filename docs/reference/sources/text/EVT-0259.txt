@@ -1,0 +1,1 @@
+suppose  langchain/langgraph/langmem maybe more reliable, but do they applicable / fully fits to our use case? or a fully customized system is better for making the app's functioning?

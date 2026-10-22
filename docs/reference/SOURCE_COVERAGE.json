@@ -3936,5 +3936,21 @@
       "R-023"
     ],
     "reason": "Reviewed source is explicitly cited by the retained points; statuses and later corrections are preserved at the destinations."
+  },
+  {
+    "source_id": "LIVE-06",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "R-026"
+    ],
+    "reason": "Explicit later user requirement controls the portable detailed development handoff."
+  },
+  {
+    "source_id": "LIVE-07",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "R-027"
+    ],
+    "reason": "Explicit later user requirement controls the portable detailed development handoff."
   }
 ]

@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad72c165ff881918650d0b53097b5aa",
+    "content": [
+      {
+        "type": "Text",
+        "text": "文件會放在專案的 `docs/`，並按專案規則使用英文。我也會用 write-page 的文件整理指引，沿用現有儲存位置與格式。內容會保留討論中的修正與取捨，並清楚標示：設計原則已同意，但觸發門檻、框架選型及實作仍未決定。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 796,
+  "timestamp_original": "2026-10-20T08:53:44.935Z",
+  "timestamp_display": "2026-10-20T16:53:44.935+08:00",
+  "turn_id": "01a15883-7bdd-7023-a1db-862638c09041",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T16:53:42.735+08:00",
+  "completed_at": "2026-10-20T16:53:44.935+08:00",
+  "event_id": "EVT-0225",
+  "evidence_path": "evidence/events/EVT-0225.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

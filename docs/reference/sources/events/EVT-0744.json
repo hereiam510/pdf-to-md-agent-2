@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad981d5c67c8191bb11e748dc2054c0",
+    "content": [
+      {
+        "type": "Text",
+        "text": "這版把 policy 的提交移到 SQLite，卻仍讓多個工具各自更新 LangGraph 的 `active_policy_rev`；資料庫寫入即使排好順序，框架狀態仍可能衝突。另外，「物件 ID 不重疊就自動合併」並不足夠：釘選的區塊，可能正好依賴另一個操作要釋放的證據。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2281,
+  "timestamp_original": "2026-10-22T03:24:08.063Z",
+  "timestamp_display": "2026-10-22T11:24:08.063+08:00",
+  "turn_id": "01a161a1-07d2-78e0-9a32-9e9f29116491",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T11:24:07.864+08:00",
+  "completed_at": "2026-10-22T11:24:08.063+08:00",
+  "event_id": "EVT-0744",
+  "evidence_path": "evidence/events/EVT-0744.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

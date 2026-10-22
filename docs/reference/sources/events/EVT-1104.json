@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9d37394e88191b5de2f4301498628",
+    "content": [
+      {
+        "type": "Text",
+        "text": "主架構可以維持，目前更需要把契約說準：一次整理可以有效縮小歷史而仍未達最終容量；舊操作的完成收據也應在 head 前進後繼續有效。這兩點若定清楚，能減少重試與恢復時的分歧，不必再增加通用狀態機。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 3211,
+  "timestamp_original": "2026-10-22T09:12:22.482Z",
+  "timestamp_display": "2026-10-22T17:12:22.482+08:00",
+  "turn_id": "01a162da-6433-7203-a8e9-3d03868f2c2b",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T17:12:21.459+08:00",
+  "completed_at": "2026-10-22T17:12:22.482+08:00",
+  "event_id": "EVT-1104",
+  "evidence_path": "evidence/events/EVT-1104.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

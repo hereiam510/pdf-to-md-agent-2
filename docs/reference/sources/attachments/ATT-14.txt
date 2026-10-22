@@ -1,0 +1,159 @@
+將優先設計基準收斂至 **LangChain `create_agent` ＋ 持久化 LangGraph Checkpointer**，並將「一般程序重啟（原地延續）」與「舊狀態不可用時的 `[Recovery Context]`」徹底脫鉤，是整場架構討論中最關鍵的一次收斂。你透過核對 Pi v1.3.0 原始碼抓出 `Agent.continue()` 在最後一則為 `assistant` 訊息且無排隊訊息時會直接拋錯的限制，以及指出可透過 `get_state()` / `getEntries()` 等公開 API 對帳而不必解析私有 `checkpoint_blobs`，直接為框架選型提供了具決定性的工程依據。
+
+為使 App 在這套分工下發揮最佳功能，以下先確認五項應直接定案的修正，接著針對你這版方案在 **LangGraph Superstep 重播機制、無交接釋放的快取取捨、未整理回合的語義保留** 上仍潛藏的四個實作盲點進行正面交鋒與補強。
+
+---
+
+## 一、 完全成立並定案的五項架構修正
+
+1. **程序重啟優先原位恢復（In-Place Resume First）：** 崩潰重啟的第一步永遠是載入既有 Checkpoint／Session 並對帳已完成的操作收據，只要原狀態合法且容量可控，就直接從原斷點繼續；唯有在歷史損毀、狀態不合法或容量超限無法在原視窗解決時，才降級組裝 `[Recovery Context]`。
+2. **以公開 State API 結合 `Lazy Ack` 取代盲目推測：** 撤回「單靠 Hook 觀測即可 100% 解決雙儲存時間差」的保證。改由薄適配層在啟動與恢復時呼叫框架公開的 `get_state()`（LangGraph）或 `getBranch()` / `getEntries()`（Pi），與 App SQLite 中的 `operation_id` 收據對帳。
+
+
+3. **拆解「單純釋放證據」與「完整 Epoch 整理交接」：** 釋放不再需要的單一大型證據（如巨型圖片或座標結構）僅需更新活躍輸入的投影選擇，不必綁定額外的 Handshake 模型回合或強制開啟新 Epoch。
+
+
+4. **移除執行期背景 TTL 清理，改用生命週期邊界清理：** 既然長耗時操作（如多頁高 DPI OCR）可能超過預設租約，與其維護複雜的續租（Lease Renewal）機制，不如直接規定**在任務執行期間禁止刪除任何 Blob**，僅在沒有活躍任務的啟動階段或任務結案後清理未被引用的準備檔。
+5. **校準聚焦於真實 `create_agent` 基線：** 一般 `create_agent` 預設不掛載 Deep Agents 的 `FilesystemMiddleware`；將評估基準定在乾淨的 `create_agent` 加上自訂 Context / Receipt Middleware，能大幅減少拆除非必要預設行為的負擔。
+
+
+
+---
+
+## 二、 四個正面交鋒：要讓這套設計真正無縫運作，還需補上的缺口
+
+### 1. 交鋒一（針對第 1、2 點）：LangGraph 的 Checkpoint 以「Superstep」為邊界——若只對「文件寫入操作」做冪等收據，重啟時仍會重跑昂貴的讀取／OCR 工具！
+
+你提出重啟時「載入原有 checkpoint $\rightarrow$ 對帳已完成的文件操作與工具結果 $\rightarrow$ 從原位置延續」，並指出「文件操作則以 app 自己保存的穩定 `operation_id` 和結果收據保證冪等」。
+
+* **底層機制盲點：** 在 LangGraph 的執行模型中，Checkpoint 是在每個 **Superstep（圖節點邊界）** 結束時寫入的。假設模型在同一個回合發出了 3 個並行工具呼叫：
+* `tc_1`: `ocr_pdf(pages="15-20")`（耗時 45 秒，已完成並落盤為 `ev_015`）
+* `tc_2`: `update_draft(...)`（已完成並寫入 `draft_rev=4` 收據）
+* `tc_3`: `view_preview(...)`（執行中，此時程序崩潰！）
+因為整個 `ToolNode` Superstep 尚未全部完成，LangGraph 的最新 Checkpoint **仍停留在 `AIMessage(tool_calls=[tc_1, tc_2, tc_3])` 剛產生的那一刻**，透過 `get_state()` 查到的框架持久化狀態裡，這三筆 `ToolMessage` 全部都不存在！當 LangGraph 原位恢復執行時，它會把 `tc_1`、`tc_2`、`tc_3` 全部重新派發一次。如果只有「文件寫入操作（`tc_2`）」有冪等收據，那麼已經跑完 45 秒的 `ocr_pdf`（`tc_1`）就會被白白重跑一次！
+
+
+* **最佳功能設計（全工具統一收據短路 Universal Tool-Call Receipt Short-Circuiting）：**
+* App SQLite 的 `operation_receipts` **不應只記錄文件寫入，而應涵蓋所有工具呼叫（包含 `inspect`、`ocr`、`render`、`view_preview` 與 `update_draft`）**，以 `(session_id, tool_call_id)` 為唯一鍵。
+* 因為讀取與視覺工具本來就會先將產出寫入不可變 Blob 並登記 `evidence_id`，只要在工具完成當下寫入一筆收據，當 LangGraph 因半途崩潰而重播整個 `ToolNode` Superstep 時，`wrap_tool_call` 就能對 `tc_1`（OCR）與 `tc_2`（草稿修改）直接毫秒級回傳已保存的收據與 `evidence_id`，只真正執行未完成的 `tc_3`！
+
+
+
+
+
+### 2. 交鋒二（針對第 3 點）：既然模型在未整理的 12 個回合中沒有主動寫筆記，它的「語義理解」其實已經寫在哪裡了？
+
+你在第 3 點一針見血地指出：機械式的操作時間線（`讀過第 15–16 頁、更新過 table_02`）無法保存「第 16 頁首列延續上一頁表格；某個數值仍有字形疑問」這種語義判斷；並建議讓 Agent 在正常工作中隨時追加筆記，且明確記錄筆記參照到哪個事件位置。
+
+* **認知習慣的交鋒：** 開放隨時追加筆記、並在每筆筆記記錄 `covered_up_to_event_seq` 完全正確。但回顧專案過往的自然採用測試（如 9 頁測試 B/C 與 P 任務），當模型專注於連續探勘與轉寫時，它極少主動呼叫額外的輔助記錄工具。那麼，模型在讀完第 15–16 頁、決定暫不採用某個數值時，它把這個「字形疑問與跨頁判斷」寫在哪裡了？
+**答案是：它幾乎都寫在當回合 Assistant 回覆的文字內容（`AIMessage.content` 或推理摘要）以及被退回的候選稿參數裡！**
+
+
+* **數據支持的設計補強（在恢復視圖中保留「未整理回合的 Assistant 原文」＋ 零成本隨附筆記）：**
+1. 在已結案的 Core Delivery 實測中，8 個回合的總輸入高達 636,591 tokens，但**全部 8 個回合的模型總輸出（含 reasoning）加起來只有 1,587 tokens**！也就是說，真正塞爆 Context 視窗的永遠是龐大的工具回傳（OCR / Layout / 圖片），而模型自己在每輪寫下的觀察文字（`AIMessage.content`）體積小得驚人。
+
+
+2. 因此，當自上次 `notes_watermark_seq` 以來累積了多輪未整理活動，且因異常被迫進入 `[Recovery Context]` 時，App 組裝的近期活動視圖**不應只抽離冷冰冰的「工具呼叫名稱與收據」，而應直接保留自 `notes_watermark_seq` 之後每一輪的 `AIMessage.content` 原文（將中間龐大的 `ToolMessage` 本體壓縮為收據引用）**！這樣即使 Agent 忘記顯式呼叫筆記更新，它在前幾輪說過的「第 16 頁首列延續上頁、某字存疑」也會原封不動留在恢復視圖中。
+3. 同時，在日常所有工具（包含 `inspect_pdf`、`ocr_pdf` 等讀取工具，不限於 `update_draft`）的 Schema 中，提供一個選填的輕量欄位 `note_on_previous_step`，讓模型在發出下一個讀取指令時能順手把上一頁的發現存進筆記表，徹底消除「為了記筆記而多發一次工具呼叫」的摩擦。
+
+
+
+### 3. 交鋒三（針對第 4 點）：破除「圖文混合比例失準」的方法不是退回純猜測，而是「圖文分軌估算（Split-Modality Accounting）」
+
+你舉出的反例非常致命：若用文字為主的請求校準出一個總體誤差係數 $\alpha$，下一輪變成圖片為主時，即使圖片低估十倍也會被上一輪的文字比例掩蓋，導致嚴重失準。
+
+* **工程解法：** 這個反例證明的是「不能把文字與圖片混在同一個未知係數裡校準」，而不是無法建立可靠的估算器。在實作上應拆為雙軌：
+1. **文字與結構（Text & Schema Track）：** 直接使用框架或本地對應模型家族的 Tokenizer（如 `tiktoken`）計算精確基準值。在純文字回合（如第 1 輪或無新圖回合），實際 `usage.input_tokens` 與本地分詞數的差值，只用來校準「系統封裝與訊息邊界開銷」。
+2. **視覺圖片（Vision Track）：** 圖片 Token 與文字分詞完全無關，只取決於 `(模型路由, 圖片寬高 px, detail 模式)`。當某輪新增了圖片且收到實際 `usage.input_tokens` 時，扣除已知的文字 Token 增量後，剩餘的增量就直接揭示了**該 Nexus 路由對該尺寸圖片的真實計費 Token 數**。系統將其存入路由能力表的 `(width_bucket, height_bucket) -> observed_tokens` 快取中；在尚未觀測過該路由的圖片計費前，直接以高解析度多圖塊上限（如單張全頁高 DPI 圖預留 1,500～2,500 tokens）作預留，並在整批工具回傳後按實際大小動態決定當次投影。
+
+
+
+
+
+### 4. 交鋒四（針對第 5、6 點）：無交接釋放的「批次延遲生效」與視覺模態的「委派工具（Vision Tool Delegation）」
+
+1. **避免單張釋放頻繁打碎前綴快取：**
+你在第 5 點指出，Agent 判斷某份證據暫時不需要時，只需「更新活躍輸入的選擇」，不必強制做完整 Handshake 與新 Epoch。這點完全合理；但要注意，當我們把第 3 回合的某張圖片從活躍輸入中抽走時，第 3 回合之後的前綴快取就會重算。
+
+
+* **最佳實踐：** 讓 Agent 可以隨時標記某份 `evidence_id` 為 `releasable`（不再需要常駐）；但 App 的 Context 組裝器在組裝下一輪輸入時，**若當前總容量距離水位線還非常寬裕，可以暫時保持原訊息不動（繼續享受快取），等到累積了數筆 `releasable` 證據或容量接近整理門檻時，再一次性在 `wrap_model_call` 中將所有已標記為 `releasable` 的大載荷替換為精確檢索入口**。這樣既給了 Agent 零阻力的即時標記自由，又避免了每釋放一個小東西就擊穿一次快取。
+
+
+2. **將「視覺模態委派」做成標準工具能力：**
+你在第 6 點提到：「無視覺模型遇到視覺依賴時……若已有可用的視覺工具／模型，也可由 agent 選擇使用。」這是一個極佳的產品設計點！
+* 如果使用者將主 Agent 切換為純文字模型（或視窗較小的快速模型），當遇到 `GlyphLessFont` 等需要確認粗體、上下標或圖表完整性的區塊時，App 除了阻擋主模型直接接收原生圖片 Bytes 外，可在工具箱中暴露一個選用的 **`query_visual_evidence(evidence_id, crop_bbox, question)`** 工具，由該工具在底層呼叫已配置的視覺模型路由核對局部像素，並將觀察結果連同模型身分與區域來源登記為一筆可追溯的衍生證據。
+
+
+
+
+
+---
+
+## 三、 收斂後的重構基準架構（基於 `create_agent` + App 獨立服務）
+
+將你的修正與上述四點補強整合後，整個 App 的重構設計可以濃縮為一套極度乾淨、責任邊界分明的系統規範：
+
+```mermaid
+flowchart TD
+    subgraph Framework["框架執行層：LangChain create_agent + LangGraph Checkpointer"]
+        Loop["Agent Loop / 狀態圖 / get_state() 公開恢復接口"]
+        MW_Model["wrap_model_call：輸入組裝與雙軌容量預檢"]
+        MW_Tool["wrap_tool_call：全工具 tool_call_id 收據短路與投影"]
+    end
+
+    subgraph AppServices["App 獨立核心服務 (SQLite WAL + Immutable Blobs)"]
+        EvSvc["證據與視覺服務\n- 原始抽取與無損渲染\n- 觀測事實與衍生線索分欄"]
+        DocSvc["文件與版本草稿服務\n- {block_id, content_ref} 結構\n- 多來源匯入与操作冪等"]
+        CtxPol["Context Policy 引擎\n- 延遲批次釋放 (Releasable Queue)\n- 正常整理 vs Recovery Context 組裝"]
+    end
+
+    Loop --> MW_Model
+    Loop --> MW_Tool
+    MW_Model <--> CtxPol
+    MW_Tool <--> DocSvc
+    MW_Tool <--> EvSvc
+    CtxPol <--> DocSvc
+    CtxPol <--> EvSvc
+
+```
+
+### 核心狀態與事件對齊設計（僅需維護一個單調遞增的 `event_seq`）
+
+為了實踐你在第 3 點要求的「明確記錄筆記參照到哪個事件位置，而不另建重複帳本」，App 的 SQLite 資料庫只需用一個全局單調遞增的 **`event_seq`** 貫穿既有的操作收據與筆記表：
+
+1. **全工具收據表（`operation_receipts`）：**
+* 欄位：`event_seq (PK, AUTOINCREMENT)`, `session_id`, `checkpoint_id (nullable)`, `tool_call_id (UNIQUE)`, `operation_id`, `tool_name`, `args_summary_json`, `status`, `produced_draft_rev`, `produced_evidence_id`, `result_envelope_json`, `observed_in_session_at`。
+* **雙重用途：** 既是 `wrap_tool_call` 重啟防重跑（涵蓋 OCR、讀取與寫入）的冪等根據，也是直接用 `SELECT ... WHERE event_seq > ?` 動態生成「未整理操作時間線」的唯一來源，**完全不需另外維護一張獨立帳本表**。
+
+
+2. **工作筆記與依賴表（`working_notes`）：**
+* 欄位：`note_rev (PK)`, `covered_up_to_event_seq`, `active_notes_json`, `open_dependencies_json`, `pinned_items_json`。
+* 每當 Agent 更新筆記（無論是隨讀取／草稿工具附帶，或整理交接時提交），系統自動填入當下的最新 `event_seq` 作為 `covered_up_to_event_seq`。
+
+
+3. **重啟與恢復的精確判準（4-Step Recovery Flow）：**
+* **Step 1：** 呼叫 LangGraph 的 `get_state(config)` 讀取最新持久狀態。
+* **Step 2：** 若存在未完成的 `tool_calls`（Superstep 中斷），直接讓框架繼續執行；`wrap_tool_call` 會自動查核 `operation_receipts`，將已完成的 OCR／草稿寫入直接回傳原收據，僅執行真正未完成的呼叫。
+* **Step 3：** 若原狀態完整且經雙軌估算器評估容量仍在可運作範圍，**直接原位繼續**，不切換 Context。
+* **Step 4：** 唯獨在原狀態損毀、或容量已超限且無法在原視窗完成正常交接時，才建立標示為 `[Recovery Context]` 的新基準，由程式自動放入：
+1. 最新有效要求（`user_requirements_log`）；
+2. 最新草稿結構（`draft_revisions` 的 `{block_id, content_ref}` 與頁碼狀態）及釘選內容；
+3. 最新工作筆記（`working_notes`）；
+4. **`event_seq > covered_up_to_event_seq` 的所有操作收據摘要 ＋ 對應回合的 `AIMessage.content` 原文**（保留未整理期間的完整操作與模型語義判斷，並提供所有相關 `evidence_id` / `candidate_id` 的精確取回入口）。
+
+
+
+
+
+---
+
+## 四、 建議的下一步行動
+
+到這一輪為止，我們已經將所有「假設性自動化規則」全部剔除，並把框架選型收斂到了 **`create_agent` ＋ LangGraph Checkpointer ＋ App 獨立文件／證據／Context Policy 服務** 的清晰基線上。
+
+若你認同這四點補強（全工具收據防 Superstep 重跑、保留未整理回合的 `AIMessage.content`、圖文分軌估算、以及延遲批次釋放），我們下一步可以直接進入具體設計或實作驗證：
+
+1. **定義核心接口規格：** 撰寫這套收斂架構下的最小 SQLite Schema（`operation_receipts`、`draft_revisions`、`evidence_blobs`、`working_notes`）與 `wrap_model_call` / `wrap_tool_call` 的精確處理流程；或者
+2. **設計離線驗證切片：** 針對你最關心的「Superstep 半途崩潰重啟（含已提交草稿與已完成 OCR 的原位恢復）」與「超限轉入 `[Recovery Context]` 時保留未整理判斷」寫一個基於 `create_agent` 的最小驗證測試。
+
+你希望先從哪一部分開始？

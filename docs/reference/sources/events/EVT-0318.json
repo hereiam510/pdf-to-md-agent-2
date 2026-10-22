@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad87c32e2308191acb5bc814a4b6f1a",
+    "content": [
+      {
+        "type": "Text",
+        "text": "我的評價是：**這份建議的分層值得保留，但選型結論過早，而且 context management 的具體設計需要修改。** 我核對了官方文件；其中有些限制是真實的，有些則把「需要適配」直接判成「不適合」。\n\n對你最關心的問題，它其實選擇了：**借用 LangGraph 管理執行狀態，context management 的核心仍由我們自行設計。** 這是合理選項，但它尚未證明比採用現成 harness 更可靠、更省維護。\n\n**分層方向是合理的。** 模型通訊、執行狀態、PDF 證據與 context policy 各自有清楚責任，確實方便維護。`EvidenceStore`、`ContextCompiler` 這類領域模組，也符合我們的需要。\n\n文中的 OpenAI Python SDK 是 API 客戶端，可以設定 endpoint 指向 Nexus；這不代表改用 OpenAI 按量付費服務，也不會讓 Nexus 自動獲得原生 compaction 等能力。另外，`model_extra` 保留額外回應欄位，與 `max_retries=0` 沒有因果關係；後者只是關閉 SDK 自動重試。[OpenAI Python SDK 文件](https://developers.openai.com/api/reference/python)\n\n還要分清楚：這裡建議的是 **OpenAI Python SDK**，並沒有真正評估我們之前討論的 **OpenAI Agents SDK**。兩者承擔的責任不同，所以那張「所有候選的最終判決」並不完整。\n\n**它排除其他候選的理由，需要修正。**\n\n| 候選 | 核對後的看法 |\n|---|---|\n| **Pi** | 「只能作為外部 CLI」不正確。Pi 有可嵌入 Node.js／Bun 的 TypeScript SDK，提供 session、tools、models 與 compaction。真正的取捨是：agent runtime 是否必須全部放在 Python。若容許 TypeScript runtime 配 Python PDF 工具，Pi 仍是候選。[Pi SDK](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/sdk.md) |\n| **LangChain** | `ChatOpenAI` 確實不保留某些第三方非標準 reasoning 欄位，這是實際風險。但官方建議採用 provider-specific integration；不能由此推論整個 LangChain 或 `create_agent` 都不適合。[ChatOpenAI 的 API 範圍](https://docs.langchain.com/oss/python/integrations/chat/openai) |\n| **Deep Agents** | 內建檔案工具與 PDF 工具可能有責任重疊，但並非必然衝突。官方提供自訂工具、backend，以及替換內建 middleware 的入口。應評估需要修改多少行為，以及修改後還能保留多少框架價值。[Deep Agents 自訂方式](https://docs.langchain.com/oss/python/deepagents/customization) |\n| **LangGraph** | 是合理的 Python 執行基礎，但採用它之後，證據釋放、內容保護、摘要品質與重新取回，仍需要我們設計。 |\n\n因此，我不會接受它的「Use／Drop」作為定案。**是否採用 Python 作為唯一 agent runtime，是其中一個前提；現有 PDF 工具使用 Python，並不足以單獨決定這件事。**\n\n**最需要修改的是它的 context policy。**\n\n它提出「頁面或批次 saved 就整理」、「只注入 active pages 的圖片」、「較舊結果換成指標」，這些規則太粗，容易破壞我們已同意的原則。\n\n例如跨頁表格：第 10 頁已儲存，但第 11 頁仍需沿用第 10 頁的表頭、單位或註解。此時 `saved` 只代表成果已寫入，不能代表相關證據已無用途。`active_pages` 可以記錄工作焦點，卻不能成為其他頁面內容進入 context 的限制。\n\n我會這樣修改：\n\n| 原建議 | 較符合我們需要的設計 |\n|---|---|\n| 儲存頁面後自動釋放 | 儲存後可重新評估；由 agent 判斷哪些內容目前不再需要，app 確認完整原件與取回位置已保存 |\n| 舊工具結果自動替換 | 依當前用途、未解依賴及可恢復性選擇，不能只看新舊 |\n| 固定 `inspect → OCR → draft → revise` 階段 | 記錄目前工作、未解問題與成果狀態；讓 agent 選擇方法和次序 |\n| 達到 75% 就清理 | 根據實際路由容量、下一次請求大小、輸出預留及整理所需空間決定；75% 暫無選定依據 |\n| 清走圖片與 reasoning 就算 compaction | 分開處理可取回證據的釋放，以及較舊工作歷史的摘要與延續狀態 |\n\n而且容量檢查應發生在**送出下一次模型請求之前**。單次 OCR 結果本身就可能非常大，不能等它進入 context 後才檢查。\n\n這裡也有一個重要缺口：文章沒有說明整理失敗怎麼辦。我的建議是，先建立候選摘要／延續狀態，保存原件、核對必要引用及仍有效的要求，再切換 context；整理失敗就保留原有狀態。這樣才是一個完整的 context transition。\n\n**LangGraph 能減少狀態管理工作，但文中高估了 checkpoint 的保證。**\n\nCheckpoint 保存的是 graph state。假設 `save` 已經寫出 Markdown，程式卻在 checkpoint 前崩潰，恢復時仍可能重新執行該 node。官方文件明確提醒：恢復可能從 node 開頭重跑，外部副作用需要冪等設計。[LangGraph 的重新執行與冪等性](https://docs.langchain.com/oss/python/langgraph/graph-api#re-execution-and-idempotency)\n\n所以，我們仍需要成果版本、操作識別與完成收據，才能判斷某次寫入是否已完成。「SQLite checkpoint」本身不會把 SQLite、Markdown 和圖片檔案一起變成單一原子交易。\n\n它的 schema 也有兩個問題：\n\n- `active_messages` 放進會被 checkpoint 的 state，並不會因為註解寫了 *ephemeral* 就變成暫存資料。若包含大量 base64 圖片，可能增加 checkpoint 的儲存與序列化負擔。\n- `page_status` 與 `evidence_index` 不足以表達有效的使用者要求、跨頁依賴、未完成的有用草稿，以及引用所屬的成果版本。\n\n我較傾向讓持久狀態保存**內容識別、版本與引用**，到組裝模型請求時才載入所需內容。完整紀錄、執行 checkpoint、模型當前 context，三者各有明確用途。\n\n另外，文章稱 `MessagesState` 為單純 append-only 也不準確：它使用的 `add_messages` 能按 message ID 更新既有訊息。自訂 schema 可以有充分理由，但不應建立在這個誤解上。[MessagesState 文件](https://docs.langchain.com/oss/python/langgraph/graph-api#messagesstate)\n\n**把 reasoning 統一成 `TurnReasoning`，需要格外小心。**\n\n不同 provider 的 reasoning 可能是文字、結構化 item，或不可讀的加密內容，回傳要求也不同。OpenAI reasoning items 與 DeepSeek `reasoning_content` 並不是可以任意互換的同一種資料。[OpenAI reasoning 文件](https://developers.openai.com/api/docs/guides/reasoning)、[DeepSeek thinking mode](https://api-docs.deepseek.com/guides/thinking_mode/)\n\n可以提供統一的容器，但應保留原生內容、類型及來源，由對應 adapter 決定如何回傳。也不能承諾「永遠不丟失 chain of thought」：模型未提供的內部推理無法保存，失敗請求的部分輸出也不能直接拼接到下一次嘗試。\n\n文中的固定三次嘗試同樣不應直接成為新設計的預設；我們目前仍是自動重試 0、有限恢復另行啟用。網路細節按你的安排留待後續討論。\n\n**我會把這份方案保留為「LangGraph 執行層＋自訂 PDF context 層」的候選。** 它的優點是責任清楚、控制度高；代價是 context policy、摘要切換、證據恢復與領域一致性仍主要由我們維護。\n\n接下來的選型應圍繞一個更具體的比較：**哪個方案能直接承擔通用的 session／compaction 工作，同時容許我們實現上述 PDF 證據規則，而且所需修改最少。** 在完成這個比較前，Pi 和 Deep Agents 都有保留價值；這份文字目前還不足以證明應把它們排除。"
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 1131,
+  "timestamp_original": "2026-10-21T08:49:52.553Z",
+  "timestamp_display": "2026-10-21T16:49:52.553+08:00",
+  "turn_id": "01a15da1-abc7-7172-afaa-ab7a2420b0c9",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-21T16:47:46.253+08:00",
+  "completed_at": "2026-10-21T16:49:52.553+08:00",
+  "event_id": "EVT-0318",
+  "evidence_path": "evidence/events/EVT-0318.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

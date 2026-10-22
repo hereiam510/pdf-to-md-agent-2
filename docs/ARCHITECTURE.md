@@ -2,6 +2,8 @@
 
 Status: settled responsibility boundaries and preferred implementation baseline; no application is implemented here. EVT-1068, EVT-1107 and EVT-1166 consolidate this direction. The earlier Pi-first and LangChain `create_agent` recommendations remain documented in the reference discussion with their corrections.
 
+For shared terms, an end-to-end example and the module-specific engineering explanations, read [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md). It routes to detailed local guides; source IDs are optional provenance, not prerequisites for understanding this architecture.
+
 ## Responsibilities
 
 | Component | Owns | Boundary |
@@ -20,7 +22,7 @@ There is no required module count or table count. Boundaries may share a file or
 
 A graph can express a dynamic model/tool loop. Graph-based execution does not require a fixed business workflow, and autonomy does not remove the need to manage state, budgets, side effects and recovery. The graph represents execution responsibilities; the model still selects methods, tools and continuation based on results.
 
-The model selects source access, OCR, scripts and reconstruction scope. The app checks capacity, maintains identities and accepts only complete valid executable batches. The dispatcher executes the accepted batch and records each result before the next model input is assembled. Context work occurs at a defined safe boundary with the same durable request and budget handling as other model calls.
+The model selects source access, OCR, scripts and reconstruction scope. The app checks capacity, maintains identities and accepts complete native replies. The dispatcher executes only validated calls and records every accepted batch member's success, rejection or failure outcome before the next model input is assembled. A complete accepted reply does not imply that every proposed operation passes domain validation. Context work occurs at a defined safe boundary with the same durable request and budget handling as other model calls.
 
 The exact nodes/edges and their schemas are implementation details to settle with [the three contracts](CONTRACTS.md). A simple `prepare -> model -> tools` sketch is not a guarantee that every recovery or cancellation branch is correct.
 

@@ -1,0 +1,26 @@
+{
+  "item": {
+    "type": "UserMessage",
+    "id": "01a1587f-e8c0-77d3-ba95-474084971628",
+    "client_id": "938a4def-6541-48f2-b340-c604543363d0",
+    "content": [
+      {
+        "type": "text",
+        "text": "continue researching and discussion\n",
+        "text_elements": []
+      }
+    ]
+  },
+  "source_line": 739,
+  "timestamp_original": "2026-10-20T08:49:00.106Z",
+  "timestamp_display": "2026-10-20T16:49:00.106+08:00",
+  "turn_id": "01a1587f-e77b-7c40-bc36-fc08c725252c",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T16:49:00.106+08:00",
+  "completed_at": "2026-10-20T16:49:00.106+08:00",
+  "event_id": "EVT-0207",
+  "evidence_path": "evidence/events/EVT-0207.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

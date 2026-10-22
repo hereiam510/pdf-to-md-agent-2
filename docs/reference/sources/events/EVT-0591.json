@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad8fcf98f648191a32cced0a68ced73",
+    "content": [
+      {
+        "type": "Text",
+        "text": "公開接口核對後，恢復方案需要修正：LangGraph 提供 checkpoint 狀態查詢，Pi 也提供 session 紀錄讀取，因此不必自行解析框架的儲存格式。但「載入 session 後自動重跑未完成工具」不能視為兩者共有的保證；這會直接影響我們需要自行維護多少恢復程式。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1893,
+  "timestamp_original": "2026-10-21T17:57:13.028Z",
+  "timestamp_display": "2026-10-22T01:57:13.028+08:00",
+  "turn_id": "01a15f96-764a-75f3-8dc1-3ecbaf576f1b",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T01:57:12.980+08:00",
+  "completed_at": "2026-10-22T01:57:13.028+08:00",
+  "event_id": "EVT-0591",
+  "evidence_path": "evidence/events/EVT-0591.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

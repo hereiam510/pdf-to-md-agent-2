@@ -1,0 +1,53 @@
+**你的考量有道理。如果目標是長期維護一個可靠的 agent app，我會優先採用框架提供的通用機制，再實作我們特有的文件處理規則。** 在不需要向後相容的前提下，這比繼續擴大自製 controller 更值得優先評估。:codex-annotation{index="1"}
+
+我先前偏向延伸現有 controller，主要考慮已有工具與保存機制的整合成本。但這個理由不足以支持我們自行維護整套 agent runtime。你強調的是**長期可靠性與維護負擔**，這應該成為選型的重要依據。
+
+不過，「框架比較可靠」需要拆開理解：
+
+- **通用機制**：訊息處理、agent loop、狀態保存、執行接續等，採用框架可以減少我們自己負責的程式與邊界情況。
+- **我們的產品行為**：PDF 證據是否完整、圖片是否真的送達模型、摘要是否保留跨頁依賴，仍需要我們設計及驗證。
+- **實際整合可靠性**：Nexus 相容性、套件版本和設定都會影響結果，不能單靠框架名稱保證。
+
+這是支持採用框架的工程判斷，目前還不是我們 app 的實測比較結論。
+
+**這幾個工具也不是必須一起安裝的三件套。**
+
+| 工具 | 適合承擔的責任 | 我對本專案的建議 |
+|---|---|---|
+| **LangGraph** | 工作流執行、狀態、checkpoint、接續 | 優先作為底層執行與狀態管理基礎 |
+| **LangChain** | 標準 agent loop、模型／工具介面、middleware | 優先使用現成 agent，避免自行重建 model–tool loop |
+| **Deep Agents** | 已組合好的 harness，包含檔案工具、offloading、整理等能力 | 與 LangChain agent＋少量自訂 middleware 比較，可能省下更多工作 |
+| **LangMem** | 記憶與摘要元件 | 有明確缺口才加入，不預設必要 |
+
+LangChain 的 agent 本身建立在 LangGraph 上，因此可以先使用高階介面，只有必要時才直接定義 graph；不必一開始自行畫出整套複雜工作流。[LangChain 官方介紹](https://docs.langchain.com/oss/python/langchain/overview)  
+Deep Agents 又建立在 `create_agent` 之上，提供更多已組合的能力。[Agents 官方文件](https://docs.langchain.com/oss/python/langchain/agents)
+
+**我會把上一輪的架構建議改成以下分工：**
+
+| 部分 | 優先交給框架 | 我們保留的責任 |
+|---|---|---|
+| Agent 執行 | 模型呼叫、工具循環、執行狀態 | 工具契約與 PDF 任務規則 |
+| 持久化 | LangGraph checkpointer | 原始 PDF、OCR、圖片、不可變成果版本 |
+| Context 整理 | 現成 middleware／摘要機制 | 保護要求、依賴及精確證據引用的政策 |
+| 工作狀態 | Framework state 與更新機制 | `TaskContract`、`WorkingState` 的內容定義 |
+| 模型接入 | 現成 model integration | Nexus 路由設定及實際能力驗證 |
+
+換句話說，上一輪提出的 `TaskContract`、`WorkingState` 和 `EvidenceStore` 仍有價值，但它們可以是**框架中的資料與工具**，不需要各自發展成一套自製執行引擎。
+
+LangGraph 的 checkpointer 已處理 thread state 的保存與接續；我們仍需選擇真正持久化的 backend，不能把只存在 RAM 的 `InMemorySaver` 當成重啟後可恢復的儲存。[Persistence 官方文件](https://docs.langchain.com/oss/python/langgraph/persistence)
+
+**為甚麼仍不能直接接受所有框架預設？**
+
+有一個與我們要求直接相關的例子：LangMem 文件明確寫到，待摘要內容超過 `max_tokens` 時，只會把最後那部分送去摘要。這種行為可以有其用途，但若我們直接採用，就可能讓較早的關鍵內容沒有進入摘要。[LangMem API 文件](https://langchain-ai.github.io/langmem/reference/short_term/)
+
+因此，我們需要做的是**選擇、設定與補足框架**。需要檢查的核心問題很具體：
+
+- 整理是否完整保留原始證據，並清楚呈現移出範圍？
+- 使用者修訂與未解依賴是否能跨 context 保留？
+- 取回圖片後，模型收到的是實際像素嗎？
+- 接續時，已成功保存的成果會不會被重複執行或覆蓋？
+- Nexus 的訊息格式與模型能力是否符合 integration 的假設？
+
+這些是整合是否合格的判準，不要求現在啟動新一輪模型測試。
+
+**所以，我修正後的推薦是：以框架為優先，先比較「Deep Agents」與「LangChain `create_agent`＋少量 context middleware」，兩者都利用 LangGraph；LangMem 按需要選用。** 我們主要維護 PDF 證據、成果與 context 保護政策，讓框架承擔它已經提供的通用執行機制。網絡策略的細節仍留待下一階段討論。

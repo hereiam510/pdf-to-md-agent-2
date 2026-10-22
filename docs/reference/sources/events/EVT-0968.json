@@ -1,0 +1,29 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9c0133a0c8191bf13d719cdc54415",
+    "content": [
+      {
+        "type": "Text",
+        "text": "**我現在較傾向採用「小型 LangGraph runtime＋共用工具派發器＋文件／證據核心」作為重構基準。** 原因是我們已明確需要掌握工具批次、恢復與輸入組裝的行為，直接表達這些責任，比在 `create_agent` 外圍逐層改寫更清楚。\n\n但這份提案的三節點圖仍是架構草圖，還不能稱為「無損恢復閉環」。最需要修正的是步驟身分、操作收據的提交位置，以及把 context 管理延後到第三階段的安排。\n\n**1. 直接使用 LangGraph 合理，但不必把「三個節點」當成限制。**\n\n需要區分選擇理由：\n\n- 驗證前保存候選稿，是共用工具入口的責任，使用任何 runtime 都需要。\n- 回覆落盤與重新進入節點時的對帳，也是任何 runtime 都需要。\n- **整批工具的執行順序與恢復方式**，才是目前直接使用 `StateGraph` 最充分的理由。\n\n`create_agent` 並非只提供兩個節點，它還整合了工具、middleware、結構化輸出等行為；不用它代表我們自行決定哪些需要保留，不能把這些工作視為自動消失。\n\n另一方面，既然不用 `create_agent`，**也不一定需要再實作完整的 `BaseChatModel` 子類**。模型節點可以直接呼叫抽離後的 Nexus 請求服務，再回傳框架需要的訊息。只有需要 LangChain 模型介面的其他能力時，才值得增加這層。\n\n節點數應由可靠的保存邊界決定。多一個準備步驟不會多呼叫一次模型，也不必然比三節點更複雜。\n\n**2. `(job_id, checkpoint_ns, model_turn_seq)` 仍會發生身分碰撞。**\n\n它能處理提案中的單一路徑恢復例子，但還有兩個反例。\n\n第一，`checkpoint_ns` 區分主圖與子圖，**不是執行分支的唯一身分**。從同一 checkpoint 修改 state 建立分支時，可能仍有相同的 job、namespace 和計數器；新分支就會錯誤讀回舊分支的模型答案。[Checkpoint namespace](https://docs.langchain.com/oss/python/langgraph/checkpointers)、[LangGraph 分支行為](https://docs.langchain.com/oss/python/langgraph/use-time-travel)\n\n第二，你只在工具後的 `settle_step` 增加計數器。假設第 4 輪直接回答、沒有工具呼叫，便進入 END；使用者之後補充要求，若沿用這個工作狀態，計數器仍是 4，可能再次取得上一個答案。\n\n我建議把規則定為：\n\n- 每次需要**新的模型判斷**，先建立並持久保存新的 `model_step_id`。\n- 普通故障恢復沿用原步驟；新使用者輸入、刻意分支或重新判斷建立新步驟。\n- 步驟關聯當時的輸入版本／請求指紋；身分相同但輸入不同時，不能靜默重用答案。\n- 發送 HTTP 前，該步驟身分必須已可靠保存。\n\n若這個保存保證依賴 Graph checkpoint，也要明確選擇 durability 行為。官方文件區分 `async` 與 `sync`；前者可能在下一步開始後才完成保存，後者先保存再繼續。[Durability 模式](https://docs.langchain.com/oss/python/langgraph/checkpointers#durability-modes)\n\n如此才能保證：**同一步驟已有完整、已持久保存的回覆時，恢復可直接重用。** 它仍不代表所有中斷都能避免重複上游生成。\n\n**3. 「工具完成後寫收據」還有一個會重複操作的時間差。**\n\n例如：\n\n```text\n文件版本已提交\n→ 程序中斷\n→ 操作收據尚未寫入\n```\n\n恢復時，若派發器把「沒有收據」當成「沒有執行」，就可能重複寫入。\n\n因此，收據不能只是工具完成後的一條日誌。對文件操作，需要：\n\n- 文件提交與操作身分具有原子關係；或\n- 已提交版本本身帶有操作身分，足以在恢復時查回結果。\n\n現有程式已把 `publication_operation` 寫入文件快照，並在重試時查找對應版本。這個原理值得保留，而不是只搬走外層迴圈。[現有提交與對帳](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/core.py:241)\n\nOCR／腳本還要區分「尚未開始」與「可能已執行但結果未確認」。沒有收據，不能一律直接重跑。工具的重播結果也應包含必要的狀態變更與 context intents，不能只找回一段顯示文字。\n\n共用 `AppToolDispatcher` 的方向正確，但**放進共用類別，不等於 MCP／CLI 已自動取得驗證前保護**。我查到目前安裝的 MCP SDK 會先驗證參數，再呼叫註冊函式；如果 dispatcher 放在那個函式裡，仍然太晚。[目前 SDK 的驗證位置](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/.venv/Lib/site-packages/mcp/server/mcpserver/tools/base.py:152)\n\n每個入口都必須把已合法解碼的工具請求，送到共同的保存入口，再進行工具 schema 驗證。這是接線契約，不能靠「共用」二字推定完成。\n\n**4. `token.map` 有用，但提案的 HTML 表格定位方法目前不成立。**\n\n我用本機 parser 核對：對 `html_block` token 執行：\n\n```python\ntoken.attrSet(\"data-block-id\", \"blk_01\")\n```\n\n預設 renderer 輸出的 `<table>…</table>` **不會包含這個屬性**。官方實作直接回傳 `token.content`，沒有輸出 token 的 attributes。[Renderer 原始碼](https://markdown-it-py.readthedocs.io/en/latest/_modules/markdown_it/renderer.html#RendererHTML.html_block)\n\n所以應分開處理：\n\n- 一般 Markdown 節點：可利用 token 的來源範圍與渲染規則。\n- 原始 HTML 區塊：需要明確的渲染定位處理，不能只設定 token 屬性。\n- 跨越多個內容區塊的渲染節點：保留多對多關係，不能假定一定落在單一行號區間內。\n\n另外，整份解析可以保留跨區塊參照，但不會自動增加語法支援。目前專案的 parser 設定沒有啟用註腳擴充，不能宣稱註腳因此「100% 正常解析」。[目前 parser 設定](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/preview.py:22)\n\n這項功能可以做；需要撤回的是「約 15 行就完整解決」的估計。\n\n**5. 截圖專用 CSS 不能取代實際交付閱讀的核對。**\n\n把視窗展寬至最寬表格、取消所有 overflow，可能有助於看清內容，但也可能讓原本在正常視窗下的閱讀問題消失。\n\n我會保留兩種清楚標示的檢視：\n\n| 檢視 | 用途 |\n|---|---|\n| 實際閱讀檢視 | 同一保存版本、正常閱讀樣式與明確 viewport，檢查使用者實際看到的結果 |\n| 展開／放大檢視 | 查看長表格、細字或局部內容，明確記錄改變了哪些顯示條件 |\n\n兩者可以共用渲染服務，但不能把後者當成前者的驗收證據。\n\n多個 DOM 區域的聯集框也可能包含大量空白與無關內容；可按實際區域分開截圖，回報覆蓋範圍，讓 agent 決定如何檢視。局部工具能降低核對成本，但目前不能承諾它會解決既有的強調格式或「礪／厲」判斷錯誤。\n\n**6. Context 管理不應整體延後到「40 頁以上」。**\n\n這是我對路線圖最大的調整。\n\n容量取決於實際選入的文字、圖片、工具描述與歷史，不取決於頁數。既有單頁 `inspect` 已有 191,662 字元；短任務同樣可能遇到容量問題。\n\n第一階段至少應具備：\n\n- 完整證據與本次輸入分開保存。\n- 明確記錄本次選入哪些內容、哪些沒有送入。\n- 依實際輸入提供容量估計與超限處理。\n- 保留首次完整讀取、精確欄位／範圍與原生圖片的選擇。\n- 超限時保留工具成果與已完成操作，不靠靜默截斷繼續。\n\n普通對話歷史整理、要求修訂及未解依賴的保護，可以在下一個切片完善；**沒有理由必須等新的區塊截圖與表格檢視工具完成後才做。** 現有整頁預覽仍可支援早期工作。\n\n圖片的責任邊界則可以保留：context 政策決定選甚麼，輸入組裝器解析那些引用，adapter 編碼已選內容。不過「adapter 絕不能碰磁碟」不是必要的產品約束；若日後需要串流讀取大圖片，只要它嚴格按既定輸入清單處理、沒有自行重新選取歷史證據即可。\n\n**7. 模型停止呼叫工具，還不等於文件已交付。**\n\n圖中的 `無 tool_calls → End／交付` 應再拆清楚。\n\n模型可能是在回答問題、報告阻礙，或提早停止。App 仍須確認實際交付的是哪個保存版本、是否有對應匯出，以及目前是草稿還是完成聲明。現有 `deliver()` 已檢查匯出包與保存版本是否一致，這項保護應保留。[現有交付檢查](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/agent.py:787)\n\n也不建議讓 `complete_accepted` 成為「沒有結構錯誤就自動成立」的狀態。結構有效、agent 聲明完成、來源核對結果，仍是不同資訊；不需要因此增加例行人工批准。\n\n草稿可保存與匯出、正文和選填 metadata 可一起提交、來源觀察可隨版本更正，這些方向我都支持。更正文件的 `source_refs` 時，應更換引用或建立新觀察，保留原始證據記錄不被改寫。\n\n我會把後續設計順序調整為：\n\n1. **文件與執行核心**：候選保存、實用草稿、局部修改、交付一致性、操作對帳，以及基本輸入容量處理。\n2. **Context 整理與接續**：可恢復的證據釋放、普通歷史整理、有效要求與未解工作的保護。\n3. **進階核對便利功能**：區塊定位、局部對照、表格檢視，按實際需要加入。\n\n這保留了完整重構的自由，也讓每一步都能改善 agent 真正完成文件的能力。\n\n本輪查核了現有程式、已安裝 SDK、官方文件，並做了記憶體內的渲染範例核對；沒有修改專案或呼叫 Nexus。"
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 2875,
+  "timestamp_original": "2026-10-22T07:50:49.515Z",
+  "timestamp_display": "2026-10-22T15:50:49.515+08:00",
+  "turn_id": "01a16292-70c3-7da2-8fac-1fb549463b61",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T15:49:39.914+08:00",
+  "completed_at": "2026-10-22T15:50:49.515+08:00",
+  "event_id": "EVT-0968",
+  "evidence_path": "evidence/events/EVT-0968.json",
+  "supporting_paths": [
+    "supporting/workspace/src/pdf_to_md_agent/agent.py",
+    "supporting/workspace/src/pdf_to_md_agent/core.py",
+    "supporting/workspace/src/pdf_to_md_agent/preview.py"
+  ],
+  "embedded_paths": []
+}

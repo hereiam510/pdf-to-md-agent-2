@@ -1,0 +1,234 @@
+這份審閱精準抓出了前一版在動態狀態注入、跨儲存狀態歸屬與恢復邏輯上的四個隱性缺陷——特別是指出「每輪尾端注入工作狀態在下一輪移除或替換時，照樣會破壞上一輪尾端的快取前綴」**、**「工具結果不在精簡後的活躍輸入中，不等於尚未交付，絕不能掃描精簡歷史亂補收據」**、**「保留／釋放屬於特定 Context 的投影選擇，而非證據本身的永久屬性」**，以及**「Pi v1.3.0 工具 `execute()` 回傳的是 `AgentToolResult`（`{content, details}`），而非 Session 訊息物件」。
+
+更重要的是，你在第 6 點一針見血地指出了目前的真正缺口：**儲存與收據已經收斂，但「Context 運行契約（模型實際看見甚麼、容量如何計算、何時切換、交接失敗如何避免卡死）」尚未定清。**
+
+以下先針對這份審閱中揭示的**四個深層設計張力**進行交鋒與補強，接著直接給出你要求優先確立的 **「Context 運行契約」** 與 **「解耦後的資料與資產模型」**。
+
+---
+
+## 一、 四個深層交鋒：解決審閱中暴露的設計張力
+
+### 1. 交鋒一（針對第 1 點）：解決「尾端動態狀態」與「穩定前綴」的兩難——改用「事件驅動增量訊息（Event-Driven Delta）」
+
+你敏銳地問道：**「尾端注入的工作狀態，下一輪會怎樣處理？若每輪替換或移除，不一定能延續前綴；若每輪永久附加，又會累積大量重複狀態。」**
+
+* **問題根源：** 把工作狀態當成一個「每輪動態重繪的浮動面板（Floating HUD）」塞在訊息列表末端，在無狀態的 HTTP 模型 API 中必然會面臨「抽走即破快取、保留即堆垃圾」的死結。
+
+
+* **最佳功能設計（正常靠工具結果，外部變動靠一次性 Append-Only 事件訊息）：**
+1. **日常回合零額外注入：** 正如你所建議，當 Agent 自己呼叫 `update_draft` 或更新筆記時，該次工具回傳的 `ToolResult` 本身就已經帶有最新 `draft_revision`、變更摘要與待確認問題；此時 Context 組裝器**完全不額外注入任何尾端狀態區塊**，讓對話歷史維持純粹的 Append-Only。
+
+
+2. **僅在「非 Agent 主動操作導致狀態改變」時，追加一則持久事件訊息：** 只有當發生（a）使用者中途修改要求、（b）從中斷恢復且有已提交但未回傳給 Session 的收據，或（c）剛完成一次 Context Compaction 重建工作集時，組裝器才向訊息歷史追加一則不可變的系統轉移訊息（例如 `[State Sync: requirement_rev=2, draft_rev=4]`）。一旦追加，這則訊息就留在該 Epoch 的歷史中不再抽走，直到下一次 Compaction 一併整理——既不重複堆疊完整快照，又不會每輪抽換尾端破壞前綴。
+
+
+
+
+
+### 2. 交鋒二（針對第 6 點）：如果「交接筆記失敗時保留舊狀態」，當舊狀態已滿載時會引發永久死鎖（Capacity Deadlock）
+
+你在第 6 點定義了一個關鍵保護規則：**「交接筆記失敗或不完整：保留可用的舊狀態，不切換到缺少工作資訊的新 context。」**
+
+* **潛在死鎖陷阱：** 為什麼會觸發整理（Compaction）？正是因為舊 Context 已經逼近模型視窗上限（或者剛產生了一筆龐大的工具結果等待載入）。如果這時請模型產生交接筆記（Handshake）因網路超時、格式殘缺或模型漏填欄位而失敗，單純「退回舊狀態、不切換新 Context」，意味著**舊 Context 依然處於塞滿狀態**——下一輪 Agent 既不能讀取新頁面，重試 Handshake 也可能因同樣原因再次失敗，導致任務永久卡死！
+
+
+* **最佳功能設計（免模型介入的「機械式安全降級（Deterministic Safe Eviction）」作為退避底線）：**
+當「請模型整理交接筆記」失敗時，我們確實**不能**切換到一份依賴殘缺摘要的新 Context，但 App 必須擁有一條**不依賴 LLM 推理的機械式減壓路徑**：
+1. **完整保留所有推理與草稿文字：** 保留舊 Context 中所有的使用者要求、Agent 文字回覆、工作筆記與 `update_draft` 呼叫紀錄（確保未記錄的推理與判斷零遺失）。
+
+
+2. **僅將「已落稿頁面」的巨量原始證據原地降級為引用：** Context Policy 引擎直接掃描舊 Context 中佔用大量空間的歷史 `inspect` / `ocr` / 原圖 `ToolResult`；凡是其對應頁碼在最新 `draft_revision` 中已有內容且無未解錯誤標記，直接將該筆歷史訊息中的龐大 Payload 替換為精確的 `evidence_id` 取回入口（原件仍在磁碟與 SQLite 中）。
+
+
+3. **結果：** 不需要模型寫出完美交接筆記，就能瞬間釋放數萬至數十萬字元的容量，讓 Agent 在保有完整對話推理脈絡的前提下繼續工作，徹底消除交接失敗導致的死鎖。
+
+
+
+### 3. 交鋒三（針對第 5 點）：完全移走 Evidence Stub 改靠「主動查找」，會重蹈「儲存可用不等於模型知悉」的覆轍
+
+你指出若長文件中每份釋放的證據都永久留下一條 100 字元的 Stub，300 頁累積下來索引本身也會膨脹；因此建議將完整索引持久保存供查找，活躍 Context 只留「目前工作相關入口與未解依賴」。
+
+* **認知盲區風險：** 專案的架構規範（`ARCHITECTURE.md`）有一條極為精闢的公理：**「Storage availability is not model awareness（儲存中的可用性不等於模型知悉）」**。假設 Agent 先探勘了第 10–30 頁，隨後開始逐頁重建第 10–12 頁，此時第 13–30 頁的證據因「非目前編輯頁」而退出活躍輸入。如果它們只存在於 SQLite 索引表裡等待 Agent「依頁、類型或文字主動查找」，當 Agent 寫到第 12 頁表格底部時，它**根本不會記得第 15 頁有一個跨頁註腳或附錄對照表要去查**！
+
+
+* **最佳功能設計（以「連續頁碼區間摺疊圖（Page-Range Rollup Map）」取代逐筆 Stub）：**
+為了同時解決「逐筆 Stub 隨呼叫次數 $O(N)$ 膨脹」與「模型不知道哪一頁有東西可查」的矛盾，活躍 Context 中不放逐次工具呼叫的 Stub，而是維護一張**按頁碼區間自動摺疊的輕量文件地圖（Document Rollup Map）**：
+* 連續相同狀態的頁面自動合併為單行（例如：`Pages 1-9: outside_scope | Pages 10-11: in working_draft rev 4 | Pages 12-14: inspected [ev_012..014], contains 2 table candidates | Page 15: inspected [ev_015], has bottom small-text span | Pages 16-290: uninspected`）。
+
+
+* **容量特性：** 即使是一本 300 頁的書，經過連續區間摺疊後，這張全局感知地圖永遠只有 **10～20 行（不到 400 tokens）**！它既不會隨工具呼叫次數無限膨脹，又能讓 Agent 隨時保持對全書探勘進度與異常頁面的全局視野（Global Awareness）。
+
+
+
+### 4. 交鋒四（針對第 2、3 點）：徹底廢除「掃描活躍訊息找收據」，改用明確的「雙階段生命週期狀態」
+
+你完全抓準了前一版的漏洞：**「某筆工具結果沒有出現在整理後的活躍輸入，不代表它尚未被交付。不應每輪掃描精簡歷史，再把所有不見了的收據重新貼回來。」** 同時你也要求明確定義 `acknowledged_in_turn` 的含義。
+
+* **最佳功能設計（在操作收據表定義嚴格的三態時間戳）：**
+每一筆寫入操作（`operation_id`）在 App 資料庫中不靠掃描訊息歷史對帳，而是直接維護三個明確的階段欄位：
+1. `dispatched_at`：Adapter 收到框架的 `tool_call`、完成參數快照並準備執行（此步同時綁定 `framework_session_id` 與 `tool_call_id`）。
+
+
+2. `committed_at`：文件服務在 SQLite 短交易內成功提交 `produced_rev_id`（前提是所引用的外部不可變 Blob 檔案已先完成寫入與 `fsync` 校驗）。
+
+
+3. `returned_to_session_at`：Adapter 已將 `AgentToolResult` / `ToolMessage` 交還給 Runtime，且確認該回合已寫入框架 Session／Checkpointer。
+
+
+* **精確恢復判準：** 系統只有在「崩潰重啟（Crash Recovery）」時，才查詢 `committed_at IS NOT NULL AND returned_to_session_at IS NULL` 的記錄。一旦某筆收據已經正常回傳給 Session（`returned_to_session_at` 已填寫），後續無論該筆訊息是否因為 Compaction 從活躍輸入中被移除，它都是「已完整交付的歷史操作」，**永遠不會被誤判為未結收據重新貼回**！
+* 此外，針對你指出的「即使辨認出原操作已產生 `rev=4`，文件目前可能已經是 `rev=5`」，收據回傳結構將明確分離 **`operation_outcome: { produced_rev: 4 }` 與 `current_document_state: { latest_draft_rev: 5 }**`，防止模型誤把歷史收據當成目前最新版本。
+
+---
+
+## 二、 優先補齊的核心規格：Context 運行契約（Context Runtime Contract）
+
+回應你在第 6 點的要求，以下將「模型實際看見甚麼、容量如何核算、何時切換、失敗如何保護」定義為明確的運行規範，不綁定固定百分比或硬性頁數，直接支援 Agent 自主工作：
+
+### 1. 模型每次請求實際看見的結構（Canonical Request View）
+
+每次呼叫模型前，Context Policy 引擎組裝出的訊息序列固定由以下四個邏輯區段構成：
+
+```mermaid
+flowchart LR
+    P1["1. 穩定基準區 (Stable Prefix)\n系統規則 + 工具 Schema\n+ 當前有效使用者要求"] --> P2["2. 全局工作視圖 (Compact Working View)\n- 頁碼區間摺疊地圖 (Rollup Map)\n- 當前活躍草稿索引與釘選區塊\n- Agent 工作筆記與未解問題"]
+    P2 --> P3["3. 當前 Epoch 對話與證據流\n(Append-Only Active Turns)\n近期推理、展開的證據與圖片"]
+    P3 --> P4["4. 條件式狀態同步 (Conditional Sync)\n僅在要求變更或重啟恢復時\n追加於最尾端的差異提示"]
+
+```
+
+* **要求變更的即時表達：** 當使用者中途修改要求（例如縮小頁碼範圍或調整格式規則）時，系統除了保存要求修訂歷史，會在下一次請求追加明確的對照聲明：`[Effective Requirement Update (rev 2): Supersedes rev 1 on page scope; pages 20-30 are now outside_scope]`，並將受影響的舊工作筆記標記為 `needs_recheck_against_req_rev_2`，絕不讓舊筆記悄悄覆蓋新要求。
+
+
+
+### 2. 容量核算契約（Dual-Anchor Capacity Accounting）
+
+由於檔案 MB 與 JSON 字元數不等於模型 Token 數，且 Nexus 代理路由背後的實際部署與圖片計費規則可能不透明，容量計算採用「API 實測校準 ＋ 保守增量估算」雙軌制：
+
+1. **基準錨點（API Reported Anchor）：** 每當收到模型回覆且包含 `usage.input_tokens`（或 `prompt_tokens`）時，將該數值記錄為截至上一輪訊息的**真實已知 Token 數**（涵蓋系統提示、工具 Schema、既有文字與已傳送圖片的真實開銷）。
+
+
+2. **新增內容的保守增量估算（Conservative Delta Estimator）：**
+* **文字與 JSON：** 針對本輪新加入的文字／JSON，不單看字元數，而是同時取 `UTF-8 bytes` 與 `CJK 字元數` 的保守上界係數估算（並在下一輪收到真實 `input_tokens` 後自動校正該模型的實際字元／Token 比例）。
+* **圖片像素（Vision Budget）：** 依據目標模型家族的公開視覺切塊規則（例如依長短邊縮放與 $512 \times 512$ 或 $768 \times 768$ 圖塊數估算上限）加上安全係數計算 Token 預留量，且同時檢查單次請求的最大圖片張數／Payload 大小限制。
+
+
+3. **固定預留區（Mandatory Headroom）：**
+
+$$\text{Available Intake Budget} = \text{Model Effective Window} - \text{Current Context Tokens} - \max(\text{Normal Output Margin}, \text{Handshake Turn Margin})$$
+
+
+
+### 3. 五大核心情境的明確運行行為（Runtime Behavioral Matrix）
+
+| 運行情境 | App 的確定性檢查與執行步驟 | 失敗或邊界條件的退避保護 |
+| --- | --- | --- |
+| **1. 單次工具結果很大**<br>
+
+<br>（例如多頁 `inspect` 或全頁詳細座標超出可用餘量） | 1. 完整原始結果先寫入不可變 Blob 並登記至 SQLite（`operation_status = "succeeded"`）。
+
+<br>
+
+<br>2. 計算完整表示法所需的預估 Token；若超過當前回合的 `Available Intake Budget`，**不做隱藏截斷**。
+
+<br>
+
+<br>3. 回傳「容量超限導覽收據（Capacity-Gated Envelope）」：列出完整檔案已保存的 `evidence_id`、各頁／各欄位的實際大小、抽樣結構預覽，以及可選的讀取方式（如按頁碼範圍、按區塊或選用簡化視圖）。
+
+ | Agent 保有 100% 自主選擇權：可選擇直接分段讀取所需範圍、先釋放已用完的舊證據騰出空間，或撰寫工作區腳本先過濾該筆已落盤的證據 JSON。
+
+ |
+| **2. 準備整理 Context**<br>
+
+<br>（活躍歷史累積接近水位，或 Agent 主動要求整理） | 1. 綜合評估全部組成（系統規則、工具 Schema、活躍歷史、已掛載圖片，以及完成一次交接所需的輸入＋輸出餘量）。<br>
+
+<br>2. 盤點目前活躍輸入中的大型證據，結合頁碼狀態與近期使用情況，向 Agent 提出「可釋放候選清單（Release Candidates）」並請求更新工作筆記／未解依賴（Handshake）。 | 若只需釋放幾張已完成的舊頁圖片即可騰出充裕空間，Agent 可直接勾選釋放候選，**無須強制重寫整份歷史摘要**。
+
+ |
+| **3. 交接筆記失敗或不完整**<br>
+
+<br>（模型超時、格式錯誤，或漏掉關鍵欄位） | 1. **拒絕切換至殘缺的新 Context**，保留原有的完整對話與推理紀錄。<br>
+
+<br>2. 若舊 Context 仍未滿，直接返回原狀態繼續；若舊 Context 已無空間容納下一步，啟動前述的**「機械式安全降級（Deterministic Safe Eviction）」**：保留所有文字對話與筆記，僅將「已寫入草稿且無錯誤標記頁面」的巨量原始證據 Payload 替換為 `evidence_id` 取回指標。 | 既保證**零推理／筆記遺失**，又能在無須模型成功配合的情況下釋放巨量證據空間，確保長文件轉換絕不因 Handshake 失敗而死鎖。 |
+| **4. 整理完成與切換前驗收**<br>
+
+<br>（準備啟用新 Context Epoch） | 在記憶體組裝新 Epoch 的首個請求並執行確定性結構檢查：<br>
+
+<br>- 最新 `requirement_rev` 的有效要求是否完整在列？<br>
+
+<br>- 最新 `draft_revision` 的工作草稿索引與未完區塊是否可達？<br>
+
+<br>- 已登記的未解問題（`open_issues`）與釘選引用是否全部包含？<br>
+
+<br>- 所有被移出活躍輸入的證據是否皆有合法的 `evidence_id` 檢索入口？<br>
+
+<br>- 總預估容量是否已回到安全區間？ | 全部檢查通過後，才在 SQLite 更新活躍 `epoch_id`；任一項未通過則中止切換並回退至機械式安全降級或原狀態。
+
+ |
+| **5. 切換到較小 Context 或不同能力的模型** | 1. 重新載入新模型的有效視窗上限、視覺支援能力與圖片計量參數（不沿用上一模型的容量假設）。<br>
+
+<br>2. 立即對當前活躍工作集執行重新預算（Re-budgeting）。 | - **若新模型視窗較小：** 自動將超出新水位的舊證據退回為 `evidence_id` 引用（保留在 Rollup Map 中），並通知 Agent 工作集已依新模型容量收縮。<br>
+
+<br>- **若新模型不支援圖片輸入：** 立即擋下或移除活躍輸入中的原生圖片 Bytes，避免 API 報錯，並提示改用 OCR／文字座標或切換回具備視覺能力的模型。
+
+ |
+
+---
+
+## 三、 修正後的儲存責任與資產登記契約（回應第 3、4 點）
+
+採納你對資料表職責混雜的批評，以及對外部 Blob 與資料庫交易順序的要求，重構後的儲存層將嚴格遵守以下邊界：
+
+### 1. 跨儲存寫入的「兩階段提交順序（Blob-First Commit Protocol）」
+
+由於 SQLite 交易不包含外部檔案與框架 Session，所有寫入與提取操作強制依序執行：
+
+1. **Phase 1（鎖外準備與持久化）：** 將擷取的證據 JSON、無損圖片或匯入的草稿內容寫入臨時檔，計算 SHA-256，完成結構解析與驗證，並以內容雜湊命名原子移動至 `blobs/<sha256>`（完成檔案落盤）。
+2. **Phase 2（SQLite 短交易）：** 開啟資料庫交易，檢查 `expected_draft_revision`（若為文件修改），確認無誤後一併寫入新的 `draft_revision`、指向 `blobs/<sha256>` 的引用，以及狀態為 `committed` 的 `operation_receipt`。此設計保證**資料庫中任何已提交的記錄，其指向的外部檔案 100% 已經存在且完整**（即使在 Phase 1 與 Phase 2 之間崩潰，最多只在磁碟留下可隨時清理的未引用孤兒檔，絕不產生懸空指標）。
+3. **Phase 3（框架回傳）：** Adapter 將业务收據包裝為框架專屬結果（如 Pi 的 `AgentToolResult { content, details }` 或 LangChain 的 `ToolMessage`）回傳，隨後更新收據的 `returned_to_session_at`。
+
+### 2. 拆解混雜職責後的六個獨立邏輯實體
+
+針對你指出的四項欄位問題，將資料模型修正如下：
+
+| 原提案的問題點 | 修正後的解耦設計 |
+| --- | --- |
+| **`evidence_records.retention_state` 混入永久屬性** | **`evidence_blobs` 只存永久客觀事實**（來源頁、抽取器回報值 `extractor_reported`、App 額外衍生線索 `app_derived_hints`、檔案路徑与 SHA-256）。<br>
+
+<br>某份證據在當前 Context 是「展開、局部載入、還是已釋放」則獨立存於 **`context_epoch_items (epoch_id, evidence_id, projection_mode)`**。 |
+| **`requirements_json` 與 `agent_notes_json` 混在同一張表** | 拆分為兩張權限隔離的表：<br>
+
+<br>- **`user_requirements_log`**：僅能由 UI／使用者指令寫入，保存原始要求與歷次修訂原話。<br>
+
+<br>- **`agent_working_notes`**：由 Agent 讀寫，記錄排版慣例、暫定判斷與待查問題，並標註其參考的 `requirement_rev`。Agent 工具在架構上沒有修改 `user_requirements_log` 的權限。 |
+| **每版 `draft_revisions` 複製整份文件的 `blocks_manifest**` | 引入**內容尋址區塊庫 `content_blocks (block_hash PK, markdown_text, meta_json)**`。<br>
+
+<br>每次 `draft_revision` 只儲存輕量的**有序區塊指標陣列（`[block_hash_1, block_hash_2, ...]`）**與頁碼對應表。修改單一段落或表格時，未變動的幾百個區塊直接重用既有 `block_hash`，不重複複製內文。 |
+| **圖片資產來源過度限制於內建工具** | 建立統一的 **`registered_assets` 登記契約**，支援四種合法來源種類（`source_kind`）：
+
+<br>
+
+<br>1. `native_embedded`（保留原始串流編碼與尺寸，含原始 JPEG）；
+
+<br>
+
+<br>2. `page_or_region_render`（記錄來源頁、座標框、渲染 DPI 與無損 PNG）；
+
+<br>
+
+<br>3. `raster_crop`（記錄父資產 ID、像素裁切範圍與無損保存格式）；
+
+<br>
+
+<br>4. **`script_produced`（開放 Agent 腳本生成的裁切／合成圖透過 `register_asset` 匯入，記錄輸入來源資產／頁碼、腳本路徑與處理說明）**。
+
+<br>
+
+<br>同時將「來源可追溯性（Provenance Recorded）」與「內容完整性核對（Content Verified，如是否漏裁圖例）」分開記錄，草稿可自由引用，發布前僅針對缺漏來源或已知問題提示核對，不設逐圖人工審批關卡。
+
+ |
+
+---
+
+這套修正已經把你指出的 **Context 運行契約（容量預算、大結果導覽收據、交接失敗的機械式安全降級、模型切換重算）** 與 **儲存／資產邊界（Blob-First 提交、要求與筆記隔離、內容尋址區塊重用、腳本圖片合法登記）** 全部閉環。
+
+如果要針對 **Pi SDK (v1.3.0)** 與 **LangChain `create_agent**` 執行下一步的公開接口實測，你希望我們先用這套 **Context 運行契約（特別是「大結果容量攔截」與「交接失敗的機械式降級」這兩個最考驗框架彈性的情境）** 來設計最小對照測試嗎？

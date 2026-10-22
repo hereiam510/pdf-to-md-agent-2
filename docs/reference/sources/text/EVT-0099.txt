@@ -1,0 +1,1 @@
+我會查 CLIProxyAPI 的路由、上游轉換及相關設定，分別核對原生 compaction、background response 查詢和取消。也會區分專案目前的支援與本機 Nexus 實際使用的版本。

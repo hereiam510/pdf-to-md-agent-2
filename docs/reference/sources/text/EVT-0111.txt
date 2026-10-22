@@ -1,0 +1,1 @@
+查到一個需要修正的地方：CLIProxyAPI 目前主分支已有 `/v1/responses/compact`，也有特定 WebSocket 的 `response.interrupt`；但尚未看到標準 background response 查詢與按 ID 取消的 HTTP 路由。因此不能概括為「三者都不支援」。我正在確認這些功能的上游限制，以及本機 Nexus 所帶的版本。

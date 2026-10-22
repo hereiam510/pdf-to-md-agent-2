@@ -1,0 +1,28 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad8eedf042881919dc0d4704af03b10",
+    "content": [
+      {
+        "type": "Text",
+        "text": "**這份方案可以作為候選設計，但它對 Deep Agents 的排除結論仍缺乏依據；幾項新規則也可能增加轉換負擔。** 我會保留「精確緊湊表示、統一容量核算、版本化引用、候選稿重用」，但不會直接採納整張框架比較表或把這些機制定為強制流程。\n\n完整重構可以讓我們重新選擇實作方式。應保留的是產品能力與已驗證的行為，舊 controller 的程式結構本身沒有必須保留的理由。\n\n**1. 框架比較仍然不對稱，不能據此判定 Deep Agents 的優勢歸零。**\n\n我重新核對了附件指定版本的公開介面與原始碼，有幾點需要更正。\n\n**Deep Agents 的大結果卸載可以設定，不等於必須重寫整個 middleware。**\n\n在 `0.7.29`，相關機制位於 `FilesystemMiddleware`，公開建構參數包括：\n\n```python\ntool_token_limit_before_evict=None\n```\n\n原始碼明確處理這個設定，以跳過該工具結果的大小卸載路徑。可以透過官方的同名 middleware 替換機制放入設定好的實例；這與自行重寫其完整實作是不同工作量。[版本原始碼](https://github.com/langchain-ai/deepagents/blob/deepagents%3D%3D0.7.29/libs/deepagents/deepagents/middleware/filesystem.py)、[官方客製化方式](https://docs.langchain.com/oss/python/deepagents/customization)\n\n這不表示預設卸載適合我們，而是比較表應先區分：\n\n- 設定既有機制；\n- 包裝或組合既有機制；\n- 替換產品政策；\n- 重寫底層機制。\n\n**摘要也不是只能接受預設或全部推翻。**\n\n該版本提供摘要提示、計量方式及自訂 `summarizer` 等入口。這些不會自動實現我們的釘選與 manifest 交易，但代表部分摘要機制仍可能重用，不能先判定價值歸零。[版本原始碼](https://github.com/langchain-ai/deepagents/blob/deepagents%3D%3D0.7.29/libs/deepagents/deepagents/middleware/summarization.py)\n\n**Pi 同樣需要協調內建整理政策。**\n\nPi 有預設自動 compaction、觸發時機、近期內容保留與摘要流程。若 app 接管容量與整理，它也需要設定、攔截或停用相應行為。因此不能把 Pi 的這類工作算作「薄轉接」，卻把 Deep Agents 的同類工作全部算作「重寫」。[Pi compaction 文件](https://github.com/earendil-works/pi/blob/v1.3.0/packages/coding-agent/docs/compaction.md)\n\n我會把「單一決策入口」理解為：**各層遵守同一份 context 政策，最終請求有明確的組裝與檢查責任。** 它可以由多個協作元件完成，並不要求所有邏輯放在一個 hook 裡。\n\n另外，語言選項也不只附件列出的兩條路：\n\n- Deep Agents 有官方 TypeScript 版本，雖然仍需獨立核對功能與版本差異。[官方 TypeScript 文件](https://docs.langchain.com/oss/javascript/deepagents/overview)\n- 如果不需要 Deep Agents 的整套預設功能，可以使用 **LangChain `create_agent` 加上選定 middleware**，不必直接退到裸 LangGraph 或全自建。[官方 agent 文件](https://docs.langchain.com/oss/python/langchain/agents)\n\n因此，這份比較尚不能證明「Electron 應選 Pi，Python 應排除 Deep Agents」。\n\n**2. 無損緊湊編碼值得驗證，但不應立即成為模型輸入的預設。**\n\n這一版放棄預設 span 合併和座標量化，是合理修正。不過，「目前提出的 tuple 可以完整還原原始 dict」仍然只是待驗證的設計。\n\n有三個細節：\n\n- `147,366 ÷ 446` 包含 block、line 等資料，不能全部歸因為每個 span 的負擔。\n- 頂層 `text` 是獨立欄位；刪除它不會縮小已單獨量測的 `layout`。該次頂層文字約為 3,034 字元。[既有量測](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/EVIDENCE.md:62)\n- 目前程式分別呼叫文字與 dict 抽取，不能未經檢查就假設拼接 spans 能完全還原另一份文字結果的空白、換行與順序。[目前實作](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/core.py:104)\n\n如果要稱為無損，還要保留完整的層級、方向、屬性、缺省值及其他實際存在的欄位，不能只驗證文字與 bbox。樣式種類也不能預設最多只有十多種。\n\n而且還有一個更關乎 app 功能的問題：\n\n**程式能精確解碼，不代表模型更容易使用。**\n\n大量位置式 tuple 和樣式索引可能縮短字元量，也可能增加模型查表、理解欄位和定位錯誤的負擔。尤其我們要支援不同能力的模型，不能只優化序列化長度。\n\n我建議把它當成一種可選表示，評估：\n\n| 層面 | 要回答的問題 |\n|---|---|\n| 資料正確性 | 解碼後是否還原承諾保留的全部資料？ |\n| 輸入效率 | 實際輸入 token、schema 說明與後續讀取合計如何？ |\n| 使用效果 | Agent 是否仍能正確識別閱讀順序、樣式、表格及圖片關係？ |\n\n單一頁面的字元壓縮率，只能回答其中一部分。\n\n**3. 容量調節流程可以採用，但有兩個自動選擇需要放鬆。**\n\n第一，**「未釘選」不等於「已不需要」。**\n\nAgent 可能仍在使用一份證據，只是沒有顯式釘選。若系統把所有未釘選內容都當成可釋放，就會把正確工作的前提變成「agent 必須記得維護完整釘選表」。\n\n釘選應是強保留訊號。釋放還應考慮近期使用、未完成工作、已登記依賴及 agent 的整理判斷。不能要求每份有用資料都先被釘選。\n\n第二，**超量後總是載入前幾頁，未必符合下一步需要。**\n\n若 agent 正在核對跨頁表格，最需要的可能是最後一頁表尾與下一頁表頭。容量分配應優先保留呼叫中指定的頁面、區域及工作依賴；沒有足夠資訊時，提供清楚的範圍目錄，讓 agent 選擇。\n\n這個流程應允許「調整表示、釋放舊證據、局部讀取、交接」按情況組合。它不需要成為每次都走完的四階程序。\n\n工具回覆分開表達操作結果與載入範圍，我支持。但 `full` 要說清楚是「完整的請求表示」還是「完整原始結果」；多頁操作亦可能部分成功，需要保留各部分結果，避免單一成功／失敗欄位掩蓋有用工作。\n\n**4. 工作集必須容納正在編輯的候選稿，釘選也不能依賴「文字微調」的語義猜測。**\n\n附件提出「活躍工作集只放已發布版本，候選稿只放摘要」，這會限制實際工作。\n\n例如，agent 已完成一張跨頁表格，只因頁碼 metadata 尚未補齊而未發布。接下來修表頭、補下一頁時，**最有用的是那份候選稿的精確內容**。只載入舊發布版本會造成額外讀取，甚至讓 agent 沿用舊內容。\n\n我會區分：\n\n- 目前工作的候選稿：可按需要載入、釘選和繼續編輯。\n- 其他候選稿：通常只呈現索引及狀態。\n- 已發布版本：維持明確的發布身分與可追溯性。\n\n同樣地，「單純文字微調且結構未變」不能作為安全跟隨的充分條件。`mg` 改成 `μg`、增加一個「不」、數字改一位，結構都可能不變，含義卻大幅改變。\n\n比較清楚的規則是：\n\n- `fixed_snapshot` 始終引用指定版本。\n- 跟隨目前成果的引用，依明確的邏輯身分解析新版，並揭露變更。\n- 是否需要重新判斷相容性，依保留目的和受影響內容處理；程式不宣稱已證明「只是微調」。\n\n**5. CAS 改進可以保留，但核對紀錄的失效規則太粗。**\n\n把交接筆記先作為 `staged_notes_delta`，再與 manifest 一起提交，解決了先前的自我衝突問題。\n\n實作時還要明確指定持久化邊界：如果筆記放在 app 儲存、session 放在框架儲存，不能因為同一個 hook 執行了兩次寫入，就宣稱它們是一個原子交易。較簡單的方式是讓筆記與活躍 manifest 有一個權威提交點，其他記錄透過 manifest ID 對應。\n\n核對紀錄則應保留歷史事實：\n\n> 「版本 v1 的某個範圍曾完成某項核對」不會因 v2 出現而變成假的。\n\n需要重新判定的是：**這項核對能否沿用到 v2。**\n\n附件把修改區塊所在頁面和依賴區塊一律降級，可能造成大量不必要重查。比較合適的是按核對項目區分：\n\n- 修正文句：相關文字核對需要更新。\n- 改變圖片或裁切：相關圖片核對需要更新。\n- 改變樣式或位置：可能影響閱讀效果，但不必否定未變文字的來源核對。\n- 改變跨頁關係：檢查受影響的關係及相鄰內容。\n\n這些記錄應幫助 agent 決定哪裡需要重看，避免變成新的強制審核流程。對需求變更也類似：標示「需重新評估」通常比直接把成果宣告為無效更準確，原有有用內容應保留。\n\n**6. 離線實驗值得做，但不能用它直接拍板預設或框架。**\n\n附件建議的兩種實驗有價值，證據用途需要收窄：\n\n| 實驗 | 可以支持的結論 | 不能單獨支持的結論 |\n|---|---|---|\n| 緊湊編碼與 round-trip | 資料能否還原、大小如何變化 | Agent 理解更好、等品質更省成本 |\n| Fake model／工具與 hook 測試 | 事件順序、投影、交易及錯誤路徑是否可行 | 真實模型會正確交接、Nexus 全面相容、產品整體最佳 |\n\n「兩小時」目前沒有依據；轉接程式碼行數亦不是主要勝負標準。比較時應讓兩個候選都使用最適合自己的公開介面，記錄哪些行為直接重用、哪些需要設定、哪些必須維護自訂程式，並檢查失敗時能否保住工作。\n\n現有 228 項測試及 R1/R2 紀錄值得重用為行為與 fixture 參考，但它們是有範圍的證據，不能把整個現有 controller 稱為已充分驗證，也不要求新架構照搬全部舊實作。Nexus 網絡設計仍可留待下一階段。\n\n**我的設計建議是：維持一個清楚的工作 context 決策入口，讓證據、正在編輯的候選稿和發布版本各有精確身分；優先重用 runtime 的成熟機制，只自訂 PDF 轉換需要的政策。** 目前沒有足夠理由淘汰 Deep Agents，也沒有足夠理由認定 Pi 必然修改最少。下一份接口對照應把 LangChain `create_agent` 這個中間選項納入，並用同一套具體行為比較，而不是先把某一方的可重用能力排除。"
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 1540,
+  "timestamp_original": "2026-10-21T16:58:10.524Z",
+  "timestamp_display": "2026-10-22T00:58:10.524+08:00",
+  "turn_id": "01a15f62-12d2-7280-ba2d-9d431239054d",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T00:57:02.399+08:00",
+  "completed_at": "2026-10-22T00:58:10.524+08:00",
+  "event_id": "EVT-0459",
+  "evidence_path": "evidence/events/EVT-0459.json",
+  "supporting_paths": [
+    "supporting/workspace/docs/EVIDENCE.md",
+    "supporting/workspace/src/pdf_to_md_agent/core.py"
+  ],
+  "embedded_paths": []
+}

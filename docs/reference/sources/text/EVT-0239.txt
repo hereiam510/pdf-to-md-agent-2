@@ -1,0 +1,9 @@
+已建立 [Context Management Discussion](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/CONTEXT_MANAGEMENT_DISCUSSION.md)，按專案規則以英文記錄：
+
+- 討論脈絡、修正與考量
+- 現有能力、缺口及框架比較
+- 論文、相關專案與論壇可信度
+- 已同意原則及接續工作的方案
+- 尚待決定事項與延後討論的網絡管理
+
+已同步更新文件索引、設計原則、決策及目前狀態；本地連結與 Markdown 檢查通過。本次僅更新文件，未改動程式或設定。

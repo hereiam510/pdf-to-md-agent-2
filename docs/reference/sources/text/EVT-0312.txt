@@ -1,0 +1,1 @@
+這份建議的分層有價值，但它把幾個仍需判斷的選型直接寫成了定案。較大的問題是：「頁面已儲存就清走 context」不符合我們已同意的保留原則，而 LangGraph checkpoint 也不能單獨保證檔案寫入與恢復都正確。我正在核對它排除 Pi、LangChain 和 Deep Agents 的理由。

@@ -1,0 +1,210 @@
+這份修正將架構邊界收得非常精準：把小型 `context_policy` 收回 LangGraph `AgentState` 並透過 `before_model` 集中結算、把「提交格式（局部稀疏）」與「最終交付（完整頁碼對應）」拆開、要求 `source_refs` 綁定不可變證據版本與內部路徑，以及將「候選稿保存（驗證失敗不丟失正文）」提前至 Slice 1 第一天實作，都讓重構方向更貼近真實產品需求。同時，你對 40 頁測試中 8 次工具錯誤的分類校準（6 次底層拒絕＋2 次成功後投影錯誤，且包含 OCR timeout schema 問題），以及舉出 Nursing「Breasts」任務僅轉換物理第 12 頁局部段落的實例，都直接修正了前一輪過度簡化的假設。
+
+若以「完全重構、讓 App 發揮最佳功能」為標準，這份設計在 **並行工具意圖的結算順序、繁體中文罕用字的跨語言字元定位、局部頁面範圍的完成判準、抗縮放的局部視覺對照，以及 Slice 1 中 `create_agent` 與既有 HTTPX2 傳輸層的接合** 上，仍有五個關鍵工程細節需要正面交鋒與補強。
+
+---
+
+## 一、 五個深層交鋒與最佳功能設計補強
+
+### 1. 交鋒一（針對第 1 點）：`before_model` 集中結算若依賴「工具完成時間」，會在並行與重播時產生非確定性衝突
+
+你提出了一個極佳的簡化流程：`工具回報 context 變更意圖 → before_model 集中結算 → 一次更新 policy 與已處理批次 → wrap_model_call 按政策組裝本次輸入`。同時你也正確指出，已發出的模型請求、已消耗預算、已提交文件版本與已完成的外部工具操作，絕對不能只依賴可回退的 Checkpoint。
+
+* **隱藏的決定性漏洞（Non-Deterministic Parallel Settlement）：**
+當模型在同一個回合發出多個並行工具呼叫（例如同時呼叫兩個讀取或筆記／釘選更新工具），LangGraph 透過 `Send("tools", ...)` 並行執行時，**哪個工具先跑完是取決於作業系統排程與 I/O 的隨機結果**。如果兩個並行工具都回傳了針對同一個區塊或證據的 context 變更意圖（例如一個更新釘選、一個釋放或修改同一主題筆記），而 `before_model` 按「工具完成先後順序」去結算，那麼重跑（Replay）時就可能因為完成順序對調而結算出不同的 `context_policy`！
+
+
+* **最佳功能設計（按父回覆 `tool_calls` 陣列索引做確定性結算 ＋ 明確切分兩個 Hook 的職責）：**
+1. **確定性排序規則：** 每個工具回傳的 `ContextIntent` 必須附帶其 `tool_call_id`。當 `before_model` 集中結算同一批次的變更意圖時，**強制依照父級 `AIMessage.tool_calls` 的宣告順序（`index: 0, 1, 2...`）依序套用**，徹底消除並行執行時間差帶來的隨機性。
+2. **為什麼要同時用 `before_model` 與 `wrap_model_call`？** 這個雙 Hook 分工在 LangChain `create_agent` 中剛好各司其職：
+
+
+* **`before_model`（持久化狀態轉換）：** 負責讀取本輪新增的 `ContextIntent`、檢查批次 ID 是否已結算過，並將更新後的 `context_policy`（輕量 JSON）寫回 LangGraph `AgentState` 存入 Checkpoint。
+* **`wrap_model_call`（純暫態輸入水合）：** 讀取已定案的 `context_policy`，從外部 `EvidenceStore` / `DocumentStore` 載入原文與圖片像素、計算本次 `input_view_id` 的三維容量水位，組裝出暫態訊息送給模型，**不把展開的巨量文字與圖片寫回 Checkpoint**。
+
+
+
+
+
+
+
+---
+
+### 2. 交鋒二（針對第 4 點）：在繁體中文（特別是香港／公文 PDF）中，跨語言「字元位置（Offsets）」與「單行 HTML 表格」是真實地雷
+
+你敏銳點出了 `patch_block` 的四個邊界：同一行多個 `0`、HTML 表格可能整張只有一行、顯示換行與原始換行不同，以及 JavaScript（UTF-16 code units）與 Python（Unicode code points）的字元索引差異。
+
+* **為什麼這在本專案是致命實戰問題？**
+1. **罕用字與異體字（SIP 字元）的索引漂移：** 在香港 JRE 或中文書籍中，常出現擴充區漢字（Unicode Plane 2，如 `U+20000` 以上的罕用字／異體字）。這類字元在 Python `len(s)` 中算 **1 個字元**，但在 Electron / JavaScript 的 `str.length`（UTF-16 surrogate pair）中算 **2 個 code units**！加上 Windows 的 `\r\n` 與 `\n` 差異（先前 `agent.py` 就曾處理過 CRLF 與 LF 的正規化問題），只要讓 UI、Agent 與 Python 後端交換「字元 Offset 數字」，在長表格中幾乎必然發生切歪半個字或錯位的災難。
+
+
+2. **單行壓縮 HTML 表格的修補困境：** 當表格含有跨欄／跨列（`colspan` / `rowspan`）時，Agent 會使用 HTML `<table>`。如果 Agent 輸出成單行 `<table><tr><td>...</td></tr></table>`，行號定位（`line_range`）就會退化為整張表都是第 1 行。
+
+
+
+
+* **最佳功能設計（廢除裸字元 Offset 契約 ＋ 儲存層 HTML 表格結構化分行 ＋ 上下文錨點定位）：**
+1. **儲存邊界強制正規化（Canonical Ingest）：** 文件服務在接收任何草稿區塊時，底層一律先轉為標準 `\n` 換行與 NFC 編碼；對於 HTML `<table>` 區塊，在不改變任何標籤與儲存格內容的前提下，**自動在 `<tr>`、`</tr>`、`<td>`、`<th>` 邊界執行確定性的標準換行排版（Canonical Pretty-Format）**。如此一來，任何 HTML 表格在草稿庫與 `reopen` 視圖中天然具備清晰的「一列／一格一行」行號，徹底消滅「整張 HTML 表只有一行」的問題！
+2. **不靠數數字的定位契約：** 工具介面**不要求 Agent 手算 UTF-16 或 Unicode 字元 Offset**，而是支援兩種人類與 LLM 最擅長的無歧義定位：
+* **行區間 ＋ 前後文錨點：** `line_range: [18, 20]` 搭配 `context_before`、`expected_old_text`、`context_after`（若該區間內仍有重複，可指定 `occurrence: 1`）。
+* **表格座標定位（選用輔助）：** 針對標準 Markdown 或 HTML 表格，提供 `table_cell_locator: { row: 5, col: 3, expected_old: "0", replacement: "**0**" }`，由 Python 後端解析替換，Agent 連前後管道符 `|` 都不用重組。
+
+
+
+
+
+---
+
+### 3. 交鋒三（針對第 2 點）：從「Breasts 第 12 頁局部範圍」出發，重新設計不越權的「頁面交代 vs. 任務範圍對應」
+
+你用 Nursing 的 **Breasts / Figure 4-13（物理第 12 頁／印刷第 68 頁）** 舉出了一個極具說服力的反例：該任務只要求轉換第 12 頁內的 Breasts 小節與圖 4-13，明確排除同頁前後的其他段落；因此單靠 `target_pages=[12]` 與「第 12 頁有 `converted` 區塊」既無法表達「同頁部分在範圍內、部分在範圍外」，也無法證明該頁內的表格、圖說與 18 個搜尋標籤皆已完成。
+
+同時你也指出，將 `source_blank_or_omitted` 混為一談並不準確（原頁空白 vs. Agent 省略純裝飾是兩回事）。
+
+* **最佳功能設計（將頁面映射細化為「精確處置狀態」，並支援「子頁面範圍錨點」）：**
+為了同時滿足 `PRODUCT_REQUIREMENTS.md`「映射每一個輸入頁面（含範圍外與未處理頁）」，以及支援「單頁局部範圍」與「跨任務續工」：
+
+
+1. **任務範圍定義（`TaskScope`）支援子頁面邊界：**
+`TaskStore` 中的目標範圍不只是一個整數陣列 `pages: [12]`，而是支援 `{ pages: [12], subpage_boundary_note: "Breasts subsection and Figure 4-13 only; exclude preceding subsection" }`。
+
+
+2. **分開五種客觀頁面處置（Page Disposition）：**
+Agent 只需提交本次任務實際觸及頁面的處置；其餘未觸及頁面，由 App 在產生版本快照與匯出時，自動根據當次 `TaskScope` 補齊為 `outside_task_scope`（當明天啟動新任務將 `TaskScope` 擴大為全書時，這些未觸及頁面的自動推導值就會自然變為 `unprocessed`，完全不會被舊版本的 `outside_scope` 卡死！）：
+* `converted_full_page`：該物理頁全部實質內容均已轉換。
+* `converted_partial_scope`：該頁僅轉換了任務指定的局部範圍（必須附帶 `scope_note`，如 `"Breasts subsection only"`）。
+
+
+* `source_visibly_blank`：來源頁面確認為物理空白頁（搭配 `printed_page: "none"` 或實際頁碼）。
+
+
+* `omitted_non_content`：來源頁面為純裝飾、版權頁或按規則省略之非正文頁（附省略理由）。
+
+
+* `unprocessed` / `drafting`：在本次任務範圍內，但尚未完成轉換。
+
+
+
+
+3. **完成檢查的誠實邊界：** App 程式層負責檢查「所有 `TaskScope` 頁面皆已脫離 `unprocessed/drafting`、所有引用的圖片資產皆存在且合規、沒有未關閉的驗證錯誤」；至於「圖 4-13 的 18 個標籤是否一字不漏」，App 不假裝自己是語義裁判，而是將各區塊關聯的 `source_refs` 與核對狀態透明列出，供 Agent 自主核對或獨立審閱者檢驗。
+
+
+
+
+
+---
+
+### 4. 交鋒四（針對第 5 點）：綁定證據版本的 `source_refs` 加上「雙端同區域原尺寸裁切」，才能真正避開視覺模型的自動縮圖
+
+你精準指出：`p14_b03` 若不綁定證據版本，重跑 OCR 或改變裁切就會指錯對象；因此必須綁定 **「不可變證據版本（`evidence_id`）＋ 該證據內的區塊／欄位路徑」**，並重用 `ocr.py` 既有的 `bbox_pixels` 與 `bbox_pdf` 區分。你也指出 Qwen 等視覺處理器會依像素預算自動縮放整頁大圖。
+
+* **如何把這兩點結合成殺手級功能？**
+既然上游視覺處理器（如 Qwen-VL 或各家 Vision API）會在**單張圖片總像素過大時自動降採樣（Downscale）**，那麼當 Agent 懷疑某張表格的表頭粗體或某個字（如第 14 頁的 `礪` vs `厲`）有誤時，傳送「整頁來源圖 ＋ 整頁預覽圖」正是導致處理器縮圖、讓筆畫細節變模糊的原因！
+
+
+* **最佳功能設計（基於 `source_refs` 的自動局部雙端裁切對照）：**
+1. **不可變來源引用格式：** 區塊的 `source_refs` 採用 `{"evidence_id": "ev_004", "item_pointer": "/pages/14/blocks/3"}`。因為 `ev_004` 是不可變證據，App 可直接從中讀出精確的 `bbox_pdf: [x0, y0, x1, y1]`。
+
+
+2. **局部高解析對照工具（`inspect_block_pair`）：** 當 Agent 指定要核對某個 `block_id`（例如 `tbl_02`）時：
+* **若該區塊具有帶 `bbox_pdf` 的 `source_refs`：** App 自動從來源 PDF 針對該 `bbox_pdf`（外擴少量 padding）渲染一張 **300–400 DPI 的局部原圖裁切**，同時在離屏渲染器針對 HTML 中的 `#tbl_02` 元素擷取**局部預覽裁切**。因為局部裁切圖的長寬像素很小（例如 $900 \times 350$ px），送入任何視覺模型都**不會觸發整頁大圖的縮放降採樣**，每個中文字的筆畫與粗體都能保持 100% 原始清晰度！
+* **若該區塊只有粗粒度頁碼（無 `bbox`）：** 才退回整頁來源與預覽，並在工具回覆中明確標示 `location_granularity: "page_coarse"` 與實際影像像素尺寸。
+
+
+
+
+
+---
+
+### 5. 交鋒五（針對第 6 點與 Slice 1 範圍）：縮小 Slice 1 的最佳捷徑，是把既有 HTTPX2 控制器包裝成 `create_agent` 的自訂 Model Adapter
+
+你建議縮小 Slice 1：「先重用已有來源工具與編碼能力，接通目前實際使用的 Nexus 路由，完成一次有用的來源到成品流程……且從第一天保存有用的候選內容（驗證失敗不丟失正文）。」
+
+* **關鍵工程問題：** 如果在 Slice 1 引進 LangChain `create_agent`（LangGraph），但我們又要「重用已有的編碼能力与 Nexus 路由」，這兩者要怎麼接？
+* 如果直接用 LangChain 現成的 `ChatOpenAI` 去連 Nexus，我們就會立刻失去現有 Python Controller（`HTTPX2`）中已經通過 228 項測試與 R1/R2 實戰驗證的核心資產：包括 **Chat Completions 工具結果後緊接配對 User Image 的精確順序、原生 SSE 逐幀安全組裝（拒絕半截 JSON）、`service_tier` 安全過濾，以及持久化的單輪重試帳本**！
+
+
+
+
+* **最佳功能設計（薄層 `NexusHttpChatModel` 包裝既有傳輸編碼器）：**
+在 Slice 1 中，**不要丟棄既有的 HTTPX2 編碼器與請求帳本**！我們只需要寫一個不到 150 行的自訂 LangChain `BaseChatModel` 子類（暫名 `NexusHttpChatModel`）：
+1. 上層交給 `create_agent` 與 LangGraph `SqliteSaver` Checkpointer 管理對話迴圈、`AgentState`（含 `context_policy`）與工具派發。
+
+
+2. 當 `create_agent` 呼叫模型時，`wrap_model_call` 完成輸入視圖組裝（記錄 `input_view_id`），隨即交給 `NexusHttpChatModel`——底層直接呼叫我們現有已驗證的 **HTTPX2 請求編碼器、圖片配對器與單輪重試帳本**發送至 Nexus！
+
+
+3. 收到回覆後，在 `AIMessage.response_metadata` 寫入確切的 `accepted_reply_id` 與 `input_view_id`，供後續工具產生穩定的 `operation_id`。
+
+
+
+
+* **這樣做的巨大好處：** Slice 1 幾乎不需要重寫任何底層網路、串流或 PDF 工具程式碼，就能立刻獲得 LangGraph 的狀態管理與恢復能力，且 100% 繼承現有系統對 Nexus 路由的所有容錯保護！
+
+
+
+
+
+---
+
+## 二、 徹底重構後的系統責任與狀態邊界總表
+
+將你的取捨（「簡化政策狀態、保留外部副作用收據、改善局部更新與候選稿重用、避免過度承諾」）整理為重構後的四大權責邊界：
+
+| 狀態與能力維度 | 儲存與擁有者 | 核心契約與真實保護邊界 |
+| --- | --- | --- |
+| **1. 可回退的執行與 Context 政策**<br>
+
+<br>（`Execution & Context Policy`） | **LangGraph `AgentState**`<br>
+
+<br>（Checkpointer 持久化） | - 儲存：訊息引用歷史、`context_policy`（選取/釋放/釘選清單）、工作筆記、已處理的意圖批次 ID。<br>
+
+<br>- **更新契約：** 工具僅回報 `ContextIntent`；由 `before_model` **依父回覆 `tool_calls` 陣列順序**集中結算；`wrap_model_call` 依政策動態載入原文／原圖並計算本次輸入水位。 |
+| **2. 不可回退的外部事實與帳本**<br>
+
+<br>（`Irreversible Ledgers`） | **App 核心資料庫**<br>
+
+<br>（不受 Graph Time-Travel 影響） | - **請求與容量帳本：** 記錄每次 `request_attempt_id`、關聯的 `input_view_id`、已消耗的重試額度與實際 `usage`（尊重 HTTP 413 的 `Retry-After` 與共同總預算）。<br>
+
+<br>- **操作收據（`operation_receipts`）：** 綁定 `operation_id`（關聯已接受的 `accepted_reply_id` 與 `tool_call_id`），確保節點重跑時不會重複寫入文件或重跑已完成的工作。
+
+ |
+| **3. 稀疏提交與完整對應的文件核心**<br>
+
+<br>（`Document & Candidate Core`） | **App 文件服務**<br>
+
+<br>（SQLite + 不可變資產檔） | - **Day-1 候選稿保護：** 任何 `save` / `revise` / `patch_block` 先保存為 `candidate_id`；結構或頁碼驗證失敗時完整保留正文供修正重交。
+
+<br>
+
+<br>- **稀疏更新、完整交付：** Agent 可只提交變動區塊與變動頁面；App 結合來源總頁數與當次 `TaskScope` 自動合成完整的全書頁面對應表（區分 `converted_full`、`converted_partial_scope`、`source_visibly_blank`、`omitted_non_content`、`unprocessed` 與 `outside_task_scope`）。
+
+ |
+| **4. 綁定證據的來源與對照服務**<br>
+
+<br>（`Evidence & Visual Service`） | **共用工具層**<br>
+
+<br>（內建 Agent / MCP / CLI 共用） | - **跨介面一致能力：** 支援首次呼叫直接選取欄位／範圍或取得完整結果，並明確回報資料形狀、大小與未載入範圍。
+
+<br>
+
+<br>- **可追溯 `source_refs`：** 綁定 `(evidence_id, item_pointer)`；提供完整頁、局部區域裁切與雙圖對照選項，修改後自動標記舊版核對紀錄需重評。
+
+ |
+
+---
+
+## 三、 重新校準的 Slice 1（最小端到端重構起點）
+
+採納你將 Slice 1 瘦身並把「候選稿重用」納入第一天的建議，重構的第一個可驗證垂直切片（Slice 1）只需要聚焦在以下四件事：
+
+1. **薄層接入 `create_agent` 與既有 Nexus 路由：** 以自訂 `BaseChatModel` 包裝現有已驗證的 HTTPX2 `chat_completions` 編碼器與請求帳本，接上 LangGraph Checkpointer，驗證訊息、原生圖片與工具呼叫在真實路由上的完整往返。
+
+
+2. **Day-1 候選稿保護與局部頁面更新：** 在文件服務實作「先存 `candidate_id` 再驗證」以及「允許只提交任務範圍頁面、由 App 補齊其餘 `outside_task_scope` 對應」，立即消除單次 metadata 錯誤導致重寫正文的風險。
+
+
+3. **基礎 `before_model` / `wrap_model_call` 管線：** 建立 `input_view_id` 記錄與基礎容量水位報告（區分原始證據大小與本次實際輸入貢獻），暫不啟用複雜的自動壓縮。
+4. **端到端小範圍實測：** 直接用一個已知的小範圍基準（例如 1～2 頁含圖表的範圍），走完「讀取 $\rightarrow$ 存草稿／候選稿重用 $\rightarrow$ 預覽 $\rightarrow$ 匯出完整包」。
+
+這樣的 Slice 1 範圍是否已經足夠精簡且切中核心？如果同意這個切片邊界，我們下一步可以直接針對 **Slice 1 的文件服務接口（含 Day-1 `candidate_id` 保存與稀疏頁面提交）** 與 **`before_model` / `wrap_model_call` 的最小狀態結構** 展開具體設計。

@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad8f083a37881918b4090547a8bf6f7",
+    "content": [
+      {
+        "type": "Text",
+        "text": "這版最值得保留的是可持續編輯、可預覽的 Working Draft。不過，頁面狀態不能直接決定所有證據都要留在 context；`context_manifest` 也不能單獨判定哪些文件寫入已生效。後者若處理錯誤，重啟時可能忽略已保存的成果。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1574,
+  "timestamp_original": "2026-10-21T17:04:03.087Z",
+  "timestamp_display": "2026-10-22T01:04:03.087+08:00",
+  "turn_id": "01a15f6a-0567-7132-8b13-837e1bb75551",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T01:04:03.018+08:00",
+  "completed_at": "2026-10-22T01:04:03.087+08:00",
+  "event_id": "EVT-0471",
+  "evidence_path": "evidence/events/EVT-0471.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

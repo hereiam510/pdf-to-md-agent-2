@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "這份審閱精準抓出了前一版在動態狀態注入、跨儲存狀態歸屬與恢復邏輯上的四個隱性缺陷——特別是指出「每輪尾端注入工作狀態在下一輪移除或替換時，照樣會破壞上一輪尾端…": C:\Users\laichungling\.codex/attachments/51150c49-8a66-45ae-8cd0-50020adfc2d1/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

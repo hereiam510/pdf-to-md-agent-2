@@ -1,0 +1,10 @@
+
+# Response annotations:
+Each item contains text selected from an earlier Codex response and may include a user comment. Treat items as Annotation 1, Annotation 2, and so on in array order. Use every selection as context and address every comment. For every annotation you address, include its inline directive `:codex-annotation{index="N"}`, where N is its one-based array position (for example, `:codex-annotation{index="1"}`). Do not use unstructured annotation labels.
+<response-annotations>
+[{"text":"接下來要定的是整理的優先次序與保護範圍。我建議：\n\n先考慮釋放可精確取回、目前不再需要的證據，例如已完成部分的大量 OCR 或圖片結果。\n仍不足時再整理較舊的工作歷史，保留必要近期內容及繼續工作的狀態。\n持續有效的使用者要求、未解依賴和未保存的有用成果必須保護；未保存內容可以先完整存入工作檔，context 保留精確引用。","source":{"messageId":"msg_0c5633e5013375f9016ad728605e708191b76561c4211d6364","startOffset":150,"endOffset":308}}]
+</response-annotations>
+
+## My request:
+agreed
+perhaps you can search for journals or related projects to cross-confirm

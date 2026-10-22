@@ -1,0 +1,91 @@
+這批評論有實際工程經驗，但也混合了**過時描述、術語誤用和不同需求下的個人取捨**。不能直接用「LangGraph 不夠自主」或「agent 只需要三行 loop」來決定架構。
+
+核對官方資料後，我會保留我們的方向：**採用合適的 agent 執行基礎，自訂 PDF 證據與 context 政策。Pi 現在應加入主要候選，而不是直接排除 LangChain／LangGraph。**
+
+**先修正論壇中幾個會影響選型的說法。**
+
+| 論壇說法 | 判斷 |
+|---|---|
+| 「Closed loop 是死板流程，open loop 才會依回饋調整」 | 按一般控制理論，定義恰好相反：closed loop 使用回饋，open loop 不依輸出回饋修正。作者可能想說的是「固定流程」與「開放式任務」，但不應混用。 |
+| 「LangGraph 不能動態理解、調整行動」 | 不正確。模型可以在 graph 的節點內決定下一步、選工具、反覆觀察結果；graph 可以只表達通用 agent loop。 |
+| 「LangChain 只能做靜態 chain，沒有原生 agent 抽象」 | 不符合目前版本。現在的 `create_agent` 就是模型與工具循環，並提供 middleware 和狀態整合。 |
+| 「Deep Agents 用 ReAct 取代 LangGraph」 | 不正確。Deep Agents 建立在 LangChain 元件上，使用 LangGraph runtime。ReAct 是行動模式，LangGraph 是執行機制，兩者可以同時存在。 |
+| 「LangGraph 只有線性回退，不能 fork」 | 不正確。官方支援從 checkpoint 分支；但這不等於自動回復外部檔案或其他副作用。 |
+
+上述分別可由 [MathWorks 回饋控制說明](https://www.mathworks.com/videos/series/understanding-control-systems-123420.html)、[LangGraph workflows and agents](https://docs.langchain.com/oss/python/langgraph/workflows-agents)、[LangChain 現行定位](https://docs.langchain.com/oss/python/langchain/overview)、[Deep Agents 架構](https://docs.langchain.com/oss/python/deepagents/overview)及 [LangGraph time travel](https://docs.langchain.com/oss/python/langgraph/use-time-travel)核對。
+
+**「複雜流程可以變成簡單 loop」有道理，但只說中了其中一層。**
+
+對我們的 app，確實不需要寫死：
+
+> 每頁先抽文字 → 必須 OCR → 必須看圖 → 寫 Markdown。
+
+可以讓 agent 根據文件決定方法。可是外面的程式仍需要處理：
+
+- 這次模型實際看見哪些證據？
+- 工具結果太大時怎樣處理？
+- 哪些內容已保存，哪些仍只是候選？
+- 壓縮後如何保留要求、跨頁依賴及圖片引用？
+- 模型宣稱完成時，對應的是哪個成果版本？
+
+**模型能力可以減少手寫的內容處理分支，但不會替 app 完成精確儲存、版本一致性和訊息組裝。** 「loop 很簡單」與「可靠 runtime 很簡單」是兩回事。
+
+這也是論壇中「自研容易」與「自研最後變成專門開發框架」兩種經驗可以同時成立的原因。
+
+**五個候選其實位於不同層次，應分開比較。**
+
+| 候選 | 已提供的主要部分 | 對我們最有價值的地方 | 主要適配工作 |
+|---|---|---|---|
+| **Pi SDK** | Agent loop、session、分支、compaction、擴充介面 | 接近我們希望的自主 agent；context 與 session 能力已組合好 | 接入 Python PDF 工具、替換 coding 預設、核對圖片及整理行為 |
+| **LangChain／LangGraph** | 可組合 agent loop、狀態與執行管理、middleware | 可以保持 agent 自主性，同時精確定義 app 狀態和執行邊界 | Context 政策、證據儲存及 provider 接入 |
+| **Deep Agents** | 在 LangChain／LangGraph 上預先組合檔案工具、offloading、摘要等 | 最有機會直接重用較完整的 context 機制 | 核對內建工具、預設政策與我們的成果／證據模型是否一致 |
+| **OpenAI Agents SDK** | Agent runner、工具、session、handoff 等 | 可作為相對集中的 SDK 執行基礎，提供 Python／TypeScript 路線 | Nexus provider 適配，以及不依賴上游原生功能的 context 管理 |
+| **自製 controller** | 完全按我們需要設計 | 協定與 context 控制最直接 | 整個 loop、狀態、整理、診斷和長期維護都由我們負責 |
+
+這張表是**適配判斷，不是可靠性實測排名**。框架功能多、程式短或下載量高，都不能直接證明在我們的 PDF 任務上更可靠。
+
+**Pi 比我先前的候選分析更值得重視，但要區分使用哪一層。**
+
+Pi 有底層 agent library，也有較完整的 coding-agent SDK：
+
+- 底層提供 `transformContext`、`convertToLlm` 等介面，方便控制送給模型的內容。
+- 較完整的 SDK 提供持久化 session、分支、compaction 和自訂工具。
+- Compaction 有正式擴充點，可以取消預設整理或提供自己的摘要。
+
+這些正好對應我們想要的「完整記錄與 active context 分離」。[Pi agent core](https://github.com/earendil-works/pi/blob/main/packages/agent/README.md)、[SDK](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/sdk.md)、[compaction](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/compaction.md)
+
+但若只使用底層 loop，session 和 compaction 的整合責任仍有不少落在我們身上；若使用完整 SDK，又要檢查它的既定行為。
+
+一個具體例子：目前 Pi 文件列出的圖片自動縮放預設是開啟的。這對一般 coding agent 可能合理，但我們需要精細來源圖片時，就不能不加檢查地接受它。[Pi 設定](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/settings.md)
+
+Pi 的 TypeScript／Node 嵌入方式，與我們未來 Electron app 相配；但現有 Python 工具需要透過明確的介面接入。這是可行的架構選擇，不代表必須重寫 PDF 核心。
+
+**OpenAI SDK 也需要拆成兩種，否則比較會失準。**
+
+如果你指一般 `openai` API client，它主要幫助呼叫 API；完整 agent 執行與 context 管理仍需要我們負責。
+
+如果你指 **OpenAI Agents SDK**，它確實提供 agent loop、工具及 session，而且官方也提供非 OpenAI 模型的 provider／adapter 路線。[Agents SDK](https://developers.openai.com/api/docs/guides/agents/sdk)、[模型與 providers](https://developers.openai.com/api/docs/guides/agents/models)
+
+但要注意：官方某些現成 compaction 範例依賴 Responses 的服務端 compaction。這不能直接算成 Nexus 多模型路線的可用能力。SDK 也有自訂 session 管理方式，但我們仍要選擇符合要求的實作。[原生 compaction 範例](https://developers.openai.com/cookbook/examples/agents_sdk/building_reliable_agents_memory_compaction)、[自訂 session 範例](https://developers.openai.com/cookbook/examples/agents_sdk/session_memory)
+
+所以，使用 Agents SDK 並不等於必須改用官方付費 API；同時，也不等於官方所有能力都能透過 Nexus 使用。
+
+**對我們而言，真正應該比較的是「剩下多少必要的自訂工作」。**
+
+我會用同一個具體情境檢查候選：
+
+> Agent 正在轉換跨頁表格，使用者中途修訂要求；大型 OCR 結果造成容量壓力。整理後，agent 必須保留新要求、已保存版本和未解依賴，並能找回原本的高解析圖片，繼續完成工作。
+
+然後看：
+
+1. 能否只用公開 SDK／擴充介面完成？
+2. 能否準確知道整理前後送出了甚麼？
+3. 原始證據與可用圖片是否保持完整？
+4. Framework state 與成果版本能否一致？
+5. 是否需要維護私有 fork 或反覆繞過框架？
+
+這比「哪個比較輕」「哪個比較新」更能判斷適配性。
+
+**我現在會把 Pi SDK 與 LangChain `create_agent`＋LangGraph 放在主要比較位置。** 前者值得看現成 session／context 能力能省多少工作；後者值得看能否以清楚的 state 和 middleware 實現我們的規則。Deep Agents 若其預設大部分能保留，可能反而最省工；OpenAI Agents SDK 也是有效候選，但要先確認所選 context 路線不依賴 Nexus 未提供的能力。
+
+完全自製仍可保留為選項，但目前沒有證據顯示我們的需求已迫使我們走到這一步。**選擇的目標應是讓我們集中維護 PDF 產品能力，而不是另外養一套通用 agent 框架。**

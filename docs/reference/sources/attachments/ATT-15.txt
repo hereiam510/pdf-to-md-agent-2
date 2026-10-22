@@ -1,0 +1,253 @@
+你對 `bdc032cac806419b9612c40927dbcf99` 前七輪 `assistant.content = null` 的實測查核、`covered_up_to_event_seq` 在並行工具下的競態漏洞、`update_draft()` 與 `view_preview()` 同批執行的版本錯位，以及 `create_agent` 透過 `Send("tools", ...)` 搭配 `pending_writes` 的底層機制修正，直接排除了四個會在實作階段引發資料遺失或狀態錯亂的隱患。
+
+在完全採納這些修正的前提下，若將你提出的第 1 點（短路時仍應交付完整 OCR，而非只回傳 `evidence_id`）與第 7 點（Checkpoint 優先持有穩定引用，避免反覆複製巨大載荷）放在同一個 LangGraph 執行流中檢視，會浮現**四個必須在進入 SQLite Schema 設計前解決的機制張力**。以下先針對這四點進行交鋒與收斂，再直接給出修正後的**四項核心契約（操作身分、筆記覆蓋、版本依賴、實際輸入組裝）**。
+
+---
+
+## 一、 四個深層交鋒：打通修正案中的機制張力
+
+### 1. 交鋒一（第 1 點 vs. 第 7 點的張力）：如何在「Checkpoint 只存輕量引用」的同時，保證「正常與重啟短路都能交付完整 OCR 與原圖」？
+
+你在第 1 點要求：「原本要求完整 OCR，且容量容許，就應從保存的結果交付完整 OCR，而不是重啟後一律只回傳 `evidence_id`」；同時在第 7 點指出：「重型 OCR 和圖片資料宜保存在產出儲存中，checkpoint 優先持有穩定引用，避免反覆複製巨大載荷。組裝模型請求時仍可直接補入完整原文與原生圖片。」
+
+* **潛在實作衝突：** 在 `create_agent`（LangGraph）中，`wrap_tool_call` 的回傳值就是直接寫入 Graph State 與 Checkpointer（含 `pending_writes`）的 `ToolMessage`！
+* 如果讓 `wrap_tool_call` 直接把 15 萬字的完整 OCR 或 Base64 圖片塞進 `ToolMessage.content`，那麼 LangGraph 在後續每一個回合的 Checkpoint 都會重複序列化並複製這份巨型載荷（違反第 7 點）。
+* 反之，如果 `wrap_tool_call` 只回傳一個純 `evidence_id` 字串給 `ToolMessage`，又會變成你第 1 點批評的「自動降低結果完整度，逼模型多花一輪去讀」。
+
+
+* **最佳功能設計（「交付憑證 Delivery Ticket」＋ `wrap_model_call` 即時水合 Hydration）：**
+要讓第 1 點與第 7 點同時 100% 成立，必須將 **「存入 LangGraph Checkpoint 的訊息結構」** 與 **「送給模型的 Wire Message」** 解耦：
+1. **`wrap_tool_call` 永遠只向 LangGraph State 回傳輕量的「結構化交付憑證（Delivery Ticket）」：**
+無論是首次執行還是重啟後的收據短路，寫入 `ToolMessage`（並進入 `pending_writes` / Checkpointer）的都是一個僅數百 bytes 的 JSON 憑證，但裡面明確記錄了「本次呼叫要求的原始投影規格（`requested_projection`）」：
+```json
+{
+  "operation_id": "op_8f3a...",
+  "status": "succeeded",
+  "evidence_id": "ev_015",
+  "content_sha256": "a1b2...",
+  "requested_projection": { "mode": "full_ocr", "pages": [15, 16], "include_images": true }
+}
+
+```
+
+
+2. **`wrap_model_call` 負責在發送請求前執行「按容量水合（Just-in-Time Hydration）」：**
+當進入 `wrap_model_call` 組裝實際模型輸入時，Context Policy 掃描訊息流中的 `Delivery Ticket`：
+* 若該憑證未被標記為釋放，且當前回合容量容許，組裝器直接從 App 的 `Immutable Blob Store` 讀取 `ev_015` 的**完整 OCR 原文與原生 PNG 像素**，在記憶體中展開為模型可見的完整 `ToolMessage`（與配對圖片）。
+
+
+* 若整批工具結果加總超限，才降級展開為「已載入範圍＋未載入範圍目錄」。
+
+
+
+
+
+
+* **效果：** LangGraph 的 SQLite Checkpointer 永遠只有幾 KB 的輕量憑證（零載荷複製膨脹），而模型在正常回合與崩潰恢復回合看到的都是 **100% 完整的請求結果與真實像素**！
+
+
+
+### 2. 交鋒二（針對第 6 點）：在 `Send("tools", ...)` 並行模型下，如何防止 `update_draft()` 與 `view_preview()` 產生競態？
+
+你抓出了一個極為關鍵的品質漏洞：若模型在同一回合發出 `update_draft()` 與 `view_preview()`，而預覽預設讀取「最新草稿」，就可能讀到修改前的舊版本，讓 Agent 誤以為已檢查新稿。你建議：「預覽、讀回和匯出都對應明確版本……若預覽依賴剛修改完成的稿件，就保留這個依賴；無關的 OCR／讀取仍可並行。」
+
+* **執行期機制交鋒：** 當模型在同一個 `AIMessage` 同時輸出 `update_draft(expected_rev=3, ...)` 與 `view_preview(...)` 時，新的 `rev=4` 尚未誕生（模型在呼叫當下不可能知道新版本的隨機 hash，若猜測 `rev=4` 則在 `Send("tools", ...)` 並行派發下，`view_preview` 極可能比 `update_draft` 早 5 毫秒執行而讀不到 `rev=4`）。更關鍵的是：**萬一 `update_draft` 因為頁碼映射缺漏而驗證失敗（未產生 `rev=4`），同批次的 `view_preview` 絕對不能去渲染舊的 `rev=3`！**
+* **最佳功能設計（顯式版本綁定 ＋ 同批次寫後讀屏障 Read-After-Write Barrier）：**
+1. **禁止隱式 `"latest"` 預覽：** `view_preview`、`reopen` 與 `export` 的 Schema 強制要求傳入明確的 `target_revision`（整數修訂號，如 `3`）或顯式枚舉值 `"after_batch_mutation"`。
+2. **同批次兩階段屏障（Batch Execution Barrier）：**
+當一個模型回合包含多個 `tool_calls` 時，App 的工具協調層自動識別工具類別：
+* **無依賴操作（`inspect`、`ocr`、`render`、`update_draft`）：** 立即並行執行。
+* **依賴當批修改的檢視操作（標記為 `target_revision="after_batch_mutation"` 或指定了當批預期產出版本號的 `view_preview` / `reopen`）：** 自動等待同批次的 `update_draft` 結束：
+* 若 `update_draft` **成功提交 `produced_rev=4**`：`view_preview` 立即鎖定 `draft_rev=4` 執行渲染，並在回傳結果中明確標示 `rendered_draft_rev: 4`。
+* 若 `update_draft` **驗證失敗（僅存為未生效的 `candidate_id`）**：`view_preview` **自動中止（不啟動 Chromium 渲染）**，直接回傳 `status: "skipped_due_to_failed_draft_mutation"`，徹底杜絕「修改失敗卻預覽舊稿」的假象！
+
+
+
+
+
+
+
+### 3. 交鋒三（針對第 3 點）：既然前七輪 `assistant.content` 皆為 `null`，未整理回合的「語義意圖」應靠什麼載體保護？
+
+你查核 `bdc032cac806419b9612c40927dbcf99` 發現前 7 輪的 `assistant.content` 全是 `null`，第 8 輪才有 508 字元，直接證偽了「靠保留 `AIMessage.content` 就能保留大部分未寫筆記之語義判斷」的假設。同時你也指出，獨立的 `record_notes` 工具可以跟讀取工具在同一次模型回應中並行發出，不會多花一輪模型請求。
+
+* **工程推論與補強：**
+1. **果斷移除所有工具上的 `note_on_previous_step` 寄生欄位：** 採納你的建議，提供獨立、支援局部增修的 **`record_work_note`** 工具。模型可在發出 `inspect_pdf(pages=[16])` 的同一個 `AIMessage.tool_calls` 陣列中並行呼叫 `record_work_note(...)`，零額外回合延遲，且徹底避免了讀取工具重播時連帶重寫筆記的副作用。
+2. **當 `assistant.content` 為 `null` 時，什麼才是真實的操作意圖軌跡？**
+在 `bdc032cac806419b9612c40927dbcf99` 的前 7 輪中，模型的判斷完全體現在 **「它發出了什麼 `tool_calls` 參數（如選擇了哪個 `crop_bbox`、哪個 `_select` 指針、提交了什麼草稿區塊）」** 與 **「收到了什麼工具回傳／驗證錯誤」**。因此，在需要建立 `[Recovery Context]` 時，針對尚未被 Compaction 整理的近期回合，組裝器應保留 **「緊湊版對話骨架（Compact Turn Skeletons）：完整 `AIMessage(content + tool_calls 摘要)` ＋ 對應 `ToolMessage(結果收據、未採用候選稿 candidate_id 與錯誤訊息)`」**，而不是只留純文字 `content`。
+
+
+
+
+
+### 4. 交鋒四（針對第 1 點）：解決「任意腳本無成功收據時，無法確定是否已產生副作用」的恢復僵局
+
+你特別提醒：「只有『沒有成功收據』時，不能立即推定操作從未執行，尤其是任意腳本。」在既有專案規範中，未確認的本地腳本或 OCR 副作用會直接迫使任務停機等待人工檢查（Uncertain unacknowledged OCR/scripts stop）。
+
+* **最佳功能設計（執行前 `in_flight` 登記 ＋ 每操作隔離輸出沙盒箱）：**
+既然允許徹底重構，我們可以透過檔案系統目錄隔離，把「腳本崩潰導致狀態不明」的停機機率降到最低：
+1. **執行前先寫入 `status = "in_flight"`：** 任何工具（含 `run_script`）在實際啟動子程序前，必須先在 SQLite `operations` 表寫入一筆 `status = "in_flight"` 記錄。因此重啟時可以 100% 區分「根本還沒開始跑（不存在記錄）」與「跑一半崩潰（`status == "in_flight"`）」。
+2. **強制隔離每次腳本呼叫的寫入目錄：** 執行 `run_script` 時，環境變數與工作目錄指向專屬於該 `operation_id` 的隔離子目錄 `workspaces/<job>/script_runs/<operation_id>/out/`（來源證據目錄設為唯讀）。
+3. **崩潰後的確定性處置：** 若重啟時發現某筆 `run_script` 處於 `in_flight`（代表執行中途斷電或崩潰），因為它的輸出完全限制在 `<operation_id>/out/` 內，**絕對不會污染主工作區或其他草稿版本**。恢復模組可直接將該未完成目錄封存為 `aborted_run_artifacts`，並在工具結果中誠實回報：「前次腳本執行於中途異常終止，未完成輸出已隔離，請決定是否重新執行或檢視殘留檔。」
+
+
+
+---
+
+## 二、 修正後的四項核心契約（定案規格）
+
+按照你最後的指示，在凍結 SQLite Schema 之前，我們先把 **操作身分、筆記覆蓋、版本依賴、實際輸入與估算** 這四項契約精確定義如下：
+
+### 契約 A：操作身分與收據重用契約（Operation Identity & Receipt Contract）
+
+1. **三層身分映射：**
+* `operation_id`（PK）：App 產生的穩定唯一識別碼（UUIDv7 或由 `(thread_id, checkpoint_ns, tool_call_id)` 衍生之確定性雜湊）。
+* `framework_call_ref`：記錄 `(thread_id, run_id, tool_call_id)`，在資料庫設為 `UNIQUE(thread_id, tool_call_id)`（修正前一版誤將單獨 `tool_call_id` 設為全局唯一的錯誤）。
+* `canonical_input_sha256`：對「工具名稱 ＋ 正規化後的完整輸入參數 ＋ 所引用的基底版本／輸入檔案 SHA-256」計算的完整雜湊（不依賴截短的 `args_summary_json` 做一致性核對）。
+
+
+2. **恢復與重用順序：**
+* **優先級 1（LangGraph 原生狀態）：** 啟動時配置 `durability="sync"`；恢復時優先使用 LangGraph Checkpointer 與 `pending_writes` 中已持久化的工具結果。
+* **優先級 2（App 收據補齊）：** 若某個工具已在 App 完成落盤並提交 `status = "succeeded"` 收據，但崩潰發生在 LangGraph 完成 `pending_writes` 之前，當框架重播該 `tool_call` 時，`wrap_tool_call` 核對 `(thread_id, tool_call_id)` 與 `canonical_input_sha256` 吻合後，直接回傳保存的 `Delivery Ticket`，並由 `wrap_model_call` 按原始請求規格水合完整內容（不因重啟而縮水為純 ID）。
+* **優先級 3（`in_flight` 異常中斷）：** 若狀態為 `in_flight`（啟動後未提交完成收據即崩潰），純讀取／渲染／隔離目錄腳本可安全清理臨時檔後重跑；若涉及未隔離的外部副作用，則明確標記 `interrupted_uncertain_state` 交由 Agent 或使用者裁決。
+
+
+
+### 契約 B：工作筆記與三錨點覆蓋契約（Note Coverage & Concurrency Contract）
+
+徹底廢除「寫筆記即自動推進全局 `covered_up_to_event_seq`」的設計，改為區分三個獨立維度：
+
+| 記錄欄位 | 寫入時機與決定者 | 代表的精確語義 |
+| --- | --- | --- |
+| **`created_at_seq`** | 筆記寫入資料庫時由系統自動賦予 | 這則筆記是在哪一個系統事件時間點被保存的（僅供排序與審計）。 |
+| **`based_on_input_seq`** | 由 `wrap_model_call` 在發送請求前標記當次輸入的最大 `event_seq`，隨該輪模型產生的筆記一併寫入 | **Agent 形成這則筆記時，實際看見了截至哪一個事件的資料。** 若並行 OCR 在事件 `101` 完成，而同輪筆記基於事件 `100` 的輸入視圖產生，該筆記的 `based_on_input_seq` 為 `100`，絕不會誤將未見過的事件 `101` 算成已處理！ |
+| **`compacted_up_to_seq`** | **僅在執行正式歷史整理（Compaction）且通過切換檢查後**，寫入 `context_epochs` 表 | 哪個範圍以前的原始對話訊息已經被正式整理並移出活躍歷史。日常呼叫 `record_work_note` **永遠不會推進此邊界**。 |
+
+* **並行安全的條目式更新（Item-Level Patching）：** 筆記不存成單一互蓋的 `active_notes_json` 大字串，而是以具 `note_key` / `note_id` 的獨立條目儲存（支援 `upsert`、`append_observation`、`resolve_issue`）。即使同一回合兩個並行工具同時附帶或更新不同發現，在 SQLite 中也是獨立的新增／更新列，不會互相覆蓋。
+
+### 契約 C：版本依賴與批次執行契約（Version Dependency & Batch Ordering Contract）
+
+1. **所有讀取、預覽、核對與匯出強制綁定明確版本：**
+* `update_draft` 必須傳入 `expected_draft_rev`，成功時回傳 `produced_draft_rev`；失敗時將內容保存為不可變的 `candidate_id`，草稿版本號不變。
+
+
+* `view_preview`、`reopen`、`record_verification` 與 `export` 必須指定目標版本（如 `draft_rev: 4` 或 `published_ver: "v1"`），且回傳結構必須包含 `actual_processed_rev` 以供核驗。
+
+
+2. **同批次讀寫依賴保護：**
+* 當同一個 `AIMessage` 中同時包含 `update_draft` 與 `view_preview(target="after_batch_mutation")` 時，執行器強制先完成 `update_draft`：若成功則將 `produced_draft_rev` 傳遞給 `view_preview` 渲染；若 `update_draft` 失敗，則直接取消該次 `view_preview` 並回報前置修改未生效，嚴防「檢查舊版、交付新版」。
+
+
+
+### 契約 D：實際輸入組裝與不確定性容量估算契約（Actual Input & Uncertainty-Aware Estimation Contract）
+
+1. **組裝來源與水合規則：**
+`wrap_model_call` 每次根據當前 `context_epoch` 基準、活躍對話流中的 `Delivery Ticket` 以及 Agent 的保留／釋放選擇，組裝本次實際送往模型的訊息。
+2. **雙態釋放語義（Relevance vs. Capacity Eviction）：**
+* `drop_immediately`：Agent 判定某份證據過時、錯誤或造成干擾，要求**下一輪立即移出活躍輸入**（不論剩餘容量多寡，組裝器立即將其替換為輕量檢索入口）。
+* `evict_when_needed`：Agent 標記某份證據已完成主要階段、允許在容量吃緊時優先移出；若容量充裕且有利於維持穩定前綴，組裝器可暫時保留。
+
+
+3. **帶不確定性的容量估算（Uncertainty-Aware Estimator）：**
+* 不宣稱任何本地公式為絕對「保守上界」。
+* 組裝器每次針對**本次實際準備送出的完整 Payload**（含系統規則、工具 Schema、訊息封裝、歷史中仍在場的所有圖片與本次展開的文字／圖片）計算預估範圍 `[estimated_tokens, high_water_estimate]`，並結合前次實際 `usage.input_tokens` 作為校準參考。
+
+
+* 保留兩道防線：發送前依 `high_water_estimate` 預留交接空間並決定 `Delivery Ticket` 的水合範圍；萬一仍因路由未知計費規則而觸發上游 Context Overflow 錯誤，由異常恢復契約攔截，將超限的大載荷降級為引用後重試，不導致任務崩潰。
+
+
+
+
+
+---
+
+## 三、 對齊四項契約的最小 SQLite Schema（草案）
+
+當上述四項契約確定後，App 的 SQLite Metadata Store 可以非常乾淨地定義為以下五張核心表（外部大型 JSON 與無損圖片統一存於 `blobs/<sha256>`）：
+
+```sql
+-- 1. 全局單調事件序號與操作收據表（涵蓋所有工具呼叫）
+CREATE TABLE operations (
+    event_seq INTEGER PRIMARY KEY AUTOINCREMENT,
+    operation_id TEXT NOT NULL UNIQUE,
+    thread_id TEXT NOT NULL,
+    run_id TEXT,
+    tool_call_id TEXT NOT NULL,
+    tool_name TEXT NOT NULL,
+    canonical_input_sha256 TEXT NOT NULL,
+    based_on_input_seq INTEGER NOT NULL, -- 該呼叫產生時，模型已見的最大 event_seq
+    status TEXT NOT NULL CHECK(status IN ('in_flight', 'succeeded', 'failed', 'aborted')),
+    produced_draft_rev INTEGER,
+    produced_candidate_id TEXT,
+    produced_evidence_id TEXT,
+    delivery_ticket_json TEXT,           -- 寫入 LangGraph ToolMessage 的輕量憑證與投影請求
+    error_detail_json TEXT,
+    created_at TEXT NOT NULL,
+    completed_at TEXT,
+    UNIQUE(thread_id, tool_call_id)
+);
+
+-- 2. 不可變證據與衍生判讀表（含 OCR、Layout、原圖、預覽圖、視覺委派結果）
+CREATE TABLE evidence_blobs (
+    evidence_id TEXT PRIMARY KEY,
+    created_by_op_id TEXT NOT NULL REFERENCES operations(operation_id),
+    source_kind TEXT NOT NULL,           -- 'pdf_inspect' | 'ocr' | 'native_image' | 'region_render' | 'preview' | 'vision_delegation' | 'script_asset'
+    source_pages_json TEXT NOT NULL,
+    target_draft_rev INTEGER,            -- 若為 preview，明確綁定渲染的草稿版本
+    blob_sha256 TEXT NOT NULL,
+    byte_size INTEGER NOT NULL,
+    observed_metadata_json TEXT NOT NULL,-- 尺寸、字型統計、模型身分等客觀屬性
+    derived_hints_json TEXT              -- 標明為衍生推測之輔助線索
+);
+
+-- 3. 版本化工作草稿與未生效候選稿表
+CREATE TABLE draft_revisions (
+    draft_rev INTEGER PRIMARY KEY,
+    parent_draft_rev INTEGER,
+    created_by_op_id TEXT NOT NULL REFERENCES operations(operation_id),
+    blocks_manifest_json TEXT NOT NULL,  -- [{"block_id": "tbl_1", "content_ref": "sha256:..."}, ...]
+    page_map_json TEXT NOT NULL,
+    open_issues_json TEXT NOT NULL
+);
+
+CREATE TABLE staged_candidates (
+    candidate_id TEXT PRIMARY KEY,
+    created_by_op_id TEXT NOT NULL REFERENCES operations(operation_id),
+    base_draft_rev INTEGER NOT NULL,
+    submitted_ops_blob_sha256 TEXT NOT NULL,
+    validation_errors_json TEXT NOT NULL,
+    resolution_status TEXT NOT NULL CHECK(resolution_status IN ('pending', 'committed', 'superseded'))
+);
+
+-- 4. 條目式工作筆記與跨頁依賴表（消除整包覆蓋與假水位）
+CREATE TABLE working_notes (
+    note_id TEXT PRIMARY KEY,
+    note_category TEXT NOT NULL CHECK(note_category IN ('convention', 'cross_page_dep', 'unresolved_question', 'verification_memo')),
+    scope_pages_or_blocks_json TEXT NOT NULL,
+    content_text TEXT NOT NULL,
+    linked_evidence_or_block_refs_json TEXT,
+    status TEXT NOT NULL CHECK(status IN ('active', 'resolved', 'superseded')),
+    created_at_seq INTEGER NOT NULL REFERENCES operations(event_seq),
+    updated_at_seq INTEGER NOT NULL REFERENCES operations(event_seq),
+    based_on_input_seq INTEGER NOT NULL, -- 形成此判斷時依據的輸入水位，不代表全局已壓縮水位
+    based_on_req_rev INTEGER NOT NULL,
+    based_on_draft_rev INTEGER NOT NULL
+);
+
+-- 5. Context Epoch 與歷史整理邊界表（唯一記錄實際整理範圍的地方）
+CREATE TABLE context_epochs (
+    epoch_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    thread_id TEXT NOT NULL,
+    compacted_up_to_seq INTEGER NOT NULL,-- 真正已被整理替換的歷史事件上界
+    base_req_rev INTEGER NOT NULL,
+    base_draft_rev INTEGER NOT NULL,
+    pinned_refs_json TEXT NOT NULL,      -- 包含 pin_mode ('fixed_snapshot' | 'follow_latest')
+    evidence_projections_json TEXT NOT NULL, -- 各 evidence_id 的當前狀態 ('hydrated' | 'evict_when_needed' | 'dropped')
+    continuation_summary_text TEXT,
+    is_recovery_context INTEGER NOT NULL DEFAULT 0,
+    created_at_seq INTEGER NOT NULL REFERENCES operations(event_seq)
+);
+
+```
+
+這套修正是否已經把你關心的 **「Delivery Ticket 輕量持久化 vs. `wrap_model_call` 完整水合」**、**「三錨點筆記覆蓋（`based_on_input_seq` vs. `compacted_up_to_seq`）」** 與 **「同批次 `update_draft` + `view_preview` 順序保護」** 定義清楚？若這四項契約與 Schema 結構無誤，我們下一步就可以直接撰寫 `wrap_tool_call` 與 `wrap_model_call` 的具體狀態轉移邏輯。

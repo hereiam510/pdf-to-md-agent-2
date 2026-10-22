@@ -1,0 +1,22 @@
+SUP-02 — selected continuing requirements from an old-document snapshot
+
+Historical source excerpts only. Current owners are the freshly written documents in docs/.
+Old implementation status, defaults, validation results and closed-work permissions are excluded.
+Source line numbers and full-source hash identify extraction; the complete old document is not required or imported.
+
+--- Original lines 102-115 ---
+## Official practices, versions and changes
+
+The following exact framework rule is the sole language exception:
+
+> 本项目代码必须严格遵守该框架官方的最佳实践（Best Practices），禁止为了图省事而绕开框架原生的目录结构和设计模式。在写代码前，必须检索该框架的最新官方规范。
+
+English meaning: project code must follow the selected framework's official best practices; do not bypass native structure/design patterns for convenience. Before coding, retrieve the latest relevant official guidance.
+
+- Consult primary guidance applicable to selected/locked versions and changed APIs. Record consequential findings without a separate report for every lookup.
+- Latest guidance does not automatically upgrade dependencies/protocols. Make compatible upgrades deliberate and traceable in manifests/locks.
+- Follow actual lifecycle/API/security requirements. Where upstream permits several structures, choose a simple supported project convention; do not invent mandatory layers.
+- Revise infeasible implementation choices with evidence and synchronize owners. Ask only when changing accepted outcomes/explicit constraints is necessary.
+- These are development rules; ordinary conversion does not load all development documents or search framework guidance for every tool call.
+
+

@@ -1,0 +1,30 @@
+目前已完成的是**有來源驗收證據的 headless 轉換核心**；最終獨立 Electron／TypeScript／React App 仍未完成。整體方向符合已定目標，本次未找到需要修改 code、defaults 或重開試驗的實質矛盾。
+
+已重新確認 HEAD 為 `dd6e4ce`、工作樹乾淨，local master 比本地記錄的 `origin/master` 領先 22 commits。本輪只做唯讀審閱，沒有執行轉換、模型呼叫、測試或遠端同步。
+
+**目前確實已有可用交付。**
+
+| 成品 | 已依來源接受的範圍 |
+|---|---|
+| [Breasts Markdown](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/outputs/core-delivery-validation/breasts/document.md)／[ZIP](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/outputs/core-delivery-validation/breasts.zip) | PDF 第 12 頁／印頁 68：完整三段、跨欄接續、兩個 bullets、Figure 4–13 與 18 個可搜尋標籤 |
+| [R1／R2／P 成品索引](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/outputs/bounded-validation/README.md) | JRE 1.2–1.3、完整青春期生理小節及圖、完整交通事故報道小節 |
+
+更早另有 image-only JRE、PELVIC FLOOR、婦科圖片與 revision、18 頁 checkpoint，以及普通九頁 A/B/C 的限定範圍交付。這些結果支持多種實際內容處理能力；適用範圍仍以各份來源審閱為準。[既有交付證據](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/EVIDENCE.md:372)
+
+可靠性方面，R1／R2 已證實保存有用部分後，經局部注入故障仍能完成剩餘轉換。R1 的 90 秒故障實際到再次轉送用了約 188 秒，其中約 98 秒發生於服務恢復之後，這項等待負擔有被如實保留。自然長時間斷線、遠端取消及原 generation 接續仍未證實。Selective／checkpoint 已有機制使用證據；普通 B/C 沒有採用 optional transition，因此淨效益仍未知。P 沒有執行 scripts，實質 script transformation 也仍未驗證。[結果及限制](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/CURRENT_STATE.md:51)
+
+**成本 audit 的結案表述準確，沒有需要重啟的工作。** 本輪獨立核對八筆原始 usage，重現：
+
+- input 636,591、cached 537,088、算術非快取餘額 99,503；output 1,587 已包含 reasoning。
+- 按既有假設價格計算，合計 **US$0.2685848**；這是條件基準。
+- Request 2 的非快取部分占 input 成本基準約 **61.0%**，但沒有分離出 layout／words 的邊際成本，也沒有證明它可避免。
+
+首次請求確實已提供 `_select` 與完整讀取說明；較後的 selected reopen 也確實成功。因而不能把問題簡化為「沒有告知精確選欄」。5,014 對 191,662 字元的投影可重現，但沒有證明欄位足夠、等品質或整項任務省錢。實際 Nexus 收費、cache 語義、首次選擇動機、各欄位貢獻及較小 intake 的後續成本仍未知；**零項改動是合理的結案結果，也沒有宣稱目前選擇最優。** [核算與推論界線](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/EVIDENCE.md:30)
+
+方向上，單一 controller、共用工具、immutable snapshots，以及 agent 自選 extraction／OCR／scripts／preview 的責任分配仍一致。直接查看程式也確認 full history、optional context off、non-streaming、automatic retries 0 的預設。[實際設定](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/src/pdf_to_md_agent/agent.py:102)
+
+可確認的負擔主要在文件：多個 owner 重複描述結案、限制和不再排程，增加閱讀及同步成本。目前它們沒有成為普通轉換 prompt 或固定 pipeline，也沒有把所有後端未知設成桌面階段的前置門檻。本輪沒有充分依據判定 runtime 已過度工程；同時也沒有全面認證其可維護性。[架構與桌面交付界線](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/ARCHITECTURE.md:74)
+
+本次兩位 `fork_turns:"none"` sub-agent 分別核對成本／原始請求，以及產品方向／實際成品。我也閱讀最新完整 Markdown，觀看保留的來源頁與保存畫面。獨立核對確認 ZIP 五個成員與輸出目錄、唯一 immutable snapshot 逐位元一致，preview PNG 確實進入 requests 7／8。沒有重做全部歷史逐字驗收或重新生成像素；舊結果仍依其原有審閱範圍成立。
+
+下一步最值得釐清的是：**你現在最想取得哪份 PDF、哪個完整自然小節的成品，以及它要用於閱讀、搜尋還是後續編輯？** 我的最小提案是先定這項實際交付及驗收範圍，再判斷現有能力是否足夠。若當前主要負擔已變成「必須透過命令列才能使用」，便值得另議第一個可自行啟動 agent、完成 package 交付的 Windows App 切片；桌面交付不需要等所有後端未知都研究完才開始。

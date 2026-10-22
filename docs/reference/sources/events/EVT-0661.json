@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad979e89a0c819187598872e3cc6246",
+    "content": [
+      {
+        "type": "Text",
+        "text": "「保存引用、呼叫模型前再載入原文／原圖」與 LangChain 的公開接口相容，可以保留。仍需修正的是：最大事件序號不能代表實際送入模型的內容；指定腳本工作目錄也不能限制它只能在該處寫檔。我也不傾向為了同批預覽，新增一套通用工具排程器。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2061,
+  "timestamp_original": "2026-10-22T02:50:18.149Z",
+  "timestamp_display": "2026-10-22T10:50:18.149+08:00",
+  "turn_id": "01a1617f-dd27-73c1-9cbc-28c8a2759583",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T10:50:16.050+08:00",
+  "completed_at": "2026-10-22T10:50:18.148+08:00",
+  "event_id": "EVT-0661",
+  "evidence_path": "evidence/events/EVT-0661.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

@@ -1,0 +1,1 @@
+我會使用 OpenAI Docs skill 核對 OpenAI 的官方做法，並另外查 Anthropic、LangGraph／LangChain、AWS 等一手資料，區分跨平台共通原則與特定服務才有的功能。

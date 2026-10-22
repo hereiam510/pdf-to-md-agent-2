@@ -1,0 +1,6 @@
+in my view, currently there are 2 areas that needs attention:
+
+1. context management
+2. network management
+
+please explain the current status, gaps, and issues to me

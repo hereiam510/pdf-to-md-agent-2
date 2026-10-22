@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9d32d84648191b5f85dab2bca2280",
+    "content": [
+      {
+        "type": "Text",
+        "text": "還有一個比 Pydantic 驗證更早的邊界：LangChain 會把 JSON 解析失敗的呼叫放入 `invalid_tool_calls`，一般 ToolNode 不會派發它們。因此，`wrap_tool_call` 可以保存送達它的錯誤參數，卻不能獨自保證所有候選原件都留存。原生回覆保存仍應留在 Nexus 接收層。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 3201,
+  "timestamp_original": "2026-10-22T09:11:09.099Z",
+  "timestamp_display": "2026-10-22T17:11:09.099+08:00",
+  "turn_id": "01a162da-6433-7203-a8e9-3d03868f2c2b",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T17:11:09.016+08:00",
+  "completed_at": "2026-10-22T17:11:09.099+08:00",
+  "event_id": "EVT-1099",
+  "evidence_path": "evidence/events/EVT-1099.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

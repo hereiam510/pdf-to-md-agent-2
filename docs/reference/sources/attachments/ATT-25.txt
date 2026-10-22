@@ -1,0 +1,171 @@
+將「草稿可先保存且可匯出」、「整份文件解析以保留 CommonMark 跨區塊參照」、「放棄記憶體順序鎖」與「模型節點重入時先查持久帳本」這四點確立下來，讓系統避開了幾個會在實作時才爆開的隱藏陷阱。同時，關於實測紀錄的校準完全成立：`191,662` 字元的 `inspect` 來自已通過來源驗收的 Breasts 任務（證明的是輸入負擔而非任務失敗），而 13 頁測試中 A 的強調格式錯誤在 16／18／24 頁，C 才包含第 14 頁及「礪→厲」字形替換。
+
+若以「如何設計讓 App 發揮最佳功能、且不寫多餘繞路程式碼」為標準，你在第 1、2、3、6 點指出的框架限制，其實共同指向一個更直接的架構結論：**我們不應該再用 `create_agent` 外殼去包 `wrap_tool_call` 與 `wrap_model_call`，而應該直接用 LangGraph 的 3 節點 `StateGraph` 作為 Runtime。**
+
+以下針對你提出的 7 點進行深度交鋒與具體設計收斂：
+
+---
+
+## 一、 核心架構交鋒：既然 `create_agent` 的預設行為處處需要攔截，直接用 3 節點 `StateGraph` 才是真正的「薄 Runtime」
+
+請把你在第 1、2、6 點抓出的三個問題放在一起看：
+
+1. **驗證前保存候選稿（第 1 點）：** LangChain 的 `wrap_tool_call` 拿到的 `args` 已經是解析後的字典，且只在 LangChain Agent 內部生效；但產品要求 **MCP（`serve`）與 CLI（`call`/`relay`）也必須共享相同的驗證前候選稿保存契約**。
+
+
+2. **並行派發與恢復死鎖（第 2 點）：** `create_agent` 預設把工具拆進 `Send("tools", ...)` 並行執行；若在 middleware 用記憶體鎖控序，重啟時 LangGraph 跳過已完成的工具 A，就會讓等待 A 訊號的工具 B 卡死。你自己也指出：「使用 LangGraph 的一個小型順序工具節點，是合理取捨；沒有必要為維持 `create_agent` 的形式，反而在 middleware 裡重建隱藏排程器。」
+
+
+3. **跨儲存重入的時間差（第 6 點）：** 模型回覆已落盤，但包含 `accepted_reply_id` 的 Graph checkpoint 尚未保存；重啟後模型節點必須先按穩定的邏輯步驟身分查帳本，避免重發 HTTP。
+
+* **正面交鋒：** `langchain.agents.create_agent` 本質上只是一個幫你組裝「模型節點 $\leftrightarrow$ `Send("tools")` 並行工具節點」的工廠函數。當我們既要替換它的 `Send("tools")` 節點、又要在模型節點前後做持久帳本對帳與 Context 水合、還要讓工具保存邏輯下沉到與 MCP／CLI 共用的底層時，**繼續套著 `create_agent` 再用多層 middleware 去改寫它，反而是在跟框架拔河**。
+
+
+* **最佳功能設計（直接定義 3 節點 `LangGraph StateGraph` ＋ 共用 `AppToolDispatcher`）：**
+
+```mermaid
+flowchart LR
+    Start([啟動 / 恢復]) --> M["節點 1: model_step\n1. 按 (job_id, turn_seq) 查已落盤回覆\n2. 若無則經 ContextPolicy 組裝輸入並呼叫 Nexus\n3. 原生回覆先落盤，再回傳 AIMessage"]
+    M -->|有 tool_calls| T["節點 2: tool_batch_step\n交由與 MCP/CLI 共用的 AppToolDispatcher：\n1. 先保存原始參數 (Candidate)\n2. 讀取/OCR 並行、寫入/預覽/匯出按序執行\n3. 每個工具完成即時寫入持久收據"]
+    T --> S["節點 3: settle_step\n按 tool_calls 宣告順序結算 Context Intents\n推進 turn_seq 並寫入 Checkpoint"]
+    S --> M
+    M -->|無 tool_calls / 結束| End([結束 / 交付])
+
+```
+
+這樣設計的好處是立竿見影的：
+
+* **零記憶體鎖死鎖：** `tool_batch_step` 一次拿到整批 `AIMessage.tool_calls`。重啟恢復重新進入此節點時，它直接掃描 App 資料庫中的持久操作收據（已完成者直接取回結果，未完成者按宣告順序繼續執行），完全不依賴前一次程序留下的記憶體訊號。
+* **MCP／CLI 100% 共享保護：** 「先存原始參數與候選正文、再做 Schema 與業務驗證」直接寫在底層共用的 `AppToolDispatcher.dispatch()` 中（承接現有 `agent_tools.py:383` 的位置），無論呼叫來自內建 Agent、MCP 還是 CLI，都能獲得完全一致的候選稿保護與收據。
+
+
+
+---
+
+## 二、 針對其餘關鍵細節的交鋒與修正方案
+
+### 1. 針對第 1、5 點（草稿匯出、分階段驗證與可更正的 Provenance）
+
+* **完全採納的修正：**
+1. **草稿隨時可預覽、建快照與匯出：** 嚴格遵循 `PRODUCT_REQUIREMENTS.md` 中「有用的部分成果即是誠實草稿（honest draft）」的規定。`export` 不設「全書必須完成」的阻擋門檻；當匯出尚未完成全部範圍或帶有未解問題的版本時，匯出器正常產出完整的 Markdown／JSON／HTML／資產／ZIP 包，並在 `manifest.json` 與 `document.json` 中明確標記 `delivery_state: "draft"` 與 `unresolved_gaps` 清單（區分「未處理範圍」、「內容存疑」與「技術錯誤」），僅阻擋將其宣稱為 `complete_accepted`。
+
+
+2. **單一編輯呼叫同時容納正文與選填頁碼：** 不強迫 Agent 拆成兩次工具呼叫。編輯工具（如 `save_or_patch_version`）允許同時傳入區塊修改與已知的頁碼／範圍對應；若頁碼對應尚有缺漏，系統仍原子保存新版本並將缺漏處標為 `unconfirmed`，不退回已寫好的正文。
+
+
+3. **印刷頁碼與 Provenance 皆為「可隨版本更正的觀測記錄」：** 撤回「印刷頁碼是 68 永遠不會失效」的絕對化表述。只有來源 PDF 的 `sha256` 與總物理頁數是不可變的檔案事實；印刷頁碼（`printed_page`）、區塊對應的 `source_refs`（含 `evidence_id`、頁碼、座標框）與範圍聲明，全部綁定文件版本號（`version_id`），允許 Agent 在後續發現辨讀有誤時提交新版本更正，並保留歷史版本的雙向追溯。
+
+
+
+
+
+---
+
+### 2. 針對第 3 點（整份文件解析下的 `data-block-id` 注入與消除捲動截斷）
+
+你用 `區塊 A: See [source][r].` 與 `區塊 B: [r]: [https://example.com](https://example.com)` 證偽「逐區塊獨立呼叫 `markdown-it-py` 渲染」非常精準——除了參考式連結（Reference Links），跨區塊的註腳（Footnotes）在獨立渲染時同樣會壞掉。
+
+* **如何在「整份文件一起解析」的前提下，精確建立 `block_id -> DOM` 對應？**
+我們不需要靠脆弱的文字比對，也不需要假設「一個區塊只能對應一個 DOM 節點」：
+1. **整份文件拼接並記錄行號區間：** 當組合某個版本的完整 Markdown 時，系統確切知道每個 `block_id` 佔用的起始與結束行號 `[start_line, end_line)`（例如 `blk_01` 為第 0–12 行，`blk_02` 為第 14–35 行）。
+2. **利用 `markdown-it-py` 原生 `token.map` 注入屬性：** 將整份 Markdown 一次送入 `markdown-it-py` 解析（因此跨區塊的 `[source][r]` 與註腳 100% 正常解析）。接著透過一個僅約 15 行的 `markdown-it-py` core rule，遍歷頂層 block tokens（以及由 HTML 表格構成的 `html_block` token）：凡是 `token.map` 落在 `blk_k` 行號區間內的頂層產出節點，統一在該 DOM 元素上掛載 `data-block-id="blk_k"`（若單一 `blk_k` 產生多個頂層段落或表格，多個 DOM 節點都會帶有相同的 `data-block-id="blk_k"`，天然支援一對多！）。最後在 `nh3` 清理時保留 `data-block-id` 屬性即可。
+
+
+3. **從 CSS 源頭消除 `locator.screenshot()` 的捲動遮擋：**
+你指出 Playwright 的 `locator.screenshot()` 遇到捲動容器只會拍到可見區域。好消息是：預覽 HTML 的 CSS 完全由我們的 `preview.py` 控制！
+
+
+* 在生成供檢視截圖的預覽頁面時，CSS 嚴禁對頁面或表格容器設定固定高度與 `overflow: auto / scroll`，並將離屏視窗寬度動態展開至包含最寬表格的 `document.documentElement.scrollWidth`（同時確保無 `position: fixed/sticky` 遮擋物）。
+* 當一個 `block_id` 對應多個帶有 `[data-block-id="blk_k"]` 的 DOM 節點時，由渲染器計算這組節點的聯集邊界框（Union Bounding Box）後透過頁面級 `clip` 擷取，若區塊極長則自動分段擷取並回報分段範圍。
+
+
+
+
+
+---
+
+### 3. 針對第 6 點（跨重啟穩定的邏輯步驟身分，而非依賴框架 `run_id`）
+
+你在第 6 點問到關鍵細節：**「`(run_id, step_index)` 可以是實作方式，但要明定它是 App 的穩定身分，如何跨恢復維持、如何區分分支；不能直接假定框架每次 invocation 的識別碼具有這些性質。」**
+
+* **實作陷阱確認：** 在 LangGraph 中，每次呼叫 `.invoke()` / `.ainvoke()` 都會產生全新的 `run_id`！因此如果重試帳本或已落盤回覆用 LangGraph 的 `run_id` 當主鍵，程序崩潰重啟後再次呼叫 `.ainvoke()` 時，因為 `run_id` 變了，系統就會找不到崩潰前已落盤的 `accepted_reply_id`，進而重發一次重複的 HTTP 請求！
+* **最佳功能設計（由 Graph State 承載的 `(job_id, checkpoint_ns, model_turn_seq)`）：**
+1. 在 `AgentState` 中維護一個顯式的整數計數器 `model_turn_seq`（初始為 `1`，僅在 `settle_step` 完成一輪工具與狀態結算、準備進入下一輪模型呼叫時 `+1`）。
+2. 當進入 `model_step` 時，App 的模型步驟穩定主鍵定義為 **`logical_step_id = f"{job_id}:{checkpoint_ns or 'main'}:{state['model_turn_seq']}"`**。
+3. **無縫跨重啟恢復：** 假設在第 4 輪（`model_turn_seq = 4`），Nexus 已經回傳完整回覆並由 Adapter 寫入本地帳本（綁定 `logical_step_id = "job_1:main:4"` 與 `accepted_reply_id = "rep_004"`），但就在此刻程序斷電，LangGraph 尚未保存第 4 輪的 Checkpoint。
+4. 重啟後，LangGraph 從第 3 輪結束時的 Checkpoint 恢復（此時 `state["model_turn_seq"]` 依然是 `4`），重新進入 `model_step`。節點一開始就用 `"job_1:main:4"` 查詢本地帳本，立刻發現 `rep_004` 已經存在且通過完整性驗證，直接從磁碟載入該回覆轉為 `AIMessage` 返回，**零重複網路請求**！
+
+
+
+---
+
+### 4. 針對第 6 點另一半（嚴格隔離 `ToolMessage.artifact` 與 `NexusChatModel` 編碼器）
+
+你指出的這條資料流邊界必須寫成硬性規定：
+
+> **保存的完整 artifact → 本次 context 選取 → 解析所選圖片 → 協定編碼。**
+
+* **具體隔離契約：**
+* `NexusChatModel` **禁止**讀取 `ToolMessage.artifact`，也**禁止**直接去磁碟查找歷史圖片。
+* 持久化的 `AgentState["messages"]` 中，`ToolMessage` 只存輕量文字摘要與 `artifact={"evidence_id": ...}`。
+* 在呼叫 `NexusChatModel` 之前，唯有 `ContextPolicy` 模組有權根據當前的保留／釋放狀態，將「本次確定要送給模型看」的圖片與證據原文載入到當次請求的暫態訊息副本（Transient Request Messages）中。一旦某張圖片被 release，`ContextPolicy` 就不再將其載入暫態副本，`NexusChatModel` 自然不會將它編碼進 HTTP Payload。
+
+
+
+---
+
+## 三、 重新切分、真正聚焦的 Slice 1 與 Slice 2 路線圖
+
+完全同意你第 7 點的判斷：先前的表格把雙協定串流、局部雙圖工具、DOM 複雜對應全部塞進 Slice 1，違反了「先確保內容存得住、能修、能拿走、能接續」的優先順序。
+
+若我們以最精簡、可獨立驗收的方式推進重構，建議將工作切分為以下三個乾淨的階段：
+
+### Slice 1：核心保存、局部修訂與無損恢復閉環（Core Save / Patch / Resume Loop）
+
+* **目標：** 不加花俏的新視覺工具或複雜壓縮，先用新架構跑通一個完整自然小節（如 Nursing `Breasts` 或 JRE 短小節）的提取、草稿保存、局部修訂、原位重啟恢復與匯出。
+
+
+* **包含的最小必要設計：**
+1. **共用 `AppToolDispatcher` 與文件核心：**
+* 支援驗證前先落盤原始參數（產生 `candidate_ref`）；
+
+
+* 支援保留原始字元（僅統一 LF，不跑 NFC、不自動重排 HTML）的 `write_blocks` 與要求唯一匹配的 `patch_block(base_version, block_id, expected_old_text, new_text)`（重複時回傳行號與前後文）；
+* 分離「來源頁碼觀測」、「區塊 `source_refs`」與「綁定 `(scope_rev, version_id)` 的完成聲明」，並允許隨時將未完成草稿匯出為誠實標示缺口的 Package。
+
+
+
+
+2. **3 節點 `LangGraph StateGraph` ＋ `NexusChatModel`：**
+* 實作 `logical_step_id = (job_id, checkpoint_ns, model_turn_seq)` 的模型回覆落盤與重入對帳；
+* 實作 `tool_batch_step`（讀取並行、有狀態操作按宣告順序執行並寫入持久收據）；
+* 實作無 `pending_images` 殘留的當次請求圖片組裝。
+
+
+
+
+
+### Slice 2：整頁解析下的區塊級預覽與局部對照（Block-Level Preview & Visual Check）
+
+* **目標：** 解決過去 13 頁測試中出現的粗斜體強調遺漏與形近字（「礪→厲」）核對問題。
+
+
+* **包含的設計：**
+1. 在整份文件統一經過 `markdown-it-py` 解析（保留 `[source][r]` 等跨區塊語義）的基礎上，利用 `token.map` 注入 `data-block-id`，並調整預覽 CSS 消除內部捲動容器截斷；
+2. 提供可選的 `inspect_block_pair`（預設回傳獨立來源區域裁剪圖與輸出區塊渲染圖，亦保留拼圖選項）及唯讀的 `table_cell_locator` 檢視輔助。
+
+
+
+### Slice 3：長任務 Context 管理與整理（Long-Document Context Management）
+
+* **目標：** 解決跨章節長文件（如 40 頁以上或整本 JRE / 新聞寫作 PDF）的容量控制與跨頁依賴延續。
+
+
+* **包含的設計：**
+1. 在 `ContextPolicy` 中處理普通對話歷史增長、使用者中途修訂要求、未解跨頁依賴保護，以及單次所選證據超出視窗容量時的導覽與分段讀取。
+
+
+
+
+
+這樣的 Slice 1 範圍是否已經收斂到你認可的「最小、最聚焦且契約嚴密」的實作起點？如果同意這個切分，我們可以直接針對 **Slice 1 的文件操作契約（`write_blocks` / `patch_block` / 草稿匯出）與 3 節點恢復流程** 進行最終確認。

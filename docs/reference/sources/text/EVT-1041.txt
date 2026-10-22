@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "將版本登記、操作唯一性與工作指標收回 **SQLite 短交易（搭配外部不可變檔案）**，並撤回「以最後一次成功提交時間篩選候選稿」、「將估算失敗值當成模型規…": C:\Users\laichungling\.codex/attachments/96ac93a0-d478-40f3-97d9-505f0c0518cf/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following, or the whole project, or previously mentioned/not mentioned, if you find anything worth mentioning
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

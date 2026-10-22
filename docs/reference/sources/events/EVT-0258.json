@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad731b917c48191af0fd723d59b64c3",
+    "content": [
+      {
+        "type": "Text",
+        "text": ""
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 918,
+  "timestamp_original": "2026-10-20T09:17:45.447Z",
+  "timestamp_display": "2026-10-20T17:17:45.447+08:00",
+  "turn_id": "01a15891-2bfe-7db1-b6ae-f9480311d730",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T17:17:45.331+08:00",
+  "completed_at": "2026-10-20T17:17:45.447+08:00",
+  "event_id": "EVT-0258",
+  "evidence_path": "evidence/events/EVT-0258.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

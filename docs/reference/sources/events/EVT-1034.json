@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9c92469048191ad6de793fe0bc113",
+    "content": [
+      {
+        "type": "Text",
+        "text": "Context 部分還有一個重要邊界：超限後縮減輸入，應與網路重試分開處理，但每次實際模型請求仍要記入總預算。若要用模型整理歷史，這次整理也需要可恢復的執行紀錄，不能藏在 `prepare_step` 裡當作一般資料處理。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 3040,
+  "timestamp_original": "2026-10-22T08:28:21.616Z",
+  "timestamp_display": "2026-10-22T16:28:21.616+08:00",
+  "turn_id": "01a162b4-b93d-7ff3-9ce6-8a5816e0c770",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T16:28:19.926+08:00",
+  "completed_at": "2026-10-22T16:28:21.616+08:00",
+  "event_id": "EVT-1034",
+  "evidence_path": "evidence/events/EVT-1034.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

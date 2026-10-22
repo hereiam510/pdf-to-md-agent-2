@@ -1,4 +1,4 @@
-# Local source review and private inputs are not published with the design.
+# Private review scratch and runtime inputs remain local; bundled design sources are versioned.
 .local/
 private/
 workspaces/

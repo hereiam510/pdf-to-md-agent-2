@@ -1,0 +1,284 @@
+這份自我修正展現了很好的工程誠實度——特別是撤回了不對稱的比較、承認「跨頁依賴不需要建成複雜語義圖」，以及提出「工具結果產生時就先保存完整原件」。但若從「如何設計這個 App 才能發揮最佳功能（且允許徹底重構）」的高度來審視，這份修正卻走向了一個危險的倒退：**它為了「少自建通用 context 功能」，反而把目標從輕量的控制層轉向優先評估 Deep Agents，掉入了「框架本位（Framework-First）」而非「產品功能本位（Function-First）」的陷阱。**
+
+以下先針對這份文字的邏輯漏洞與盲點進行正面交鋒（Confrontation），再給出以「發揮 App 最佳功能」為核心的徹底重構設計藍圖。
+
+---
+
+## 一、 對這份修正建議的五個直接交鋒（Confrontations）
+
+### 1. 最大矛盾：第四點已經親手證偽了「優先評估 Deep Agents」的理由
+
+這份文字在第四點提出了一個極佳的設計原則：**「讓工具結果產生時就保存完整原件。如此，後續摘要中的歷史檔案只是另一個取回入口，保存責任不必全部壓在摘要 middleware 上。」**
+
+* **交鋒點：** 既然你們已經決定在「工具執行當下」就把完整原件存入獨立的 Evidence Store，而且在第二點的表格中也承認無論選哪個框架，都必須自建「PDF 精確引用與重新載入證據工具」、「自訂整理規則」與「自訂保存檢查」，那麼 **Deep Agents 引以為傲的「自動 offloading 寫檔」與「虛擬檔案系統讀取（`ls`/`read_file`）」對你們還有什麼實質價值？**
+
+
+* Deep Agents 的預設 offloading 是把過大的純文字或媒體傾倒進框架自己的虛擬檔案路徑，再讓模型用通用文字行號去讀；但本專案的證據是**結構化 PDF JSON（含座標、字型、區塊）加上必須以真實視覺 Token 傳遞的無損 PNG/JPEG 像素**（專案規範明確指出：單靠路徑或編碼文字不等於視覺存取）。一旦你們自建了工具層原件落盤與 `read_evidence`（支援 JSON Pointer、範圍與原生圖片取回），Deep Agents 剩下的就只有「呼叫一次 LLM 做對話摘要」——為了這不到 100 行就能寫完的功能，去背負整個 LangChain / LangGraph / Deep Agents 的抽象層與依賴樹，完全違背了「減少維護負擔」的初衷。
+
+
+
+### 2. 致命遺漏：只看「保存歷史與單次輸入分離」，卻完全無視「動態修改 Context 擊穿 Prompt Cache」的實測教訓
+
+這份文字花大量篇幅證明 Deep Agents 的 `_get_effective_messages()` 與 Pi 的 `context_edit` 都能做到「不刪原始歷史、只改本次模型輸入」。
+
+* **交鋒點：** 在程式碼層面，「保存的完整陣列」與「組裝給本次 API Request 的 `messages`」分離，本來就只是一個純函數投影（`project(history) -> request_messages`），現有的小型 Python controller 早已實作了這個機制，根本不需要依賴特定框架。
+
+
+* 真正的工程難題從來不是「能不能改單次請求的 `messages`」，而是「改了之後對 Prompt Cache、重讀成本與模型行為的衝擊」。根據專案既有的實測證據：
+
+
+* 在 Core Delivery 驗證中，總輸入 636,591 tokens 中有高達 **537,088 tokens 命中快取**（未快取僅 99,503 tokens），關鍵就在於請求維持 **Append-Only 的穩定前缀（Stable Prefix）**。
+
+
+* 在 13 頁 Full vs. Selective 實測中，允許替換舊訊息並在後續重取像素的 Selective 分支，最終耗用了**比 Full History 更多的總輸入、更多未快取輸入、更多請求輪數與更長執行時間**。
+
+
+* 在 13 頁 Checkpoint 實測中，清空歷史雖然讓單輪輸入短暫從 26,875 降到 5,521，但卻導致模型隨後一口氣拉取 9 個完整 OCR 物件（1,976,466 字元），使下一輪輸入暴衝至 **796,420 tokens**。
+
+
+
+
+* Deep Agents 的自動 offloading 與摘要 middleware 會在達到字元／Token 門檻時自動介入改寫訊息前缀；如果不嚴格控制觸發時機與讀入源頭，這種「框架自動幫你整理 context」的機制反而會頻繁擊穿 Nexus 上的快取前缀，造成成本與延遲雙重惡化。
+
+
+
+### 3. 測試情境一（Scenario 1）本末倒置：把「工具設計不良造成的巨量讀入」當成 Context 框架的考題
+
+文字中提出的第一個比較情境是：「1. 巨大 OCR 結果保存後，agent 能完整或按範圍取回。」
+
+* **交鋒點：** 為什麼會允許「巨大 OCR 結果」先塞進模型輸入、再靠框架 offloading 移走？
+* 回顧專案的成本審閱與 40 頁測試紀錄，單次未加 `_select` 的 `inspect` 就會回傳 **191,662 字元**（因為同時包含了重疊的 `text`、`layout` 與 `words` 結構）；8 到 9 頁的完整 OCR 物件更高達 **186 萬至 197 萬字元**。
+
+
+* 讓工具先把 20 萬字的巢狀 JSON 丟給框架、再由 Deep Agents 的 offloading 截斷頭尾並要求模型讀檔，是極差的工具人體工學（Ergonomics）。**最佳設計應該在「工具回傳契約（Intake）」就直接分層**：工具執行時原件 100% 落盤，但預設回傳給模型的永遠是「精簡語義信封（純文字區塊＋異常字型/低信心警告＋結構與大小指標）」，只有當模型需要核對複雜跨欄、字距或局部像素時，才主動按指針或範圍讀取。從源頭消除 90% 的無效巨量讀入，比事後用任何框架做 offloading 都更有效。
+
+
+
+### 4. 測試情境三（Scenario 3）偏離產品本質：把「自動化批次文件轉換器」當成「聊天機器人」
+
+文字中提出的第三個情境是：「3. 使用者中途更正要求，compaction 後遵守新要求，並保留未完成成果。」
+
+* **交鋒點：** 請對照專案的 `PRODUCT_REQUIREMENTS.md`——本產品的核心定位是使用者提供 PDF、範圍與目標後，由 Agent 自主完成提取、OCR、視覺核對與組裝，直接交付完整可讀的 Markdown 與圖片包，**「不需要例行的逐頁指令、修復審批或手動組裝」**。
+
+
+* 這不是一個人類邊看邊聊、在第 15 頁突然插話改需求的聊天室；在真實轉換任務中，真正會在中途發生並需要跨越 Compaction 保留的，不是「使用者插話改要求」，而是：
+1. **Agent 自主探索出的文件全局慣例**（例如：實體第 11 頁對應印刷頁碼 `001`、特定章節的標題層級規範、透明 `GlyphLessFont` 的處理方式）。
+
+
+2. **跨頁未閉合的結構依賴**（例如：物理第 17 頁跨到第 18 頁的英文提示段落、或跨頁延續的六欄表格表頭）。
+
+
+3. **已生成但因局部驗證失敗而未發布的草稿（Prepared / Rejected Candidates）**（例如：在 R2 或 40 頁測試中，模型已經寫好幾千字 Markdown，但因為 `revise` 的 `remove_ids` 或頁碼映射格式錯誤而被退回的候選區塊——這筆成果若在整理 Context 時遺失，模型就得重寫一次）。
+
+
+
+
+
+### 5. 嚴重低估「網路容錯、串流組裝與雙協定圖片編碼」的框架適配成本
+
+這份文字認為選 Deep Agents 可以「少自建通用功能」，並把 Nexus 相容性簡化為 reasoning、圖片與 tool-call pairing 的檢查。
+
+* **交鋒點：** 專案在 Nexus（`[http://127.0.0.1:3939/v1/chat/completions](http://127.0.0.1:3939/v1/chat/completions)`, `cliproxy/gpt-6.1-sol`）上踩過最痛的坑是什麼？是 **180 秒 Header ReadTimeout、HTTP 500/502/503、SSE 串流傳到 36 個 frames 後突然斷線、非標準 `service_tier` 欄位，以及寫入成功但回傳投影失敗的對帳問題**。
+
+
+* 現有的 Python controller 已經針對這些問題建立了極度嚴密的防護：單輪持久化重試預算（`automatic_retries: 2`，嚴格限制最多 3 次嘗試且跨重啟不重置）、Attempt-local SSE 完整組裝（絕不執行半截 JSON 或跨次拼接）、操作收據（Operation Receipts）與發布 Token 對帳，以及 Chat Completions（Tool Result 配對後接 User Image）與 Responses API（Function Output 直接帶原生圖片與加密 Reasoning）的雙原生編碼器。
+
+
+* 如果改用 Deep Agents，你的網路請求與工具迴圈會被包在 `Deep Agents Middleware -> LangGraph Pregel Loop -> LangChain ChatOpenAI -> OpenAI SDK` 四層黑盒之下。當 Nexus 發生 SSE 半途斷線或 502 時，要防止 LangChain/SDK 私自倍增重試次數、要精確攔截半截 JSON、要塞入真實雙協定圖片 Bytes，你得在框架內部到處打 Monkey Patch——**這絕對不是「修改最少」，而是把已經寫好且通過 228 項測試的穩定底層拆掉，換成一個難以控制邊界的黑盒**。
+
+
+
+---
+
+## 二、 聚焦核心問題：這個 App 應該如何設計才能發揮最佳功能？
+
+既然你明確表示「完全重構也可以（Complete reconstruction is ok），重點是讓 App 發揮最佳功能」**，我們就應該跳出「Deep Agents 還是 Pi SDK 哪個改比較少」的框架泥淖，直接從**產品終極形態（獨立的 Electron + TypeScript + React 桌面應用） 與高品質 PDF 轉換的核心痛點出發，設計最乾淨、最強大的系統架構。
+
+要讓 `pdf-to-md-agent` 發揮最佳功能，架構必須同時達成四個指標：
+
+1. **極致的轉換保真度**（精確文字、繁簡與特殊字形如 `勞工福利部部長`、跨頁表格、無損原圖或高 DPI 截圖、100% 實體與印刷頁碼映射）。
+
+
+2. **極低的模型認知摩擦**（Agent 把 Token 花在理解排版與撰寫內容，而不是跟笨重的工具 Schema 或 20 萬字的座標 JSON 搏鬥）。
+
+
+3. **高快取命中率與無損長文件延續**（維持 80%+ Cache Hit，且跨章節壓縮時 100% 不掉表頭、不掉草稿、不掉頁碼進度）。
+
+
+4. **乾淨可打包的桌面端架構**（消除多語言、多瀏覽器引擎的套娃進程）。
+
+
+
+以下是實現最佳功能的 **四層徹底重構設計（Clean-Slate Blueprint）**：
+
+### 第一層：進程與執行期拓撲——消除「俄羅斯套娃」，確立單一控制核心
+
+目前專案的技術棧存在明顯的過渡期套娃現象：目標外殼是 **Electron（內建 Node.js 與 Chromium）**，中間卻夾了一個 **Python Controller**，然後 Python 再去啟動 **Node.js 子進程跑 Tesseract.js OCR**，又另外安裝一套 **Playwright Python + 獨立 Headless Chromium** 來截圖預覽。
+
+若進行徹底重構，最能發揮桌面 App 效能與打包穩定度的拓撲是 **「Node/TypeScript 全權主控 ＋ Python 純無狀態 PDF 算子」**：
+
+```mermaid
+flowchart TD
+    subgraph Electron["Electron 桌面應用 (TypeScript / Node.js)"]
+        UI["React UI：任務配置、進度、對照預覽"]
+        Harness["App-Owned Agent Harness\n(薄層自建或基於 Pi Session 核心)"]
+        Ledger["結構化狀態帳本 (Working Ledger)\n與版本管理 (Save / Revise / Export)"]
+        OCR["Tesseract.js 6.0.1 Worker\n(Node 原生執行緒，免跨語言呼叫)"]
+        Preview["Electron 離屏 BrowserWindow\n(原生 capturePage 截圖，免 Playwright)"]
+    end
+
+    subgraph PyEngine["純無狀態 Python 算子 (PyInstaller 輕量封裝)"]
+        PyPDF["PyMuPDF + Pillow\n僅負責：文字/字型/座標提取、原圖抽取、指定 DPI 渲染"]
+    end
+
+    subgraph Storage["本地工作區 (Single-Writer Disk Store)"]
+        EvStore["Immutable Evidence Store\n(原始 JSON、無損 PNG/JPEG、SHA-256)"]
+        DocStore["Immutable Document Versions\n(Markdown / JSON / Safe HTML / ZIP)"]
+    end
+
+    UI <--> Harness
+    Harness <-->|"雙協定原生編碼 + 有限重試"| Nexus["Nexus / 模型 API"]
+    Harness <--> Ledger
+    Harness --> OCR
+    Harness --> Preview
+    Harness -->|"非同步 stdio RPC (僅傳遞路徑與參數)"| PyPDF
+    PyPDF --> EvStore
+    Ledger --> DocStore
+    EvStore -. "按指針/範圍/像素精確取回" .-> Harness
+
+```
+
+* **為什麼這樣設計功能最強？**
+1. **砍掉 Playwright 與第二套 Chromium：** Electron 本身就是 Chromium。當 Agent 需要 `view_preview` 檢查生成的表格或排版時，直接用 Electron 內建的隱藏 `BrowserWindow` 載入本地安全 HTML 並呼叫 `webContents.capturePage()` 即可取得真實截圖像素，安裝包瞬間減少數百 MB，且預覽渲染與使用者在 UI 看到的畫面 100% 一致。
+
+
+2. **Tesseract.js 回歸原生 Node Worker：** 不再由 Python 跨進程管 Node OCR，直接在 Electron 的 Node UtilityProcess / Worker 中運行，初始化與錯誤診斷更直接。
+
+
+3. **Python 徹底無狀態化：** Python 只留 `PyMuPDF` 與 `Pillow`（連 MCP SDK、HTTPX2、LangChain 都不用放進 Python），專門處理 PDF 底層解析與無損圖片裁切。所有的版本鎖、重試帳本、Session 狀態全部收歸 TypeScript 主控層單一寫入，徹底消滅跨進程狀態分裂（Split-Brain）。
+
+
+
+
+
+---
+
+### 第二層：工具人體工學重構——「源頭分層讀入」與「零摩擦增量存檔」
+
+要讓 Agent 在長文件（如 173 頁全掃描 JRE 或 290 頁新聞寫作 PDF）中保持高水準表現，工具契約（Tool Contracts）必須為模型的認知特性量身打造：
+
+#### 1. 證據讀取工具：預設回傳「精簡語義信封（Compact Envelope）」，原件自動落盤
+
+* 當 Agent 呼叫 `inspect_pdf` 或 `ocr_pdf` 時，底層**自動將完整的 `text` + `layout` + `words` + `tsv` 與渲染圖寫入 Evidence Store**。
+
+
+* **但預設回傳給模型 Context 的內容（Tier-1 Intake）只包含：**
+* 該頁／區域的純文字流（Text）與基本區塊結構；
+* **自動偵測的關鍵異常摘要**（例如：「警告：本頁含 42 個透明 `GlyphLessFont` 字元，無法單靠字型屬性判斷粗體，請結合視覺像素核對」、「警告：第 3 區塊 OCR 平均信心度僅 62%」、「偵測到 2 張內嵌原圖與疑似雙欄排版」）；
+
+
+* **精確證據目錄（Evidence Manifest）**：列出已落盤的 `/pages/12/words`、`/pages/12/layout` 指標與字元大小。
+
+
+
+
+* **效果：** 模型第一眼就能讀完文字並知道哪裡有坑，Context 消耗從 19 萬字元驟降到幾千字元；當它需要排解跨欄段落或圖表標籤時，再呼叫 `read_evidence(id, pointer="/pages/12/words", bbox=...)` 或直接請求該區域的高 DPI 圖片。**這比任何框架的自動 offloading 都更精準，因為它不會把有效文字跟冗餘座標混在一起胡亂截斷。**
+
+
+
+#### 2. 寫入與修改工具：支援「局部增量 Patch」與「失敗草稿自動暫存（Auto-Staged Candidates）」
+
+舊版 `revise` 要求每次修改都必須傳入非空連續 `remove_ids` 以及**整份 PDF 所有頁面的完整 `content_updates` 映射表**，且不支援純 Append/Insert，這在實測中造成了不必要的工具報錯與 Token 浪費。重構後應改為：
+
+* **原生支援 `append_blocks` 與 `patch_page_map`：** Agent 讀完第 14–15 頁後，只需提交新增的 Markdown 區塊與第 14–15 頁的頁碼映射更新（如 `[{pdf_page: 14, printed_page: "015", status: "converted"}]`），由 App 底層自動與上一版本的完整頁碼表合併並執行完整性檢查。
+
+
+* **驗證失敗時自動轉為 Staged Candidate：** 若 Agent 提交了 3,000 字的完美 Markdown，卻因為漏填某頁的 `printed_page` 標籤而被驗證器攔下，App **自動將該次提交的內容區塊存為 `candidate_id`（例如 `cand_004`）**，並在錯誤訊息中明確告知：*「頁碼映射第 15 頁缺少狀態；但你撰寫的 8 個內容區塊已安全暫存為 `cand_004`。請直接呼叫 `commit_candidate(candidate_id='cand_004', page_map_patches=...)`，無須重新生成內文！」* 這能徹底杜絕因小格式錯誤導致整段文字重寫的悲劇。
+
+
+
+---
+
+### 第三層：三層式 Context 與記憶引擎——兼顧 Prompt Cache 與 100% 依賴保留
+
+這正是你貼出的那段文字最糾結的部分。其實，只要把「工作狀態帳本（Working Ledger）」從對話歷史中抽離出來，你們根本不需要依賴 Deep Agents 笨重的摘要 middleware，也不需要每輪手動呼叫 Pi 的 `context_edit`：
+
+1. **平時（章節轉換期間）：嚴格維持 Append-Only，榨乾 Prompt Cache**
+* 在處理同一個章節（例如連續 5～10 頁）時，**不對歷史訊息做任何原地修改或逐輪刪除**，讓每一輪請求的前缀 100% 穩定命中快取。
+
+
+* 由於第二層已經做到了「源頭精簡讀入」，10 頁的轉換過程連同幾張關鍵圖片，通常只佔用 3 萬～6 萬 tokens（完全在實測舒適圈內，如 9 頁自然測試峰值僅約 5.4 萬 tokens）。
+
+
+
+
+2. **狀態同步：由 App 與 Agent 共同維護結構化的 `WorkingLedger**`
+* 在工作區維護一份確定性的 `working_ledger.json`，包含兩部分：
+* **App 自動更新的部分：** 原始任務要求（Effective Task Constraints）、目前已發布的最新 `version_id`、各頁轉換狀態統計（已轉換 1–14 頁、未處理 15–173 頁）、最新已存檔 Markdown 的最末 2 個區塊（作為續寫錨點），以及任何尚未發布的 `staged_candidates` 引用。
+
+
+* **Agent 順手標記的輕量欄位（呼應你文中的第三點）：** 在 `save` / `revise` 工具中加入選填的 `active_notes` / `open_dependencies` 欄位（例如：`[{"kind": "table_header", "from_page": 14, "description": "6欄表格：部門｜預算...", "evidence_ref": "e00004"}]`）。Agent 不需要額外呼叫管理工具有意識地「釋放」舊證據，只需要在存檔時順手登記「哪個跨頁表頭還沒結束」。
+
+
+
+
+
+
+3. **章節邊界或高水位時：執行確定性的「分段重置（Epoch Compaction）」**
+* 當一個大章節存檔完成且 Token 水位超過門檻（例如突破有效視窗的 60%），App 觸發一次乾淨的 Context 切換，下一次請求的輸入由程式碼**確定性組裝（Deterministic Assembly）**：
+
+
+1. **System Prompt + 原始任務要求**（絕對不走 LLM 摘要，保證要求零失真）；
+
+
+2. **最新的 `WorkingLedger` 快照**（包含最新 `version_id`、進度映射、最末區塊錨點、未發布草稿指標 `staged_candidates`）；
+
+
+3. **未結依賴與關聯證據自動掛載**：掃描 `WorkingLedger.open_dependencies`，把仍在使用的舊頁表頭定義與其綁定的 `evidence_ref`（甚至該表頭的局部截圖）自動保留在新 Context 的開頭；
+
+
+4. 其餘已存檔完畢的舊頁對話、舊圖與中間工具呼叫則直接歸檔（只留在磁碟 Session 紀錄與 Evidence Store 中，隨時可透過 `read_evidence` 重取）。
+
+
+
+
+* **你看，這樣設計需要 LLM 跑通用摘要嗎？幾乎不需要！** 因為 PDF 轉換的狀態（進度、版本、跨頁表頭、草稿位置、證據 ID）全都是結構化事實，用確定性的 `WorkingLedger` 注入，比讓 Deep Agents 或 Pi 的通用 LLM 摘要去「濃縮對話歷史」**準確 100 倍、速度 0 延遲、而且完全免費**！
+
+
+
+---
+
+### 第四層：框架選型的最終裁決——別把核心競爭力外包給 Deep Agents
+
+回到你文末的選型表格與下一步建議，我的明確建議是：
+
+| 評估選項 | 針對「最佳 App 功能與架構」的裁決 | 理由 |
+| --- | --- | --- |
+| **選項 A：自建薄層 TypeScript Harness（直接移植現有 Python Controller 的精髓）或採用 Pi SDK 作為輕量基座** | **強烈推薦（排第一）** | 現有 Python Controller 已經證明：真正關鍵的雙協定圖片編碼、SSE 串流安全組裝、有限重試帳本與收據對帳，自己掌控最穩。若重構至 Electron/Node，無論是把這套邏輯直接轉寫為幾百行的 TypeScript Controller，還是用 Pi SDK 管理基礎 Session 並掛載上述的 `WorkingLedger` Extension，都能與 Electron、Tesseract.js、離屏預覽無縫融合，且完全不破壞 Nexus 的傳輸控制力。
+
+ |
+| **選項 B：保留現有 Python Controller，僅升級工具契約與 `WorkingLedger**` | **務實次選（排第二）** | 如果短期內還不想動手寫 Electron 前端，現有的 Python Controller 已經通過了 228+ 項離線測試與 R1/R2/P 實戰驗收。你只需要在現有 Controller 上實作「預設精簡讀入」、「局部增量 `revise`」與「確定性 `WorkingLedger` 注入」，就能解決所有 Context 痛點，**完全不必換框架**。
+
+ |
+| **選項 C：優先評估並遷往 Deep Agents** | **明確反對（應淘汰）** | Deep Agents 看似有 offloading、摘要與檔案讀取，但它的抽象假設是「通用純文字/檔案代理」。為了把 PDF 雙通道證據（結構化座標＋真實視覺像素）、確定性頁碼帳本與 Nexus 的嚴格重試/串流邊界 塞進 Deep Agents 的 Middleware 與 LangChain 的 `ChatOpenAI` 轉接層，你們寫的 Adapter 與繞路程式碼只會比自建更多，而且還被迫在 Electron 裡打包整座龐大的 LangChain/LangGraph 生態系。
+
+ |
+
+### 建議的下一步行動（取代原本的三情境框架測試）
+
+不要花時間去寫把需求映射到 Deep Agents Middleware 的 PoC。如果你想透過實作驗證最佳設計，建議直接針對**真正決定轉換成敗與成本的四個核心機制**做設計與驗證：
+
+1. **改造 Intake 契約：** 讓 `inspect_pdf` / `ocr_pdf` 在產生結果時直接完整落盤，但預設只回傳「文字＋異常警告＋結構/大小指標」，驗證單輪讀入字元數是否能從 19 萬字元降至 5,000 字元以內且不損及模型判斷。
+
+
+2. **改造 `save` / `revise` 契約：** 支援 `append_blocks`、局部頁碼映射 Patch、失敗時自動暫存 `staged_candidate_id`，並加入選填的 `open_dependencies` 欄位讓 Agent 標記跨頁表頭或未完段落。
+
+
+3. **實作確定性的 `WorkingLedger` 與 Epoch Compaction：** 廢除依賴 LLM 自由發揮的對話摘要，改在章節存檔邊界用程式碼確定性組裝「任務要求＋最新帳本＋未結跨頁依賴＋待發布草稿指標」。
+
+
+4. **決定執行期歸屬：** 確認是否要在這次重構中，直接將 Controller 與版本帳本搬進 Node.js / TypeScript（同時用 Electron 原生截圖取代 Playwright、讓 Tesseract.js 原生執行），讓 Python 退居為純無狀態的 PyMuPDF 算子。
+
+
+
+你傾向先在現有的 Python Controller 上快速驗證這套「精簡讀入＋結構化 `WorkingLedger`＋增量 `revise`」的新契約，還是一步到位直接啟動基於 Node/TypeScript（Electron 主控）的徹底重構？

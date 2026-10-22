@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9c2d41f5c8191b1d1842942d98944",
+    "content": [
+      {
+        "type": "Text",
+        "text": "核對後，這版仍有兩個關鍵假設要修正：LangGraph 的恢復或分支不一定會重新經過 `prepare_step`；版本資料夾已存在，也不代表它已成為目前提交的版本。這兩點需要明確的入口與提交規則，單靠增加節點或內嵌收據還不夠。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2918,
+  "timestamp_original": "2026-10-22T08:01:25.600Z",
+  "timestamp_display": "2026-10-22T16:01:25.600+08:00",
+  "turn_id": "01a1629d-caf4-7b20-987f-2089ed7c96b0",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T16:01:25.162+08:00",
+  "completed_at": "2026-10-22T16:01:25.600+08:00",
+  "event_id": "EVT-0982",
+  "evidence_path": "evidence/events/EVT-0982.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

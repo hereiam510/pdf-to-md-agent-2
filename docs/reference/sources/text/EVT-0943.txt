@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "將「草稿可先保存且可匯出」、「整份文件解析以保留 CommonMark 跨區塊參照」、「放棄記憶體順序鎖」與「模型節點重入時先查持久帳本」這四點確立下來，讓系…": C:\Users\laichungling\.codex/attachments/f3d71d2e-8b89-4ee9-b49f-e9ce6567dbf8/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following, or the whole project, or previously mentioned/not mentioned, if you find anything worth mentioning
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

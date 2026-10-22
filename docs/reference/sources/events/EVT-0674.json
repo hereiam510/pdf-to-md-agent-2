@@ -1,0 +1,27 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad97ac598548191af7e6ddc37ada7ee",
+    "content": [
+      {
+        "type": "Text",
+        "text": "**「保存輕量引用、呼叫模型前再載入原文／原圖」可以保留；但我不建議把這份契約與 SQL 定案。** 目前最需要修正的是輸入身分、操作事件順序，以及腳本執行狀態的定義。同批次寫後讀屏障則可能增加不必要的自訂排程責任。\n\n我仍傾向沿用 `create_agent`＋持久化 LangGraph Checkpointer，並讓自訂部分集中在文件、證據與 context 的產品需求。\n\n**1. Delivery Ticket 與即時載入是合理設計，而且已有公開接口支援。**\n\n這不是兩個要求互相衝突，而是需要區分：\n\n- **持久狀態：** 保存結果身分、不可變內容引用、工具呼叫配對及必要的小型訊息。\n- **本次模型輸入：** 根據要求與容量，把引用展開成原文、結構資料或圖片。\n\nLangChain 官方明確支援透過 `wrap_model_call` 修改單次模型輸入，而不修改保存的 state；`ToolMessage.artifact` 也能承載不直接送給模型的程式用資料。[Context engineering](https://docs.langchain.com/oss/python/langchain/context-engineering)、[ToolMessage 文件](https://docs.langchain.com/oss/python/langchain/messages)\n\n我會作幾個調整：\n\n- 大型內容外置；短小的成功、錯誤或操作結果可以直接保存，無須所有工具都繞一次 Blob 讀取。\n- 引用放在 app 明確管理的結構中，例如 `artifact`；不要靠辨識訊息正文中「像憑證的 JSON」來決定載入行為。\n- 組裝新的訊息物件，保留正確的訊息身分與工具配對，避免把展開後的大內容意外寫回持久 state。\n- 正常模型呼叫與歷史整理都要理解這套引用機制，避免主模型取得完整內容，整理程序卻只拿到憑證編號。\n\n但「Checkpoint 永遠只有幾 KB」需要撤回。訊息數、筆記、assistant 工具參數、提交的稿件或腳本仍會增長。這個設計能減少大型證據的重複保存，不能保證全部狀態維持固定大小。\n\n另外，「原生圖片」不等於 PNG；原件是 JPEG 時，也應保留其原始格式與身分。\n\n**2. `based_on_input_seq` 仍然不能代表 agent 實際獲得的資料。**\n\n這版解決了「筆記寫入時取最新序號」的競態，卻留下另一個問題：\n\n> 最大事件序號，只表示序號上界，不能描述選擇性 context。\n\n假設輸入包含事件 20 的文字、事件 40 的部分欄位，事件 21–39 沒有載入，圖片也沒有載入。把 `based_on_input_seq` 設為 40，不能解讀成「agent 看過截至事件 40 的資料」。\n\n同一個最大序號，也可能對應完全不同的原文、圖片、草稿版本與投影範圍。\n\n**我建議筆記主要連結 `input_view_id` 或 `model_request_id`。** 每次請求保存一份小型、不可變的輸入清單，記錄：\n\n- 使用的要求、草稿及 context policy 版本。\n- 納入哪些訊息、證據、欄位、範圍與圖片表示。\n- 哪些要求的內容因容量而未納入。\n\n清單可以引用原件，不必再複製全部內容。序號仍可輔助查詢，但不再承擔「實際輸入證明」。\n\n這也只是證明資料列入請求，不能證明模型理解了其中每個細節。\n\n**3. 目前的 `operations.event_seq` 不是事件時間線，會漏掉較晚完成的早期操作。**\n\n依照提案，操作開始時插入：\n\n```text\nevent_seq=100, status=in_flight\n```\n\n完成時只更新同一列：\n\n```text\nevent_seq=100, status=succeeded\n```\n\n假如操作 101 先完成、操作 100 稍後才完成，之後查詢 `event_seq > 101`，永遠不會找到操作 100 的新完成結果。\n\n因此，這個欄位目前代表的是**操作建立順序**，不能同時代表完成順序、訊息順序、筆記依據與 compaction 邊界。\n\n我會簡化其責任：\n\n- `operations` 保存操作目前狀態及結果身分。\n- 對話順序使用框架的訊息／checkpoint 身分。\n- 筆記依據使用前述輸入清單。\n- compaction 記錄被替換的實際訊息範圍。\n- 如果確實需要操作狀態變更時間線，再保存追加式的狀態事件；不必先建立完整事件溯源系統。\n\n條目式筆記更新可以避免不同筆記互相覆蓋，但兩個操作同時修改**同一則**筆記仍會衝突，需要條目版本檢查或明確的合併規則。\n\n**4. 我不會把通用的 `after_batch_mutation` 屏障列為首版必要能力。**\n\n版本綁定值得保留，但「按工具類別自動判斷依賴」不可靠：\n\n- 同批有兩個 `update_draft`，預覽應依賴哪個？\n- 第一個成功、第二個失敗，要預覽甚麼？\n- 兩個修改都基於同一舊版本，不能僅靠排列執行順序就假定可以合併。\n- 如果等待關係只存在於工具 wrapper 的記憶體，重啟後又要自行恢復這套排程狀態。\n\n這已接近新增一套工具依賴執行器。\n\n**較直接的預設是：修改回傳 `produced_revision`，agent 再用它選擇讀回、預覽或匯出。** 不需要模型猜測下一個版本號，也不要求每次修改都預覽。\n\n如果之後確實需要省去這個中間模型回合，可以提供一個文件服務層的明確組合操作，例如「修改成功後取得該版本預覽」。但要分別回報：\n\n- 文件是否已提交。\n- 預覽是否成功。\n\n否則，預覽失敗可能被誤解為整次修改失敗，導致重複修改。\n\n另外，修改失敗後，agent 明確選擇查看舊稿或檢查保留候選內容，仍然可能有用。應禁止的是**把舊稿預覽冒充新稿驗證**，而非一律取消後續檢視。\n\n**5. 腳本工作目錄不是沙箱，`in_flight` 也不能證明腳本「跑到一半」。**\n\n這一段的可靠性保證需要明確撤回。\n\n把工作目錄與環境變數指向：\n\n```text\nworkspaces/<job>/script_runs/<operation_id>/out/\n```\n\n不會阻止程式使用絕對路徑、上層目錄或其他可寫位置。Windows 的存取權由程序的安全身分與物件權限決定；改變工作目錄不會改變這些權限。[Microsoft Access Tokens](https://learn.microsoft.com/en-us/windows/win32/secauthz/access-tokens)\n\n專案現有約定也明確將 trusted scripts 定義為宿主使用者權限執行，工作目錄並非 OS sandbox。[ARCHITECTURE.md](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/ARCHITECTURE.md:28)\n\n同樣一筆 `in_flight` 可能代表：\n\n- 已登記，但尚未啟動子程序。\n- 子程序仍在執行。\n- 子程序已完成，但完成收據尚未提交。\n- 子程序已中斷，留下部分成果。\n\n所以不能重啟後直接標為 aborted、封存目錄並重跑。控制器退出，也不應被當成子程序已停止的證據；程序群組管理是另一項執行責任。[Microsoft Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)\n\n我建議將**穩定操作身分**與**每次執行嘗試**分開。每次嘗試保留自己的工作目錄、程序狀態與產出紀錄；恢復時先確認程序及成果，再決定重用、保留部分成果或重新執行。\n\n每次嘗試獨立目錄仍然有價值，但它提供的是成果整理與追溯能力。若要保證寫入不能離開指定範圍，就必須另外選擇真正的執行限制機制。\n\n**6. Compact Turn Skeleton 可以幫助恢復，但工具參數仍不能保存全部語義。**\n\n「模型的判斷完全體現在工具參數與結果」依然說得太滿。\n\n`crop_bbox` 可以告訴我們模型選了哪個區域，卻不能完整告訴我們：\n\n- 為甚麼選它。\n- 它懷疑哪個字。\n- 哪個跨頁關係尚未解決。\n- 某個候選方案為甚麼被放棄。\n\n我支持保留緊湊的操作骨架、錯誤與候選成果入口；它能降低恢復時重新摸索的成本。但它不能取代顯式工作筆記。\n\n還要注意：**摘要後的歷史工具呼叫必須被當成查閱資料。** 原始完整參數留在可追溯紀錄中，恢復視圖則明確標示為歷史摘要，避免被執行器誤當成待執行呼叫，或被模型誤認為原始精確參數。\n\n**7. Schema 還需要幾項實質修正，而不是直接增加更多表。**\n\n| 問題 | 建議 |\n|---|---|\n| `operation_id` 推導包含 `checkpoint_ns`，唯一鍵卻沒有 | 統一操作命名空間；`run_id` 可作嘗試資訊，但不能讓恢復同一操作時失去原身分。 |\n| 契約使用 `interrupted_uncertain_state`，SQL 狀態列舉卻不容許 | 明確表示未知結果，不能強行歸入 failed／aborted。 |\n| `draft_rev`、筆記等缺少工作／文件範圍 | 明訂每任務獨立資料庫，或補上適當作用域；避免不同文件的 revision 混用。 |\n| `context_epochs` 與框架 checkpoint 分別保存可變狀態 | 明確指定目前採用哪個 policy／epoch 版本，避免恢復時各自取「最新」而組成從未存在過的狀態。 |\n| `follow_latest` 在組裝期間可能變動 | 每次請求先解析成固定版本，再載入內容，並寫入該次輸入清單。 |\n\n其中 context 狀態可以採取一個相對簡單的安排：**App 保存不可變的 context policy 版本，框架 state 保存目前選用的版本引用。** 單次輸入再記錄實際展開結果。這樣恢復有明確依據，也不需要假定兩套儲存共享同一交易。\n\n容量超限的處理也應保留邊界：先依 agent 的保留／釋放選擇與容量規則調整，清楚指出未交付內容；如果必要要求、活躍依賴和最小可用工作集仍放不下，就保存工作並回報容量阻礙。**把大型內容全部換成引用，並不保證 agent 仍具備完成工作的資訊。**\n\n我會把下一版設計收斂在四件事：**可重建的模型輸入、可對帳的操作與執行嘗試、明確版本的文件服務，以及連結實際輸入的工作筆記。** Delivery Ticket 是其中一種實作方式；通用批次屏障、固定幾 KB checkpoint 和目錄式沙箱保證，都不應成為這個基準的必要條件。\n\n本次只進行設計審閱與資料核對，沒有修改程式或新增模型呼叫。"
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 2087,
+  "timestamp_original": "2026-10-22T02:55:25.545Z",
+  "timestamp_display": "2026-10-22T10:55:25.545+08:00",
+  "turn_id": "01a1617f-dd27-73c1-9cbc-28c8a2759583",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T10:53:57.050+08:00",
+  "completed_at": "2026-10-22T10:55:25.545+08:00",
+  "event_id": "EVT-0674",
+  "evidence_path": "evidence/events/EVT-0674.json",
+  "supporting_paths": [
+    "supporting/workspace/docs/ARCHITECTURE.md"
+  ],
+  "embedded_paths": []
+}

@@ -1,0 +1,214 @@
+這份五點審閱精準地切中了分散式狀態機與框架整合的要害——特別是指出「SQLite 交易順序不等於 LangGraph 同一個 superstep 內的並行 `Command` 套用順序」**、**「將 Policy 啟用權責集中到循序的 `before_model` 步驟」**、**「區分結果快取（Result Cache）與操作重播（Operation Replay）」**、**「HTTP 413 與模型 Token 上限屬於不同維度」**，以及**「放棄把 `StateSnapshot.tasks` 當成自建排程器，交還框架恢復入口搭配 `wrap_tool_call`」。這些修正直接砍掉了大量脆弱的自訂控制邏輯。
+
+但若以「讓 App 發揮最佳功能、保護 Agent 自主性與轉換保真度」為最高標準，這五點提案在**並行工具的意圖表達、跨頁快取與局部釋放的粒度對齊、HTTP 413 的實際退避手段、Windows 檔案獨佔驗證，以及 `pending_writes` 與 `before_model` 的對帳閉環**上，仍存在五個必須正面交鋒與補強的設計缺口。
+
+---
+
+## 一、 對這五點修正的正面交鋒與工程補強（Confrontations & Refinements）
+
+### 1. 交鋒一（針對第 1 點）：「要求 Agent 一次提交完整 Context 變更、遇競爭即報錯」會懲罰正常的並行工具呼叫，且並未解決語義依賴問題
+
+你正確指出：若 A 釘選 `blk_12`、B 釋放 `ev_03`，兩者寫入 SQLite 後各自回傳 `Command(active_policy_rev=...)`，在同一個 LangGraph superstep 會引發並行更新錯誤或覆蓋問題；因此你建議改在 `before_model` 統一核對父版本，且「先讓 Agent 一次提交完整的 context 變更；遇到競爭提案就明示衝突」。
+
+* **邏輯盲點：**
+1. **為什麼同一個回合會出現 A 與 B 兩個提案？** 因為模型在同一個 `AIMessage.tool_calls` 陣列中，很自然會同時發出「修改草稿並釘選新表頭 `blk_12`」與「釋放前幾頁已用完的證據 `ev_03`」。如果規定每個工具都必須提交一份綁定 `parent_policy_rev=7` 的「完整 Context 變更提案」，只要模型在同一回合並行呼叫兩個帶有 Context 選項的工具，第二個工具在 `before_model` 核對父版本時就**必然發生自我衝突（Self-Conflict）**！
+2. **「一次提交完整變更」並不會消除依賴衝突：** 你舉例「A 釘選 `blk_12`、B 釋放 `ev_03`，但 `blk_12` 的未解表頭關係可能正依賴 `ev_03`，或共同超出容量」。請注意：就算強制 Agent 在**單一工具呼叫**裡同時寫 `{pin: ["blk_12"], release: ["ev_03"]}`，這個語義依賴衝突與容量超限依然 100% 存在！問題根本不在於「分兩次工具呼叫還是合併成一次呼叫」，而在於 **`before_model` 啟用新 Policy 前必須執行引用完整性與容量檢查**。
+
+
+* **最佳功能設計（Superstep 局部意圖收集 ＋ `before_model` 集中依賴檢查與單次提交）：**
+* 不做跨回合的複雜通用 Linear Intent Rebasing，但**允許同一回合（同一個 `input_view_id` 觸發的同一批 `tool_calls`）內的工具各自登記局部變更意圖（Delta Intents：`pin_add`、`pin_remove`、`evidence_release`）**。
+* 當該批次工具全部結束、進入單一循序的 `before_model` 節點時，由 App 的 **Policy Resolver** 讀取當前分支唯一的 `State["active_policy_rev"]`（例如 `rev=7`），將本批次收集到的所有局部意圖合併套用，並執行兩項確定性檢查：
+1. **顯式依賴保護（Dependency Guard）：** 檢查本批欲釋放的 `ev_03` 是否仍被任何活躍釘選區塊（如剛釘選的 `blk_12`）或未解決的 `working_notes` 顯式引用（`linked_refs`）。若有引用衝突，**自動攔截對 `ev_03` 的釋放並保留 `blk_12` 的釘選**，同時在注入模型的狀態中附上明確警告：`[Policy Warning: Retained ev_03 because newly pinned blk_12 still references it]`。
+2. **單一版本生成與持久化：** 檢查通過後，由 `before_model` 在 SQLite 建立唯一的 `policy_rev = 8`，並透過該節點的返回值一次性將 `{"active_policy_rev": 8}` 寫入 LangGraph State（確保進入 Checkpoint 持久化，而非僅在記憶體暫態修改）。這樣既徹底消滅了雙重 `active_policy_rev` 與並行 `Command` 衝突，又不會懲罰 Agent 的並行工具呼叫！
+
+
+
+
+
+---
+
+### 2. 交鋒二（針對第 2 點）：要讓 `pages=15–20` 的快取被 `pages=15–16` 重用，必須將「快取與證據的基本單位」拆解到「單頁／單區域（Page/Region Unit）」
+
+你一針見血地指出：`pages=15–20` 與 `pages=15–16` 的整包參數雜湊不同，若只做整次呼叫的快取，根本無法解決重複讀取；同時快取鍵必須涵蓋引擎版本、OCR 模型／語言資料與解析後的預設參數，並提供顯式重算開關。
+
+* **深層架構連動（快取粒度 ＝ 釋放粒度）：**
+如果 Agent 第一次呼叫 `ocr_pdf(pages="15-20")` 產生了一個單一巨型檔案 `ev_001.json`（包含第 15 到 20 頁），這不僅導致後續呼叫 `pages="15-16"` 或 `pages="19-22"` 無法直接命中快取，還會導致稍後 Agent 想「釋放第 15–18 頁、只保留第 19–20 頁」時，無法對單頁進行精確投影或卸載！
+* **最佳功能設計（原子級單頁／單區域儲存 ＋ 複合呼叫動態組裝）：**
+1. **以「單頁／單一裁切框」作為不可變證據與快取的原子單位：**
+當 Agent 呼叫 `ocr_pdf(pages=[15, 16, 17, 18, 19, 20], dpi=300, psm=6, langs=["chi_tra", "eng"])` 時，底層針對每一頁計算完整的 **`computation_signature`**：
+
+$$\text{sig}_p = \text{SHA256}(\text{source\_pdf\_hash}, \text{page}=p, \text{bbox}, \text{tool\_impl\_ver}, \text{engine\_ver}, \text{lang\_data\_hashes}, \text{resolved\_dpi\_psm\_params})$$
+
+
+
+（注意：`langs` 陣列順序在 Tesseract 中會影響辨識結果，故保留原序；而預設參數則先正規化展開再計算雜湊。）
+2. **逐頁查表、差集運算、複合回傳：**
+假設稍後 Agent 呼叫 `ocr_pdf(pages=[19, 20, 21])` 且 `force_recompute=False`（預設）：
+* 執行器查表發現第 19、20 頁已有對應 `computation_signature` 的完整證據（`ev_p19`、`ev_p20`），直接跳過這兩頁的 OCR 運算；
+* **僅對第 21 頁執行實際 OCR** 並存為 `ev_p21`；
+* 回傳匹配當前新 `tool_call_id` 的 `ToolMessage`，其 `artifact` 包含 `[ev_p19, ev_p20, ev_p21]` 的引用清單，並在結果中誠實標註：`{"computed_pages": [21], "reused_cached_pages": [19, 20], "evidence_ids": ["ev_p19", "ev_p20", "ev_p21"]}`。
+
+
+3. **顯式重算不覆寫舊證據：**
+當 Agent 為排查錯誤而傳入 `force_recompute=True`（或調整 DPI/PSM）時，系統強制重新執行並產生新的 `evidence_id`（保留舊 `ev_p19` 供比對或既有筆記引用），並將預設快取索引指向最新產出。
+
+
+
+---
+
+### 3. 交鋒三（針對第 3 點）：區分「模型 Context 超限」與「HTTP 413 Payload 過大」後，兩者在 Context 組裝器中的處置邏輯必須分開設計
+
+你精準指出：HTTP 413 代表伺服器或代理（如 Nexus 路由）拒絕該請求的 Byte 大小，不能據此推算模型的 Token 上限；且「當批最大」往往正是 Agent 剛要求檢查的關鍵表格或圖片，絕不能由傳輸層擅自刪掉重送。
+
+* **實戰場景推演：**
+在 PDF 轉換中，什麼時候最容易觸發 HTTP 413？不是文字太多，而是當 Context 歷史裡已經掛載了 6 張高解析度 PNG 原圖，本輪 Agent 又請求了 3 張 600 DPI 的全頁渲染圖——此時總 Token 數可能才 45,000 tokens（遠低於模型 128k/200k 的 Token 上限），但 9 張無損 PNG 經 Base64 編碼後的 HTTP Request Body 卻突破了代理伺服器的 15MB/20MB 限制！
+如果在這種情況下，只靠「請 Agent 在工作視圖中做語義取捨」，但 Agent 甚至連這一輪的請求都送不出去（因為一送出就撞上 HTTP 413），就會陷入僵局。
+* **最佳功能設計（雙預算維度追蹤 ＋ 保護當批焦點的「舊證據優先退避與單批分頁閘門」）：**
+1. **嚴守專案契約：** 傳輸層（HTTPX2 Adapter）遇到 HTTP 413 或模型 `context_length_exceeded` 時，**絕不消耗 `automatic_retries` 配額，也絕不自行竄改 Payload 重送**，而是將結構化錯誤（標明 `rejection_kind: "http_payload_too_large" | "model_context_exceeded"` 與當時的 `request_bytes` / `estimated_tokens`）交還給 `before_model` 的 Context 組裝機制處理。
+2. **保護「當批新請求證據」、優先收縮「歷史可釋放載荷」：**
+當預檢或上游回報容量超限時，Context 組裝器遵循嚴格的保護順序：
+* **第一優先保護：** 有效任務要求、活躍釘選（`pinned`）、未解依賴，以及**本輪 Agent 剛要求讀取／檢查的當批工具結果**。
+* **第一優先退避：** 先將歷史回合中已標記為 `evict_when_needed` 或較早回合已處理完畢的大型圖片／座標載荷退回為輕量檢索入口（保留 `evidence_id` 與範圍資訊）。
+
+
+3. **當「單批新請求本身」就超過單次 HTTP Payload 或 Token 上限時（Batch Paging Gate）：**
+若即便清空了所有可退避的舊圖片，Agent 在**本輪單次呼叫**中要求同時載入的 5 張高解析巨圖或 20 頁完整 OCR 依然超過單次請求上限：
+* 組裝器**不刪除或丟棄任何成果**，而是採用「按序分批載入（Windowed Batch Delivery）」**：在本次請求中完整載入本批前 $K$ 個放得下的項目（確保 Agent 至少能立刻處理第一部分），並將同批剩餘的 $N-K$ 個項目轉為明確的**「待載入佇列入口（`staged_in_batch`）」，告知 Agent：*「第 15–16 頁原圖已完整載入；同批第 17–19 頁原圖（共 14.2 MB）已保存為 `ev_p17`..`ev_p19`，因單次請求容量限制暫未展開，完成本步後可直接呼叫 `load_evidence(["ev_p17", ...])` 載入。」*
+
+
+
+
+
+---
+
+### 4. 交鋒四（針對第 4 點）：在 Windows 下取得「一致的固定副本」，不能在子程序仍握有寫入 Handle 時直接複製檔案
+
+你將成果救援拆解為「可讀檢視（不強制全目錄驗證、不偷偷殺程序）」、「終止舊嘗試並確認程序已結束」、「取得一致的不可變副本後用成熟函式庫完整解碼（如 Pillow `load()`）」，以及「區分『原始操作是否完整完成』與『局部成果已救回』」，這套設計非常嚴謹。
+
+* **需要補上的作業系統細節：**
+你提到：「正式採用時，才針對選定成果確認：它不再被受控執行程序修改，或已取得一致的固定副本。」
+請注意：**如果一個脫離管控的子代程序（Descendant Process）仍在對某個檔案寫入，此時直接複製該檔案，拿到的「固定副本」依然會是寫到一半的撕裂檔案（Torn Copy）！**
+* **最佳功能設計（三階段分離操作 ＋ Windows 共享模式獨佔鎖定快照）：**
+將救援流程拆成三個職責單一的內部步驟／工具行為：
+1. **`inspect_attempt(attempt_id)`（純唯讀診斷）：**
+* **不終止任何程序、不改變任何狀態。**
+* 查詢受控 Job Object 的活躍程序清單（`active_pids`），列出嘗試目錄下的檔案大小、最後修改時間，並允許 Agent 讀取部分日誌（stdout/stderr tail）或損壞的文字／JSON 片段以診斷失敗原因（若 `active_pids` 非空，附上 `process_still_running` 警告）。
+
+
+2. **`terminate_attempt(attempt_id)`（顯式終止程序樹）：**
+* 針對確認需中止的舊嘗試，關閉／終止其對應的 Windows Job Object（或 POSIX 程序群組），並輪詢確認受控程序樹已完全退出，而非僅檢查頂層原始 PID。
+
+
+3. **`salvage_artifacts(attempt_id, items=[...])`（獨佔快照 $\rightarrow$ 完整解碼 $\rightarrow$ 局部收據登記）：**
+* **Step A（防寫入干擾的一致快照）：** 在將選定檔案複製為不可變 Blob 前，在 Windows 上使用 `CreateFileW` 並指定 **`dwShareMode = FILE_SHARE_READ`**（僅容許其他程序讀取，**拒絕任何仍握有 `FILE_SHARE_WRITE` / `GENERIC_WRITE` 的寫入 Handle**）。若開啟失敗（`ERROR_SHARING_VIOLATION`），代表仍有未知後代程序正在寫入該檔案，系統立即拒絕採用並回報 `file_still_open_for_write`，絕不複製寫到一半的檔案！開啟成功後，在持有該 Handle 期間讀取全部 Bytes 計算 SHA-256 並寫入不可變 Blob 庫。
+* **Step B（完整解碼與範圍核實）：** 對不可變 Blob 執行完整解析（圖片執行 `Image.open()` + **`Image.load()`** 強制解壓縮全部像素流；JSON 執行完整語法解析）。
+* **Step C（誠實雙態記錄）：** 原始 `operation_attempt` 的狀態維持真實的失敗／中斷紀錄（如 `exited_error` 或 `killed`），**絕不改寫為成功**；同時另外建立一筆獨立的 `salvage_receipt`，將通過驗證的局部檔案登記為可用的 `evidence_id`（標明已驗證的實際頁碼範圍，如 `verified_pages: "1-30 of requested 1-100"`），避免把 30 頁的合法 JSON 誤判為 100 頁腳本已全部完成。
+
+
+
+
+
+---
+
+### 5. 交鋒五（針對第 5 點）：交由框架恢復入口續跑時，必須處理「`pending_writes` 已完成工具」與 `before_model` 的銜接
+
+你指出不應把 `StateSnapshot.tasks` 當成自建工具排程器，而應「使用框架的恢復入口續跑；當框架實際再次呼叫某個工具時，`wrap_tool_call` 才核對操作身分與收據，決定重播或執行」。
+
+* **關鍵邊界確認：**
+這個簡化非常乾淨，但我們必須確認它與第 1 點（將 Policy 與狀態啟用集中在 `before_model`）結合時的恢復閉環：
+* 假設同一回合有 `tc_1` 與 `tc_2` 兩個並行工具。崩潰前，`tc_1` 已執行完畢，不僅寫入了 App SQLite 收據，**連 LangGraph 的 `pending_writes` 也已經保存了 `tc_1` 的 `ToolMessage**`；而 `tc_2` 則在寫入 SQLite 收據後、寫入 `pending_writes` 前崩潰。
+* 重啟後呼叫框架標準恢復入口 `agent.invoke(None, config)`：
+1. LangGraph 從 Checkpointer 發現 `tc_1` 已在 `pending_writes` 中，因此**不會再次對 `tc_1` 觸發 `wrap_tool_call**`；
+2. LangGraph 僅對尚未完成 `pending_writes` 的 `tc_2` 觸發 `wrap_tool_call`，此時我們的 `wrap_tool_call` 核對 SQLite 收據，重播 `tc_2` 的結果；
+3. 當 `tc_1`（來自 `pending_writes`）與 `tc_2`（來自 `wrap_tool_call` 重播）會合後，LangGraph 自動推進至單一循序的 **`before_model` hook**！
+4. 此時 `before_model` 檢查 SQLite 中屬於該回合（由父級 `AIMessage` 的 `input_view_id` 綁定）的所有已完成操作（同時涵蓋 `tc_1` 與 `tc_2` 的 Context 變更提案），一次性完成 `active_policy_rev` 的推進！
+
+
+* **結論：** 正是因為第 1 點把狀態推進從個別工具的 `Command` 移到了整批工具會合後的 `before_model`，才使得第 5 點「完全交給框架恢復入口續跑（即便 `tc_1` 被 `pending_writes` 跳過不重跑 `wrap_tool_call`）」能夠 **100% 閉環且不漏掉任何狀態更新**！
+
+
+
+---
+
+## 二、 收斂後的 App 最佳設計規格（Architecture & Lifecycle Synthesis）
+
+結合你這輪的五項關鍵修正與上述補強，整個 App（基於 `create_agent` + LangGraph Checkpointer + App SQLite/Blob 服務）的核心運作架構如下：
+
+```mermaid
+flowchart TD
+    subgraph LangGraph["LangChain create_agent + LangGraph Runtime"]
+        Resume["框架標準啟動 / 恢復入口\n(invoke / astream)"]
+        BeforeModel["單一循序 before_model 步驟\n1. 結算上批工具的 Context 提案並更新 State.active_policy_rev\n2. 查閱快取/證據，依 Token 與 HTTP Byte 雙預算水合輸入\n3. 寫入不可變 model_input_views 並注入訊息"]
+        ModelNode["模型推理節點\n(透過 Nexus Adapter 發送)"]
+        ToolWrapper["wrap_tool_call 攔截層\n1. 核對 (thread_id, tool_call_id) 操作收據決定重播\n2. 若為新呼叫，計算逐頁/逐區域 computation_signature 查快取\n3. 僅對未命中範圍執行運算，保存完整原件與提案"]
+    end
+
+    subgraph AppServices["App 獨立核心服務 (SQLite WAL + Immutable Blobs)"]
+        PolicyStore[("Context Policies & Proposals\n(由 before_model 單一寫入啟用)")]
+        CacheIndex[("Unit-Level Evidence Cache\n(按頁/區域 + 引擎版本 + 模型資料 + 展開參數索引)")]
+        DocStore[("Working Draft & Receipts\n(版本化區塊 + 候選稿 + 操作收據)")]
+        SalvageSvc["三階段子程序與救援服務\n(唯讀檢視 / 顯式終止程序樹 / 獨佔快照+完整解碼採用)"]
+    end
+
+    Resume --> BeforeModel
+    Resume -. "續跑未完成工具" .-> ToolWrapper
+    BeforeModel --> ModelNode
+    ModelNode --> ToolWrapper
+    ToolWrapper --> BeforeModel
+
+    BeforeModel <--> PolicyStore
+    BeforeModel <--> CacheIndex
+    BeforeModel <--> DocStore
+    ToolWrapper <--> CacheIndex
+    ToolWrapper <--> DocStore
+    ToolWrapper <--> SalvageSvc
+
+```
+
+### 六大核心模組的最終契約總表
+
+| 核心模組 | 修正後的精確設計契約 | 解決的邊界條件 |
+| --- | --- | --- |
+| **1. Policy 唯一啟用點**<br>
+
+<br>（`before_model`） | - **LangGraph 分支狀態（`State["active_policy_rev"]`）持有唯一有效指標**；SQLite 僅保存不可變的政策內容與工具提交的待啟用提案（Proposals），移除 SQLite 內的競爭指標 `current_active_rev`。<br>
+
+<br>- 工具在執行期僅保存局部變更提案並回報 `proposal_saved_pending_activation`。<br>
+
+<br>- 整批工具完成後，由單一循序的 **`before_model`** 核對父版本與 `State["active_policy_rev"]`，檢查跨區塊引用依賴（如 `blk_12` 是否仍依賴 `ev_03`）與總容量，一次性更新 `active_policy_rev` 並產生啟用或衝突結果。 | 徹底消除同一個 superstep 多個 `Command` 並行更新錯誤，以及 SQLite 與 Checkpoint 版本指標分裂（Split-Brain）。 |
+| **2. 證據進度與單元級快取**<br>
+
+<br>（Unit-Level Cache） | - 狀態提示嚴格區分 `draft_pending` 與實際已保存的 `available_evidence`（標明頁碼範圍、種類與必要警告，不把「有 OCR」等同於內容完整正確）。<br>
+
+<br>- 對逐頁獨立的操作（如 `inspect`、單頁渲染、單頁 OCR），按**實際運算單元（單頁／單區域）**建立快取索引，Signature 涵蓋：來源雜湊、工具名稱、實作／引擎版本、OCR 模型與語言資料雜湊，以及解析後的完整預設設定（DPI、PSM、裁切、註解）。<br>
+
+<br>- 支援重疊範圍部分重用（如 `15–20` 快取可直接滿足 `15–16` 讀取）與 `force_recompute=True` 明確重算。<br>
+
+<br>- 嚴格區分「操作重播（同 `tool_call_id` 恢復）」與「結果快取（新 `tool_call_id` 引用既有 `evidence_id` 但回傳匹配當前 `tool_call_id` 的新訊息）」。 | 解決重疊頁碼範圍無法命中快取的問題；防止引擎或參數變更拿到舊輸出，並支援排查錯誤時的強制重算。 |
+| **3. 雙維度容量恢復**<br>
+
+<br>（Context vs. HTTP 413） | - 嚴格區分**模型 Context Token 限制**（含輸入預算與輸出預留）與 **HTTP 413 Payload 過大**（代理／伺服器請求 Byte 限制）；不把容量錯誤當成傳輸故障消耗重試配額。<br>
+
+<br>- 容量超限時由 Context 機制（`before_model`）重組輸入：優先退避歷史回合中已標記可釋放的舊載荷，**保護當批 Agent 剛要求檢查的大型表格或圖片、有效要求與未解依賴**。<br>
+
+<br>- 若單批新請求本身即超過上限，採用分批視窗載入並明示未載入範圍與精確讀取入口；若需要新的語義取捨，交由 Agent 在可容納的工作視圖中選擇，而非按檔案大小盲目踢除最大項。 | 防止 Agent 剛要求檢查的關鍵大圖因「當批最大」被自動踢掉；保持同一回合預算不因換 view 重置計數。 |
+| **4. 四步分離的成果救援**<br>
+
+<br>（Inspect / Terminate / Validate / Adopt） | 將 `inspect_and_salvage_attempt` 拆解為獨立步驟：<br>
+
+<br>1. **檢視（Inspect）：** 純唯讀，允許查看部分日誌、未完成 JSON 或損壞檔案以判斷能否修復，不要求全目錄驗證，也**絕不默默終止仍在工作的程序**。<br>
+
+<br>2. **終止（Terminate）：** 針對已確認需中止的舊嘗試，終止整個受控程序樹並確認所有後代程序已退出。<br>
+
+<br>3. **固定與驗證（Snapshot & Decode）：** 以拒絕寫入共享（`FILE_SHARE_READ`）取得一致的不可變副本後，使用成熟函式庫完整解碼（如 Pillow `load()` 而非僅靠 `verify()` 或 EOI/CRC 檢查）。<br>
+
+<br>4. **採用（Adopt）：** 分開記錄「原始操作是否完整完成（維持未完成／失敗歷史）」與「哪些局部成果已核對範圍並成功救回（產生獨立救援收據）」。 | 避免把「只有前 30 頁的合法 JSON」誤認為「100 頁腳本已成功完成」；確保驗證完的檔案不會被殘留後代程序竄改。 |
+| **5. 原生恢復與 Wrapper 對帳**<br>
+
+<br>（Framework-Driven Resume） | - 放棄自行解析 `StateSnapshot.tasks`（`PregelTask`）充當排程器。<br>
+
+<br>- 統一呼叫框架原生恢復入口續跑；僅在框架實際再次派發某個工具呼叫時，由 `wrap_tool_call` 核對操作身分與 SQLite 收據，決定重播結果或執行運算。<br>
+
+<br>- `StateSnapshot` 僅用於 UI 狀態顯示、診斷與定位 Checkpoint。 | 保持精確重播能力，同時消除維護 LangGraph 內部 Pregel 排程細節的長期負擔。 |
+
+這套收斂方案完全順應「框架負責執行生命週期、App 提供可靠文件與證據服務、Agent 保有內容判斷與方法選擇」的核心原則。如果要將最關鍵的第一步落實為具體規格，建議直接從你點出的首要任務——「`before_model` 中 Policy 的唯一啟用流程、同批次提案核對與衝突／警告回報格式」開始定義。

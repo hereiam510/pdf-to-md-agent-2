@@ -1,0 +1,28 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad97ffa0b408191a73b67d9980f5b84",
+    "content": [
+      {
+        "type": "Text",
+        "text": "**這版大部分修正可以保留，但仍有三個重要問題：版本大小不能代替衝突處理、未載入證據不應永久塞進活躍 context，以及穩定訊息 ID 不能單獨保證安全重播。**\n\n我仍支持 `create_agent`＋持久化 LangGraph checkpointer 作為優先設計基線。現在需要釐清的是幾項執行契約，而不是再增加管理層或重寫整份資料模型。\n\n**1. `active_policy_rev` 不應使用「取較大版本」作為主要正確性規則。**\n\n這是本版最需要修改的地方。\n\n例如兩個並行操作都根據 policy 7：\n\n- 操作 A 建立 policy 8，新增「保留第 12 頁表頭」。\n- 操作 B 建立 policy 9，釋放某份舊 OCR；但它也是從 policy 7 建立，沒有包含 A 的修改。\n\n`max(8, 9)` 會選 policy 9，於是第 12 頁的保留要求消失。**版本號向前推進，仍然可能丟失有效修改。**\n\n我建議：\n\n- 使用已有的 `parent_policy_rev` 表達版本關係。\n- 啟用新 policy 時，核對它的預期父版本與當前有效版本。\n- 同一操作已套用，才視為重播成功；不同操作從同一舊版本產生互相競爭的更新，應明示衝突。\n- Context policy 的啟用只有一個寫入點；Agent 可以在一次提交中包含多項變更，其他讀取及計算工具仍可並行。\n\n**這個檢查必須發生在實際接受狀態更新的地方。** 兩個工具開始時各自讀到 policy 7，然後各自通過版本檢查，仍不能解決衝突。\n\n正常恢復也應遵循被恢復 checkpoint 的狀態與版本關係，不能讀取資料庫最大的 revision 當成當前狀態。LangGraph 的歷史分支會保留不同執行路徑；全域最大編號不代表該分支的有效版本。[官方 Time travel 文件](https://docs.langchain.com/oss/python/langgraph/use-time-travel)\n\n**2. 穩定 `ToolMessage.id` 值得採用，但它只解決特定的訊息去重。**\n\n`add_messages` 確實會替換目前列表中同 ID 的訊息；如果列表裡沒有該 ID，就會新增。[LangGraph 原始碼](https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/message.py)\n\n由此可推得：\n\n> 如果舊訊息已被 compaction 移除，再重播同 ID 的收據，仍會把它重新加入。\n\n所以恢復順序應是：\n\n1. 由 checkpointer 判定目前有哪些工作需要續跑。\n2. 對這些工作查詢操作收據。\n3. 重用已提交結果，並重播尚需套用的框架更新。\n\n不要掃描所有成功操作，再把收據全部灌回當前 state。否則可能復活已整理的歷史，甚至留下沒有父工具呼叫的 `ToolMessage`。\n\n資料身分也有一個值得修正的地方：目前保存了 `parent_ai_message_id`，唯一約束卻仍只有：\n\n```text\n(thread_id, checkpoint_ns, tool_call_id)\n```\n\n除非明確保證 `tool_call_id` 在整個 thread 內全域唯一，我會把父回覆身分納入操作鍵。同一操作重播時，工具名稱與參數雜湊也必須一致。\n\n另外，`framework_state_update_json` 足以支援我們目前需要的 `Command(update=...)`，但不能稱為任意 `Command` 的完整序列化：官方 `Command` 還有 `goto`、`graph` 等控制語義。可以明確限定 App 工具目前使用的形式；其他形式不能被默默丟棄。[官方 Command 文件](https://docs.langchain.com/oss/python/langgraph/graph-api#command)\n\n**3. 「不摘要未讀原文」正確，但「未水合引用必須原封不動留在每輪 context」過強。**\n\n這裡應分清三件事：\n\n| 事實 | 能證明甚麼 |\n|---|---|\n| 證據已保存 | 可以取回原件 |\n| 證據曾納入某次模型輸入 | 當次請求包含該內容 |\n| Agent 認為工作已處理 | 一項工作判斷，仍不等於來源保真度已獲證明 |\n\n水合紀錄不能證明模型理解或完成處理；反過來，沒有在整理回合重新水合，也不代表先前筆記完全不能使用。\n\n我會把契約改成：\n\n> **不得對未取得的原文作出無根據的內容摘要；整理不得丟失仍需繼續工作的狀態與可取回入口。**\n\n這容許以下做法：\n\n- 第 15–20 頁尚未處理時，保留「待處理範圍＋不可變 evidence manifest 入口」，不必把每個 evidence 的完整目錄逐項帶進每輪。\n- 完整目錄保存在文件服務中，Agent 可以按頁、範圍或 evidence ID 精確查詢。\n- Agent 可以移出已判斷無關、重複或暫不需要的證據引用，即使它尚未展開全部原文；原件及索引繼續保存。\n- 未完成工作也可以整理歷史，只要必要的繼續工作狀態及未解依賴被保留。否則長章節會因「尚未完成」而永遠無法跨越 context 邊界。\n- 對「工具已產生第 15–20 頁資料」這類操作事實，可以直接整理成精確狀態記錄，不必先閱讀這幾頁的全部內容。\n\n同樣，「活躍草稿」應明確表示版本與相關區塊，不能默認每次注入完整草稿。\n\n這符合專案既有的區分：持久化原件、工作狀態、活躍模型輸入各有責任；保存完整資料不代表每輪都要載入完整資料。[ARCHITECTURE.md](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/ARCHITECTURE.md:62)\n\n**4. 輸入快照與請求嘗試分開是正確的，但不能把 input view 當成所有執行身分。**\n\n「一份固定輸入，對應多次傳輸嘗試」可以成立，前提是重試期間輸入確實凍結。\n\n需要補明：\n\n- 相同固定輸入的重試，可以共用 `input_view_id`。\n- 如果重新解析 `follow_latest`、更換工具 schema、修改訊息或模型設定，就應記錄新的輸入快照。\n- **建立新快照不能重置原來的回合身分、已消耗嘗試次數及時間預算。**\n\n因此，應連結既有 controller 的穩定回合／請求身分，而不是只依靠 `UNIQUE(input_view_id, attempt_no)` 管理執行。這不需要第二套重試控制器。[既有恢復契約](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/docs/TOOLS.md:261)\n\n把 assembler 放在最內層 middleware 也是合理方向，但其下仍有模型整合層、序列化與 Nexus 轉換。因此，應把可重建承諾寫成：\n\n> 可重建 App 在指定邊界組裝的邏輯輸入。\n\n不要宣稱這等於「100% 還原上游模型實際看見的一切」。如果需要核對 adapter 編碼結果，可以保留相應的安全請求描述或雜湊；不必為此把整套代理鏈的內部行為納入 context 系統。\n\n**5. 子程序恢復方向已改善，但安全重試應依據副作用契約，而非「內建／腳本」名稱。**\n\n內建 OCR／渲染可以設計成安全重試，但需要真正滿足：\n\n- 讀取固定版本輸入。\n- 寫入該次嘗試專用的候選位置。\n- 不直接改動正式草稿或已發布版本。\n- 重試前確認舊執行不會繼續修改相同成果，並遵守原有執行限制。\n\n「由 App 自有程式碼執行」本身不足以證明以上條件。\n\n對任意宿主腳本，我同意不能因收據缺失就自動重跑。不過，**沒有最終收據也不應排除核對後補登成功與重用成果**。Agent 可以先檢查已保存腳本、輸出、程序狀態及可確認的副作用；無法核對的部分才保持未知。這能減少不必要的人工接手。\n\nWindows 實作還有兩處要收緊：\n\n- `CreateProcess(CREATE_SUSPENDED)` 與 `AssignProcessToJobObject` 之間仍有崩潰空隙，可能留下未納入 Job 的暫停程序。支援的 Windows 版本可考慮使用建立程序時的 `PROC_THREAD_ATTRIBUTE_JOB_LIST`，避免事後指派的這個空隙。[Microsoft 文件](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute)\n- 重啟後不能假定原 Job 一定仍可查詢；最後 handle 關閉並終止所屬程序後，Job 本身也可能被銷毀。[Microsoft Job Objects 文件](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)\n\n這些應由子程序執行器處理，不需要擴展成每次 context 整理都必經的檢查流程。\n\n**6. 不可變筆記與內容尋址可以採用，但「零重複成本、100% 可重建」需要限定。**\n\n我支持：\n\n- `expected_note_rev` 樂觀版本檢查。\n- 不可變筆記版本。\n- 提示詞、schema、投影內容按雜湊去重。\n- 完成收據與 `completed_seq` 在同一 SQLite 交易提交。\n\n但精確重建仍依賴所有引用內容持續存在，以及訊息順序、角色、工具參數、圖片引用等資訊完整保存。雜湊可以驗證內容，不能替代內容本身。\n\n還需要明確的寫入順序：**先完成 blob 保存與驗證，再提交引用它的記錄。** 否則可能出現資料庫已有有效 input view，對應檔案卻尚未保存完成的情況。\n\n去重會降低重複資料量；快照清單、新版本及執行記錄仍有儲存與寫入成本。這不妨礙採用，只是不應把它描述成沒有成本。\n\n**我會把這版收斂成以下設計決定：**\n\n| 採用 | 調整後的契約 |\n|---|---|\n| 完整工具收據與穩定訊息 ID | 只對框架需要續跑的工作重播；保留實際使用的狀態更新語義 |\n| 不可變 context policy | 依父版本與明確提交點啟用，不能用最大版本取代衝突處理 |\n| 容量限制下按需載入 | 保護待續工作與精確入口；原件目錄可在 context 外查詢 |\n| 輸入快照與 attempts 分離 | 與既有穩定回合身分連結，換快照不重置預算 |\n| 不可變筆記及內容去重 | 保證引用可解析，明確限定重建範圍 |\n| 子程序成果核對 | 依實際副作用決定重用、重試或保留未知 |\n\n對 App 最有價值的能力，是讓 Agent 在換 context 後仍知道要完成甚麼、能取回必要原件，並保住已完成的文件成果。上述修正有助於這個目標，也保留 Nexus 接入與 Agent 自主決策；目前沒有新的理由因此更換框架方向。\n\n本輪只做設計審閱與資料核對，沒有修改程式或執行模型測試。"
+      }
+    ],
+    "phase": "final_answer"
+  },
+  "source_line": 2245,
+  "timestamp_original": "2026-10-22T03:16:59.533Z",
+  "timestamp_display": "2026-10-22T11:16:59.533+08:00",
+  "turn_id": "01a16197-e457-7912-8016-03dbb9de1b4a",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T11:16:11.859+08:00",
+  "completed_at": "2026-10-22T11:16:59.533+08:00",
+  "event_id": "EVT-0730",
+  "evidence_path": "evidence/events/EVT-0730.json",
+  "supporting_paths": [
+    "supporting/workspace/docs/TOOLS.md",
+    "supporting/workspace/docs/ARCHITECTURE.md"
+  ],
+  "embedded_paths": []
+}

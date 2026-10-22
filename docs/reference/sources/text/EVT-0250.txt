@@ -1,0 +1,11 @@
+
+# Response annotations:
+Each item contains text selected from an earlier Codex response and may include a user comment. Treat items as Annotation 1, Annotation 2, and so on in array order. Use every selection as context and address every comment. For every annotation you address, include its inline directive `:codex-annotation{index="N"}`, where N is its one-based array position (for example, `:codex-annotation{index="1"}`). Do not use unstructured annotation labels.
+<response-annotations>
+[{"text":"如果後續希望連整個工作流程、分支和恢復機制都交由框架統一管理，LangGraph 才有更充分的採用理由。","source":{"messageId":"msg_0c5633e5013375f9016ad72166a1bc8191a23874f0179cefb4","startOffset":1876,"endOffset":1928}}]
+</response-annotations>
+
+## My request:
+1. is this better?
+
+what i think about using langchain/langgraph/langmem is that they seems more reliable then building ourselves

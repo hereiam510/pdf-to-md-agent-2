@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9b9fa34948191aa01cc5fdfbcffc4",
+    "content": [
+      {
+        "type": "Text",
+        "text": "無狀態圖片組裝的方向可以保留，但編碼器必須只處理本次 context 已選中的圖片；若它重新掃描所有歷史 artifact，就會把已釋放的圖片加回輸入。另一項需要明定的是：完整回覆已落盤、Graph checkpoint 尚未保存時，重啟應先查既有回覆，避免直接再發模型請求。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2803,
+  "timestamp_original": "2026-10-22T07:23:37.913Z",
+  "timestamp_display": "2026-10-22T15:23:37.913+08:00",
+  "turn_id": "01a1627a-cd7c-78a3-94fe-6be8d227dfa9",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T15:23:37.685+08:00",
+  "completed_at": "2026-10-22T15:23:37.913+08:00",
+  "event_id": "EVT-0940",
+  "evidence_path": "evidence/events/EVT-0940.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

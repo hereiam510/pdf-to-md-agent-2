@@ -1,0 +1,1 @@
+框架比較表仍有兩個不對稱之處：Pi 也有需要協調的內建自動整理；Deep Agents 則有可設定的卸載門檻，不能直接把調整設定算成重寫。此外，Deep Agents 也有 TypeScript 版本，所以「Electron 用 Pi、Python 用 Deep Agents」不是完整的選擇範圍。

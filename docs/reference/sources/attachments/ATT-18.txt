@@ -1,0 +1,224 @@
+這份審閱指出的三個核心問題——**以 `max(policy_rev)` 處理並行更新會靜默丟失分支修改**、**被 Compaction 移除的 `ToolMessage.id` 若遭重播會「借屍還魂」重新插入訊息列表**，以及**未水合引用若強制每輪逐項留在活躍輸入會阻礙長章節跨越 Context 邊界**——精準點出了前一版契約在極端並發與長程執行下的破口。
+
+在維持 **LangChain `create_agent` ＋ 持久化 LangGraph Checkpointer** 作為重構基線的前提下，以下先確認六項直接定案的修正，接著針對這些修正落實到執行期時會引發的**四個次生工程問題**進行正面交鋒與補強，最後給出收斂後的執行與資料規格。
+
+---
+
+## 一、 完全成立並納入基線的六項修正
+
+1. **廢除 `max(policy_rev)`，改用 `parent_policy_rev` 血緣檢查與單一啟用點：** 版本號較大不代表涵蓋了另一並行分支的修改；Context Policy 的推進必須核對預期父版本，且恢復時必須遵循被恢復 Checkpoint 分支所綁定的版本，而非讀取資料庫的全域最大修訂號。
+2. **重播嚴格限縮於 Checkpointer 判定待續跑的工作：** 恢復時不掃描資料庫所有成功收據灌回 State，避免將已被 Compaction 移除的舊 `ToolMessage` 重新插入訊息列表；同時將 `parent_ai_message_id` 納入 `operations` 的唯一約束，並明確限定 `framework_state_update_json` 僅序列化 App 工具契約允許的 `Command(update=...)` 欄位。
+3. **未水合證據以「待處理範圍＋外部目錄入口」跨越多個 Context：** 遵守「不對未讀原文做無根據摘要」的同時，允許將「工具已產出第 15–20 頁資料」這類操作事實壓縮為範圍狀態與 Manifest 查詢入口，讓未完成的長章節也能順利整理歷史。
+
+
+4. **分離「回合預算身分（`round_id`）」與「輸入檢視快照（`input_view_id`）」：** 單一模型回合的重試次數上限（如 `1 + automatic_retries` 最多 3 次嘗試）與累積活躍時間預算綁定於穩定的 `round_id`；若重試期間因故更新了輸入快照，產生的新 `input_view_id` 仍共享同一筆回合預算，絕不重置計數。
+
+
+5. **以 `PROC_THREAD_ATTRIBUTE_JOB_LIST` 消除程序建立空隙，並允許核對後重用腳本成果：** 在支援的 Windows 環境於 `CreateProcessW` 建立當下直接掛載 Job List，消除 `CREATE_SUSPENDED` 與事後指派之間的崩潰視窗；對缺少最終收據的宿主腳本，允許 Agent 先檢查已保存腳本、輸出與副作用，確認合規後再補登重用。
+
+
+6. **輸入檢視（`model_input_views`）同樣遵守 Blob-First 寫入順序：** 先完成 System Prompt、Tool Schemas 與投影內容的 Blob 落盤與校驗，再於 SQLite 提交引用它們的 `model_input_views` 記錄，並將可重建承諾嚴格界定為「App 在最內層組裝邊界產生的邏輯輸入」。
+
+
+
+---
+
+## 二、 四個深層交鋒：解決修正方案衍生的新執行期陷阱
+
+### 1. 交鋒一（針對第 1 點）：若等到 LangGraph State Reducer 才拒絕 `parent_policy_rev` 衝突，會導致整個並行 Superstep 崩潰
+
+你提出：「啟用新 policy 時，核對它的預期父版本與當前有效版本……不同操作從同一舊版本產生互相競爭的更新，應明示衝突。這個檢查必須發生在實際接受狀態更新的地方。」
+
+* **執行期陷阱：** 在 LangGraph 中，如果兩個並行工具呼叫都回傳 `Command(update={"active_policy_rev": ...})`，所謂「實際接受狀態更新的地方」是 Superstep 結束時的 **State Channel Reducer**。如果我們讓 Reducer 在發現 `parent_policy_rev` 衝突時拋出例外，**整個 `ToolNode` Superstep 就會在框架層直接崩潰**，連同該批次中另一個已經跑完 40 秒的無辜 OCR 工具也無法完成 Checkpoint 推進！
+* **最佳功能設計（將「Policy 提交點」收歸 SQLite `BEGIN IMMEDIATE` 短交易，並支援無衝突增量合併）：**
+1. **以 SQLite 獨佔寫入鎖作為唯一啟用點：** 任何修改 Context Policy 的工具在回傳 `Command` 之前，必須先在 App 資料庫的 `BEGIN IMMEDIATE` 交易內提交新 Policy。因為 SQLite 寫入交易本身就是嚴格串行化的，兩個並行工具絕對不會同時通過資料庫的 `parent_policy_rev == current_active_rev` 檢查。
+2. **非重疊意圖自動線性串接（Linear Intent Rebasing）：** 當操作 A（新增釘選 `blk_12`）與操作 B（釋放舊證據 `ev_03`）同時基於 `policy 7` 發出時：
+* 先拿到鎖的 A 建立 `policy 8 (parent=7)`。
+* 幾毫秒後拿到鎖的 B 發現當前已是 `policy 8`；但因為 B 提交的是結構化變更意圖（`delta_intents`），服務層檢查發現 A 與 B 操縱的對象完全無交集（Disjoint），即可直接在交易內將 B 基於 `policy 8` 疊加生成 `policy 9 (parent=8)`（同時包含 `blk_12` 釘選與 `ev_03` 釋放）！
+* 只有當 A 與 B 修改同一個對象（例如一個釘選 `ev_03`、一個釋放 `ev_03`）時，才讓後到的 B 回傳一則 `status="conflict_rejected"` 的普通 `ToolMessage`（不帶 `Command` 更新），既明示了衝突，又**絕對不會炸毀 LangGraph 的 Superstep**。
+
+
+
+
+
+### 2. 交鋒二（針對第 3 點）：將未水合證據移出每輪 Context 時，必須防止 Agent 把「已抽取待讀頁」誤判為「未抽取頁」而重複執行 OCR
+
+你指出第 15–20 頁尚未處理時，只需保留「待處理範圍＋不可變 evidence manifest 入口」，不必把每個 evidence 的完整目錄帶進每輪 Context。
+
+* **認知與效能陷阱：** 假設 Agent 在第 4 輪對第 15–20 頁呼叫了耗時的 `ocr_pdf(pages="15-20")`，因容量限制未水合展開；到了第 6 輪執行 Compaction 後，如果活躍視圖只留下一句籠統的 `Pages 15-20: pending, see manifest_04`，Agent 在開始處理第 15 頁時，極可能忘記這幾頁已經做過 OCR，於是再次呼叫 `ocr_pdf(pages="15-16")`（而不是呼叫零運算成本的 `read_evidence`）！
+* **最佳功能設計（雙重保護：區分「抽取覆蓋 vs. 草稿覆蓋」＋ 證據服務內容尋址快取）：**
+1. **活躍視圖明確標示「已有可用原件範圍」：** 在緊湊進度視圖中，將狀態明確寫為 `Pages 15-20: draft_pending | extracted_evidence_ready: [ocr, layout] via manifest_04`，讓 Agent 一眼看出原件已在庫中，只需按頁讀取。
+2. **抽取與渲染工具的確定性快取（Deterministic Extraction Cache）：** 即使 Agent 真的忘記而再次呼叫 `ocr_pdf` 或 `inspect_pdf`，證據服務在啟動子程序前，先計算 `(source_pdf_sha256, tool_name, canonical_params_sha256)`；若 `evidence_blobs` 中已有完全相同參數的成功產出，直接回傳既有 `evidence_id` 的指定範圍內容，不重複啟動 Tesseract 或 PyMuPDF 渲染。
+
+
+
+
+
+### 3. 交鋒三（針對第 4 點）：在固定 `round_id` 預算下，必須明確規定「何種失敗凍結 `input_view_id`，何種失敗允許降級產生新 `input_view_id`」
+
+你精確指出：相同固定輸入的重試可共用 `input_view_id`；若修改了輸入則應建立新 `input_view_id`，但不能重置原有的回合身分、已消耗嘗試次數及時間預算。
+
+* **必須定清的決策分界：** 當單一回合的第 1 次模型請求失敗、準備消耗第 2 次重試配額時，系統究竟該**原封不動重送同一個 `input_view_id**`，還是**重新組裝一個新的 `input_view_id**`？如果規則不清，會在兩種極端間犯錯：
+* **錯誤 A：** 遇到網路超時或 HTTP 502 時重新解析 `follow_latest` 產生新 `input_view_id`，平白無故改變了訊息內容並破壞已建立的上游快取。
+
+
+* **錯誤 B：** 遇到上游回報 `context_length_exceeded`（因路由未知 Token 膨脹導致估算失準）時，還死板凍結同一個超限的 `input_view_id` 重試兩次，把寶貴的 3 次嘗試配額全部浪費在必敗的相同請求上！
+
+
+
+
+* **最佳功能設計（依錯誤類別路由的 `Round -> InputView` 重試狀態機）：**
+
+| 失敗類別（發生於 `round_id = R, attempt = 1`） | 第 2 次嘗試（`round_id = R, attempt = 2`）的 `input_view_id` 處理規則 | 預算與診斷記錄 |
+| --- | --- | --- |
+| **瞬時傳輸／服務故障**<br>
+
+<br>（連線失敗、HTTP 500/502/503/504、Receive-Headers 超時、SSE 半途斷線）
+
+ | **嚴格凍結並重用原 `input_view_id`。** 直接重送完全相同的邏輯輸入，不重新解析釘選或改變前綴。
+
+ | 扣除 `round_id = R` 的 1 次嘗試配額；若前次為無回應超時或串流中斷，標記 `failed_ambiguous_settlement` 保留未知遠端費用紀錄。
+
+ |
+| **容量超限拒絕**<br>
+
+<br>（上游明確回報 `context_length_exceeded` 或 Payload 過大）
+
+ | **在同一 `round_id = R` 下建立降級的 `input_view_id_2`。** 根據該次錯誤校準路由容量上限，將當批大型展開證據降級為範圍收據後重送。
+
+ | **同樣扣除 `round_id = R` 的 1 次嘗試配額（絕不重置回合預算）**，但透過縮減載荷讓重試真正有機會成功。
+
+ |
+| **永久設定／權限錯誤或使用者取消**<br>
+
+<br>（401/403、無效模型名稱、User Cancel）
+
+ | **立即中止，不執行重試**。 | 保留當前已落盤成果並回報明確中止原因。
+
+ |
+
+### 4. 交鋒四（針對第 5 點）：開放 Agent 檢視並採用 `interrupted_uncertain` 腳本成果前，必須加上「程序消亡確認 ＋ 檔案結構完整性護欄」
+
+你建議對缺少最終收據的任意宿主腳本，「不應排除核對後補登成功與重用成果。Agent 可以先檢查已保存腳本、輸出、程序狀態及可確認的副作用；無法核對的部分才保持未知。」這比一律停機等人類處理更符合自主性原則。
+
+* **潛在破損風險：** 如果程序在腳本寫入一張 PNG 圖片或大型 JSON 表格寫到一半（例如只 flush 了前 60% bytes）時崩潰，重啟後磁碟上確實存在那個檔案，但它是截斷損壞（Truncated/Corrupted）的；或者在非 Windows 平台（或特殊脫離情況下）舊子程序其實還沒死透，正在寫入該檔案。若 Agent 只看檔名存在就呼叫匯入工具採用，會把損壞資產寫進正式草稿！
+* **最佳功能設計（兩階段核驗轉正工具 `inspect_and_salvage_attempt`）：**
+1. **硬性前置檢查：** 當 Agent 檢視 `interrupted_uncertain` 操作的嘗試目錄時，App 的子程序執行器先透過 OS 查詢前次記錄的 `(os_pid, os_process_CreationTime)` 是否已確認不存在（若仍存活則先執行終止並等待 handle 釋放），接著對目錄內所有產出檔案執行**格式完整性驗證**（JSON 完整語法解析、PNG IEND 結尾塊與 CRC 校驗、JPEG EOI 標記校驗）。
+2. **明確分流報告：** 系統向 Agent 列出哪些檔案通過完整性檢驗（`structurally_valid_files`）、哪些檔案已損毀（`corrupted_partial_files`）。Agent 只能將通過完整性檢驗且核對過內容無誤的檔案，透過 `register_asset` 或 `update_draft` 正式納管並將操作補登為已處理。
+
+
+
+
+
+---
+
+## 三、 收斂後的資料模型與關鍵欄位修訂
+
+結合本輪所有修正，我們不需要增加新表，只需將既有表格的約束與關係調整至完全精確：
+
+```sql
+-- 1. 模型回合預算表（承載既有 controller 的單輪重試上限與活躍耗時，不隨 input_view 改變而重置）
+CREATE TABLE model_rounds (
+    round_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    checkpoint_ns TEXT NOT NULL DEFAULT '',
+    round_index INTEGER NOT NULL,
+    max_attempts_allowed INTEGER NOT NULL,     -- 對應 1 + automatic_retries (預設 1，試驗配置最多 3)
+    attempts_consumed INTEGER NOT NULL DEFAULT 0,
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    UNIQUE(thread_id, checkpoint_ns, round_index)
+);
+
+-- 2. 不可變的模型邏輯輸入清單（必須在所有引用之 prompt / schema / projection blobs 落盤驗證後才可插入）
+CREATE TABLE model_input_views (
+    input_view_id TEXT PRIMARY KEY,
+    round_id TEXT NOT NULL REFERENCES model_rounds(round_id),
+    policy_rev INTEGER NOT NULL REFERENCES context_policies(policy_rev),
+    effective_req_rev INTEGER NOT NULL,
+    effective_draft_rev INTEGER NOT NULL,
+    system_prompt_blob_sha256 TEXT NOT NULL,
+    tool_schemas_blob_sha256 TEXT NOT NULL,
+    route_and_model_config_json TEXT NOT NULL,
+    resolved_pins_json TEXT NOT NULL,
+    resolved_notes_json TEXT NOT NULL,
+    included_messages_manifest_json TEXT NOT NULL, -- 含訊息順序、角色、工具參數與實際投影引用
+    capacity_omitted_manifest_json TEXT NOT NULL,
+    estimated_tokens_range_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+-- 3. 模型傳輸嘗試紀錄（綁定 round_id 與當次實際使用的 input_view_id）
+CREATE TABLE model_request_attempts (
+    model_attempt_id TEXT PRIMARY KEY,
+    round_id TEXT NOT NULL REFERENCES model_rounds(round_id),
+    attempt_no INTEGER NOT NULL,               -- 在同一 round_id 下嚴格為 1..max_attempts_allowed
+    input_view_id TEXT NOT NULL REFERENCES model_input_views(input_view_id),
+    transport_mode TEXT NOT NULL,
+    request_wire_digest_sha256 TEXT,           -- 記錄 Adapter 編碼後之安全請求結構雜湊，供核對邊界
+    outcome_status TEXT NOT NULL CHECK(outcome_status IN (
+        'in_flight', 'accepted', 'rejected_candidate', 'failed_known', 'failed_ambiguous_settlement'
+    )),
+    accepted_response_message_ids_json TEXT,
+    observed_usage_json TEXT,
+    safe_diagnostics_json TEXT,
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    UNIQUE(round_id, attempt_no)
+);
+
+-- 4. 邏輯工具操作收據（納入 parent_ai_message_id 唯一約束，限定受控狀態更新）
+CREATE TABLE operations (
+    operation_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    checkpoint_ns TEXT NOT NULL DEFAULT '',
+    parent_input_view_id TEXT NOT NULL REFERENCES model_input_views(input_view_id),
+    parent_ai_message_id TEXT NOT NULL,
+    tool_call_id TEXT NOT NULL,
+    tool_name TEXT NOT NULL,
+    canonical_input_sha256 TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN (
+        'dispatched_uncertain', 'succeeded', 'failed', 'interrupted_uncertain', 'salvaged_resolved'
+    )),
+    completed_seq INTEGER UNIQUE,              -- 於提交結果的同一 SQLite 交易內賦值
+    tool_message_id TEXT NOT NULL,
+    tool_message_content_json TEXT,
+    tool_message_artifact_json TEXT,
+    state_update_patch_json TEXT,              -- 嚴格限縮為允許更新之 State 欄位 (如 active_policy_rev)，不含任意 goto
+    produced_draft_rev INTEGER,
+    produced_candidate_id TEXT,
+    produced_evidence_id TEXT,
+    updated_at TEXT NOT NULL,
+    UNIQUE(thread_id, checkpoint_ns, parent_ai_message_id, tool_call_id)
+);
+
+-- 5. 具線性父版本約束的 Context Policy 表（於 SQLite 短交易內檢查 parent_policy_rev 並推進）
+CREATE TABLE context_policies (
+    policy_rev INTEGER PRIMARY KEY AUTOINCREMENT,
+    parent_policy_rev INTEGER REFERENCES context_policies(policy_rev),
+    replaced_message_ids_json TEXT NOT NULL,
+    pinned_specs_json TEXT NOT NULL,
+    evidence_projections_json TEXT NOT NULL,
+    pending_extracted_manifests_json TEXT NOT NULL, -- 記錄已抽取但待處理之頁碼範圍與 manifest 入口
+    historical_activity_digest_text TEXT,
+    based_on_view_id TEXT REFERENCES model_input_views(input_view_id),
+    created_by_op_id TEXT REFERENCES operations(operation_id),
+    created_at TEXT NOT NULL
+);
+
+```
+
+---
+
+## 四、 核心執行契約總覽（供實作直接對照）
+
+1. **恢復與重播（Checkpointer-Driven Replay Only）：**
+重啟時先由 LangGraph Checkpointer 取得當前分支（Branch）的 `StateSnapshot`（含該分支的 `active_policy_rev` 與待執行 `tasks`）。**僅針對當前 `tasks` 中待執行的工具呼叫查詢 `operations` 表**：若 `(thread_id, checkpoint_ns, parent_ai_message_id, tool_call_id)` 與 `canonical_input_sha256` 吻合且已 `succeeded`，才重播對應的 `ToolMessage` 與 `state_update_patch_json`；絕不掃描歷史收據復活已壓縮的舊訊息。
+2. **Policy 變更與衝突處理（Serialized Intent Commit）：**
+Context Policy 變更統一在 App 服務的 `BEGIN IMMEDIATE` 交易內核對 `parent_policy_rev`。無交集的並行變更自動線性疊加（`7 -> 8 -> 9`）；相互矛盾的變更在工具層直接回傳衝突說明，不讓 LangGraph Reducer 拋出未捕捉例外中斷整個 Superstep。
+3. **跨 Context 進度與證據感知（Manifest-Backed Continuity）：**
+整理歷史時，未展開的證據不必逐筆塞入每輪 Prompt，而是收斂為 `pending_extracted_manifests_json` 的範圍摘要（明確標示哪些頁碼已有現成抽取原件可查、哪些頁碼尚未抽取），搭配證據服務的參數雜湊快取，確保長章節跨越多個 Context 時既不塞爆視窗、也不重複執行昂貴的 OCR。
+
+
+
+這套架構與契約已經把執行恢復、並發版本控制、重試預算綁定與長文件 Context 延續的所有邊界條件收斂完畢。你希望下一步直接進入這個資料庫與 Middleware 核心層的程式結構設計，還是還有其他邊界條件需要微調？

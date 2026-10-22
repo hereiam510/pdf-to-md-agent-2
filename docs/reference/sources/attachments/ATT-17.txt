@@ -1,0 +1,223 @@
+這份審閱抓出了五個會在重構實作時造成狀態脫節或恢復錯誤的深層問題：包括**工具重播若只回傳 `ToolMessage` 會漏掉 LangGraph `Command` 的狀態更新**、**整理前若強制完整水合所有證據會引發容量死鎖**、**外層 Middleware 組裝的 `input_view_id` 可能被內層修改或重試多次**、**`spawning` 無完成標記不能推導出子程序未執行**，以及`working_notes` 原地覆寫會讓舊 `input_view` 失去歷史重建能力。
+
+完全採納這五項修正後，我們不需要再增加新的管理層，而是要將既有設計的邊界收緊。以下針對這五個環節提出具體的工程收斂方案，並指出兩個在落實這些修正時必須同步防範的次生陷阱。
+
+---
+
+## 一、 五項關鍵修正的工程收斂與次生風險防範
+
+### 1. 完整重播 `Command` 狀態更新，並搭配「單調 Reducer ＋ 確定性訊息 ID」（針對第 1 點）
+
+你指出的問題非常致命：若某個工具（如切換 Context Policy 或更新草稿狀態）在 App 資料庫已提交 `policy_rev = 8`，並準備透過 `Command(update={"active_policy_rev": 8}, ...)` 更新 LangGraph State 時崩潰，重啟後若只重播 `ToolMessage`，框架 State 就會卡在舊的 `policy_rev = 7`。
+
+在實作「保存並重播語義等價的 `Command`」時，為了滿足你要求的「避免重播造成重複訊息，或覆蓋較新的狀態」，必須在 `operations` 表與 LangGraph State 定義上同時鎖死兩個機制：
+
+* **收據同時保存 `tool_message_payload` 與 `state_update_json`：** 當工具完成提交時，`operations` 表同時記錄這兩項資料。若框架在恢復時重跑該工具，`wrap_tool_call` 直接根據收據重建完整的 `Command(update=..., ...) ` 或 `ToolMessage`。
+* **確定性 `ToolMessage.id` 防止重複附加：** 重建 `ToolMessage` 時，必須賦予由 `operation_id` 決定的穩定訊息 ID（例如 `id = f"tm_{operation_id}"`）。LangGraph 的 `add_messages` reducer 遇到相同 `id` 時會執行原地冪等替換（Upsert），而不會在訊息列表中插入第二筆重複的 `ToolMessage`。
+* **State 欄位的版本單調檢查（Monotonic Guard）：** 若同一 Superstep 中有多個並行工具，或恢復期間狀態已推進，無條件重播舊 `Command(update={"active_policy_rev": 8})` 仍可能覆蓋更新的值。因此，LangGraph State 中記錄的版本指標（如 `active_policy_rev`）應定義專屬的 Reducer：僅在 `new_rev > current_rev`（或通過明確的前置版本檢查）時才套用更新，從機制上杜絕舊收據倒退覆蓋新狀態。
+
+### 2. 破解「整理前水合死鎖」：不水合就不摘要，原樣跨越整理邊界（針對第 2 點）
+
+你指出了前一版的循環矛盾：「因為 Context 太大而需要整理；整理前卻必須先把所有原文、原圖載入 Context。」並確立了正確原則：主模型與整理程序共用同一套引用解析與組裝機制，但各自必須服從當次請求的容量上限。
+
+在落實這個設計時，有一個**直接影響轉換保真度的次生陷阱**必須防範：
+
+* **次生風險（盲態摘要陷阱）：** 假設某次大範圍讀取產生了第 12–20 頁的龐大證據（`ev_012`..`ev_020`），因容量限制只有第 12–14 頁被水合展開，第 15–20 頁僅以「未載入範圍收據」存在於 Context 中。此時若觸發歷史整理（Compaction），整理程序或 Agent 因為也沒載入第 15–20 頁的原文，萬一把第 15–20 頁連同舊對話一起壓成一句模糊文字摘要並移出活躍索引，Agent 在整理後就會失去這幾頁的精確檢索入口！
+
+
+* **收緊後的整理水合契約（No Summarization Without Hydration）：**
+1. **容量受限的按需載入：** 整理回合（或輔助摘要請求）同樣經過容量估算器，優先載入「最新有效要求、活躍草稿、已登記之未解依賴與釘選區塊」。
+
+
+2. **未展開證據強制原樣保留引用：** 凡是在整理當下因容量限制而**未被水合展開的證據範圍**，嚴禁交由模型憑空摘要或隨舊訊息一併抹除；組裝器必須將其原始的「未載入範圍與精確讀取入口（`evidence_id`、頁碼範圍、結構目錄）」直接原封不動繼承到新的 `context_policy` 中。只有模型實際已經看過並完成處理（或明確選擇釋放）的已水合歷史，才進入壓縮替換範圍。
+
+
+
+
+
+### 3. 最內層 `input_view_id` 攔截，並對齊「單一邏輯請求 vs. 多次傳輸嘗試」（針對第 3、5 點）
+
+你提出的四項修正（在最接近模型介面的最內層記錄輸入、處理 `ModelResponse` 結構、使用具 App 命名空間的 `response_metadata`、將不可變輸入與每次執行觀測分開）非常關鍵，且剛好與本專案既有的 **Nexus 有限重試與雙傳輸架構**完美契合：
+
+* **最內層組裝邊界：** 將 `InputViewAssembler` 放在所有 Middleware 的最內層（緊貼 Nexus Provider Adapter 之前）。只有當所有上層變更都已完成、準備交給傳輸層編碼時，才將當次最終的 `system_prompt`、`tool_schemas`、`model_settings` 與展開後的訊息清單固化為一筆不可變的 `model_input_views`（取得 `input_view_id`）。
+* **分離 `model_input_views`（1）與 `model_request_attempts`（N）：** 在既有專案規格中，單一模型回合在開啟 `automatic_retries: 2` 時最多允許 3 次 HTTP 嘗試（包含遭遇 502/503、90 秒本地閘門或 SSE 串流半途斷線的重試），且失敗嘗試的未知遠端費用與診斷必須保留。因此：
+
+
+* `model_input_views` 只記錄那一份**不可變的邏輯輸入結構**；
+* 每次實際發起 HTTP / SSE 請求時，在 `model_request_attempts` 新增一筆記錄（綁定 `input_view_id` 與 `attempt_no`），各自保存該次嘗試的傳輸模式、完成狀態、安全階段耗時與 `observed_usage_json`。
+
+
+
+
+* **嚴格的父回覆綁定：** 當某次 Attempt 獲得完整有效的 `ModelResponse` 時，Adapter 在被接受的 `AIMessage.response_metadata["pdf_md_app"]` 中寫入 `{"input_view_id": ..., "accepted_attempt_id": ..., "message_id": ...}`。後續 `wrap_tool_call` 必須核對父級 `AIMessage` 上的這個命名空間欄位；若缺失或不一致，直接回報結構關聯錯誤並停止，絕不退回查詢「資料庫最新一筆 view」。
+
+
+
+### 4. 撤回「無標記即未執行」假設，區分「App 純計算子程序」與「任意宿主腳本」（針對第 4 點）
+
+你的反例完全成立：控制器在寫入 `spawning` 後、更新 `running` 前崩潰，子程序可能早已啟動並修改了檔案；或者子程序已完成，控制器卻在寫入 `_exit_status.json` 前崩潰。
+
+因此，我們將子程序管理收緊為以下三條硬規則：
+
+1. **僅限真正啟動外部程序的工具使用：** 諸如 `record_work_note`、切換 Context Policy 或純 SQLite 草稿 metadata 更新，直接走資料庫短交易，**不建立程序嘗試目錄或退出標記**。只有真正派生子程序的工具（本地 Node OCR、預覽渲染、以及 `run_script`）才進入子程序監管協議。
+
+
+2. **以 `dispatched_uncertain` 取代 `spawning` 假象：** 在呼叫作業系統建立子程序之前，資料庫寫入的初始狀態即定義為 `dispatched_uncertain`。在恢復邏輯中，**只要沒有通過完整成果與工具契約驗證，一律視為「可能已經執行並產生過副作用」**，絕不因為缺少 `running` 或 `_exit_status.json` 就推論為「從未執行」。
+3. **依副作用性質決定恢復行為（對齊專案既有安全邊界）：**
+* **受控內建程序（OCR / 預覽渲染）：** 這些是由 App 自有程式碼執行的純計算／渲染工作，僅在專屬臨時路徑寫入候選檔。重啟時若已存在完整且雜湊吻合的輸出並符合工具契約，可驗證後補登重用；若不完整，可直接安全重試。
+* **任意宿主腳本（`run_script`）：** 具宿主使用者權限，工作目錄並非 OS 沙箱。一旦重啟時處於 `dispatched_uncertain`（無論有無退出標記，只要尚未完成最終收據提交），系統**嚴禁自動重跑**，必須將操作維持在 `interrupted_uncertain` 狀態，列出已觀測到的目錄產出與程序狀態，交由使用者或 Agent 核對實際成果後再決定下一步。
+
+
+* **Windows Job Object 的精確納管：** 在 Windows 實作時，使用 `CreateProcessW(..., CREATE_SUSPENDED, ...)` 搭配非繼承（Non-inheritable）的 Job Handle，在主執行緒啟動前完成 `AssignProcessToJobObject`（不開放 `BREAKAWAY_OK`）再呼叫 `ResumeThread`，並在恢復前顯式查詢 Job 內是否仍有殘留活動程序，而不把 Job Object 當成檔案回滾保證。
+
+
+
+### 5. 以內容尋址（CAS）實現「歷史輸入與筆記版本 100% 可重建」（針對第 5 點）
+
+為了讓任何舊的 `input_view_id` 都能精確重建當時模型實際看見的內容，同時不讓 SQLite 表格無限制膨脹：
+
+* **筆記版本不可變保存（`working_note_revisions`）：** 修改筆記時，必須帶入 `expected_note_rev` 執行樂觀鎖檢查；每次更新不覆寫原文字，而是寫入一筆新的 `(note_id, note_rev, content_text, ...)` 記錄。當 `model_input_views` 記錄它載入了 `[(note_id: "n1", note_rev: 3)]` 時，事後隨時能精確查回 `note_rev = 3` 當下的隻字片語。
+* **提示詞與工具 Schema 去重保存：** 系統提示詞（System Prompt）、工具定義（Tool Schemas）與文字投影內容，在計算 SHA-256 後直接存入既有的 `blobs/<sha256>`（因為同一個任務中絕大多數回合的 System Prompt 與 Tool Schemas 完全相同，只會存一份檔案）。`model_input_views` 只需記錄對應的 `sha256` 引用，就能在零重複儲存的成本下，100% 還原任何一次請求的完整輸入。
+* **`completed_seq` 於提交收據時原子分配：** 移除建立時的自增序號混用，改在 SQLite 中維護單一計數器，僅在操作收據正式提交（Commit）的同一個交易內分配單調遞增的 `completed_seq`。
+
+---
+
+## 二、 收緊後的資料模型（修正版 SQLite Schema）
+
+以下 Schema 嚴格落實了上述五項修正，沒有多餘的管理表，每個欄位都對應明確的恢復與追溯責任：
+
+```sql
+-- 1. 單調計數器（確保 completed_seq 嚴格按完成提交順序賦值）
+CREATE TABLE sequence_counters (
+    counter_name TEXT PRIMARY KEY,
+    current_value INTEGER NOT NULL
+);
+
+-- 2. 不可變的模型邏輯輸入清單（由最內層 Middleware 在交給 Adapter 前記錄）
+CREATE TABLE model_input_views (
+    input_view_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    checkpoint_ns TEXT NOT NULL DEFAULT '',
+    policy_rev INTEGER NOT NULL REFERENCES context_policies(policy_rev),
+    effective_req_rev INTEGER NOT NULL,
+    effective_draft_rev INTEGER NOT NULL,
+    system_prompt_blob_sha256 TEXT NOT NULL,   -- 指向 blobs/<sha256>，可完整重建當時 System Prompt
+    tool_schemas_blob_sha256 TEXT NOT NULL,    -- 指向 blobs/<sha256>，可完整重建當時 Tool Schemas
+    route_and_model_config_json TEXT NOT NULL, -- 記錄目標 endpoint / model / protocol / image 設定
+    resolved_pins_json TEXT NOT NULL,          -- 當次請求解析後的固定 (block_id, content_ref)
+    resolved_notes_json TEXT NOT NULL,         -- 當次請求載入的固定 [(note_id, note_rev), ...]
+    included_messages_manifest_json TEXT NOT NULL, -- 訊息 ID、展開之 evidence_id、投影範圍或投影快照引用
+    capacity_omitted_manifest_json TEXT NOT NULL,  -- 因容量未載入之項目與明示收據
+    estimated_tokens_range_json TEXT NOT NULL,     -- [low_estimate, high_water_estimate]
+    created_at TEXT NOT NULL
+);
+
+-- 3. 模型請求執行嘗試與觀測紀錄（與不可變輸入呈 N:1 關係，支援有限重試與未知費用追蹤）
+CREATE TABLE model_request_attempts (
+    model_attempt_id TEXT PRIMARY KEY,
+    input_view_id TEXT NOT NULL REFERENCES model_input_views(input_view_id),
+    attempt_no INTEGER NOT NULL,
+    transport_mode TEXT NOT NULL,              -- 'non_streaming' | 'streaming'
+    outcome_status TEXT NOT NULL CHECK(outcome_status IN (
+        'in_flight', 'accepted', 'rejected_candidate', 'failed_known', 'failed_ambiguous_settlement'
+    )),
+    accepted_response_message_ids_json TEXT,   -- ModelResponse 中所有訊息的穩定 ID 清單
+    observed_usage_json TEXT,                  -- 實際回報的 input / cached / output / reasoning tokens
+    safe_diagnostics_json TEXT,                -- 階段耗時、HTTP 狀態、保留的 candidate 引用
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    UNIQUE(input_view_id, attempt_no)
+);
+
+-- 4. 邏輯工具操作與完整重播收據（同時保存領域結果與框架 Command 狀態更新）
+CREATE TABLE operations (
+    operation_id TEXT PRIMARY KEY,
+    thread_id TEXT NOT NULL,
+    checkpoint_ns TEXT NOT NULL DEFAULT '',
+    parent_input_view_id TEXT NOT NULL REFERENCES model_input_views(input_view_id),
+    parent_ai_message_id TEXT NOT NULL,
+    tool_call_id TEXT NOT NULL,
+    tool_name TEXT NOT NULL,
+    canonical_input_sha256 TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN (
+        'dispatched_uncertain', 'succeeded', 'failed', 'interrupted_uncertain'
+    )),
+    completed_seq INTEGER UNIQUE,              -- 僅在結果提交交易內由 sequence_counters 賦予
+    tool_message_id TEXT NOT NULL,             -- 確定性 ID (如 "tm_" || operation_id) 供重播去重
+    tool_message_content_json TEXT,            -- 重播時還原的 ToolMessage.content
+    tool_message_artifact_json TEXT,           -- 重播時還原的 ToolMessage.artifact
+    framework_state_update_json TEXT,          -- 若工具回傳 Command(update=...)，保存需重播的狀態更新
+    produced_draft_rev INTEGER,
+    produced_candidate_id TEXT,
+    produced_evidence_id TEXT,
+    updated_at TEXT NOT NULL,
+    UNIQUE(thread_id, checkpoint_ns, tool_call_id)
+);
+
+-- 5. 外部子程序執行嘗試（僅用於真正啟動外部程序的 OCR / 渲染 / 腳本工具）
+CREATE TABLE subprocess_attempts (
+    subproc_attempt_id TEXT PRIMARY KEY,
+    operation_id TEXT NOT NULL REFERENCES operations(operation_id),
+    attempt_no INTEGER NOT NULL,
+    work_dir_path TEXT NOT NULL,
+    os_pid INTEGER,
+    os_process_CreationTime TEXT,
+    observed_exit_code INTEGER,
+    exit_marker_verified INTEGER NOT NULL DEFAULT 0, -- 是否讀到標記且產出符合工具契約
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    UNIQUE(operation_id, attempt_no)
+);
+
+-- 6. 具歷史版本保留的工作筆記表（確保舊 input_view 可精確重建當時筆記內容）
+CREATE TABLE working_note_revisions (
+    note_id TEXT NOT NULL,
+    note_rev INTEGER NOT NULL,
+    note_category TEXT NOT NULL,
+    scope_json TEXT NOT NULL,
+    content_text TEXT NOT NULL,
+    linked_refs_json TEXT,
+    status TEXT NOT NULL CHECK(status IN ('active', 'resolved', 'superseded')),
+    based_on_view_id TEXT NOT NULL REFERENCES model_input_views(input_view_id),
+    created_by_op_id TEXT NOT NULL REFERENCES operations(operation_id),
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (note_id, note_rev)
+);
+
+-- 7. 不可變的 Context Policy 版本表（對應 LangGraph State["active_policy_rev"]）
+CREATE TABLE context_policies (
+    policy_rev INTEGER PRIMARY KEY AUTOINCREMENT,
+    parent_policy_rev INTEGER,
+    replaced_message_ids_json TEXT NOT NULL,
+    pinned_specs_json TEXT NOT NULL,
+    evidence_projections_json TEXT NOT NULL,   -- 含未水合證據的原樣保留引用
+    historical_activity_digest_text TEXT,
+    based_on_view_id TEXT REFERENCES model_input_views(input_view_id),
+    created_by_op_id TEXT REFERENCES operations(operation_id),
+    created_at TEXT NOT NULL
+);
+
+```
+
+(註：`draft_revisions`、`staged_candidates`、`evidence_blobs` 與 `user_requirements_log` 維持上一輪已確認的不可變結構。)
+
+---
+
+## 三、 這套收斂設計如何保障端到端可靠性
+
+| 關鍵邊界場景 | 收緊後的確定性運行行為 |
+| --- | --- |
+| **1. 工具已提交 `policy_rev=8` 並準備回傳 `Command`，但在 LangGraph 寫入前崩潰** | 重啟後 LangGraph 重跑該工具；`wrap_tool_call` 查獲 `operations.status == 'succeeded'`，直接以確定性 `tool_message_id` 與 `framework_state_update_json` 重建 `Command(update={"active_policy_rev": 8}, ...)`，搭配單調 Reducer 安全將框架 State 推進至 `8`，不重複新增訊息，也不覆蓋更新的狀態。 |
+| **2. 單次工具產出超大，或整理前無法全量水合所有證據** | 先保存完整原件至 `evidence_blobs`；若超出容量，回傳明示未載入範圍與讀取入口的投影收據。若此時執行 Context 整理，**未水合的證據不進摘要**，其 `evidence_id` 與結構入口直接保留至新 `context_policy`，由 Agent 自主決定後續分段讀取、釋放或用腳本處理。
+
+ |
+| **3. 同一邏輯請求因 Nexus 502/串流中斷觸發有限重試** | 最內層組裝的 `model_input_views` 保持唯一不可變；每次重試在 `model_request_attempts` 新增一列記錄耗時與未知結算狀態。成功接受的 `ModelResponse` 將 `(input_view_id, accepted_attempt_id)` 寫入 `AIMessage.response_metadata["pdf_md_app"]`，供下一階段工具呼叫嚴格校驗父級來源。
+
+ |
+| **4. 腳本或 OCR 執行期間控制器崩潰** | 初始狀態即為 `dispatched_uncertain`。重啟時先確認 Job Object 終止狀態與實際產出是否滿足工具契約：純計算工具（OCR/渲染）可驗證重用或安全重跑；任意宿主腳本只要未完成最終收據提交，一律保持 `interrupted_uncertain` 並保留嘗試目錄供檢查，絕不憑標記缺失自動重跑。
+
+ |
+
+這版修正已經把你點出的三項核心要求（完整重播工具結果與 `Command` 狀態更新、讓整理請求本身符合容量限制且不盲目摘要未載入證據、撤回以標記缺失推斷未執行的規則）全部落實到資料結構與 Middleware 契約中。
+
+如果這份收緊後的契約已無邏輯漏洞，你希望下一步我們直接把 **`wrap_model_call`（最內層輸入組裝與 `input_view_id` 綁定）** 與 **`wrap_tool_call`（含 `Command` 重建與狀態單調檢查）** 寫成可直接執行的 Python 核心骨架程式碼嗎？

@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad8f86cf4bc8191a492d91af12920be",
+    "content": [
+      {
+        "type": "Text",
+        "text": "我會先讀這版提案，重點檢查 context 整理如何運作、失敗時如何接續，以及是否仍保留 agent 選擇方法和讀取完整證據的自由。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1758,
+  "timestamp_original": "2026-10-21T17:37:49.747Z",
+  "timestamp_display": "2026-10-22T01:37:49.747+08:00",
+  "turn_id": "01a15f8a-50c8-7723-bec0-3f9f34588194",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T01:37:48.326+08:00",
+  "completed_at": "2026-10-22T01:37:49.747+08:00",
+  "event_id": "EVT-0536",
+  "evidence_path": "evidence/events/EVT-0536.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

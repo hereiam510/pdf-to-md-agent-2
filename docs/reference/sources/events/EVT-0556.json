@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad8f92e1bf481919438e0db313c00d6",
+    "content": [
+      {
+        "type": "Text",
+        "text": "另一個需要保留的區別是「區塊身分」與「內容 hash」：表格修改後仍應維持同一個 block ID，否則釘選和修訂目標會失去連結。容量估算也應綁定實際請求；整理或切換模型後，不能直接沿用上一輪 usage 加新增文字來判斷。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1802,
+  "timestamp_original": "2026-10-21T17:41:07.700Z",
+  "timestamp_display": "2026-10-22T01:41:07.700+08:00",
+  "turn_id": "01a15f8a-50c8-7723-bec0-3f9f34588194",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T01:41:06.639+08:00",
+  "completed_at": "2026-10-22T01:41:07.700+08:00",
+  "event_id": "EVT-0556",
+  "evidence_path": "evidence/events/EVT-0556.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

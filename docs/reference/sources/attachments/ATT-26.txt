@@ -1,0 +1,167 @@
+直接採用「小型 `LangGraph StateGraph` ＋ 抽離後的 Nexus 請求服務 ＋ 共用工具派發器 ＋ 文件／證據核心」，並省去多餘的 `create_agent` 與 `BaseChatModel` 包裝，是目前最乾淨的架構收斂。你這輪抓出的五個具體技術事實——**`model_turn_seq` 在分支與 `END` 後續對話時的碰撞**、**文件提交與寫入收據的時間差（`core.py:241`）**、**MCP SDK 在 `base.py:152` 早於工具函式執行參數驗證**、**`markdown-it-py` 的 `html_block` 忽略 `token.attrSet**`，以及**把 Context 管理延到第三階段的路線圖倒置**——全部切中要害。
+
+如果我們跳出單輪細節、從整個專案的高度回頭審視先前的討論脈絡，會發現有兩個**系統級的設計包袱**正在拖慢重構，值得先正面交鋒並徹底清理。
+
+---
+
+## 一、 全局反思與交鋒：砍掉「雙重狀態庫」包袱，補齊「終端交付驗證」
+
+### 1. 全局交鋒一：為甚麼前幾輪不斷出現「跨儲存時間差」？因為我們不該在文件快照與 Checkpointer 之外再造一套複雜的收據資料庫
+
+回顧先前的討論，我們花了大量精力修補「文件已提交但收據未寫入」、「收據已寫入但 Session 未更新」的時序漏洞。你在第 3 點提到的現有程式碼（`core.py:241`）其實已經給出了最優雅的解答：**把 `publication_operation`（操作身分）直接寫進文件版本快照本身！**
+
+* **問題根源：** 當「文件版本」與「操作收據」被拆成兩次獨立寫入時，中間必然存在崩潰空隙。
+* **最佳重構設計（Commit-as-Receipt 原則）：**
+* **文件修改操作：** 產出新草稿或正式版本時，`operation_id`（連同輸入參數指紋 `input_sha256`）直接作為該版本 `document.json` / 版本 metadata 的內建欄位，透過單次原子檔案替換（如 Windows `ReplaceFileW`）或單一短交易落盤。**版本存在，收據就存在；版本未提交，收據就不存在。** 兩者物理合一，從根本消滅「文件已提交但收據未寫入」的時間差。
+
+
+* **證據產生操作（`inspect` / `ocr` / `render`）：** 原件落盤後，其不可變證據描述檔（`evidence_meta.json`）本身就內嵌 `(operation_id, input_sha256)`。重啟對帳時只需比對確定性索引，無須維護另一套龐大的事件溯源資料庫。
+
+
+
+
+
+### 2. 全局交鋒二：破解 MCP SDK (`base.py:152`) 驗證過早的死結——分離「傳輸外殼 Schema」與「領域驗證」
+
+你查出目前安裝的 MCP Python SDK 會在進入註冊的工具函式前，先在 `mcp/server/mcpserver/tools/base.py:152` 執行 Pydantic 驗證——這意味著如果把 `save` / `revise` 的嚴格頁碼映射與結構約束全部寫在暴露給 MCP 的頂層 Pydantic 模型上，只要模型填錯一個 metadata 欄位，MCP Server 就會在 `base.py:152` 直接攔截報錯，裡面的 `AppToolDispatcher` 連一個字都收不到！
+
+要讓內建 Agent、CLI（`call`/`relay`） 與外部 MCP（`serve`） **真正 100% 共享「驗證前先存候選正文」的保護**，有兩條具體工程路徑（建議同時採用）：
+
+1. **在協議入口層攔截（針對內建 Agent 與 CLI/MCP 底層）：** 內建 LangGraph 工具節點與 CLI `relay` 直接接收解析後的原始 JSON dict，先呼叫 `CandidateStore.save_raw_arguments(operation_id, raw_args)`（承接 `agent_tools.py:383` 的設計），再執行領域驗證。
+2. **將工具的「傳輸層 Schema」與「領域層 Schema」解耦（徹底解決 MCP `base.py:152` 攔截）：**
+* 註冊給 MCP `base.py` 的頂層工具參數模型（Transport Schema）只對 `blocks` / `content` 與 `metadata` 定義寬鬆的基礎容器型別（例如允許 `page_map` 或附加欄位以 `dict[str, Any]` 通過 `base.py:152` 的第一關），讓呼叫必然能進入 `AppToolDispatcher`。
+* 進入 `AppToolDispatcher` 後，**第一步先將完整參數與正文落盤為 `candidate_ref**`；**第二步才用嚴格的領域 Pydantic 模型（Domain Schema）執行完整性驗證**。驗證失敗時回傳精確的欄位錯誤與已保存的 `candidate_ref`，讓所有入口獲得完全一致的保護。
+
+
+
+---
+
+## 二、 針對 7 點審閱的深度修正與架構收斂
+
+### 1. 以「保存邊界」定義 4 節點 `StateGraph`：解決分支與續聊的 `model_step_id` 碰撞（回應第 1、2、7 點）
+
+你指出的兩個反例完全成立：（a）從同一 Checkpoint 用 `update_state` 建立分支時，`(job_id, checkpoint_ns, model_turn_seq)` 會完全相同；（b）當模型在第 4 輪沒有呼叫工具而直接進入 `END`，使用者後續補充要求時，若未經工具結算節點，計數器仍停在 4，就會誤讀上一次的舊答案。
+
+此外，你在第 7 點指出「無 `tool_calls` 不等於文件已交付」——現有 `agent.py:787` 的 `deliver()` 還會檢查保存版本與匯出包是否一致。
+
+若我們不再受限於「3 個節點」，而是**完全按照「持久化與驗證邊界」來切分 LangGraph 節點**（設定 `durability="sync"`），最嚴密的拓撲應是 **4 個功能明確的節點**：
+
+```mermaid
+flowchart TD
+    Start([啟動 / 恢復 / 新使用者輸入 / 分支]) --> P["1. prepare_step (確定性準備邊界)\n- 組裝本次實際輸入並計算 request_fingerprint\n- 產生唯一 model_step_id 並寫入 State\n- Sync Checkpoint 落盤後才進入下一步"]
+    P --> M["2. model_step (外部通訊邊界)\n- 以 (model_step_id, request_fingerprint) 查已保存回覆\n- 若無則呼叫 Nexus 服務並先落盤完整回覆\n- 回傳 AIMessage"]
+    M -->|有 tool_calls| T["3. tool_batch_step (工具與狀態邊界)\n- 共用 AppToolDispatcher：先存 candidate 再驗證\n- 讀取並行、有副作用操作按宣告序執行\n- 原地結算 Context Intents 與文件收據"]
+    T --> P
+    M -->|無 tool_calls| D["4. delivery_check_step (交付與終止邊界)\n- 核對保存版本、匯出包一致性與範圍狀態\n- 區分：完成交付 / 誠實草稿匯出 / 阻礙停機 / 漏匯出提示"]
+    D -->|需補齊匯出或澄清| P
+    D -->|驗證通過或明確停止| End([結束並寫入最終狀態])
+
+```
+
+#### 為什麼多一個 `prepare_step` 能徹底消除碰撞？
+
+* **每次需要模型新判斷，必然先經過 `prepare_step`：** 無論是工具執行完進入下一輪、使用者在 `END` 之後追加新訊息，還是從某個歷史點 `update_state` 分支重跑，入口都是 `prepare_step`。
+* **雙重綁定（`model_step_id` + `request_fingerprint`）：**
+1. `prepare_step` 組裝好本次真正要送出的訊息、系統提示與選中證據清單後，計算內容雜湊 `request_fingerprint`，並生成一個全新的唯一 `model_step_id`（例如 UUIDv7），透過 `durability="sync"` 寫入 LangGraph Checkpoint。
+
+
+2. 接著進入 `model_step`：
+* **若在 `model_step` 收到回覆落盤後、但尚未完成 `model_step` Checkpoint 前崩潰：** 重啟時 LangGraph 會從剛跑完 `prepare_step` 的那個 Checkpoint 恢復，進入 `model_step` 時帶著**同一個 `model_step_id` 與完全相同的 `request_fingerprint**`，因此能 100% 安全重用已落盤的回覆。
+* **若是從歷史點修改狀態建立新分支，或使用者追加了新訊息：** 即使 किसी原因重用了步驟名稱，`request_fingerprint` 也必然不同，系統會立即拒絕重用舊答案並發起新請求。
+
+
+
+
+
+---
+
+### 2. 調整開發階段順序：將「基本輸入容量與證據選取」納入 Stage 1（回應第 6、7 點）
+
+完全接受你對路線圖的修正：Context 容量壓力取決於單次選入的資料量（如單頁 191,662 字元），而非頁數是否超過 40 頁；局部區塊截圖與表格定位則是進階核對便利功能，不應排在 Context 管理之前。
+
+調整後的三階段順序與邊界如下：
+
+#### Stage 1：文件／執行核心 ＋ 基本輸入容量管理（Core Runtime, Saving & Intake Capacity）
+
+在第一階段就同時立起「存得住、能恢復」與「單次輸入不爆窗」的基礎：
+
+1. **文件與草稿契約：**
+* 原始參數在領域驗證前先保存為 `candidate_ref`；
+
+
+* 保持原始字元（僅統一 LF，不做 NFC 與 HTML 重排）；
+* 支援同時提交正文與選填頁碼的草稿保存、要求唯一匹配的 `patch_block(base_version, block_id, expected_old_text, new_text)`（重複時回傳位置與上下文），以及草稿狀態下的誠實匯出；
+
+
+* 拆開「物理檔案身分（SHA-256／總頁數）」、「可隨版本更正的來源觀察與 `source_refs`（更換引用而不塗改原始證據）」及「綁定 `(scope_rev, version_id)` 的完成聲明」。
+
+
+
+
+2. **4 節點 LangGraph Runtime 與收據對帳：**
+* 實作上述 `prepare_step` $\rightarrow$ `model_step` $\rightarrow$ `tool_batch_step` $\rightarrow$ `delivery_check_step`；
+* 文件提交內嵌 `operation_id`（Commit-as-Receipt）；對於 OCR／腳本則維持「尚未啟動」與「已啟動但結果未確認（停止等待檢查，不盲目重跑）」的嚴格區分。
+
+
+
+
+3. **Stage 1 基本輸入容量控制（不延後）：**
+* 完整證據落盤與「本次模型輸入」嚴格分離；
+
+
+* 保留首次呼叫即可要求完整結果、指定欄位／範圍或原生圖片的自主權；
+
+
+* `prepare_step` 對本次實際選入的文字、圖片與工具描述進行容量估算；若單批工具結果超過可用容量，**保留完整工具產出與已完成操作，絕不靜默截斷**，改向模型回傳明確記載「本次已載入範圍、未載入範圍及精確讀取入口」的結構化清單。
+
+
+
+
+
+#### Stage 2：長任務 Context 整理與工作延續（Context Compaction & Continuity）
+
+在 Stage 1 的輸入清單基礎上，補齊跨回合與跨章節的歷史管理：
+
+1. **可恢復的證據釋放（Pin / Release）：** 允許 Agent 釋放不再需要的大型證據並保留精確重取入口，Adapter（允許按需從磁碟串流讀取大圖）嚴格依據當次輸入清單編碼，絕不自行掃描歷史把已釋放圖片加回。
+
+
+2. **普通對話歷史整理與保護：** 當累積對話與操作歷史過長時，在保護「最新有效使用者要求（含中途修訂）」、「未解跨頁依賴」與「當前活躍草稿／候選稿引用」的前提下整理舊歷史。
+
+
+
+#### Stage 3：進階視覺對照與定位便利工具（Visual & Structural Inspection Ergonomics）
+
+在核心轉換與長任務延續穩定後，再加入減少核對負擔的輔助工具（此前可直接使用現有整頁 `view_preview`）：
+
+1. **區分「實際閱讀檢視」與「展開／放大診斷檢視」（回應第 5 點）：**
+* `actual_reading`：使用與交付完全一致的保存版本、正常閱讀 CSS 與標準 viewport，用於核對真實閱讀效果；
+
+
+* `expanded_diagnostic`：專用於檢視超寬表格或局部細字，回傳時明確標註改變了哪些顯示條件，不混充為最終排版驗收。
+
+
+2. **跨語法安全的區塊定位與局部對照（回應第 4 點）：**
+* 針對 `markdown-it-py` 的 `html_block` 忽略 `token.attrSet` 問題，改在整份文件解析後的 HTML 序列化／容器包裹層處理原始 HTML 區塊與多對多渲染範圍，不假設 15 行 `attrSet` 能涵蓋 HTML 表格；
+* 按實際 DOM 區域分別截圖（避免聯集框帶入大片空白），並同時保留「獨立多圖」與「拼圖對照」供 Agent 選擇，搭配可選的 `table_cell_locator` 輔助大表定位。
+
+
+
+---
+
+## 三、 關於 `delivery_check_step`（節點 4）的具體設計確認
+
+為了確保 Stage 1 的「終端交付」不會因為換成 LangGraph 而退化，建議將 `delivery_check_step`（承接現有 `agent.py:787` `deliver()` 的職責）定為以下確定性規則：
+
+| 模型停止時的狀態 | `delivery_check_step` 的確定性行為 | 最終任務結果標記 |
+| --- | --- | --- |
+| **1. 已保存最新版本 $V$，且已針對 $V$ 完成一致匯出** | 核對匯出目錄／ZIP 與版本 $V$ 的雜湊及資產引用一致；根據版本 $V$ 在當前 `scope_rev` 下的範圍涵蓋與未解問題，標記為正式完成或誠實草稿。
+
+ | `completed_scope_claimed` 或 `exported_draft` |
+| **2. 已保存最新版本 $V$，但尚未匯出（或匯出包仍停在舊版 $V-1$）** | **不直接結束，也不丟棄成果：** 由 App 的交付服務直接針對最新保存版本 $V$ 執行一致性打包匯出（或退回一輪簡短提示請 Agent 確認是否交付版本 $V$），確保使用者拿到的匯出包永遠對齊最新保存成果。
+
+ | 對齊版本 $V$ 後完成交付 |
+| **3. 有未提交的 `candidate_ref`（例如最後一次寫入因格式被拒就停下）** | 若還在回合預算內，給出明確提示（附 `candidate_ref`）讓 Agent 決定是否修補提交；若已達回合／時間上限或明確回報阻礙，則保留所有候選檔案與已有版本，誠實標記原因並結束。
+
+ | `stopped_with_preserved_candidates` |
+
+這個「4 節點 `StateGraph` ＋ Commit-as-Receipt 版本內嵌收據 ＋ 傳輸與領域 Schema 解耦 ＋ Stage 1 包含基本輸入容量控制」的架構，是否已經把你指出的所有邊界缺口補齊？若無其他結構性異議，這就可以作為重構 Stage 1 的正式動工基準。

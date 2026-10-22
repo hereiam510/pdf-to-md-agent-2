@@ -1,0 +1,9 @@
+
+# Files pasted by the user:
+
+## "這份五點審閱非常敏銳地抓出了上一版將「大量證據水合放進 `before_model` 會再次污染持久 Checkpoint」的架構失誤，並釐清了「來源引用（`…": C:\Users\laichungling\.codex/attachments/7cb61cc2-da1a-432e-af5a-2a12ea2e2b60/Pasted text.txt
+
+## My request:
+comment, give advice, rebut or confront the following, or the whole project, or previously mentioned/not mentioned, if you find anything worth mentioning
+focus on how the app should be designed to achieve its best function
+again, complete reconstruction is ok

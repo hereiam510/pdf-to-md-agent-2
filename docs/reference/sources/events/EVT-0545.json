@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad8f8d7b5688191b425aa0f5976bd3a",
+    "content": [
+      {
+        "type": "Text",
+        "text": "這版補上了容量與交接流程，但「已寫入草稿、沒有錯誤標記，就自動釋放原始證據」仍不成立：保存成功不能證明跨頁關係已處理完。另外，頁碼摺疊無法保證任何文件都只需 10–20 行；收據的回傳時間戳，也不能消除 app 資料庫與框架 session 之間的崩潰空隙。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1778,
+  "timestamp_original": "2026-10-21T17:39:35.195Z",
+  "timestamp_display": "2026-10-22T01:39:35.195+08:00",
+  "turn_id": "01a15f8a-50c8-7723-bec0-3f9f34588194",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T01:39:35.098+08:00",
+  "completed_at": "2026-10-22T01:39:35.195+08:00",
+  "event_id": "EVT-0545",
+  "evidence_path": "evidence/events/EVT-0545.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

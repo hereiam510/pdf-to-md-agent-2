@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad9c8b4009c8191aedf1fe406650c14",
+    "content": [
+      {
+        "type": "Text",
+        "text": "目前最需要修正的是兩條恢復規則：符合操作身分的 prepared version，不能直接覆蓋重啟後已前進的工作版本；較早產生的候選，也不會因為後來有一次成功保存就自動失效。另外，提案把 OCR 列為「純讀取」，但現有 OCR 會建立檔案並啟動程序，並行與恢復規則要分開處理。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 3014,
+  "timestamp_original": "2026-10-22T08:26:30.690Z",
+  "timestamp_display": "2026-10-22T16:26:30.690+08:00",
+  "turn_id": "01a162b4-b93d-7ff3-9ce6-8a5816e0c770",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T16:26:28.846+08:00",
+  "completed_at": "2026-10-22T16:26:30.690+08:00",
+  "event_id": "EVT-1023",
+  "evidence_path": "evidence/events/EVT-1023.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

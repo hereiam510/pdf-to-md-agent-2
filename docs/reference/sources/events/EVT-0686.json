@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad97ccb49cc8191a39a71a48095b84c",
+    "content": [
+      {
+        "type": "Text",
+        "text": "目前最重要的問題是：提案把「沒有完成標記」當成「確定沒啟動或未完成」，這仍可能導致重複執行。另外，接近容量上限時要求先完整載入所有活躍證據，可能讓整理程序本身也放不進 context；這兩處需要修正，但不必因此再增加一套排程框架。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 2128,
+  "timestamp_original": "2026-10-22T03:02:36.364Z",
+  "timestamp_display": "2026-10-22T11:02:36.364+08:00",
+  "turn_id": "01a1618b-f47f-7e73-a987-05737d5f4166",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T11:02:34.751+08:00",
+  "completed_at": "2026-10-22T11:02:36.364+08:00",
+  "event_id": "EVT-0686",
+  "evidence_path": "evidence/events/EVT-0686.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

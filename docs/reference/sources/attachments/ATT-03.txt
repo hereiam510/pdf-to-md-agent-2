@@ -1,0 +1,84 @@
+For an internal Python backend engine inside an Electron app that needs both **Responses API** and **Chat Completions API** support across [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) and multi-provider endpoints (OpenAI/Codex, DeepSeek, Qwen, GLM), the cleanest architecture combines three pieces from your list and drops the other three as runtime dependencies:
+
+* **Layer 1 (Wire Transport)**: [OpenAI Python SDK](https://github.com/openai/openai-python) (`AsyncOpenAI` with `max_retries=0`) wrapped in a thin **Self-made** dual-protocol adapter (`ResponsesDriver` + `ChatCompletionsDriver`).
+* **Layer 2 (State Machine & Checkpointing)**: [LangGraph](https://reference.langchain.com/python/langgraph/graph/state/StateGraph) (`StateGraph` + [LangGraph Checkpointing](https://reference.langchain.com/python/langgraph/checkpoints) via `SqliteSaver`) to manage the turn loop, pause/resume for the Electron UI, and atomic state persistence.
+* **Layer 3 (Context & Evidence Memory)**: **Self-made** domain modules (`EvidenceStore`, `ContextCompiler`, and your 3-attempt retry ledger) that borrow the filesystem-offloading and compaction patterns from [LangChain Deep Agents](https://github.com/langchain-ai/deepagents) without importing its opinionated built-in coding tools.
+
+### Final Verdict Across All 6 Candidates
+
+| Candidate | Decision | Role in `pdf-to-md-agent` | Why This Fits Your Requirements |
+| --- | --- | --- | --- |
+| **[OpenAI Python SDK](https://github.com/openai/openai-python)** | **Use (Layer 1)** | Dual-protocol HTTP & SSE client (`client.responses` + `client.chat.completions`) | Ships first-class typed streaming for both the [OpenAI Responses API](https://developers.openai.com/api/docs/guides/migrate-to-responses) and [OpenAI Chat Completions](https://github.com/openai/openai-python/blob/main/src/openai/types/chat/chat_completion.py), while preserving provider-specific fields via Pydantic `model_extra` when `max_retries=0` is set. |
+| **[LangGraph](https://docs.langchain.com/oss/python/langgraph/overview)** | **Use (Layer 2)** | Core state machine, node routing, and SQLite checkpointing | Gives your Electron subprocess deterministic state transitions, crash recovery, and event streaming without dictating how you format prompts or call models. |
+| **Self-made** | **Use (Domain Core)** | `ProtocolAdapter`, `EvidenceStore`, `ContextCompiler`, and retry budget ledger | Preserves 100% ownership over your `e00001` evidence pointers, page-map invariants, atomic file writes, and single-owner retry budgets. |
+| **[LangChain Deep Agents](https:// docs.langchain.com/oss/python/deepagents/overview)** | **Borrow Pattern Only** | Architectural reference for context offloading and summarization | Uses the right middleware concepts, but its built-in file/todo tools (`write_todos`, `ls`, `edit_file`) collide with your [Model Context Protocol Python SDK](https://github.com/modelcontextprotocol/python-sdk) PDF tools (`inspect`, `ocr`, `save`, `revise`). |
+| **LangChain** (`ChatModel` wrappers) | **Drop** | Do not use `ChatOpenAI` or `create_agent` | High-level message abstractions normalize away provider-specific `reasoning` blocks and complicate switching cleanly between `/v1/responses` and `/v1/chat/completions` payloads. |
+| **[Pi (`pi-cliproxyapi-provider`)](https://github.com/router-for-me/pi-cliproxyapi-provider)** | **Drop** | Reference only for [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) header/auth conventions | Runs as an external TypeScript CLI harness ([`pi.dev`](https://pi.dev/packages/pi-cliproxyapi-provider)) rather than an embeddable Python engine for your Electron backend. |
+
+### Layer 1: Dual-Protocol Transport (`OpenAI SDK` + `Self-made` Adapter)
+
+Supporting both `/v1/responses` (for OpenAI/Codex and [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)) and `/v1/chat/completions` (for DeepSeek, Qwen, and GLM) is where standard frameworks break down. Even the [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/ref/models/openai_chatcompletions/) separates these models primarily for its own runner loop rather than giving you raw control over multimodal evidence eviction.
+
+Instead, instantiate a single `AsyncOpenAI(base_url=..., api_key=..., max_retries=0)` client from the [OpenAI Python SDK](https://developers.openai.com/api/reference/python) and place it behind a thin `ModelTransport` interface with two drivers:
+
+* **Normalize Multimodal Image Injection**: Convert canonical internal image blocks into `{"type": "input_image", "image_url": "data:image/png;base64,..."}` inside `ResponsesDriver`, and into `{"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}}` inside `ChatCompletionsDriver`.
+* **Preserve Reasoning Blocks Across Turns**: Extract `response.output` reasoning items in `ResponsesDriver` and non-standard `message.model_extra.get("reasoning_content")` (used by DeepSeek R1 and Qwen) in `ChatCompletionsDriver` into a unified `TurnReasoning` field so active-stage retries never lose chain-of-thought context.
+* **Unify Tool Call & Output Wiring**: Map canonical MCP tool results to top-level `{"type": "function_call_output", "call_id": ..., "output": ...}` items for the [OpenAI Responses API](https://github.com/openai/openai-python/blob/main/src/openai/types/responses/response.py), and to `{"role": "tool", "tool_call_id": ..., "content": ...}` messages for [OpenAI Chat Completions](https://github.com/openai/openai-python/blob/main/src/openai/types/chat/chat_completion.py).
+* **Enforce Single-Owner Retry Budgets**: Keep `max_retries=0` on the SDK client so your custom retry ledger remains the sole owner of the 3-attempt budget and error classification (`transient` vs. `compat` vs. `fatal`).
+
+### Layer 2: State Schema & Graph Flow (`LangGraph` + `Self-made` Memory)
+
+Inside [LangGraph](https://docs.langchain.com/oss/python/langgraph/graph-api), avoid using the default append-only `MessagesState`. Define a structured `TypedDict` state that separates durable PDF conversion progress from the ephemeral context window:
+
+```python
+from typing import TypedDict, Literal, Any
+
+class TaskContract(TypedDict):
+    pdf_path: str
+    output_dir: str
+    target_pages: list[int]
+    invariants: list[str]
+
+class WorkingState(TypedDict):
+    current_stage: Literal["inspect", "ocr_extract", "draft_md", "revise", "done"]
+    active_pages: list[int]
+    page_status: dict[int, Literal["pending", "extracted", "saved", "verified"]]
+    evidence_index: dict[str, dict[str, Any]]  # e.g. {"e00001": {"page": 3, "type": "ocr", "summary": "..."}}
+    retry_ledger: dict[str, int]               # Single-owner retry counter per stage/round
+
+class AgentState(TypedDict):
+    contract: TaskContract
+    working_state: WorkingState
+    active_messages: list[dict[str, Any]]      # Ephemeral window for the current stage only
+
+```
+
+Wire this state across four explicit nodes in [`StateGraph`](https://reference.langchain.com/python/langgraph/graph/state/StateGraph) backed by [LangGraph Persistence](https://docs.langchain.com/oss/python/langgraph/persistence) (`SqliteSaver`):
+
+1. **`compile_context` (`ContextCompiler`)**: Builds the exact payload for the next model call from `TaskContract` + `WorkingState` + `active_messages`, injecting base64 page images only for `active_pages` and replacing older tool outputs with compact `[Evidence e00001: page 3 OCR saved]` pointers.
+2. **`call_model` (`ModelTransport`)**: Calls either `ResponsesDriver` or `ChatCompletionsDriver` based on the configured provider, streams SSE tokens back to the Electron main process over stdio/IPC, and records any transport errors in `retry_ledger`.
+3. **`execute_mcp_tools` (`MCPClient` + `EvidenceStore`)**: Executes tool calls (`inspect`, `ocr`, `save`, `revise`, `read_evidence`) via the [Model Context Protocol Python SDK](https://py.sdk.modelcontextprotocol.io/), writes heavy OCR/vision outputs atomically to disk as `e00001.json`, and updates `evidence_index`.
+4. **`compact_and_release` (Stage Gate)**: Runs when a page or batch is marked `saved` or when token usage crosses 75% of the model's context window—updating `page_status`, flushing raw base64 images and intermediate reasoning from `active_messages`, and checkpointing the clean state to SQLite.
+
+### Proposed Module Layout for the Python Engine
+
+```text
+engine/
+├── transport/
+│   ├── base.py              # Canonical TurnInput, TurnOutput, ToolCall, ImageBlock
+│   ├── responses_driver.py  # AsyncOpenAI.responses wrapper (/v1/responses)
+│   ├── chat_driver.py       # AsyncOpenAI.chat.completions wrapper (/v1/chat/completions)
+│   └── retry_ledger.py      # 3-attempt persistent retry policy & error classifier
+├── memory/
+│   ├── state.py             # TaskContract, WorkingState, AgentState schemas
+│   ├── evidence_store.py    # Atomic disk offload (e00001) + read_evidence lookup
+│   └── compiler.py          # ContextCompiler (assembles prompt + evicts stale images)
+├── orchestration/
+│   ├── nodes.py             # compile_context, call_model, execute_mcp_tools, compact_and_release
+│   └── graph.py             # LangGraph StateGraph wiring + SqliteSaver checkpointer
+└── ipc/
+    └── electron_bridge.py   # JSON-RPC / stdio event stream for the Electron frontend
+
+```
+
+Would you like me to generate the starter Python implementation for the dual-protocol transport layer (`base.py`, `responses_driver.py`, `chat_driver.py`) and the LangGraph state/compiler (`state.py`, `compiler.py`, `graph.py`) so you can drop them straight into your repo?

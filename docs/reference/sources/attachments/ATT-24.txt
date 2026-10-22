@@ -1,0 +1,212 @@
+這份 7 點審閱把先前討論中過度膨脹的抽象拉回了工程現實，特別是**指出 NFC 正規化與 HTML 自動重排會破壞來源保真度**、**要求候選稿保存必須早於框架 Schema 驗證**、**拆穿 `pending_images` 可變狀態與 228 項既有測試無法直接平移至新 Adapter**，以及**糾正將 Agent 的頁面完成聲明當成客觀事實**，判斷都非常精準。
+
+若從「允許徹底重構、讓 App 發揮最佳功能」的全局視角審視，這 7 點建議與整個專案近期的演進仍有幾個關鍵盲點值得正面交鋒：
+
+---
+
+## 一、 全局交鋒：對照專案實測歷史，重構最該優先解決甚麼？
+
+回顧專案至今的實測紀錄（`CURRENT_STATE.md` 與 `EVIDENCE.md`），我們會發現一個值得警惕的現象：近期討論花了極大篇幅設計複雜的 Context 狀態機與資料庫表結構，但過去真正導致轉換任務失敗、重工或未通過來源驗收的原因，其實集中在三個「工具與介面摩擦」上：
+
+1. **寫入與修改契約過於笨重：** 在 40 頁測試中出現了 6 次底層拒絕與 2 次投影錯誤，R2 測試也因 `revise` 不支援空 `remove_ids` 而觸發錯誤；強制連續區塊替換與全書 173 頁映射更新，讓模型把大量精力花在對付工具格式而非內容本身。
+
+
+2. **單次無過濾讀入造成 Context 暴衝：** Core Delivery 首輪 `inspect` 讀入 191,662 字元，13 頁與 40 頁測試更因一次拉取 8～9 個完整 OCR 物件而塞入 186 萬～197 萬字元。
+
+
+3. **視覺強調格式與字形核對摩擦：** 13 頁測試的 A/C 分支之所以只算草稿而未通過驗收，是因為第 14、16、18、24 頁的粗斜體強調格式錯誤，以及第 14 頁將「礪」誤寫為「厲」。
+
+
+
+因此，這份審閱開頭提出的「接下來更值得完善的是保存、修改、接續工作的契約，而不是再增加框架或管理層」**切中要害。既然可以徹底重構，最佳設計應是**將狀態管理極簡化，並把工程火力集中在「零摩擦保存與局部修改」、「不改變原文的精確定位」與「直觀的視覺對照核對」。
+
+---
+
+## 二、 針對 7 點審閱的逐項交鋒與最佳功能設計建議
+
+### 1. 針對第 1 點（不強制改寫儲存內容 vs. 定位與表格修改）：撤回 `cell_ref` 儲存格修改介面，改用「純文字精確片段替換 ＋ 唯讀網格視圖」
+
+* **完全贊同的部分：** 拒絕在保存時強制執行 Unicode NFC 正規化與 HTML 自動重排。`U+2F800` 轉為 `U+4E3D` 的例子直接證明 NFC 會抹除相容漢字與異體字區別，違反本專案「保留來源支持的可見字形差異」的核心要求；而自動重排 HTML 會在元素間插入空白文字節點，改變渲染與複製結果。
+
+
+* **正面交鋒（`cell_ref` 編輯介面的隱性陷阱）：**
+審閱建議「工具回傳綁定版本的 `cell_ref`，再讓 agent 修改；無須先把所有文件改造成強制的表格結構模型」。
+* 這個設計看似輕量，實則把複雜度藏進了底層：**如果儲存內容維持原始 HTML 字串，當 Agent 對 `cell_ref="tbl_02:r5:c3@v2"` 提交修改時，App 底層依然必須實作一套支援 HTML AST 原位位元組拼接（Byte-Span Splicing）的解析器，才能在不重排其他 HTML 的前提下替換該儲存格！**
+* 更嚴重的是，當 Agent 需要修正表格的跨列／跨欄結構（例如調整 `rowspan` 或補回漏掉的一格 `<td>`）時，單一儲存格的 `cell_ref` 介面根本無法表達跨列結構變更，反而會製造無效的 HTML 語法。
+
+
+* **最佳功能設計建議：**
+* **儲存契約：** 100% 保留模型提交的原始碼位與字元，僅在寫入時統一規範換行符號為 `\n`（LF）。
+* **修改介面（統一使用 `patch_block`）：** 不需要發明專屬的 `cell_ref` 寫入協定。由於文件已按邏輯區塊（`block_id`）切分，單一區塊內（無論是段落或 HTML 表格）的局部修改，直接使用綁定版本的 **`patch_block(base_version, block_id, expected_old_text, new_text, occurrence=1)`**（類似 `str_replace`，搭配前後文定位，若區間不唯一則拒絕並回傳行號與上下文）。這能以零 AST 重排風險處理 95% 的錯字（如「厲」改「礪」）、粗體標籤與 `rowspan` 修正。
+
+
+* **表格定位輔助（唯讀視圖）：** `table_cell_locator` 應定位為**純唯讀的檢視工具**——當遇到複雜的 `rowspan`/`colspan` 大表時，工具解析 HTML 並回傳每個儲存格的「視覺座標 `(visual_row_span, visual_col_span)`、行號範圍，以及該格在原始檔案中的精確 HTML 原文片段」，讓 Agent 看清結構後直接將該片段複製進 `patch_block` 的 `expected_old_text` 完成精確修改。
+
+
+
+---
+
+### 2. 針對第 2 點（候選稿保存早於框架驗證）：攔截點必須設在 `BaseTool._parse_input` 之前，且應將「寫入正文」與「更新頁碼表」拆開
+
+* **完全贊同的部分：** 指出只在 `DocumentService.save()` 裡先存 candidate 仍會漏接正文，是極為關鍵的實作洞察。LangChain 的 `BaseTool` 會在進入工具方法前先執行 Pydantic `args_schema` 驗證，一旦某個 metadata 欄位型別不符，工具方法根本不會被呼叫。保留現有 `AgentTools.call()`（`agent_tools.py:383`）先落盤原始參數的能力是絕對必要的。
+
+
+* **正面交鋒（如何從根本消除「因 metadata 錯誤而退回正文」）：**
+* **技術攔截位置：** 在 `create_agent` 架構下，原始參數保存必須放在 **`wrap_tool_call` 的最外層入口**（直接讀取尚未經過 `BaseTool` Pydantic 驗證的 `tool_call["args"]` 字典），只要其中包含有效正文字串或區塊陣列，就先寫入 `CandidateStore` 取得 `candidate_ref`，並注入錯誤回覆中。
+
+
+* **工具契約重構：** 為什麼過去模型會因為頁碼映射漏填而導致幾千字正文被退回？因為舊工具把「提交新建／修改的內容區塊」跟「通過嚴格的全書頁碼映射驗證」綁在同一次原子操作裡！
+
+
+
+
+* **最佳功能設計建議：**
+* 在草稿階段（`Working Draft`），允許 **`write_blocks`（僅提交或修改內容區塊，頁碼映射可選填或後續補齊）** 直接成功並產生新的草稿版本（`draft_rev`）；
+
+
+* 只有在呼叫 **`publish_version`（或匯出正式成果包）** 時，才強制檢查所有範圍內頁面是否皆已完成映射與一致性驗證。這樣即使模型在寫內容時還沒填好頁碼表，正文也能直接成為正式草稿版本，連「修正 metadata 再重交 candidate」的額外回合都能省掉大半。
+
+
+
+
+
+---
+
+### 3. 針對第 3 點（頁面狀態混合來源事實、任務範圍與完成判斷）：用「三層正交資料結構」徹底取代單一頁面狀態枚舉
+
+* **完全贊同的部分：** 「任務 A 完成第 12 頁 `Breasts` 小節 $\rightarrow$ 任務 B 擴大為第 12 頁全頁」的例子，一針見血地證明了頁面上的 `converted_partial_scope` 不能脫離當下的「任務範圍定義」而單獨存在；同時，版權頁確實常含出版年份、ISBN、作者與版次等實質內容，絕不應由程式預設歸為非內容。
+
+
+* **最佳功能設計建議（不建複雜語義圖，改拆為三張正交記錄）：**
+在文件版本（JSON）中，將原本混在一起的 `page_map` 拆成三個職責單一的部分：
+1. **`source_page_inventory`（純客觀來源事實，與任務範圍無關）：**
+只記錄物理頁碼 `1..N` 與目前已觀測到的可見印刷頁碼（`printed_label: "68" | "iii" | "none" | "unknown"`）及頁面基礎觀測備註。無論任務範圍如何縮小或擴大，第 12 頁印刷頁碼是 `"68"` 的事實永遠不會失效。
+
+
+2. **`block_provenance`（區塊與來源的對應事實）：**
+在每個內容區塊（`block_id`）上記錄 `pdf_pages: [12]` 與可選的 `source_scope_note: "Section: Breasts, Figure 4-13"`。
+
+
+3. **`task_scope_and_claims`（綁定範圍版本與文件版本的完成聲明）：**
+* `scope_id / scope_rev`：記錄本次使用者要求轉換的目標範圍與排除項目；
+
+
+* `page_coverage_claims`：在當前 `(scope_rev, version_id)` 下，Agent 聲明各頁或小節的狀態（如 `page 12: { claim: "partial_scope_complete", covered: "Breasts & Fig 4-13", remaining_for_current_scope: "unprocessed" }`）。
+
+
+* **當任務 A 擴大為任務 B 時：** `scope_rev` 從 `1` 推進至 `2`。系統自動保留 `source_page_inventory` 與 `Breasts` 區塊，並將舊的 `scope_rev=1` 聲明轉為歷史參考，自動提示第 12 頁在 `scope_rev=2` 下尚有未確認範圍，邏輯乾淨且零資訊遺失。
+
+
+
+
+
+---
+
+### 4. 針對第 4 點（Context Intents 排序 vs. 文件操作並行依賴）：注意 `create_agent` 預設會並行派發所有工具！
+
+* **正面交鋒（關鍵實作盲點）：**
+審閱在第 4 點寫道：「第一個切片可以先保留現有有副作用操作的順序與版本檢查；獨立讀取再按需要並行。這比一開始重建通用排程器更符合目前需求。」
+* **這裡有一個必須立刻提醒的框架行為差異：** 在舊的 Python controller 中，`for tool_call in reply.tool_calls:` 是單執行緒依序迴圈，所以天然保證了工具按宣告順序執行；但在 **LangChain `create_agent`（LangGraph `ToolNode`）** 中，只要模型在同一個 `AIMessage.tool_calls` 裡輸出了多個工具（例如同時輸出 `revise` 與 `export`，或同時輸出兩個 `update_draft`），**LangGraph 預設會透過 `Send("tools", ...)` 將它們在同一個 Superstep 內平行（Concurrently）派發執行**！
+
+
+* 換言之，如果不寫任何控制邏輯，換上 `create_agent` 的第一天就會失去「現有有副作用操作的順序」！
+
+
+* **最佳功能設計建議（不建通用排程器，僅在 `wrap_tool_call` 加一個 30 行的宣告順序鎖）：**
+* 我們完全不需要建造複雜的 DAG 排程器，只需要在工作區的 Tool Runner 裡根據父回覆 `AIMessage.tool_calls` 的宣告索引（`call_index: 0, 1, 2...`）設立一個簡單的順序規則：
+1. **純讀取且無副作用的工具（`inspect`、`ocr`、`render_pdf`、`read_evidence`）：** 不受順序鎖限制，直接並行執行。
+2. **文件寫入／狀態修改／依賴最新版本的工具（`save`、`revise`、`reopen`、`view_preview`、`export`、`run_script`）：** 必須等待同一個 `AIMessage` 批次中 `call_index` 較小的寫入工具完成後，才依序取得工作區執行鎖。
+3. **Context Intents（釘選／釋放／筆記）：** 則如審閱所言，在整批工具結束後的 `before_model` 節點中，嚴格按照 `call_index` 順序確定性結算。
+
+
+
+
+
+---
+
+### 5. 針對第 5 點（自訂 Nexus Adapter 與 `pending_images` 解耦）：徹底消滅 `pending_images` 可變狀態
+
+* **完全贊同的部分：** 撤回「不到 150 行、100% 繼承 228 項測試保護」的宣稱非常務實。舊程式碼將重試帳本放在 `agent.py:384`、將圖片配對放在 `provider.py:798` 的可變屬性 `self.pending_images` 中，直接搬進 `BaseChatModel` 確實會因跨請求共享實例而混用暫存圖片。
+
+
+* **最佳功能設計建議（如何用最乾淨的方式重組這三塊能力）：**
+1. **用「訊息流無狀態組裝」取代 `self.pending_images`：**
+* 在新架構中，`NexusChatModel` 實例本身應為 **100% 無狀態（Stateless）**。
+* 工具產生的圖片以不可變檔案路徑／雜湊存於 `ToolMessage.artifact` 中，而 `AgentState["messages"]` 完整保留可執行的 `AIMessage.tool_calls` 與配對的 `ToolMessage`。
+
+
+* 當 `wrap_model_call` 組裝當次請求時，才讀取需要送入模型的圖片 Bytes；進入 `NexusChatModel._generate(messages)` 時，編碼器直接掃描當次傳入的 `messages` 列表：
+* 若為 `chat_completions`：當遇到某個 `AIMessage(tool_calls)` 及其後續的一批 `ToolMessage` 時，先輸出全部配對的 `role: "tool"` 訊息，緊接著在該批工具訊息正後方生成對應的 `role: "user"` 原生圖片訊息（完全重現 `provider.py:798` 的配對順序，但零實例可變狀態！）。
+
+
+* 若為 `responses`：直接將圖片編碼進對應 `call_id` 的 `function_call_output` 中。
+
+
+
+
+
+
+2. **將 `model_round()` 的重試帳本抽離為顯式 Context 參數：**
+* 在呼叫 `NexusChatModel` 時，由 `wrap_model_call` 傳入當前步驟的穩定識別碼 `(run_id, step_index)`。
+* `NexusChatModel` 內部呼叫獨立的 `RoundRetryLedger`（重用既有持久化預算、Attempt-local SSE 組裝與嚴格禁止跨次拼接殘缺 JSON 的邏輯）；一旦某次嘗試獲得完整合法的原生回覆，立即將其持久化並把穩定的 `accepted_reply_id` 寫入回傳 `AIMessage.response_metadata` 中。即使程序重啟，Checkpointer 載入的 `AIMessage` 依然指向同一個已落盤的 `accepted_reply_id`。
+
+
+
+
+
+
+
+---
+
+### 6. 針對第 6 點（局部雙圖對照 `inspect_block_pair`）：用 5 行 `<div data-block-id>` 解決 DOM 定位，且不要將雙圖硬拼成單張圖
+
+* **完全贊同的部分：** 視覺模型會依處理器像素上限調整尺寸、400 DPI 無法無中生有低解析掃描的筆畫、單一輸出區塊可能跨越來源的多個欄位／頁面區域，以及現有 `preview.py:47` 是整份 Markdown 渲染而無 `block_id -> DOM` 映射，這四點查核完全正確。
+
+
+* **最佳功能設計建議：**
+1. **零侵入補齊 `preview.py` 的 `block_id -> DOM element` 契約：**
+* 我們不需要強迫 Agent 在 Markdown 內文裡手寫 `<table id="tbl_02">`，也不需要修改匯出給使用者的 `document.md`。
+
+
+* 因為文件版本本來就是由有序的 `blocks: [{"id": "blk_01", "markdown": "..."}, ...]` 組成，在 `preview.py` 生成預覽 HTML 時，只需對每個區塊分別呼叫 `markdown-it-py`（或以區塊容器包裹），輸出為 `<div class="md-block" data-block-id="blk_01">...</div>`，並在 `nh3` 清理白名單中允許 `div` 的 `data-block-id` 屬性。
+
+
+* 這樣一來，無論該區塊是表格、段落、清單還是圖說，Playwright / Chromium 都能透過 `[data-block-id="blk_01"]` 的 `locator.screenshot()` 或 `bounding_box()` **100% 精確截取該區塊的渲染結果**，並回報實際截圖的像素尺寸！
+
+
+2. **回傳「獨立原生圖片組」而非「左右拼接單圖」：**
+* `inspect_block_pair(version_id, block_id, source_regions=[...], dpi=...)` **不應把來源圖與預覽圖硬拼（Stitch）成一張圖片**。因為來源可能是兩個跨欄區域（例如左欄下半部＋右欄上半部），而 Markdown 預覽則是重排後的單欄長區塊，硬拼成一張圖會造成巨大的空白填充與比例失真，反而迫使視覺模型縮小整體解析度。
+* 工具應在同一次呼叫中，依序回傳 **「1 至多個來源區域裁剪圖」＋「1 張對應版本的輸出區塊 DOM 截圖」作為獨立的原生圖片項目**，並附上各自的像素尺寸、DPI 與座標資訊，讓 Agent 自由決定是否需要針對某個模糊字元再局部放大。
+
+
+
+
+
+---
+
+### 7. 針對第 7 點（Slice 1 的界定與邁向最終桌面 App 的架構收斂）
+
+審閱將 Slice 1 的驗收標準從「四個模組都出現」改為「四項可觀察的完成能力（Nexus 接合、參數錯誤不丟正文、修改與交付版本一致、重啟接續不重複提交）」，並以一個完整且不切斷圖表關係的自然小節作為樣本，這是非常紮實的增量切法。
+
+為了讓 Slice 1 直接奠定最佳產品基礎，建議在實作 Slice 1 時明確鎖定以下四條收斂邊界：
+
+| 設計面向 | Slice 1 應直接到位的設計 | 明確延後（避免在 Slice 1 過度設計的部分） |
+| --- | --- | --- |
+| **Runtime 與通訊** | `create_agent` + SQLite/持久化 Checkpointer + 無狀態 `NexusChatModel`（重用 `httpx2` 雙協定編碼、SSE 單次組裝與持久化重試帳本）
+
+ | 跨模型動態切換閘門、複雜的雙軌 Token 統計校準模型
+
+ |
+| **保存與修改契約** | `wrap_tool_call` 前置保存原始寫入參數（回傳 `candidate_ref`）；保持原始字元不跑 NFC／不重排 HTML；支援區塊增刪改與 `patch_block(expected_old_text)`<br> | 針對 HTML 表格內部的 `cell_ref` 結構化回寫引擎 |
+| **頁面與範圍狀態** | 拆開 `source_page_inventory`（物理／印刷頁碼事實）、`block_provenance` 與綁定 `(scope_rev, version_id)` 的完成聲明
+
+ | 跨章節依賴的自動語義推論或複雜圖結構
+
+ |
+| **預覽與執行順序** | `preview.py` 為每個區塊加上 `data-block-id` 容器以支援區塊級預覽截圖；同批次工具按宣告索引對「寫入／預覽／匯出」加順序鎖，獨立讀取維持並行
+
+ | 自動化的長文件多階段 Compaction 交接握手（留待 Slice 2 專門處理長任務 Context 整理）
+
+ |
+
+這套調整完全對齊你這份審閱的核心判斷，同時補上了 **`create_agent` 預設並行派發導致寫入失序**、**`BaseTool` 前置驗證攔截點**，以及 **`data-block-id` 區塊預覽定位** 三個實作關鍵。下一步如果要進入 Slice 1 的細部設計，建議直接對齊這四項驗收能力，把 **「前置保存候選稿的 `save / update_draft / patch_block` 工具介面」** 與 **「無 `pending_images` 的 `NexusChatModel` 訊息轉換規則」** 寫成可直接動工的模組規格。

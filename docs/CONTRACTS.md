@@ -2,6 +2,8 @@
 
 These contracts consolidate the agreed boundaries and the final recommended tradeoffs in EVT-1166. The exact schemas and transition details listed in [OPEN_QUESTIONS](OPEN_QUESTIONS.md) remain open. No pseudocode or example here certifies an implementation. Additional mechanisms from the discussion are preserved in the reference records with their status.
 
+Detailed local explanations accompany these contracts: [document engine](design/DOCUMENT_ENGINE.md), [context and evidence](design/CONTEXT_AND_EVIDENCE.md), and [execution and delivery](design/EXECUTION_AND_DELIVERY.md). These explain data shapes, sequencing, examples and failure cases without requiring the chat export. Illustrative field names do not silently close open schema choices.
+
 ## 1. Document updates and candidate references
 
 ### Identity and original content

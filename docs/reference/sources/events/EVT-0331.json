@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad87e114a688191a9b076a1d4ab15b5",
+    "content": [
+      {
+        "type": "Text",
+        "text": "目前的差異已較清楚：Deep Agents 提供較多現成的卸載與摘要功能；Pi 也有完整 session／compaction，並提供 context 修改入口；LangGraph 則仍要自行補上大部分 context policy。我還發現兩個會影響選型的細節：圖片處理有預設限制，而 CLIProxyAPI 的 Pi 插件使用特定路由，不能直接視為 Nexus 相容證明。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1181,
+  "timestamp_original": "2026-10-21T08:55:48.383Z",
+  "timestamp_display": "2026-10-21T16:55:48.383+08:00",
+  "turn_id": "01a15dab-4409-7430-b712-00008fe74f6b",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-21T16:55:46.252+08:00",
+  "completed_at": "2026-10-21T16:55:48.383+08:00",
+  "event_id": "EVT-0331",
+  "evidence_path": "evidence/events/EVT-0331.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

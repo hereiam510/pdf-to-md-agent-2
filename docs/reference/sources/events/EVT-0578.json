@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad8fc8fe2f481919c61b1d02f201fff",
+    "content": [
+      {
+        "type": "Text",
+        "text": "這版的四份運行契約可以保留，但幾項保證仍不成立：程序重啟不等於 context 已失效；操作帳本能找回做過甚麼，卻未必保存當時的判斷；觀測到的 token 誤差也不能直接當作容量上界。我正在核對框架的公開恢復接口，確認哪些工作可直接交給框架。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 1862,
+  "timestamp_original": "2026-10-21T17:55:27.359Z",
+  "timestamp_display": "2026-10-22T01:55:27.359+08:00",
+  "turn_id": "01a15f96-764a-75f3-8dc1-3ecbaf576f1b",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-22T01:55:27.312+08:00",
+  "completed_at": "2026-10-22T01:55:27.359+08:00",
+  "event_id": "EVT-0578",
+  "evidence_path": "evidence/events/EVT-0578.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

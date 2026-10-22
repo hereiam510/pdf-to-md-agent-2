@@ -1,31 +1,35 @@
 # Current state
 
-Recorded 2026-10-22, Asia/Hong_Kong. This describes this new repository only. It is not standing permission for new provider calls or an implementation claim.
+Updated 2026-10-23, Asia/Hong_Kong. This describes the new repository only; it is not standing permission for provider calls or an application-readiness claim.
 
 ## Delivered scope
 
-An independent local Git repository named `pdf-to-md-agent-2` now holds a freshly written rebuild design baseline and detailed, source-linked discussion records. The original project is a separate read-only source. Its old active documents, run ledgers, test results and closed-work permissions have not been adopted as this project's state.
+An independent local Git repository holds newly written rebuild requirements, responsibilities, contracts, decisions and detailed technical explanations. The original project remains a separate read-only source; its old status, defaults, test results and closed-work permissions are not adopted as this project's state.
 
-The effective owners cover product requirements, architectural responsibilities, contracts, decisions and three first-version open questions. The reference layer preserves detailed reasoning, corrected/rejected ideas, examples, observations, hypotheses and deferred options. An exact source inventory and point/source coverage ledgers connect those records to the supplied export and subsequent human scoping decisions.
+[DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md) is the development entry point. Its four module guides explain integration/native model boundaries, context/evidence management, the document engine, and execution/delivery. They include data/state ownership, interface semantics, sequences, concrete examples, failure handling, rationale, historical corrections and open choices. Reading the original conversation is unnecessary to understand the development design.
+
+The detailed reference records preserve the discussion's narrower alternatives and findings. [DEVELOPMENT_COVERAGE](reference/DEVELOPMENT_COVERAGE.json) maps every retained point to its technical explanation or explicitly historical/scope reference. The source/point ledgers retain provenance and decision status; mappings are navigation aids, not a substitute for substantive explanations.
+
+All 207 visible discussion messages, the inherited product handoff, all 30 attachments, 24 substantive forum figures and selected continuing source excerpts are [bundled locally](reference/sources/INDEX.md). Exact events and attachments retain their bytes; forum HTML is inert text with offline reading views. The original export remains untouched, but is no longer needed for development or cited-source lookup. Historical paths inside quotations are provenance, not required checkout locations.
 
 ## Implementation status
 
-There is no app runtime, desktop UI, installer, selected dependency lock, migrated legacy code or configured provider in this repository. No PDF conversion, Nexus/provider generation, capability probe or new benchmark was run for this documentation task. Codex agents assisted with the documentation and review. The two standard-library Python utilities check documentation and resolve preserved sources; they are not the agent implementation.
+No app runtime, desktop UI, installer, dependency lock, migrated legacy code or provider configuration is implemented here. No PDF conversion, Nexus/provider generation, capability probe or benchmark was run for this documentation task. The two standard-library Python utilities check documentation and read preserved local sources; they are not the app implementation.
 
-The preferred rebuild route is a small Python LangGraph StateGraph, shared Nexus request service/tool dispatcher, and document/evidence core with SQLite metadata and immutable files. These responsibilities are settled enough to guide work; their three executable contracts still need the specific decisions in [OPEN_QUESTIONS](OPEN_QUESTIONS.md). Historical framework rankings and pseudocode are not competing current plans.
+The preferred route remains a small Python LangGraph StateGraph, shared Nexus request service/tool dispatcher, and document/evidence core using SQLite metadata and immutable files. The three specific contracts in [OPEN_QUESTIONS](OPEN_QUESTIONS.md) remain open. Illustrative structures in the detailed guides do not silently choose final APIs, field names, thresholds or dependency versions. Historical framework rankings are not competing current plans.
 
-No remote or release was created. The separate large raw export remains outside Git. It is required for exact original-byte lookup, while the curated design/reference docs can be read on their own.
+No remote or release was created. This work preserves knowledge and makes it usable for development; it does not begin app implementation or reopen general network design.
 
 ## Review and verification
 
-Three subagents read assigned complete discussion ranges and attachments, wrote detailed reference documents/point ledgers, and cross-reviewed the actual active/reference documentation. The root agent integrated the effective owners, inspected the source inventory, read the final consolidation and detailed late-stage record, and reconciled cross-review findings. [PRESERVATION_AUDIT](reference/PRESERVATION_AUDIT.md) records the final coverage/check results and source limits.
+The initial review divided the complete exported discussion/attachments among three subagents and independently checked source coverage and effective-owner consistency. The subsequent self-containment work expanded the terse records, added module-oriented technical explanations, and used source-aware subagent review to find missing mechanics and cross-guide contradictions. Root integration reconciles owners, navigation, local provenance and checks. [PRESERVATION_AUDIT](reference/PRESERVATION_AUDIT.md) records the actual reviewed scope, results and limits.
 
-Checks used Python **3.13.16** from the existing local interpreter at `../pdf-to-md-agent/.venv/Scripts/python.exe`, with bytecode writing disabled. This reused an interpreter read-only; it did not import or modify the old application. The tools need only a working Python 3.9+ interpreter. Bare `python`/`python3` on the reviewed Windows host resolved to nonworking WindowsApps aliases, so use a working executable path there.
+A working Python 3.9+ interpreter is the only dependency of the documentation utilities. The current portable check uses a standalone bundled Python 3.12.14 interpreter outside both repositories; the initial review used an existing Python 3.13.16 interpreter read-only with bytecode writing disabled. No dependency installation or global settings change is required.
 
-Document/hash/coverage checks do not establish runtime correctness, semantic losslessness or installed-product readiness. Source IDs and explicit dispositions make review gaps visible; exact source limits remain in SOURCE_INDEX and the audit.
+Document/hash/detail-coverage checks establish structural consistency and local availability, not runtime correctness or mathematical semantic completeness. Missing original screenshot text or an empty saved message is disclosed rather than invented. The original project's results remain historical observations, not acceptance of this unimplemented application.
 
 ## Next work
 
-The next implementation-planning task should settle only document update/reference semantics, capacity/handoff transitions, and persistence/recovery/stop boundaries using their stated closure conditions. Preserve autonomy and full source access. A useful first implementation increment connects a real source/scope to saving, reopening and explicit-version export, including candidate preservation and basic capacity behavior; it need not wait for advanced visual helpers or generalized branch infrastructure.
+The next implementation-planning task should settle document update/reference semantics, capacity/handoff transitions and persistence/recovery/stop boundaries using their stated closure conditions. The detailed guides provide the mechanisms, tradeoffs and cases needed to do that without a chat archive. Preserve autonomy and full source access.
 
-The present request creates the repository and preserves knowledge. App implementation and any live verification require a subsequent human task. Broader network design remains deferred; necessary shared execution boundaries are already recorded. Reopen other design only for a concrete contract-breaking implementation/delivery issue or changed human requirement.
+A useful first authorized implementation increment connects a real source/scope to candidate preservation, saving/reopening, basic capacity handling and explicit-version export. Advanced visual helpers, malformed-call salvage, generalized branches and cache tuning are not prerequisites. Reopen other design only for a concrete contract-breaking implementation/delivery issue or changed human requirement. App implementation and live verification require a subsequent human task.

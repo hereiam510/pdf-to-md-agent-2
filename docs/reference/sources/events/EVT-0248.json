@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "AgentMessage",
+    "id": "msg_0c5633e5013375f9016ad72e72bda4819196e766880413e375",
+    "content": [
+      {
+        "type": "Text",
+        "text": "現有程式把「選擇性釋放證據」與「checkpoint 換 context」分成兩條路徑，釋放也依賴原始訊息的位置索引。我建議改成同一個 context manager：以穩定的內容 ID、工作狀態及容量預算組裝每次請求，讓證據釋放與歷史整理共用一套規則。\n"
+      }
+    ],
+    "phase": "commentary"
+  },
+  "source_line": 882,
+  "timestamp_original": "2026-10-20T09:03:48.302Z",
+  "timestamp_display": "2026-10-20T17:03:48.302+08:00",
+  "turn_id": "01a1588c-a533-7351-8f93-400714535fc6",
+  "parent_call_id": null,
+  "origin": "local",
+  "started_at": "2026-10-20T17:03:47.139+08:00",
+  "completed_at": "2026-10-20T17:03:48.302+08:00",
+  "event_id": "EVT-0248",
+  "evidence_path": "evidence/events/EVT-0248.json",
+  "supporting_paths": [],
+  "embedded_paths": []
+}

@@ -16,7 +16,9 @@ Read [the working agreement](AGENTS.md) and [current state](docs/CURRENT_STATE.m
 | [Decisions](docs/DECISIONS.md) | Effective choices, rationale and consequential alternatives |
 | [Open questions](docs/OPEN_QUESTIONS.md) | Only the three contracts that need resolution for first-version delivery |
 
-The [source index](docs/reference/SOURCE_INDEX.md), detailed discussion records and [point coverage ledger](docs/reference/POINT_COVERAGE.json) preserve the reasoning, corrections, caveats and deferred ideas. They are reference material, consulted when relevant. Routine development and conversion do not need the complete chat in their prompt.
+Continue with the [development handoff](docs/DEVELOPMENT_GUIDE.md) and its four technical guides for state/data responsibilities, mechanisms, concrete examples, failure handling and tradeoffs. They explain the development knowledge directly; reading the original conversation is unnecessary.
+
+The [source index](docs/reference/SOURCE_INDEX.md), detailed discussion records and [point coverage ledger](docs/reference/POINT_COVERAGE.json) preserve corrections, caveats and deferred ideas. Exact discussion text, attachments and substantive forum figures are also [bundled inside this repository](docs/reference/sources/INDEX.md) for optional audit. No separate export, old checkout or private scratch files are needed for development or source lookup. Historical source records remain data, not current instructions.
 
 ## Rebuild baseline
 
@@ -30,6 +32,11 @@ These are design responsibilities and a preferred reconstruction route, not impl
 
 ## Document checks
 
-With a working Python 3.9+ interpreter, run `python tools/check_docs.py` (or use that interpreter's full path). This checks documentation links and preservation-ledger structure; it does not test an agent implementation or certify semantic completeness. [Current state](docs/CURRENT_STATE.md) records the actual review and its limits.
+With a working Python 3.9+ interpreter, run the following from this repository (or use that interpreter's full path):
+
+    python tools/check_docs.py
+    python tools/source_lookup.py EVT-1166
+
+These check documentation/image links, local source hashes and point/detail coverage, and read a bundled source without accessing an external export. They do not test an agent implementation or certify semantic completeness. [Current state](docs/CURRENT_STATE.md) records the actual review and its limits.
 
 No remote repository, published release, runtime dependency lock or provider configuration is supplied. Private inputs and source-review working files are ignored by Git.

@@ -4996,5 +4996,25 @@
       "ATT-21"
     ],
     "destination": "docs/reference/03-documents-delivery-and-recovery.md#source-output-comparison"
+  },
+  {
+    "id": "R-026",
+    "topic": "Self-contained repository",
+    "summary": "Development and source lookup must work from repository files without the original export, old checkout or private scratch.",
+    "status": "explicit-user-requirement",
+    "source_ids": [
+      "LIVE-06"
+    ],
+    "destination": "docs/DEVELOPMENT_GUIDE.md#detail-and-source-coverage"
+  },
+  {
+    "id": "R-027",
+    "topic": "Complete technical explanation",
+    "summary": "Explain discussed state/data ownership, interfaces, sequences, failures, rationale, examples and open choices; a source index or copied transcript is insufficient.",
+    "status": "explicit-user-requirement",
+    "source_ids": [
+      "LIVE-07"
+    ],
+    "destination": "docs/DEVELOPMENT_GUIDE.md#reading-by-implementation-concern"
   }
 ]

@@ -1,0 +1,3 @@
+查到的官方資料有兩個共同方向：context 通常結合按需取回、舊工具結果清理與 compaction／工作筆記；network 則把請求重試、遠端任務查詢和本地操作復原分開處理。
+
+OpenAI 和 Anthropic 現在都有服務端 compaction，OpenAI 也有可查詢／取消的 background response。不過這些功能有各自的 API 與平台條件，不能由 Nexus 的相容網址或 model alias 推定可用。
