@@ -3,7 +3,7 @@ export type Route = {
   context_tokens: number; output_tokens: number; image_tokens: number | null; vision: boolean;
   timeout_seconds: number; parameters: Record<string, unknown>
 }
-export type Limits = { max_requests: number; max_active_seconds: number; replay_unknown: boolean; max_attempts_per_request: number }
+export type Limits = { max_requests: number; max_active_seconds: number; replay_unknown: boolean; max_attempts_per_request: number; max_response_repairs: number }
 export type Settings = { route?: Route; limits?: Limits; hasKey?: boolean; encryptionAvailable?: boolean; remember?: boolean }
 export type Job = {
   id: string; name: string; scope: string; status: string; page_count: number; head: string | null; delivery: string | null;

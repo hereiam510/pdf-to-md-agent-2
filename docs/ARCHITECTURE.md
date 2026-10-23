@@ -24,7 +24,7 @@ A graph can express a dynamic model/tool loop. Graph-based execution does not re
 
 The model selects source access, OCR, scripts and reconstruction scope. The app checks capacity, maintains identities and accepts complete native replies. The dispatcher executes only validated calls. Before the assembler builds the next model input, the dispatcher records each accepted batch member's success, rejection or failure. A complete accepted reply does not imply that every proposed operation passes domain validation. Context work occurs at a defined safe boundary with the same durable request and budget handling as other model calls.
 
-The implemented graph has `prepare`, `model`, `tools`, and `compact` nodes. `prepare` assembles a fitting normal request or a fitting compaction request; both use the same persistent Nexus service. `tools` settles the accepted batch sequentially before another request. An explicit report or a no-tool reply ends that invocation. Exact state and recovery semantics are in [the implemented contracts](CONTRACTS.md#implemented-first-version-contracts).
+The implemented graph has `prepare`, `model`, `tools`, and `compact` nodes. `prepare` assembles a fitting normal request or a fitting compaction request; both use the same persistent Nexus service. `tools` settles the accepted batch sequentially before another request. A text-only reply returns to `prepare` with durable continuation feedback. A model-authored handoff validation failure returns with separate correction feedback while the old context remains active. Both correction paths are bounded and use the normal request budget. Explicit reports, cancellation, exhausted limits and unrecoverable failures end the invocation. Exact state and recovery semantics are in [the implemented contracts](CONTRACTS.md#implemented-first-version-contracts).
 
 ## Content and context are separate
 
@@ -35,6 +35,8 @@ Keep complete immutable originals outside the model context. Distinguish:
 3. Accepted executable messages, tool-batch progress and original receipts.
 4. Immutable document versions and explicit delivery versions.
 5. The temporary model-input projection and compact continuation state.
+
+Correction feedback is an immutable application result linked to the accepted response. It does not change that response's native acceptance status. Graph state holds only the current feedback references, counts and episode basis. Re-entry reconstructs the same transition from those records. Stable handoff identities and transactional event receipts prevent duplicate handoff references and correction/application events at the tested checkpoint gaps.
 
 Model-facing projections can release or replace large content with accurate references without rewriting the original journal. Replay always uses the original executable call/receipt, never a shortened display of it. Saving data does not automatically decide its relevance or release timing.
 

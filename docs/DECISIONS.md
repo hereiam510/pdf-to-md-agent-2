@@ -17,6 +17,7 @@ This is the effective rebuild decision record. Detailed proposals, evidence limi
 | Exact complete-candidate reuse and insertion/metadata edits first | Implemented Q1 contract | Addresses observed regeneration and full-map friction | EVT-1166, Q1 |
 | Self-sufficient handoff and incremental capacity reduction | Implemented Q2 contract; summary quality remains model-dependent | Avoid dangling delta anchors and all-or-nothing compaction deadlock | EVT-1107, EVT-1147, EVT-1166, Q2 |
 | Shared durable budgets/cancellation for normal and summary calls | Agreed execution boundary | Context work must not bypass recovery, spend limits or explicit stop | EVT-1040, EVT-1107, EVT-1166, Q3 |
+| Bounded application correction after text-only replies or invalid handoffs | Implemented increment, 2026-10-23 | Addresses reproduced premature stops and repeated rejected-handoff re-entry; preserves originals, agent method choice and task budgets. Two corrections per episode is a configurable starting policy, not a measured optimum. | Current development instruction; CONTRACTS Q3; tests/test_response_repairs.py |
 | Explicit immutable-version export independent of model budget | Agreed delivery boundary | Useful saved work remains deliverable after inference stops | EVT-1107, EVT-1166 |
 | Backward compatibility is unnecessary. Reconstruction is allowed. | Explicit user choice | Do not preserve old APIs/run formats merely for migration compatibility | EVT-0240, EVT-0319 and repeated attachment-review requests |
 | New independent repository, with the old repository unchanged | Explicit user choice | Preserve the rebuild knowledge while allowing a clean implementation | LIVE-01–LIVE-05 |
@@ -32,7 +33,7 @@ The repository is a self-contained technical handoff (LIVE-06/07). [DEVELOPMENT_
 - Deep Agents offloading and summaries are reusable mechanisms, not a substitute for exact native-image/structured evidence, immutable documents and receipts. LangMem is not the entire runtime. A custom harness offers control with continuing maintenance cost.
 - Dense tuples, fixed field lists, OCR-confidence/style thresholds and semantic dependency graphs were not adopted as universal conversion rules. Discoverability and source-led correctness govern representation choices.
 - Timestamps, maximum policy revision, unqualified content hashes and input-view digests cannot each substitute for causal effect identity, merge rules or source coverage.
-- All-exit auto-packaging, one-shot reminders, malformed-JSON salvage and fixed module/table counts are not required for first delivery. Their rationale and limitations remain preserved.
+- All-exit auto-packaging, malformed-native-call salvage and fixed module/table counts remain unselected. Bounded continuation feedback is now implemented for the observed text-only stop; its exact policy is in CONTRACTS Q3. The older one-shot proposal remains historical rationale.
 
 ## Reopening policy
 

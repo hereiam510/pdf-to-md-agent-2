@@ -147,6 +147,19 @@ class Store:
             db.execute("INSERT INTO events(job,type,data,created) VALUES(?,?,?,?)",
                        (job, kind, encode(data).decode(), time.time()))
 
+    def event_once(self, job: str, kind: str, key: str, data: dict) -> None:
+        """Record a replayable node's event and deduplication receipt together."""
+        identity = f"{job}:{kind}:{key}"
+        with self.transaction() as db:
+            previous = self.get_tx(db, "event_receipt", identity)
+            if previous is not None:
+                if previous != data:
+                    raise Conflict("A replayed event does not match its original receipt.")
+                return
+            db.execute("INSERT INTO events(job,type,data,created) VALUES(?,?,?,?)",
+                       (job, kind, encode(data).decode(), time.time()))
+            self.put_tx(db, "event_receipt", identity, job, data)
+
     def events(self, job: str, after: int = 0, limit: int = 200) -> list[dict]:
         with self.connect() as db:
             rows = db.execute("SELECT * FROM events WHERE job=? AND seq>? ORDER BY seq LIMIT ?",

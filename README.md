@@ -60,6 +60,8 @@ The [source index](docs/reference/SOURCE_INDEX.md), detailed discussion records 
 
 The implementation follows these responsibility boundaries. Framework choice is not a measured-superiority claim. Backward compatibility with the original project is unnecessary.
 
+The response-correction increment continues automatically after a text-only reply or an invalid context handoff. Connection settings expose **Automatic response corrections** (default 2, zero disables), applied to new tasks. Corrections retain the original reply and share the task's request/time budget. Continuing an exhausted correction episode does not reset it; new user instructions or an edited document start a new episode. Explicit completion or questions use the agent's `report` tool. See [the execution contract](docs/CONTRACTS.md#q3-execution-recovery-and-delivery) for boundaries.
+
 ## Document checks
 
 With a working Python 3.9+ interpreter, run the following from this repository (or use that interpreter's full path):

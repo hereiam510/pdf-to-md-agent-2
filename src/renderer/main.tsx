@@ -6,7 +6,7 @@ import './style.css'
 const api = window.workbench.invoke
 const statusNames: Record<string, string> = { ready: 'Ready to convert', running: 'Working', completed: 'Completed', paused: 'Paused', waiting: 'Needs your input', blocked: 'Needs attention', cancelled: 'Stopped', interrupted: 'Interrupted' }
 const defaults: Route = { endpoint: '', model: '', protocol: 'chat_completions', context_tokens: 131072, output_tokens: 8192, image_tokens: 4096, vision: false, timeout_seconds: 180, parameters: {} }
-const defaultLimits: Limits = { max_requests: 80, max_active_seconds: 7200, replay_unknown: false, max_attempts_per_request: 1 }
+const defaultLimits: Limits = { max_requests: 80, max_active_seconds: 7200, replay_unknown: false, max_attempts_per_request: 1, max_response_repairs: 2 }
 
 function Icon({ name, size = 20 }: { name: 'plus' | 'file' | 'settings' | 'arrow' | 'download' | 'stop' | 'close' | 'book'; size?: number }) {
   const paths = { plus: 'M12 5v14M5 12h14', file: 'M14 3H5v18h14V8l-5-5ZM14 3v5h5M8 12h8M8 16h6', settings: 'M4 7h16M4 17h16M8 4v6M16 14v6', arrow: 'm9 5 7 7-7 7', download: 'M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5', stop: 'M6 6h12v12H6Z', close: 'm6 6 12 12M18 6 6 18', book: 'M12 5c-4-3-9-2-9-2v16s5-1 9 2c4-3 9-2 9-2V3s-5-1-9 2Zm0 0v16' }
@@ -43,6 +43,8 @@ function Connection({ initial, close, onSave }: { initial: Settings; close: () =
       <label>Request timeout (seconds)<input type="number" min="1" max="3600" value={route.timeout_seconds} onChange={e => field('timeout_seconds', Number(e.target.value))} /></label>
     </details>
     <details><summary>Optional recovery and model parameters</summary><p className="hint">Limits remain in force after resume. An interrupted request can have unknown upstream usage.</p>
+      <label>Automatic response corrections<input type="number" min="0" value={limits.max_response_repairs} onChange={e => setLimits(l => ({ ...l, max_response_repairs: Number(e.target.value) }))} /></label>
+      <p className="hint">Correct text-only continuations or invalid handoffs before asking for attention. Corrections use the task's request budget. Zero disables them.</p>
       <label className="check"><input type="checkbox" checked={limits.replay_unknown} onChange={e => setLimits(l => ({ ...l, replay_unknown: e.target.checked, max_attempts_per_request: e.target.checked ? 2 : 1 }))} />Allow bounded replay after an unknown outcome</label>
       {limits.replay_unknown && <label>Maximum attempts per request<input type="number" min="1" max="10" value={limits.max_attempts_per_request} onChange={e => setLimits(l => ({ ...l, max_attempts_per_request: Number(e.target.value) }))} /></label>}
       <label>Additional native parameters (JSON)<textarea rows={3} value={parameters} onChange={e => setParameters(e.target.value)} /></label>

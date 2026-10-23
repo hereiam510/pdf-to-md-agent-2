@@ -40,6 +40,7 @@ class Route(Strict):
 class Limits(Strict):
     max_requests: int = Field(default=80, ge=1, le=10000)
     max_active_seconds: int = Field(default=7200, ge=1)
+    max_response_repairs: int = Field(default=2, ge=0)
     replay_unknown: bool = False
     max_attempts_per_request: int = Field(default=1, ge=1, le=10)
 

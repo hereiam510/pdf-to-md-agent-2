@@ -17,6 +17,8 @@ The [reference record](../reference/02-context-state-and-evidence.md) preserves 
 
 Durable request/attempt execution and tool replay belong to [EXECUTION_AND_DELIVERY](EXECUTION_AND_DELIVERY.md). Candidate capture, document edits, and canonical body storage belong to [DOCUMENT_ENGINE](DOCUMENT_ENGINE.md). Native protocol adaptation belongs to [INTEGRATION_AND_MODEL_BOUNDARY](INTEGRATION_AND_MODEL_BOUNDARY.md). This guide explains the context-facing requirements those services need to preserve.
 
+The response-correction increment adds bounded repair of model-authored handoffs. `HandoffRejected` identifies JSON/schema/reduction problems separately from state conflicts and storage failures. The normal task context stays active until validation and whole-input reduction succeed. New compaction input includes saved application diagnostics and covered history; rejected candidate text is added only if the full request still fits, otherwise its exact reference and omission are explicit. Correction state remains small, and normal continuation feedback survives intervening compaction. The policy and tested persistence boundaries are owned by [CONTRACTS Q3](../CONTRACTS.md#q3-execution-recovery-and-delivery).
+
 <a id="motivation-and-evidence"></a>
 ## 1. The problem this design addresses
 

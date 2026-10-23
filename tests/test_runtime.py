@@ -140,14 +140,14 @@ def test_responses_loop_preserves_reasoning_and_pairs_tool_output(setup):
             assert payload["input"][1]["encrypted_content"] == "opaque-native"
             assert payload["input"][3]["type"] == "function_call_output"
             assert payload["input"][3]["call_id"] == "r1"
-            output = [{"type": "message", "role": "assistant", "status": "completed",
-                       "content": [{"type": "output_text", "text": "A saved draft is still needed."}]}]
+            output = [{"type": "function_call", "call_id": "r2", "name": "report", "status": "completed",
+                       "arguments": json.dumps({"state": "waiting", "message": "Which source section is intended?"})}]
         return httpx.Response(200, json={"status": "completed", "output": output})
 
     runtime = Runtime(store, Nexus(store, lambda _: "key", httpx.MockTransport(reply)))
     runtime.run(job["id"])
     runtime.close()
-    assert len(payloads) == 2 and store.get("job", job["id"])["status"] == "paused"
+    assert len(payloads) == 2 and store.get("job", job["id"])["status"] == "waiting"
 
 
 def test_cancelled_pending_batch_does_not_dispatch_next_tool(setup):

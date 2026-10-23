@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from hashlib import sha256
 import sqlite3
 import time
 from typing import TypedDict
@@ -9,9 +10,9 @@ from filelock import FileLock, Timeout
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 
-from .context import Context
+from .context import Context, HandoffRejected
 from .nexus import Nexus, StopRun
-from .storage import Store
+from .storage import Store, encode
 from .tools import Dispatcher, UnknownEffect
 
 
@@ -27,6 +28,7 @@ class State(TypedDict, total=False):
     pending: str | None
     next: str
     terminal: bool
+    repairs: dict[str, dict]
 
 
 class Runtime:
@@ -44,7 +46,7 @@ class Runtime:
         builder.add_node("compact", self.compact)
         builder.add_edge(START, "prepare")
         builder.add_conditional_edges("prepare", lambda state: state["next"], {"model": "model", "compact": "compact"})
-        builder.add_conditional_edges("model", lambda state: END if state["terminal"] else "tools", {END: END, "tools": "tools"})
+        builder.add_conditional_edges("model", lambda state: state["next"], {"prepare": "prepare", "tools": "tools"})
         builder.add_conditional_edges("tools", lambda state: END if state["terminal"] else "prepare", {END: END, "prepare": "prepare"})
         builder.add_edge("compact", "prepare")
         self.graph = builder.compile(checkpointer=SqliteSaver(self.connection))
@@ -53,28 +55,68 @@ class Runtime:
         job = self.store.get("job", state["job"])
         if job["cancel_requested"]:
             raise StopRun("cancelled", "Stopped at a settled tool-batch boundary.")
+        # A new human instruction or document head starts a new correction episode.
+        # Merely restarting/pressing Continue does not reset it.
+        repairs = {kind: item for kind, item in state.get("repairs", {}).items()
+                   if item["basis"] == self.repair_basis(job)}
+        for kind, item in repairs.items():
+            if item["count"] > job["limits"].get("max_response_repairs", 2):
+                raise StopRun("response_repair_exhausted",
+                              f"Automatic {kind} correction limit reached. Saved work and replies are retained. "
+                              "Add instructions or edit the saved document before starting a new correction episode.")
+        state = {**state, "repairs": repairs}
         key = f"{job['id']}:{state['seq']}:{state['revision']}"
         # A frozen request wins over current pointers and newly reconstructed input.
         request = self.store.maybe("request", key)
         if request is None:
             payload, capacity = self.context.normal(job, state)
             if capacity["fits"]:
-                request = self.nexus.freeze(job["id"], key, payload, "normal", {"capacity": capacity})
+                request = self.nexus.freeze(job["id"], key, payload, "normal", {"capacity": capacity, "repairs": repairs})
             else:
                 payload, meta = self.context.compact_request(job, state)
-                request = self.nexus.freeze(job["id"], key, payload, "compaction", meta)
-        return {"pending": key, "next": "compact" if request["kind"] == "compaction" else "model", "terminal": False}
+                request = self.nexus.freeze(job["id"], key, payload, "compaction", {**meta, "repairs": repairs})
+        return {"pending": key, "next": "compact" if request["kind"] == "compaction" else "model", "terminal": False,
+                "repairs": repairs}
+
+    @staticmethod
+    def repair_basis(job: dict) -> str:
+        return sha256(encode({"head": job["head"], "amendments": job["amendments"]})).hexdigest()
+
+    def repair(self, state: State, kind: str, code: str, message: str) -> dict:
+        """Persist feedback before advancing the graph; re-entry returns the same transition."""
+        job, key = state["job"], state["pending"]
+        ref = f"repair:{key}"
+        saved = self.store.maybe("blob", ref)
+        if saved is None:
+            basis = self.repair_basis(self.store.get("job", job))
+            previous = state.get("repairs", {}).get(kind, {})
+            count = previous.get("count", 0) + 1 if previous.get("basis") == basis else 1
+            request = self.store.get("request", key, job=job)
+            self.store.blob(job, "response_repair", {"request": key, "kind": kind, "code": code,
+                            "message": message, "candidate_ref": request["accepted_ref"], "basis": basis,
+                            "count": count}, key=ref)
+        feedback = self.store.json(ref, job)
+        self.store.event_once(job, "response_correction", key,
+                              {"request": key, "kind": kind, "code": code, "feedback_ref": ref})
+        changes = {"repairs": {**state.get("repairs", {}), kind: {"feedback_ref": ref, "request": key,
+                   "basis": feedback["basis"], "count": feedback["count"]}},
+                   "revision": state["revision"] + 1, "pending": None, "next": "prepare", "terminal": False}
+        if kind == "normal":
+            changes.update(history=[*state["history"], key], seq=state["seq"] + 1)
+        return changes
 
     def model(self, state: State):
         reply = self.nexus.send(state["job"], state["pending"])
         if reply["text"]:
             self.store.update_job(state["job"], last_message=reply["text"])
         if reply["calls"]:
-            return {"terminal": False}
-        self.store.update_job(state["job"], status="paused", stop_reason="assistant_finished",
-                              last_message=reply["text"])
-        return {"terminal": True, "history": [*state["history"], state["pending"]],
-                "seq": state["seq"] + 1, "revision": state["revision"] + 1, "pending": None}
+            return {"terminal": False, "next": "tools"}
+        return self.repair(state, "normal", "missing_tool_call",
+                           "The last response contained text but no tool call or explicit report. "
+                           "If work remains, choose a tool and continue. To finish, deliver partial work, or ask a necessary "
+                           "user question, call report with the appropriate state. No new user answer has arrived. "
+                           "If the last text asked a necessary question, use report(waiting) with that question; do not assume an answer. "
+                           "Do not assume the task is complete.")
 
     def tools(self, state: State):
         job, key = state["job"], state["pending"]
@@ -110,7 +152,8 @@ class Runtime:
         # One deterministic policy settlement per complete accepted batch.
         changes = {"released": sorted(released), "pinned": sorted(pinned), "notes": notes,
                    "history": [*state["history"], key], "seq": state["seq"] + 1,
-                   "revision": state["revision"] + 1, "pending": None, "terminal": bool(report)}
+                    "revision": state["revision"] + 1, "pending": None, "terminal": bool(report),
+                    "repairs": {kind: value for kind, value in state.get("repairs", {}).items() if kind != "normal"}}
         if report:
             self.store.update_job(job, status="waiting" if report["state"] == "waiting" else "completed" if report["state"] == "complete" else "paused",
                                   stop_reason="agent_report", content_claim="complete" if report["state"] == "complete" else "partial",
@@ -121,12 +164,14 @@ class Runtime:
         request = self.store.get("request", state["pending"], job=state["job"])
         reply = self.nexus.send(state["job"], state["pending"])
         if reply["calls"]:
-            raise StopRun("handoff_rejected", "The compaction reply unexpectedly requested tools. Previous context is preserved.")
+            return self.repair(state, "compaction", "unexpected_tools",
+                               "No tools were executed. Return only the six-field handoff JSON, without tool calls.")
         try:
             result = self.context.apply_handoff(self.store.get("job", state["job"]), state, reply["text"], request["meta"], state["pending"])
-        except (ValueError, TypeError, KeyError) as exc:
-            raise StopRun("handoff_rejected", str(exc)) from exc
-        return {**result, "pending": None}
+        except HandoffRejected as exc:
+            return self.repair(state, "compaction", "invalid_handoff", str(exc))
+        return {**result, "pending": None,
+                "repairs": {kind: value for kind, value in state.get("repairs", {}).items() if kind != "compaction"}}
 
     def run(self, job: str, lock: FileLock | None = None) -> None:
         if lock is None:

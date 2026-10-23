@@ -1,6 +1,6 @@
 # Current state
 
-Updated 2026-10-23, Asia/Hong_Kong. Current human instructions authorize building this app, copying the old references/private configuration, and testing through Nexus. The old repository remains unchanged.
+Updated 2026-10-23, Asia/Hong_Kong. Current human instructions authorize focused implementation increments toward autonomous, faithful PDF conversion: fix evidenced defects, add necessary capabilities and verify complete delivery without reducing scope or agent autonomy. The old repository remains unchanged. Reviews and historical proposals supply evidence to assess, not an automatic implementation queue.
 
 ## Implemented application
 
@@ -10,7 +10,27 @@ The desktop imports an unchanged PDF and scope, shows source pixels and saved Ma
 
 `Start Workbench.cmd` opens the local Windows folder app with `workspaces/default`. The PowerShell launcher provides the same default and an override. `tools/setup.ps1` installs locked dependencies; `tools/build-windows.ps1` bundles the engine and desktop. Direct executable/`pnpm dev` launch uses Electron's user-data directory unless `PDFMD_DATA` is set. [README](../README.md) gives commands.
 
-No application changes have been pushed or published as a GitHub release during this task. Runtime data, copied references, private configuration, builds and review outputs are Git-ignored. The user's pre-existing `docs_bundle.txt` remains untouched and outside the implementation change.
+No application changes have been pushed or published as a GitHub release during this task. Runtime data, copied references, private configuration, builds and review outputs are Git-ignored. The user's pre-existing `review-code.txt`, `review-docs.txt` and `review-src.txt` remain untouched and outside this increment.
+
+## Response-correction increment
+
+Purpose: remove two evidenced barriers to autonomous continuation in baseline `7bba197`: text-only model narration immediately paused the job, and rejected handoff re-entry reused the same accepted candidate without a repair route. This increment changes those execution paths, rather than attempting to certify overall conversion quality or reopen every review proposal.
+
+- Text-only normal replies now retain their original history and schedule application feedback asking for a useful tool action or explicit `report`. Necessary questions and partial delivery can be formalized without assuming a user answer. `report(waiting)`, partial reports, cancellation and budgets still stop execution.
+- Invalid handoff JSON/schema, failure to reduce input and unexpected compaction tool calls now retain separate correction feedback. A new fitting request carries the error and covered history, optionally the rejected candidate text when capacity permits. Old context remains active until a valid handoff applies. Native acceptance records remain unchanged; compaction tool calls are not executed.
+- `max_response_repairs` is configurable for new tasks in the desktop connection dialog, default 2, zero disables. Separate normal and compaction counts persist across restart and ordinary Continue. A new user amendment or document head starts a new episode; consumed task attempts/time remain intact. This is a tunable starting policy, not a demonstrated optimum or a semantic-progress detector for arbitrary tool loops.
+- Feedback and handoff identities are stable. Transactional event receipts prevent duplicate correction/application events at the tested persistence-before-checkpoint gaps. Full model replies, evidence, useful candidates and saved versions remain available.
+
+Implementation: `runtime.py`, `context.py`, `storage.py`, `schema.py`, and the desktop limit control. No dependency/framework replacement or upgrade was needed: explicit graph transitions and immutable receipts fit this problem. [CONTRACTS Q2/Q3](CONTRACTS.md#implemented-first-version-contracts) owns the effective behavior; the execution/context guides explain it.
+
+Verification:
+
+- All 30 Python tests pass. New regression coverage adds text-only continuation through source read, image delivery, exact document save, reopen and byte-checked ZIP export for Chat Completions and Responses. It also covers correction exhaustion across restart, new-instruction recovery, cancellation, original request budgets, waiting/partial reports, invalid and oversized handoff repair, non-execution of compaction calls, and feedback/handoff checkpoint gaps. Tests live in `tests/test_response_repairs.py` alongside the retained baseline checks.
+- TypeScript checking and desktop production build pass. The development Electron workflow deliberately begins with text-only narration, then completes a two-page synthetic PDF in six local fixture responses without Continue. Saved source text, source-image delivery, actual saved-output preview, export, local edit and reopen are checked. No live provider calls are part of these checks.
+- Windows engine, folder app and NSIS installer are rebuilt with the correction code. Packaging log: `.local/response-repair-build.log`. The rebuilt folder app passes the desktop workflow with six local fixture responses, the default correction setting of 2, and exact saved text matching both source pages. Retained workspace: `.local/desktop-duh0Ch`; screenshots: `.local/qa/`. Installer execution and clean-machine installation are not tested.
+- These are scripted-response software and artifact checks. They do not establish real-model compliance with correction instructions, source-led quality on unseen PDFs, summary fidelity, or any reduction in actual Nexus fees. This increment makes no new live Nexus call; the older Nursing exercise retains its limitations below.
+
+Related known work remains separate: stale-base/candidate edits can overwrite newer document content; large-result projection can still force unnecessary compaction or block progress; existing-job limit changes are ignored; crash downtime is charged as active time; prepared requests can retain stale inputs after user amendments; queued cancellation has cleanup gaps; truncated native responses and unknown local effects still stop. The next recommended focused batch is stale-base and candidate-reuse protection with actionable local repair, because it directly protects already-correct saved work. Large-evidence admission and resume/budget corrections follow; this is not a requirement to solve every risk before another deliverable increment.
 
 ## Copied inputs
 
@@ -22,8 +42,8 @@ The requested subagent copied 47 reference files (242,220,051 bytes, including t
 
 ### Offline and desktop checks
 
-- Sixteen Python tests pass: exact candidate reuse, supplied-field metadata patches, insertion/stale-head checks, exact text patches, whole-document references/footnotes, source assets/ZIP bytes, persistent budgets, accepted-batch cancellation, native Responses reasoning/call pairing, rejected/truncated calls, accepted-reply/result-pointer gaps, commit-before-checkpoint resume, compaction boundaries, local authentication, HTML sanitation and opt-in script output retention.
-- TypeScript checking and the production desktop build pass. A real Electron window and Python engine pass the desktop fixture workflow: source import, native image input, saved-output screenshot, local edit, version export and reopen without more inference. The Windows folder build passes this workflow too. It uses five local fixture responses and no provider calls.
+- The original increment passed sixteen Python tests: exact candidate reuse, supplied-field metadata patches, insertion/stale-head checks, exact text patches, whole-document references/footnotes, source assets/ZIP bytes, persistent budgets, accepted-batch cancellation, native Responses reasoning/call pairing, rejected/truncated calls, accepted-reply/result-pointer gaps, commit-before-checkpoint resume, compaction boundaries, local authentication, HTML sanitation and opt-in script output retention. Current response-correction verification is recorded above.
+- The original development and Windows folder builds passed a desktop fixture workflow: source import, native image input, saved-output screenshot, local edit, version export and reopen without more inference. That baseline used five local fixture responses. The current six-response correction workflow and build verification are recorded above; neither fixture makes provider calls.
 - Development and packaged OCR workers read `LOCAL OCR TEST 25 mg` from a synthetic image and retain text, blocks, hOCR and TSV. Language data is cached. This is not multilingual or scanned-book quality validation.
 - The frozen-engine check initializes verified TLS, HTTPX, PDF resources and the script entry point without a model call. Packaging initially omitted required PyMuPDF data and a certificate distrust resource used by this machine's managed Python. The build now preserves both; TLS verification remains enabled.
 - Documentation checks pass for local links, 356 preserved point/detail mappings and 503 bundled source files. Exact discussion-source bytes remain unchanged. Counts do not prove semantic completeness or runtime correctness.
@@ -48,7 +68,7 @@ One live route/section does not certify other models, full books, multilingual O
 
 Single-writer recovery covers specific durable gaps, not arbitrary branching or every hard crash. An abruptly interrupted active interval is conservatively charged through restart. Unknown OCR/script outcomes stop with files retained. ZIP publication currently uses an exclusive local hard link; other destination filesystem behavior is unverified. External MCP/CLI product surfaces are not implemented.
 
-The Windows folder app is verified locally. The unsigned NSIS installer is built at `release/PDF Markdown Workbench Setup 0.1.0.exe`. Clean-machine installation, signing and macOS/Linux distributions are unverified. No platform/provider matrix is queued. The requested build and scoped Nexus delivery exercise are complete; further development should follow an actual delivery need or observed blocker. Do not reopen the design or launch more provider tests merely from this status note.
+The Windows folder app is verified locally. The NSIS installer is built at `release/PDF Markdown Workbench Setup 0.1.0.exe`; this task does not claim code-signing or clean-machine installation verification. macOS/Linux distributions remain unverified. No platform/provider matrix is queued. The earlier scoped Nexus exercise is complete. Development now follows the user's focused-increment instruction and the evidenced priorities above; this status note alone authorizes no additional provider test.
 
 ## Preserved knowledge
 
