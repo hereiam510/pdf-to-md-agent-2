@@ -11,12 +11,15 @@ The development knowledge is explained in [DEVELOPMENT_GUIDE](../DEVELOPMENT_GUI
 | 28 pasted-text attachments | Exact original text bytes | Complete supplied proposals and critiques, not adopted wholesale as requirements |
 | Two supplied forum pages | Exact HTML as inert text, extracted article text and offline image readers | All 24 substantive embedded figures are local and byte-preserved. Forum claims retain their credibility limits. |
 | SUP-01/02 continuing requirements | Explicit verbatim excerpt ranges with original/full-source hashes | Preserve the relevant product/platform and guidance rules without importing whole old development documents |
+| SUP-03–07 historical engineering evidence | Selected reference, stack, tool, code and correction excerpts | Support concrete examples and lessons. They introduce no old runtime, version pin or execution permission. |
 | Nine later human decisions | [LATER_DECISIONS](LATER_DECISIONS.md) | Includes self-containment, technical-detail preservation and direct-conversation review requirements |
 | Point-to-detail mapping | [DEVELOPMENT_COVERAGE](DEVELOPMENT_COVERAGE.json) | Explains where each preserved point is developed or retained as historical rationale |
 
-[source-inventory.json](source-inventory.json) records both original provenance and repo-local paths/hashes. [POINT_COVERAGE](POINT_COVERAGE.json) retains source relationships and decision status. [SOURCE_COVERAGE](SOURCE_COVERAGE.json) records each required source's disposition. The [bundle manifest](sources/bundle-manifest.json) covers copied/extracted files and figures. The two supporting excerpts are intentionally described as excerpts, not exact copies of the full old documents.
+[source-inventory.json](source-inventory.json) records both original provenance and repo-local paths/hashes. [POINT_COVERAGE](POINT_COVERAGE.json) retains source relationships and decision status. [SOURCE_COVERAGE](SOURCE_COVERAGE.json) records each required source's disposition. The [bundle manifest](sources/bundle-manifest.json) covers copied/extracted files and figures. Supporting sources contain labelled excerpts, not complete old documents or executable modules.
 
 Every discussion source cited by the maintained documents and point ledger has a local copy or explicit local excerpt. The lookup inventory excludes incidental uncited tool-execution records. They are not development sources. The original export event count remains provenance metadata. No original old-app code, runtime workspace, private settings or closed-job ledger is required to understand the rebuild.
+
+The [reference-input notes](REFERENCE_INPUTS.md) explain the five historical packages without requiring their PDFs or example outputs. Those input packages are not bundled here. SUP-06 retains a short inert code excerpt for historical export filenames and archive membership. SUP-07 retains only the source-spelling correction within an old evidence paragraph. These excerpts preserve useful facts without adopting the surrounding old implementation or work status.
 
 ## Resolve a source
 

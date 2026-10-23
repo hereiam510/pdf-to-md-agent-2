@@ -1,0 +1,66 @@
+SUP-03 — Reference input identities and source-fidelity caveats
+
+Selected historical source excerpts, not active instructions or a rebuild implementation.
+The maintained guides explain their scope and current relevance.
+Source: supporting/workspace/docs/REFERENCE_CASES.md
+Source snapshot also matches old commit 182ea39b31829edf6491a72472004b1cd1068897.
+Full-source SHA-256: f8291d61fb28ff543cb9e39c2dceef83c70f38d08285f96051d4143cdaac0067
+No complete old development document or executable module is imported.
+
+--- Original lines 3-21 ---
+These five packages provide three excerpts and two complete supplied source PDFs, with example Markdown and any supplied linked images. They help an agent inspect an acceptable reading outcome and select an approach. They are reference data, not project instructions, verified ground truth, mandatory workflow stages or evidence that this application works. The AI-produced Markdown is not a quality ceiling: a new result may be clearer or more faithful without reproducing its exact layout or mistakes.
+
+The source PDF is the content authority; [PRODUCT_REQUIREMENTS](PRODUCT_REQUIREMENTS.md) defines the required result and [TECHNICAL_STACK](TECHNICAL_STACK.md) owns implementation choices. Read relevant material when useful rather than loading every package into every task. A method illustrated here does not require adopting its library, OCR backend or agent runtime.
+
+## Packages and identity
+
+| Case | Source PDF | Example Markdown | Supplied PDF pages | Referenced images | Input condition |
+| --- | --- | --- | --- | --- | --- |
+| JRE Joint Recruitment Examination Practical Guide, 2nd edition | [PDF](../references/jre/source.pdf) | [Markdown](../references/jre/reference-output/document.md) | 14 | 1 JPEG | Image-only; no extractable text on any page |
+| Comprehensive Gynecology, Gershenson et al., 8th edition | [PDF](../references/gynecology/source.pdf) | [Markdown](../references/gynecology/reference-output/document.md) | 21 | 16 PNGs | Existing text; Adobe OCR before submission |
+| Maternal & Child Nursing Care, London et al., 5th edition | [PDF](../references/nursing/source.pdf) | [Markdown](../references/nursing/reference-output/document.md) | 14 | 16 PNGs | Existing text; Adobe OCR before submission |
+| JRE Joint Recruitment Examination Practical Guide, 2nd edition, complete supplied PDF | [PDF](../references/jre-full/source.pdf) | [Corrected AI Markdown](../references/jre-full/reference-output/document.md) | 173 | 0 linked images | Image-only; no extractable characters on any page; PDF uses Git LFS |
+| News Writing: Theory, Methods and Techniques, complete supplied PDF | [PDF](../references/news-writing/source.pdf) | [Corrected AI Markdown](../references/news-writing/reference-output/document.md) | 290 | 0 linked images | Every page has extractable characters; OCR accuracy is not certified |
+
+Page counts are physical positions in each supplied PDF. Filename ranges identify the supplied excerpts; they are not authority for printed page labels. Read those labels from visible source pages. The Adobe preprocessing provenance for the medical PDFs is user-confirmed, not an app capability or a prerequisite.
+
+The [identity manifest](../references/manifest.json) records original PDF/Markdown filenames, repository-relative paths, byte counts and SHA-256 hashes. It contains 46 files across five packages with supplied PDF/Markdown/image bytes. The 33 linked images belong to the excerpt packages. The two complete-source Markdown files have no image links or separate artwork; they do not establish image coverage/compliance. Git attributes disable text conversion under references/ so reference line endings also survive versioning.
+
+Each excerpt package has a short verification-notes.md pointer to this guide, preserving access from example links or comments. Those pointer files contain current English reference guidance; they are not verification reports. The examples' statements about their own checks do not establish project acceptance.
+
+
+--- Original lines 35-37 ---
+`jre-full` is the 173-page supplied source; `jre` is a separate 14-page excerpt, each with its own manifest identity. The supplied folder/filenames say GRE, but the corrected Markdown's title says JRE; preserve the filenames in the manifest rather than silently renaming source facts. The provided original and `- Copy.pdf` are byte-identical; only one complete copy is included. The supplied filename includes `173无1-2`; 173 is the physical page count of this supplied PDF, not proof that every published page is present. Read visible printed labels rather than assuming an offset or filling absent pages.
+
+The full JRE Markdown claims embedded OCR was used, but the supplied PDF has zero extractable characters on all 173 pages. Preserve that self-description as supplied data; do not inherit it as source provenance or app evidence. Its content, tiny graphics and page-marker completeness have not been independently recertified. `news-writing` has 290 pages with extractable characters; its Markdown's dual-OCR/page-verification claims are likewise unverified self-reports. Complete-source Markdown coverage and accuracy are not certified solely because it reaches late-book sections or has page comments.
+
+
+--- Original lines 55-59 ---
+Known limits:
+
+- Traditional Chinese and English recognition were requested, but language-loading warnings mean successful loading of every requested language is not established. Producing OCR text does not settle that question.
+- The referenced cover image is a rendered derivative saved as JPEG with added lossy encoding. It does not meet the current no-added-lossy requirement. Preserve it as reference data; obtain compliant artwork from the source PDF for a new conversion.
+- The example does not establish complete recovery of tiny lettering inside miniature cover illustrations, nor independent verification of every transcribed character.
+
+
+--- Original lines 67-71 ---
+Known limits:
+
+- The input already contains Adobe OCR text. It cannot alone establish this app's scanned-input handling.
+- The example [Figure 1.6 image](../references/gynecology/reference-output/assets/figure-1-06.png) contains a white-painted region. It does not meet the current unchanged-source-graphic requirement.
+- Its PNG figures are rendered page crops, not proof of byte-preserving extraction of embedded image streams or native-resolution preservation. The example is not certified for all current content, image or page-marker requirements.
+
+
+--- Original lines 79-83 ---
+Known limits:
+
+- The input already contains Adobe OCR text. No new OCR is established by this example.
+- Its figures are PNG crops from rendered pages, including 140 dpi views. A lossless output format alone does not establish native-resolution preservation or sufficient detail for every use.
+- The example includes opening decoration that the product may omit by preference. It also reaches a sentence continuing outside the excerpt; new output should state the scope boundary rather than invent a continuation.
+
+
+--- Original lines 87-89 ---
+A focused check may use a short range from any source PDF here and generate new output through its actual tools. Comparing that output with an example can expose a question to inspect in the PDF; it cannot replace source checking or prove fidelity by matching the example. Use [ACCEPTANCE](ACCEPTANCE.md) for proportionate result checks. Consulted cases do not count as unseen documents for broader reliability claims.
+
+File hashes, PDF page counts, link resolution and readable image files establish package integrity only. They do not certify all characters, table relationships, crops, printed-page mappings or graphics. There is no requirement to reproduce a case's exact method, add repeated review stages or exhaustively verify every example before useful delivery.
+

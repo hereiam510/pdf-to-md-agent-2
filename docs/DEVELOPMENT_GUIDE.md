@@ -17,6 +17,7 @@ The owner documents state effective requirements and boundaries. The technical g
 | Work area | Detailed explanation | Governing owner |
 | --- | --- | --- |
 | Product behavior, fidelity, user effort and acceptance | [Product requirements](PRODUCT_REQUIREMENTS.md) | Same document |
+| Historical reference-input conditions and misleading example outputs | [Reference inputs and known limits](reference/REFERENCE_INPUTS.md) | [Source-led acceptance](PRODUCT_REQUIREMENTS.md#acceptance-and-cost) |
 | Framework fit, Nexus subscription routes, native request/response representation, tools and Electron/Python integration | [Integration and model boundary](design/INTEGRATION_AND_MODEL_BOUNDARY.md) | [Architecture](ARCHITECTURE.md) |
 | Evidence access, originals, transient input, policy, budgets, history projection and rolling compaction | [Context and evidence](design/CONTEXT_AND_EVIDENCE.md) | [Context contract](CONTRACTS.md#2-context-capacity-and-handoff) |
 | Candidate capture, exact reuse, edits, page maps, immutable versions, validation and visibility | [Document engine](design/DOCUMENT_ENGINE.md) | [Document contract](CONTRACTS.md#1-document-updates-and-candidate-references) |

@@ -1870,5 +1870,83 @@
     "destination": "docs/reference/LATER_DECISIONS.md#live-09",
     "treatment": "scope-note",
     "note": "Use accessible direct message text and later corrections as well as export sources. Distinguish actual text, summaries and gaps. Do not create a chat dependency."
+  },
+  {
+    "point_id": "H-001",
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#page-identity-and-logical-structure",
+    "treatment": "explained",
+    "note": "Retain the three English HTML-comment examples. They do not define an exclusive grammar or close the Q1 serializer choice."
+  },
+  {
+    "point_id": "H-002",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#historical-package-members",
+    "treatment": "historical-reference",
+    "note": "Explain the four historical filenames and zero or more referenced assets. Preserve selected-version consistency without freezing Q3 names or requiring an empty ZIP directory."
+  },
+  {
+    "point_id": "H-003",
+    "destination": "docs/reference/REFERENCE_INPUTS.md#package-identities",
+    "treatment": "historical-reference",
+    "note": "Identify the five supplied PDF packages, physical counts, example-image counts and text-layer conditions. Actual input packages are not bundled or a mandatory benchmark."
+  },
+  {
+    "point_id": "H-004",
+    "destination": "docs/reference/REFERENCE_INPUTS.md#jre-identity-and-source-spelling",
+    "treatment": "historical-reference",
+    "note": "Distinguish the two JRE inputs and preserve the repeated source glyphs on physical page 18. The prior duplication allegation was withdrawn."
+  },
+  {
+    "point_id": "H-005",
+    "destination": "docs/reference/REFERENCE_INPUTS.md#reference-image-and-ocr-caveats",
+    "treatment": "historical-reference",
+    "note": "Retain lossy-cover, painted-image and 140-DPI crop caveats. User-confirmed Adobe preprocessing differs from the scoped Nursing page-12 GlyphLessFont observation."
+  },
+  {
+    "point_id": "H-006",
+    "destination": "docs/reference/REFERENCE_INPUTS.md#full-source-example-limits",
+    "treatment": "historical-reference",
+    "note": "Full JRE and News Writing examples lack linked artwork. Their own checking claims and extractable text do not certify source fidelity or completeness."
+  },
+  {
+    "point_id": "H-007",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-local-ocr",
+    "treatment": "historical-reference",
+    "note": "Preserve the recorded Tesseract.js 6.0.1/core 6.1.2 and 7.0.0 observations with local language-data identity. Initialization is not accuracy or a rebuild dependency selection."
+  },
+  {
+    "point_id": "H-008",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-local-ocr",
+    "treatment": "explained",
+    "note": "The old timeout applied per page, with historical 120/300-second values. Internal language checks and completed-page retention do not impose OCR on every conversion."
+  },
+  {
+    "point_id": "H-009",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#preview-content-and-resource-boundary",
+    "treatment": "explained",
+    "note": "Preserve saved Markdown and page comments independently of sanitized display. Explain local saved-version bytes, blocked external resources and the historical Playwright mechanism."
+  },
+  {
+    "point_id": "H-010",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#image-mode-and-encoding",
+    "treatment": "explained",
+    "note": "Explain why blanket RGB conversion or new JPEG encoding can lose source properties. Native JPEG reuse and PNG naming do not imply equivalent preservation."
+  },
+  {
+    "point_id": "H-011",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-desktop-packaging",
+    "treatment": "historical-reference",
+    "note": "Preserve Forge Webpack/TypeScript, then-experimental Vite and PyInstaller one-folder rationale. These observations do not choose current versions or prove installed-product readiness."
+  },
+  {
+    "point_id": "H-012",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-private-configuration",
+    "treatment": "explained",
+    "note": "Explain ignored configuration, optional plaintext key files, child-only environment, direct process environment and hidden input. Historical names are not an implemented rebuild launcher."
+  },
+  {
+    "point_id": "H-013",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#script-credential-boundary",
+    "treatment": "explained",
+    "note": "The old transform runner omitted inherited API credentials while retaining a document pointer. Environment filtering did not create an OS sandbox."
   }
 ]

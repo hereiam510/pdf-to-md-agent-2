@@ -1,0 +1,61 @@
+SUP-06 — Historical saved-version filenames and ZIP membership
+
+Selected historical source excerpts, not active instructions or a rebuild implementation.
+The maintained guides explain their scope and current relevance.
+Source: supporting/workspace/src/pdf_to_md_agent/core.py
+Source snapshot also matches old commit 182ea39b31829edf6491a72472004b1cd1068897.
+Full-source SHA-256: 19d6b8cd8d19203694ae426910ad190543965e8db3d4f2e64ab9cf909a4c2f4b
+No complete old development document or executable module is imported.
+
+--- Original lines 318-351 ---
+        snapshot = {
+            "schema_version": 1,
+            "document": document,
+            "version": version,
+            "parent_version": base_version,
+            "saved_at": datetime.now(UTC).isoformat(),
+            "source": source,
+            "content": content.model_dump(),
+            "assets": assets,
+            "markdown": markdown,
+            "markdown_sha256": digest(markdown.encode()),
+        }
+        if operation:
+            snapshot["publication_operation"] = operation
+        # Publish only a complete directory. An interrupted save leaves the previous pointer usable.
+        staging = Path(tempfile.mkdtemp(prefix=".saving-", dir=task / "versions"))
+        try:
+            (staging / "assets").mkdir()
+            for link in links:
+                shutil.copyfile(task / link, staging / link)
+            write_json(staging / "document.json", snapshot)
+            (staging / "document.md").write_text(markdown, encoding="utf-8", newline="\n")
+            (staging / "preview.html").write_text(
+                preview(content.title, markdown, version, content.language),
+                encoding="utf-8",
+                newline="\n",
+            )
+            files = ["document.json", "document.md", "preview.html", *links]
+            write_json(
+                staging / "manifest.json",
+                {
+                    "version": version,
+                    "files": {f: digest((staging / f).read_bytes()) for f in files},
+                },
+
+
+--- Original lines 438-450 ---
+    def export(self, document: str, version: str | None = None) -> dict[str, Any]:
+        saved = self.reopen(document, version)
+        version = saved["version"]
+        folder = self.task(document) / "versions" / version
+        manifest = read_json(folder / "manifest.json")
+        outputs = self.task(document) / "exports"
+        outputs.mkdir(exist_ok=True)
+        destination = outputs / f"{version}.zip"
+        temporary = outputs / f".{uuid.uuid4().hex}.zip"
+        try:
+            with zipfile.ZipFile(temporary, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for name in ["manifest.json", *manifest["files"]]:
+                    archive.write(folder / name, name)
+

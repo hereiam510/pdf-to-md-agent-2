@@ -96,4 +96,18 @@ Library behavior is preserved at its original discussion scope and needs version
 
 The expanded records cover research names, forum code symbols, old event/policy-table sketches and superseded state enums. Use the [foundation record](reference/01-foundations-and-frameworks.md), [context record](reference/02-context-state-and-evidence.md) and [delivery record](reference/03-documents-delivery-and-recovery.md) for these terms. They retain the mechanism and the reason for accepting, narrowing or rejecting the claim. A name in a forum screenshot is not an established public API.
 
+## Historical input, format and toolchain details
+
+| Term or example | Meaning and status | Owning explanation |
+| --- | --- | --- |
+| `jre`, `jre-full`, `gynecology`, `nursing`, `news-writing` | Historical package IDs with different input conditions and known example-output defects. They are not a mandatory benchmark set. | [Reference inputs](reference/REFERENCE_INPUTS.md) |
+| `<!-- PDF page: ... -->`, `printed page: none`, `printed pages: unknown` | Retained syntax examples. Preserve page correspondence. The exact serializer grammar remains open. | [Page-comment examples](PRODUCT_REQUIREMENTS.md#page-identity-and-logical-structure) |
+| `document.md`, `document.json`, `preview.html`, `manifest.json`, `assets/` | Historical export roles and names. The archive contains referenced files, without requiring an empty asset-directory entry. | [Package members](design/EXECUTION_AND_DELIVERY.md#historical-package-members) |
+| Tesseract.js, core, `best_int`, `chi_tra`, `eng`, per-page timeout | Historical language-data and initialization checks, compatibility observations and timeout semantics. They do not select rebuild versions or require OCR. | [OCR lessons](design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-local-ocr) |
+| Pillow `convert("RGB")`, alpha, bit depth, JPEG recompression | Concrete ways a crop can lose source properties. An image extension alone does not prove preservation. | [Image mode and encoding](design/DOCUMENT_ENGINE.md#image-mode-and-encoding) |
+| Playwright routing, virtual origin, sanitized DOM | Historical rendering from saved bytes with external requests blocked. Display cleanup must not rewrite saved Markdown or its page comments. | [Preview boundary](design/DOCUMENT_ENGINE.md#preview-content-and-resource-boundary) |
+| Electron Forge, Webpack, Vite, PyInstaller one-folder | Historical packaging rationale and unverified desktop directions. The old Vite status is not a current compatibility claim. | [Packaging history](design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-desktop-packaging) |
+| `private/provider.json`, `private/api-key.txt`, `api_key_env`, `PDF_MD_API_KEY`, `--ask-key` | Historical configuration and credential routes. Ignored plaintext is not encrypted storage. | [Credential convention](design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-private-configuration) |
+| `ProcessStartInfo.Environment`, `ArgumentList`, `PDF_MD_TASK` | Child process arguments and environment conventions. Removing inherited credentials does not remove host-user privileges. | [Configuration](design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-private-configuration), [script boundary](design/INTEGRATION_AND_MODEL_BOUNDARY.md#script-credential-boundary) |
+
 Not every old source path, line number, generated example ID, repeated warning or arbitrary numeric example needs a new glossary entry. Its substantive mechanism, condition and correction do need an explanation. The [technical-detail review](reference/TECHNICAL_DETAIL_REVIEW.md) records concrete deficiencies in the earlier synthesis and their repairs. It does not use term counts as proof of completeness.

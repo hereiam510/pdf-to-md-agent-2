@@ -122,7 +122,9 @@
       "P2-068",
       "P2-099",
       "P2-100",
-      "P2-103"
+      "P2-103",
+      "H-004",
+      "H-005"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -192,7 +194,8 @@
       "P2-104",
       "P2-112",
       "P2-113",
-      "P2-114"
+      "P2-114",
+      "H-005"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -640,7 +643,8 @@
       "R-008",
       "R-009",
       "R-010",
-      "R-019"
+      "R-019",
+      "H-003"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -1806,7 +1810,8 @@
       "P2-095",
       "P2-101",
       "P2-102",
-      "P2-112"
+      "P2-112",
+      "H-005"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -3925,7 +3930,8 @@
       "R-005",
       "R-006",
       "R-008",
-      "R-009"
+      "R-009",
+      "H-001"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -3968,5 +3974,57 @@
       "R-029"
     ],
     "reason": "This is an explicit later review requirement. The maintained source-first review explains actual gaps and remedies."
+  },
+  {
+    "source_id": "SUP-05",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-002",
+      "H-007",
+      "H-008",
+      "H-009",
+      "H-012",
+      "H-013"
+    ],
+    "reason": "Selected historical facts are explained locally. They introduce no old implementation authority, dependency pin or execution permission."
+  },
+  {
+    "source_id": "SUP-06",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-002"
+    ],
+    "reason": "Selected historical facts are explained locally. They introduce no old implementation authority, dependency pin or execution permission."
+  },
+  {
+    "source_id": "SUP-03",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-003",
+      "H-004",
+      "H-005",
+      "H-006",
+      "H-010"
+    ],
+    "reason": "Selected historical facts are explained locally. They introduce no old implementation authority, dependency pin or execution permission."
+  },
+  {
+    "source_id": "SUP-07",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-004"
+    ],
+    "reason": "Selected historical facts are explained locally. They introduce no old implementation authority, dependency pin or execution permission."
+  },
+  {
+    "source_id": "SUP-04",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-007",
+      "H-009",
+      "H-010",
+      "H-011"
+    ],
+    "reason": "Selected historical facts are explained locally. They introduce no old implementation authority, dependency pin or execution permission."
   }
 ]

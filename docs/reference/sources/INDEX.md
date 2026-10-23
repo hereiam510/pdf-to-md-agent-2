@@ -2,7 +2,7 @@
 
 This optional reference collection is part of Git. No separate chat export, old repository, network service or private scratch folder is needed to read these sources. Start development with [DEVELOPMENT_GUIDE](../../DEVELOPMENT_GUIDE.md); these are historical statements, not executable instructions or competing specifications.
 
-All 207 visible user/assistant messages, the inherited product handoff, 30 supplied attachments, selected continuing requirements and the substantive forum figures are included. Every EVT/ATT/SUP cited by the maintained design and point ledger resolves inside this repository. Later human scope decisions are already local in [LATER_DECISIONS](../LATER_DECISIONS.md).
+All 207 visible user/assistant messages, the inherited product handoff, 30 supplied attachments, selected supporting excerpts and the substantive forum figures are included. Every EVT/ATT/SUP cited by the maintained design and point ledger resolves inside this repository. Later human scope decisions are already local in [LATER_DECISIONS](../LATER_DECISIONS.md).
 
 Message text is provided for direct reading and exact event JSON is preserved alongside it. Attachment bytes are unchanged. HTML is stored as inert text; the offline readers show extracted article text and all substantive original figures. Supporting old-document sources contain selected, explicitly delimited excerpts, not old current-state/default/permission files. The [bundle manifest](bundle-manifest.json) verifies each included file; the parent [source inventory](../source-inventory.json) relates it to original hashes.
 
@@ -43,12 +43,17 @@ Historical file paths and source URLs inside verbatim messages remain original t
 | [ATT-29](attachments/ATT-29.txt) | pasted-text | Exact supplied text |
 | [ATT-30](attachments/ATT-30.txt) | pasted-text | Exact supplied text |
 
-## Continuing requirements
+## Supporting excerpts
 
 | Source | Scope |
 | --- | --- |
 | [SUP-01](support/SUP-01.txt) | Selected source paragraphs; line ranges recorded in inventory |
 | [SUP-02](support/SUP-02.txt) | Selected source paragraphs; line ranges recorded in inventory |
+| [SUP-03](support/SUP-03.txt) | Five historical reference inputs and known example-output limits |
+| [SUP-04](support/SUP-04.txt) | Historical image, OCR, preview and packaging lessons |
+| [SUP-05](support/SUP-05.txt) | Historical credential, OCR, preview, export and script mechanisms |
+| [SUP-06](support/SUP-06.txt) | Inert code excerpt identifying historical package members |
+| [SUP-07](support/SUP-07.txt) | Exact sentence span correcting the repeated-glyph allegation |
 
 ## Discussion and inherited handoff
 

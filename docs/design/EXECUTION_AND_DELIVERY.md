@@ -341,6 +341,21 @@ The proposed `export_package(version_id, destination, delivery_label)` named the
 
 The selected version determines Markdown, JSON, HTML, source-derived images/assets, and ZIP. Keep the relevant body/maps/assets consistent across representations. A draft remains labeled draft/partial with known gaps. Selecting/exporting it must not gain a hidden “full task complete” precondition. Likewise export success must not upgrade the content claim.
 
+<a id="historical-package-members"></a>
+### Historical package members
+
+The earlier implementation used the following layout for one saved snapshot. These names illustrate member roles rather than fix the rebuild's filenames.
+
+| Historical member | Role for the selected saved version |
+| --- | --- |
+| `document.md` | The saved Markdown reading content, with relative links to its required assets. |
+| `document.json` | The structured document, version/source identity, page mapping, content status, Markdown, and asset metadata. |
+| `preview.html` | The safe HTML reading preview generated from that saved Markdown and version. |
+| `manifest.json` | The version identity and file-hash map for `document.md`, `document.json`, `preview.html`, and the referenced asset files. |
+| `assets/<referenced-file>` | Zero or more referenced asset files from that saved version. The package excludes unrelated workspace assets. |
+
+The ZIP contained `manifest.json` plus the files listed in its member map. An empty `assets/` directory was not a required ZIP entry. Final member names and layout remain open under Q3. The retained requirement is consistent artifacts and resolvable relative links for the explicitly selected version.
+
 A proportionate consistency check compares intended members and actual bytes against the selected version. A manifest identity alone does not prove that files were written correctly or that the ZIP contains those same members. Source fidelity is a further content question. Package consistency cannot certify that every figure label or paragraph is correct.
 
 Directory publication and ZIP publication are two effects. A rename of one cannot atomically publish both. Persist enough identity/intent/outcome to reconcile re-entry: which version/scope, destination, artifacts, and known completed publication belong to this operation. Preserve unrelated files and do not overwrite a different existing output merely because the original desired name is occupied. Exact output naming, idempotence/replacement behavior, and crash visibility remain Q3 choices.
@@ -364,7 +379,7 @@ This is separate from the immutable-version commit. A failed export can leave a 
 
 An all-exit finalizer cannot promise packaging after hard termination, shutdown, cancellation, or every graph failure. Cancellation first stops new model/tool work. Whether a large already-running package operation may continue depends on the task's defined policy. A later host action can export saved work. Automatically producing the newest draft must not replace the explicitly selected delivery. All-exit packaging is not a V1 prerequisite.
 
-**Source basis:** EVT-0914, EVT-0942, EVT-0968, EVT-1005, EVT-1068, EVT-1107, EVT-1147, EVT-1166. ATT-23–ATT-30.
+**Source basis:** EVT-0914, EVT-0942, EVT-0968, EVT-1005, EVT-1068, EVT-1107, EVT-1147, EVT-1166. ATT-23–ATT-30. SUP-05, SUP-06.
 
 <a id="worked-recovery-sequence"></a>
 ## 11. Worked recovery sequence

@@ -5260,6 +5260,209 @@
           }
         ]
       }
+    },
+    {
+      "id": "SUP-03",
+      "path": "supporting/workspace/docs/REFERENCE_CASES.md",
+      "sha256": "f8291d61fb28ff543cb9e39c2dceef83c70f38d08285f96051d4143cdaac0067",
+      "bytes": 13501,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "use": "Selected historical evidence only. No inherited implementation, default, task permission or current dependency pin.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-03.txt",
+        "sha256": "9923b02da9feda599980f903ac92277a0d808dde225b7c27584638603d4a8d85",
+        "bytes": 7882,
+        "representation": "Selected verbatim excerpts with original line ranges. SUP-07 selects a labelled sentence span within one original line. Historical code is inert text.",
+        "excerpts": [
+          {
+            "start_line": 3,
+            "end_line": 21,
+            "utf8_sha256": "be1bb3759b4dc3f31cb59af265523a440932cefa85887d15596c30d5cf4da00f"
+          },
+          {
+            "start_line": 35,
+            "end_line": 37,
+            "utf8_sha256": "73c2798ee662ef6792a1471e8c17964608199c79fcae2191d68e9c880ed9d74d"
+          },
+          {
+            "start_line": 55,
+            "end_line": 59,
+            "utf8_sha256": "23a908e1de52135cfa64f0ef40f6b44a9ccdaaf146b9dd8e889b3340131e1e2a"
+          },
+          {
+            "start_line": 67,
+            "end_line": 71,
+            "utf8_sha256": "f58e353ead77d310798550e13f77f83b416d09466f4a5843d9414a0439a39225"
+          },
+          {
+            "start_line": 79,
+            "end_line": 83,
+            "utf8_sha256": "09c0629391808a0ddf4e3961866929acfbbc78ea4a74e531ce5dd35f3f223244"
+          },
+          {
+            "start_line": 87,
+            "end_line": 89,
+            "utf8_sha256": "90fc1a4f14431162d053610eb6bc94961dae8a52a962f45397730a99d153d5c6"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-04",
+      "path": "supporting/workspace/docs/TECHNICAL_STACK.md",
+      "sha256": "0a79cf2d53cb28047a063408b5c8c041a5bba07c66cdc22e1d6ca2e03a7ed85f",
+      "bytes": 26597,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "use": "Selected historical evidence only. No inherited implementation, default, task permission or current dependency pin.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-04.txt",
+        "sha256": "f49df7fca248dfcd8011e45088bc3fde39d701284ce096234391f9894f9f62a2",
+        "bytes": 5432,
+        "representation": "Selected verbatim excerpts with original line ranges. SUP-07 selects a labelled sentence span within one original line. Historical code is inert text.",
+        "excerpts": [
+          {
+            "start_line": 19,
+            "end_line": 24,
+            "utf8_sha256": "155a89140bccd7832744d60908663c54d77df2b3ef73ecb99bef8badba84fb26"
+          },
+          {
+            "start_line": 29,
+            "end_line": 30,
+            "utf8_sha256": "7947814a8d67157e353af3d5584be0c19bd20bf52c667c25f22528e3b7d5929b"
+          },
+          {
+            "start_line": 32,
+            "end_line": 35,
+            "utf8_sha256": "f0ac67e189fa9330fd90bb9a862510e3f38794eea28c22ac6379266fcb7a7c60"
+          },
+          {
+            "start_line": 44,
+            "end_line": 46,
+            "utf8_sha256": "9a7dd092d12e36568286962b877844223ef30e362e039e0e0c8b9e95fbd509ad"
+          },
+          {
+            "start_line": 78,
+            "end_line": 84,
+            "utf8_sha256": "9663d95e628addafad4f493b87bb11e075f5bb78812c8f09e553a8add538a1ec"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-05",
+      "path": "supporting/workspace/docs/TOOLS.md",
+      "sha256": "8224e8abbd44437ee2737549c8a58f174b0e1dc01081f92ca6a4c0f006a02981",
+      "bytes": 73500,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "use": "Selected historical evidence only. No inherited implementation, default, task permission or current dependency pin.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-05.txt",
+        "sha256": "18fb027a8691c08c532629a2c3a5b76e0f74cec346a2bd388e78c1b30f0cf337",
+        "bytes": 8672,
+        "representation": "Selected verbatim excerpts with original line ranges. SUP-07 selects a labelled sentence span within one original line. Historical code is inert text.",
+        "excerpts": [
+          {
+            "start_line": 75,
+            "end_line": 80,
+            "utf8_sha256": "13cac9c0130710d087ea05ff095f4f595f4fc4fde9d6737167cbf5829cc72f6e"
+          },
+          {
+            "start_line": 117,
+            "end_line": 119,
+            "utf8_sha256": "b0333e777d095131b2b6e62da459d7221c0e4faaa3fb97ee39d9d5f802e00b82"
+          },
+          {
+            "start_line": 137,
+            "end_line": 141,
+            "utf8_sha256": "7858327a0caeb0ee90ef774a7a3b22e991043e8d05f358b90e794cb43d95f023"
+          },
+          {
+            "start_line": 487,
+            "end_line": 487,
+            "utf8_sha256": "7f87bcc08e1c11ea3e3bbf874363e6108d136008f7b22d6aa3da5d65fcd92678"
+          },
+          {
+            "start_line": 493,
+            "end_line": 493,
+            "utf8_sha256": "c6b7457134a6e21264cd7c443520527018f21a56765a0259f636c912f28fe70d"
+          },
+          {
+            "start_line": 514,
+            "end_line": 518,
+            "utf8_sha256": "04208c962cf2048e3bfcc797be03ca58e1fbe63e8a5d6b0533db515effca7db0"
+          },
+          {
+            "start_line": 538,
+            "end_line": 561,
+            "utf8_sha256": "3da326831dded7be9a7c3655ffe4bd3c22bd19438ea3cdd01163c654b8d7947a"
+          },
+          {
+            "start_line": 617,
+            "end_line": 619,
+            "utf8_sha256": "fd2d617ec1cae9ed0eb29d33a4379dae4616b9d1b1db6824dcd566c7f004e098"
+          },
+          {
+            "start_line": 629,
+            "end_line": 634,
+            "utf8_sha256": "107aaddbeea4c6992d1a03eabfdd14817e3ceae5f570f5c460c9a660b5c23caf"
+          },
+          {
+            "start_line": 646,
+            "end_line": 650,
+            "utf8_sha256": "523a96ebc67bf817150993b50a684139ef57164597782c1fd4ae0ff365570666"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-06",
+      "path": "supporting/workspace/src/pdf_to_md_agent/core.py",
+      "sha256": "19d6b8cd8d19203694ae426910ad190543965e8db3d4f2e64ab9cf909a4c2f4b",
+      "bytes": 20898,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "use": "Selected historical evidence only. No inherited implementation, default, task permission or current dependency pin.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-06.txt",
+        "sha256": "ddfaf0404b9d71319a3b66644741a4b85bffebbd07aa0556ee909cb994806eb2",
+        "bytes": 2785,
+        "representation": "Selected verbatim excerpts with original line ranges. SUP-07 selects a labelled sentence span within one original line. Historical code is inert text.",
+        "excerpts": [
+          {
+            "start_line": 318,
+            "end_line": 351,
+            "utf8_sha256": "3b0a722f78c3d4cf9f464aab1377ac1269b63cd173366ddc71fe23e4d6c261ae"
+          },
+          {
+            "start_line": 438,
+            "end_line": 450,
+            "utf8_sha256": "14060d2e0fddd193d16f9eba63f2a2b92a481423700cb47290718396f8bfae9a"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-07",
+      "path": "supporting/workspace/docs/EVIDENCE.md",
+      "sha256": "7445814abdaff30ee0f1c5b127ace1f40e9b39e478a6e80692013c31286d2117",
+      "bytes": 109728,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "use": "Selected historical evidence only. No inherited implementation, default, task permission or current dependency pin.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-07.txt",
+        "sha256": "76bde13ff375979ebffa21b3645a7bbbbdf065da72b9c95c067e5f3020ced140",
+        "bytes": 801,
+        "representation": "Selected verbatim excerpts with original line ranges. SUP-07 selects a labelled sentence span within one original line. Historical code is inert text.",
+        "excerpts": [
+          {
+            "start_line": 274,
+            "end_line": 274,
+            "start_column": 210,
+            "end_column": 423,
+            "column_convention": "Zero-based Unicode code points, end exclusive",
+            "utf8_sha256": "c36af61553e0f3daaa0e12294848fc2213256f81cb3f635946333250bde1de26"
+          }
+        ]
+      }
     }
   ],
   "bundled_sources": {

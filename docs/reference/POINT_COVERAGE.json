@@ -5036,5 +5036,145 @@
       "LIVE-09"
     ],
     "destination": "docs/reference/LATER_DECISIONS.md#live-09"
+  },
+  {
+    "id": "H-001",
+    "topic": "Illustrative page-comment syntax",
+    "summary": "Retain the three English HTML-comment examples. They do not define an exclusive grammar or close the Q1 serializer choice.",
+    "status": "illustrative-example",
+    "source_ids": [
+      "SUP-01"
+    ],
+    "destination": "docs/PRODUCT_REQUIREMENTS.md#page-identity-and-logical-structure"
+  },
+  {
+    "id": "H-002",
+    "topic": "Historical export members",
+    "summary": "Explain the four historical filenames and zero or more referenced assets. Preserve selected-version consistency without freezing Q3 names or requiring an empty ZIP directory.",
+    "status": "historical-example",
+    "source_ids": [
+      "SUP-05",
+      "SUP-06"
+    ],
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#historical-package-members"
+  },
+  {
+    "id": "H-003",
+    "topic": "Five historical input identities",
+    "summary": "Identify the five supplied PDF packages, physical counts, example-image counts and text-layer conditions. Actual input packages are not bundled or a mandatory benchmark.",
+    "status": "historical-observation",
+    "source_ids": [
+      "SUP-03",
+      "EVT-0001"
+    ],
+    "destination": "docs/reference/REFERENCE_INPUTS.md#package-identities"
+  },
+  {
+    "id": "H-004",
+    "topic": "JRE identity and repeated-glyph correction",
+    "summary": "Distinguish the two JRE inputs and preserve the repeated source glyphs on physical page 18. The prior duplication allegation was withdrawn.",
+    "status": "historical-correction",
+    "source_ids": [
+      "SUP-03",
+      "SUP-07",
+      "ATT-07"
+    ],
+    "destination": "docs/reference/REFERENCE_INPUTS.md#jre-identity-and-source-spelling"
+  },
+  {
+    "id": "H-005",
+    "topic": "Reference-image defects and medical preprocessing",
+    "summary": "Retain lossy-cover, painted-image and 140-DPI crop caveats. User-confirmed Adobe preprocessing differs from the scoped Nursing page-12 GlyphLessFont observation.",
+    "status": "historical-observation",
+    "source_ids": [
+      "SUP-03",
+      "ATT-07",
+      "ATT-10",
+      "EVT-0479"
+    ],
+    "destination": "docs/reference/REFERENCE_INPUTS.md#reference-image-and-ocr-caveats"
+  },
+  {
+    "id": "H-006",
+    "topic": "Full-source example coverage limits",
+    "summary": "Full JRE and News Writing examples lack linked artwork. Their own checking claims and extractable text do not certify source fidelity or completeness.",
+    "status": "historical-observation",
+    "source_ids": [
+      "SUP-03"
+    ],
+    "destination": "docs/reference/REFERENCE_INPUTS.md#full-source-example-limits"
+  },
+  {
+    "id": "H-007",
+    "topic": "Historical OCR initialization compatibility",
+    "summary": "Preserve the recorded Tesseract.js 6.0.1/core 6.1.2 and 7.0.0 observations with local language-data identity. Initialization is not accuracy or a rebuild dependency selection.",
+    "status": "historical-observation",
+    "source_ids": [
+      "SUP-04",
+      "SUP-05"
+    ],
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-local-ocr"
+  },
+  {
+    "id": "H-008",
+    "topic": "OCR timeout unit and partial-result retention",
+    "summary": "The old timeout applied per page, with historical 120/300-second values. Internal language checks and completed-page retention do not impose OCR on every conversion.",
+    "status": "historical-mechanism",
+    "source_ids": [
+      "SUP-05"
+    ],
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-local-ocr"
+  },
+  {
+    "id": "H-009",
+    "topic": "Preview content and resource boundaries",
+    "summary": "Preserve saved Markdown and page comments independently of sanitized display. Explain local saved-version bytes, blocked external resources and the historical Playwright mechanism.",
+    "status": "retained-requirement-with-historical-mechanism",
+    "source_ids": [
+      "SUP-04",
+      "SUP-05"
+    ],
+    "destination": "docs/design/DOCUMENT_ENGINE.md#preview-content-and-resource-boundary"
+  },
+  {
+    "id": "H-010",
+    "topic": "Image-mode and encoding pitfalls",
+    "summary": "Explain why blanket RGB conversion or new JPEG encoding can lose source properties. Native JPEG reuse and PNG naming do not imply equivalent preservation.",
+    "status": "retained-requirement-with-example",
+    "source_ids": [
+      "SUP-04",
+      "SUP-03"
+    ],
+    "destination": "docs/design/DOCUMENT_ENGINE.md#image-mode-and-encoding"
+  },
+  {
+    "id": "H-011",
+    "topic": "Historical desktop packaging rationale",
+    "summary": "Preserve Forge Webpack/TypeScript, then-experimental Vite and PyInstaller one-folder rationale. These observations do not choose current versions or prove installed-product readiness.",
+    "status": "historical-direction",
+    "source_ids": [
+      "SUP-04"
+    ],
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-desktop-packaging"
+  },
+  {
+    "id": "H-012",
+    "topic": "Concrete private configuration convention",
+    "summary": "Explain ignored configuration, optional plaintext key files, child-only environment, direct process environment and hidden input. Historical names are not an implemented rebuild launcher.",
+    "status": "historical-mechanism",
+    "source_ids": [
+      "SUP-05"
+    ],
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-private-configuration"
+  },
+  {
+    "id": "H-013",
+    "topic": "Script environment and privilege boundary",
+    "summary": "The old transform runner omitted inherited API credentials while retaining a document pointer. Environment filtering did not create an OS sandbox.",
+    "status": "historical-mechanism",
+    "source_ids": [
+      "SUP-05"
+    ],
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#script-credential-boundary"
   }
 ]

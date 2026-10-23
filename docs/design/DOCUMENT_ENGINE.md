@@ -54,6 +54,13 @@ The document core makes the same preserved evidence available to the built-in ru
 
 Text, words, layout, and font/position fields may overlap while carrying different evidence. Deduplicate avoidable serialization without declaring one fixed field set sufficient for every task. Full access remains available, and the agent chooses which representation is relevant. An OCR confidence score or a small text difference cannot establish that an image is dispensable.
 
+<a id="image-mode-and-encoding"></a>
+### Image mode and encoding
+
+The historical Pillow warning concerns retained pixels, color, transparency and bit depth. A blanket `convert("RGB")` can discard alpha or change a grayscale or one-bit representation. Do not silently apply this conversion to every crop. Choose a supported representation that preserves the relevant source properties. Report any format limitation instead of silently lowering fidelity.
+
+New JPEG encoding can introduce lossy changes, even when the crop dimensions stay unchanged. Copying an existing native JPEG stream differs from decoding and recompressing it. A PNG extension alone does not prove native resolution or unchanged pixels. The [reference-input notes](../reference/REFERENCE_INPUTS.md) explain the historical crop and image-edit defects that motivate these checks. Pillow was a proposed component in that record, not a verified rebuild implementation. See SUP-04 for the retained warning.
+
 An optional computation index can reuse independently computed page/region results. The historical key proposal included source hash, tool/engine version, language-data hash, normalized parameters, and page/region. Overlapping requests could retrieve existing units. An explicit `force_recompute` could obtain a fresh result.
 
 This does not require a separate file for every page, force cached results into model context, or prove cost savings. Suitability includes the method that produced the result, not merely whether its bytes still hash correctly. Computation reuse remains a performance option, not a V1 prerequisite.
@@ -310,6 +317,15 @@ See [source][r].
 The reference link resolves when the definition is in the same parsed document. Rendering the first content block alone can lose the definition. Parsing together still does not enable a footnote extension absent from configuration.
 
 Parser token/source-line information may help produce app-owned DOM anchors. It is not automatically a one-block/one-element map: tokens can span content-block boundaries and one block can produce several DOM regions. Raw HTML needs explicit handling. The historical parser returned an `html_block`'s raw `token.content`, ignoring attributes attached only to the parser token. A `data-block-id` wrapper/attribute proposal therefore was not a complete 15-line mapping engine. Sanitization and allowed app-generated markers must preserve the intended rendering and security boundary without rewriting source content casually.
+
+<a id="preview-content-and-resource-boundary"></a>
+### Saved content and preview resources
+
+Preview sanitization must not rewrite saved Markdown or delete its page-marker comments. The sanitized display is a derived view. This requirement does not require every HTML comment to remain in the rendered DOM. Preserve the canonical Markdown and its correspondence data independently of display cleanup. Keep required table spans, emphasis and notation readable.
+
+Bind preview document assets to the selected immutable version. Load those assets from registered local bytes. Block external resource requests and source-provided active content. A link in the document is not permission to fetch its target automatically. Report unavailable resources instead of substituting mutable workspace files or remote content.
+
+The old Playwright view froze the saved HTML and image bytes before rendering. It fulfilled a virtual origin through local routing, without a listening HTTP server. It blocked all other requests and disabled page scripts, service workers and downloads. This mechanism made the preview reproducible and prevented source content from contacting external services. See SUP-05 for the historical mechanism and SUP-04 for the saved-comment rule. A future Electron renderer needs its own verification of this boundary.
 
 <a id="parser-source-map-mechanics"></a>
 ### How the proposed source-line map would locate output

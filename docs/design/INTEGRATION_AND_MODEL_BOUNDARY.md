@@ -173,6 +173,21 @@ The optional `query_visual_evidence` design let a text-focused agent ask a confi
 
 **Source basis:** EVT-0137, EVT-0249, EVT-0349, EVT-0534, EVT-0560, EVT-0595, EVT-0638, EVT-1166. See [P1-031](../reference/01-foundations-and-frameworks.md#p1-031), [P2-109–110](../reference/02-context-state-and-evidence.md#p2-109), and [complete-request accounting](CONTEXT_AND_EVIDENCE.md#capacity-accounting).
 
+<a id="historical-private-configuration"></a>
+### Historical local configuration and credential delivery
+
+The old development setup used ignored `private/provider.json` for endpoint, protocol, model, `api_key_env` and runtime settings. It stored no key in that JSON. An optional ignored `private/api-key.txt` contained one plaintext credential, without quotes, a `KEY=` prefix or extra lines. Git exclusion did not encrypt the file.
+
+The old runtime used the full endpoint URL and did not infer a route suffix. Responses used `protocol: "responses"` with the full `/v1/responses` URL. Authentication used Bearer credentials from the named process variable. The old route required HTTPS except for loopback HTTP.
+
+The old PowerShell launcher, `tools/run-local-agent.ps1`, read the key without displaying it. It supplied the key through the child-only `ProcessStartInfo.Environment` entry named by `api_key_env`. It used `ArgumentList` for process arguments and left parent, user and machine environment variables unchanged. The key itself never belonged in command arguments, prompts, screenshots or logs.
+
+The app also accepted the configured process environment variable directly, illustrated by `PDF_MD_API_KEY`. For the recorded route, that variable held the Nexus credential. Interactive `--ask-key` read a hidden value into process memory without writing a credential file. The app did not automatically load dotenv files or credential files.
+
+These historical names are examples. This repository does not yet supply that launcher, credential storage or a final configuration schema. Missing local files were errors, not permission to search arbitrary folders or chats. Local file checks did not establish valid credentials, endpoint connectivity, model access or permission for live calls.
+
+**Historical source:** [SUP-05](../reference/sources/support/SUP-05.txt), old `TOOLS.md` lines 75–80, 117–119 and 137–141. The rebuild retains the credential-exclusion and safe-diagnostic requirements stated above.
+
 <a id="native-protocol-and-adapter"></a>
 ## 6. Native request/response meaning and the adapter boundary
 
@@ -285,6 +300,9 @@ The [context guide](CONTEXT_AND_EVIDENCE.md#oversized-results) owns the capacity
 
 Trusted task scripts extend the agent's methods without a new product API for every transformation. They are process-opt-in/off by default, run with host-user privileges, and are not an OS sandbox. Once enabled for the task, autonomous own-task use needs no routine per-script approval. Complete files/logs survive bounded return text. Scripts do not erase already consumed history, and source commands or forum instructions remain inert data.
 
+<a id="script-credential-boundary"></a>
+For enabled `transform` calls, the old runner used a reduced environment that omitted inherited API credentials. It retained `PDF_MD_TASK` as a document pointer. This environment filtering did not remove host-user permissions or make scripts an OS sandbox. The existing opt-in requirement and source-data boundary still apply. [SUP-05](../reference/sources/support/SUP-05.txt) preserves the old `TOOLS.md` explanation at lines 646–650.
+
 Fidelity applies to source wording, meaningful glyphs, units, emphasis, reading order, cross-page relationships, table relationships, complete figures/captions, and searchable labels. The product permits reflow. Paraphrase or guessing cannot replace difficult evidence. Physical positions, printed labels, `none`, `unknown`, outside-scope, and unprocessed states remain distinct. The [document guide](DOCUMENT_ENGINE.md) details local edit and render mechanics. Tools and protocol adapters must preserve these distinctions.
 
 **Source basis:** EVT-0001, EVT-0137, EVT-0249, EVT-0318, EVT-0382, EVT-0400, EVT-0414, EVT-1166. See [P1-003–006](../reference/01-foundations-and-frameworks.md#p1-003), [P1-028](../reference/01-foundations-and-frameworks.md#p1-028), [P1-075–076](../reference/01-foundations-and-frameworks.md#p1-075), and [P1-087–088](../reference/01-foundations-and-frameworks.md#p1-087).
@@ -350,6 +368,28 @@ The historical alternative put Tesseract.js workers in Node and considered Elect
 The installed product must supply its required runtimes. The rebuild does not silently inherit old environment paths, package versions, process counts, or OCR worker choices. Packaging and permissions remain implementation work under the product scope. A useful complete flow need not wait for resolution of every hypothetical isolation or platform scenario.
 
 **Source basis:** EVT-0001, EVT-0382, EVT-0414, EVT-1068, EVT-1107, EVT-1147, EVT-1166, ATT-05, ATT-06, ATT-27–30, SUP-01.
+
+<a id="historical-local-ocr"></a>
+### Historical local OCR compatibility and timeout semantics
+
+The old OCR setup selected Tesseract.js `6.0.1` with core `6.1.2` and local `chi_tra`/`eng` `best_int` data. Both language packages used version `1.0.0`. Recognition sent no source, image or text to a recognition service and required no runtime language download.
+
+The recorded `6.0.1`/core `6.1.2` pair initialized both languages separately and together. The `7.0.0`/core `7.0.0` pair emitted misleading multilingual loading diagnostics with the same data, despite cold single-language success. This observation explained the old compatible lock. It did not establish universal v7 failure, OCR accuracy or installed-app readiness.
+
+Before combined recognition, that implementation checked installed language files and cold-initialized each requested language independently. Returned records included package version, uncompressed SHA-256/size and initialization state. A missing language failed without silent English fallback. Any language-load diagnostic prevented a successful recognition claim. Producing text alone therefore did not prove that the requested language data loaded correctly.
+
+The old `ocr` tool's `timeout` argument applied to each page, with a default of 120 seconds and a maximum of 300 seconds. Those values were historical defaults, not an overall batch deadline or rebuild settings. Completed page results survived a later failure or cancellation. Initialization checks belonged inside that OCR implementation, not before every conversion. The agent still chooses whether OCR is useful.
+
+**Historical sources:** [SUP-04](../reference/sources/support/SUP-04.txt), old `TECHNICAL_STACK.md` lines 23, 44–46 and 78–84. [SUP-05](../reference/sources/support/SUP-05.txt) preserves old `TOOLS.md` lines 487 and 538–561. These versions are not rebuild dependency pins.
+
+<a id="historical-desktop-packaging"></a>
+### Historical packaging direction and its limits
+
+The old desktop plan selected Electron Forge's Webpack + TypeScript template because Forge then marked its Vite integration experimental. It proposed an initial PyInstaller one-folder Python bundle inside Electron, so users would not need a separate Python installation. Its OCR packaging direction included bundled Node and unpacked worker, WASM and language-data resources.
+
+These were packaging directions, not a verified installed application. Electron, React and Forge were inactive in the recorded local environment. The rebuild still requires the installed product to supply its necessary runtimes. Future implementation must select compatible versions and check the resulting package on its target platform. The historical Vite observation does not establish its current status or select a rebuild template.
+
+**Historical source:** [SUP-04](../reference/sources/support/SUP-04.txt), old `TECHNICAL_STACK.md` lines 21, 32–35, 44–46 and 84.
 
 <a id="integration-failure-cases"></a>
 ## 11. Concrete integration failures and the retained response

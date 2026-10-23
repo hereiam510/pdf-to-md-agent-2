@@ -1,0 +1,45 @@
+SUP-04 — Historical image, OCR, preview and desktop component lessons
+
+Selected historical source excerpts, not active instructions or a rebuild implementation.
+The maintained guides explain their scope and current relevance.
+Source: supporting/workspace/docs/TECHNICAL_STACK.md
+Source snapshot also matches old commit 182ea39b31829edf6491a72472004b1cd1068897.
+Full-source SHA-256: 0a79cf2d53cb28047a063408b5c8c041a5bba07c66cdc22e1d6ca2e03a7ed85f
+No complete old development document or executable module is imported.
+
+--- Original lines 19-24 ---
+| Desktop application | Electron with TypeScript; Electron's bundled Node.js at runtime | Desktop stage. Own windows, dialogs, application lifecycle and backend processes; use the official main/preload/renderer boundaries. |
+| User interface | React with ordinary CSS | Desktop stage. Task state, progress, reading and editing views; no Next.js server, global state framework or large editor suite initially. |
+| Desktop build and distribution | Electron Forge with its Webpack + TypeScript template; npm and package-lock.json | Desktop stage. Use the first-party integration and platform makers. Forge's Vite integration is currently marked experimental, so Webpack is the working default. |
+| PDF/source tools | CPython 3.13 baseline with PyMuPDF | Source/artifact core. Documented text/position evidence, native image extraction, page/region rendering and masks reduce PDF integration boundaries. Practical fidelity and packaging still require validation. |
+| Initial OCR backend | Tesseract.js 6.0.1/core 6.1.2, CPU WASM; local chi_tra/eng best_int data | Scanned-input tools. Python renders selected regions and owns provenance; a local Node worker returns candidates/positions. Explicit local data avoids runtime downloads. Windows packaging still needs an installed-app check. |
+| Raster image operations | Pillow | When pixel cropping or a suitable lossless output format is needed. Preserve retained pixels and color/depth where supported; do not silently convert everything to RGB or newly compress images as JPEG. |
+
+
+--- Original lines 29-30 ---
+| Reading preview | markdown-it-py with nh3 for required safe HTML | Source/artifact core and desktop. Preserve required table spans, emphasis and notation. Preview sanitization must not rewrite saved content or remove its Markdown page comments. |
+| Optional saved-reading pixels | Playwright Python 1.64.0 with its matching headless Chromium | Backend inspection stage. Render the actual saved HTML/assets through intercepted local bytes, with no web service. Return real image inputs to the same agent; screenshots remain scratch evidence. Electron-stage rendering integration remains subsequent work. |
+
+
+--- Original lines 32-35 ---
+| Packaged backend | PyInstaller, initially a one-folder bundle included with Electron | Desktop packaging stage. Include Python and dependencies so the user need not install Python. Build and verify per target platform; include the selected OCR runtime/data when applicable. |
+| Development checks | pytest and Ruff for Python; TypeScript checks and desktop build for UI | Apply checks appropriate to the change. Select UI test tooling when behavior warrants it; no scoring platform or prescribed review count. |
+
+Use a supported Node.js LTS compatible with the chosen Forge/Electron versions for development; the app uses Electron's own Node.js. Exact compatible versions belong in manifests and lockfiles after an initial dependency check, not guessed version pins here.
+
+
+--- Original lines 44-46 ---
+packaging convention. OCR adds `ocr/package.json`/`package-lock.json`: Tesseract.js 6.0.1,
+core 6.1.2 and `@tesseract.js-data/chi_tra`/`eng` 1.0.0. Node 24.19.0 is exercised; Node 22+
+is required by this project's OCR runner. npm 11.6.2 bootstraps locally when needed. HTTPX2 2.13.1 and httpcore2 2.13.1 are locked; HTTPX2 is a direct controller dependency. Electron/React/Forge, Pillow and provider SDKs are inactive. Optional preview inspection uses Playwright 1.64.0, pyee 14.0.0 and greenlet 3.5.6. Its matching
+
+
+--- Original lines 78-84 ---
+## OCR backend and packaging choices
+
+Tesseract.js 6.0.1/core 6.1.2 with local chi_tra/eng 1.0.0 data is the selected OCR implementation. It returns text/TSV/blocks/confidence/positions and accepts page/region/DPI/PSM choices. Missing languages fail; low-confidence/empty output warns. Per-language preflight/hash/cold initialization precedes combined recognition. Recognition is local with no runtime language download. This establishes initialization, not accuracy.
+
+Compatibility evidence: 6.0.1/core 6.1.2 initialized singly/jointly; 7.0.0/core 7.0.0 emitted misleading multilingual loading diagnostics with the same data despite cold single-language success. The compatible lock has a concrete reason; newest is not automatically best. OCR renders are scratch evidence, not replacement artwork. Native Tesseract/PyMuPDF OCR wrapper is inactive; the agent may choose other justified methods.
+
+Bundled Node plus unpacked worker/WASM/data is the selected desktop packaging direction, not a verified installed app. PyInstaller backend inclusion, platform resources/lifecycle and app-stage script permissions need desktop evidence, outside the closed trial's scope. Shared finite recovery/dual transport have scoped offline/live evidence; arbitrary old-session restoration and general crash/migration infrastructure remain deferred.
+

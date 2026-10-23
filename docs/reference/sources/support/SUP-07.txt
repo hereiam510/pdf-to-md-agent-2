@@ -1,0 +1,11 @@
+SUP-07 — Source-fidelity correction for repeated glyphs
+
+Selected historical source excerpts, not active instructions or a rebuild implementation.
+The maintained guides explain their scope and current relevance.
+Source: supporting/workspace/docs/EVIDENCE.md
+Source snapshot also matches old commit 182ea39b31829edf6491a72472004b1cd1068897.
+Full-source SHA-256: 7445814abdaff30ee0f1c5b127ace1f40e9b39e478a6e80692013c31286d2117
+No complete old development document or executable module is imported.
+
+--- Original line 274, columns 210-423 (zero-based code points, end exclusive) ---
+An exact-source recheck confirms two consecutive 部 glyphs across the physical 18 line boundary; old A/C wording is faithful there. The former one-部/duplication allegation and its OCR-cause inference are withdrawn.

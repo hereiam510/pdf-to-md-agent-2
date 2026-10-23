@@ -12,11 +12,12 @@ Updated 2026-10-23, Asia/Hong_Kong. This records documentation scope, technical-
 | Attachments | All 30 exact attachments bundled: 28 pasted-text files and two forum HTML files stored as inert text |
 | Forum figures | All 14 ATT-01 research illustrations and all 10 ATT-02 substantive image pages retain original decoded WebP bytes. Offline readers are local. |
 | Continuing requirements | Relevant SUP-01/02 verbatim excerpt ranges include source and excerpt hashes. The rebuild does not import old active documents/defaults/permissions. |
+| Historical engineering details | SUP-03–07 retain selected facts about reference inputs, tools, export filenames and a source-spelling correction. Maintained explanations distinguish history from requirements. |
 | Later requests | LIVE-01 through LIVE-09 preserved locally, including self-containment, technical detail and direct-conversation review |
-| Point ledger | 312 entries: 102 foundations, 116 context/state, 65 delivery/recovery, 29 effective-owner/scope mappings |
-| Source dispositions | 249 sources: 246 mapped to retained points, one empty saved final message and two administrative export messages. No classification remains unresolved. |
-| Development-detail map | All 312 point IDs mapped: 247 explained, 47 historical references, 18 scope notes |
-| Bundled-file integrity | 477 included files verified against local hashes, with a separate versioned bundle manifest |
+| Point ledger | 325 entries. These include 102 foundations, 116 context/state and 65 delivery/recovery points. Another 29 map owners/scope, and 13 restore historical details. |
+| Source dispositions | 254 sources. Of these, 251 map to retained points. One saved final message is empty, and two messages concern export administration. No classification remains unresolved. |
+| Development-detail map | All 325 point IDs mapped: 253 explained, 54 historical references, 18 scope notes |
+| Bundled-file integrity | 482 files registered with local hashes and a separate versioned bundle manifest. Verification scope appears below. |
 
 The [point ledger](POINT_COVERAGE.json), [detail map](DEVELOPMENT_COVERAGE.json), [source dispositions](SOURCE_COVERAGE.json) and [source index](SOURCE_INDEX.md) serve different purposes. Counts are not independent feature counts: some owner mappings overlap the detailed records, and a point can contain several connected nuances. A source ID alone is not an adequate technical explanation.
 
@@ -81,8 +82,8 @@ A clean copy was made from the Git index, containing only intended versioned fil
 The copy passed:
 
 - Documentation and image links, anchors, source IDs, all retained point/detail mappings and source dispositions.
-- Hash/size verification of all 477 bundled files, including exact event/attachment identity checks and the 24 figures.
-- Local lookup for inherited/empty/final messages, text/forum attachments, both supporting excerpts and a later human request.
+- Hash/size verification of all 482 bundled files, including exact event/attachment identity checks and the 24 figures.
+- Local lookup for inherited/empty/final messages, text/forum attachments, all seven supporting excerpts and a later human request.
 - Exact event-JSON reading, offline forum-reader routing and local later-request reading.
 - A negative check: a modified copied source was refused on hash mismatch, then the test copy was restored.
 - Syntax parsing of the two standard-library utilities.
@@ -99,6 +100,36 @@ Default lookup never infers an external export directory. The explicit --export 
 
 Whitespace checks cover maintained documentation and utilities. Whitespace cleanup excludes exact historical source files. Hashes and Git attributes protect original CRLF, Markdown hard-break spaces and other source formatting. The check does not normalize those bytes. The checks required no dependency installation, global setting change or live provider request.
 
+<a id="verified-historical-detail-gaps"></a>
+## Verified historical-detail gaps
+
+The later attachment review compared four claimed omission areas with the repository at `8f5e7e6`. The user authorized filling confirmed gaps. Three reviewers checked distinct source areas, wrote scoped additions and cross-reviewed another area. Root integrated navigation, selected source excerpts, coverage records and wording.
+
+The review found real omissions in maintained explanations. Some underlying facts already existed in local sources. The page-comment examples, for example, were already in SUP-01. The review did not establish the critique's claim of complete core coverage or its proposed “100%” completeness conclusion.
+
+| Area | Restored explanation and evidence boundary |
+| --- | --- |
+| Page comments and package layout | Preserve the three syntax examples and historical export filenames. Exact grammar and final names remain Q1/Q3 choices. Assets mean referenced files, without a mandatory empty ZIP directory. |
+| Five reference packages | Preserve identities, input conditions, example defects, absent linked artwork and the repeated-glyph correction. The actual PDFs and example outputs are not bundled or newly validated. |
+| OCR and image handling | Explain local language identity, initialization diagnostics, per-page timeout and completed-page retention. Preserve RGB/JPEG pitfalls without pinning old versions or imposing OCR. |
+| Preview resources | Separate saved Markdown/comments from sanitized display. Explain historical local-byte routing and external-resource blocking. Electron behavior remains unverified. |
+| Desktop packaging | Preserve Forge and PyInstaller rationale as historical directions. The earlier Vite status is not a current status claim. |
+| Credentials and scripts | Explain optional plaintext files, ignored configuration, process-environment and hidden-input routes. Environment filtering does not encrypt files or create a sandbox. |
+
+The review corrected two overgeneralizations about the medical inputs. Adobe OCR preprocessing is user-confirmed for both supplied medical PDFs. The 446-span `GlyphLessFont` observation concerns Nursing physical page 12 only. It does not describe every page of both inputs.
+
+SUP-03–07 contain selected verbatim evidence with full-source and excerpt hashes. Their source snapshots match the supplied export and old commit `182ea39b31829edf6491a72472004b1cd1068897`. SUP-06 is inert code text for filenames and ZIP membership. SUP-07 selects only the correction sentences within one evidence paragraph. This review imported no complete old development document, executable module or work ledger.
+
+The additions use the same ASD-STE100 clarity rules as the earlier language review. Reviewers compared new statements with original source wording after editing. They preserved historical qualifiers, example status, source scope and open contracts. These checks do not claim official dictionary certification or semantic completeness.
+
+The per-file language scan reported four vocabulary overlaps and two passive descriptions in added text. These describe different operations or leave an irrelevant actor unnamed. No new sentence-length violation remained.
+
+After integration, the repository-only copy passed 19 checks. These included all five new source lookups with outside file access denied. The documentation check covered 25 Markdown files, 482 bundled files and all 325 point/detail mappings. All 476 prior source payloads remained byte-identical. Only their navigation index changed.
+
+A fresh comparison preserved the old repository's HEAD, status and all 103 tracked or nonignored file hashes. The user's untracked `docs_bundle.txt` also remained unchanged and outside the commit. These checks did not inspect ignored runtime trees or prove application behavior.
+
+No new PDF inspection, OCR run, provider call, dependency installation or current upstream compatibility survey occurred. The work restores documented lessons and their limits. The [reference-input note](REFERENCE_INPUTS.md) and technical guides explain those lessons without requiring the old checkout or conversation export.
+
 ## Original-project boundary and remaining limits
 
 The comparison against the old repository's initial baseline found these results:
@@ -109,7 +140,7 @@ The comparison against the old repository's initial baseline found these results
 
 Its pre-existing uncommitted work remains intact. Ignored runtime trees are outside that hash comparison and were not intentionally modified. The initial review reused an old Python interpreter read-only. The portable verification uses an independent interpreter.
 
-The supplied large export remains untouched. The source copies required here are now local. Historical paths inside verbatim messages do not create a development dependency. No old application code, private configuration, run workspace or closed-job ledger became an active owner. No remote publication, app implementation, Nexus generation/probe, PDF conversion, benchmark or installer verification was performed.
+The supplied large export remains untouched. The source copies required here are now local. Historical paths inside verbatim messages do not create a development dependency. No old application code, private configuration, run workspace or closed-job ledger became an active owner. This gap review made no remote publication, app implementation, Nexus generation/probe, PDF conversion, benchmark or installer verification.
 
 EVT-0258's saved final body is empty, some forum screenshots clip text/code, and the original export records missing incidental assets and five unreconstructible old document revisions. These source limits are disclosed, not filled with invented text. They do not represent missing pasted-text attachments or a requirement to consult the original export for the documented design.
 

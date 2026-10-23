@@ -1,0 +1,97 @@
+SUP-05 — Historical credential, OCR, preview, export and script boundaries
+
+Selected historical source excerpts, not active instructions or a rebuild implementation.
+The maintained guides explain their scope and current relevance.
+Source: supporting/workspace/docs/TOOLS.md
+Source snapshot also matches old commit 182ea39b31829edf6491a72472004b1cd1068897.
+Full-source SHA-256: 8224e8abbd44437ee2737549c8a58f174b0e1dc01081f92ca6a4c0f006a02981
+No complete old development document or executable module is imported.
+
+--- Original lines 75-80 ---
+Use the **full endpoint URL**, including its route; the runtime does not append, remove or infer a
+suffix. For Responses choose `protocol: "responses"` and the corresponding full `/v1/responses`
+URL. HTTPS is required except for loopback HTTP. Authentication is Bearer from the named process
+environment variable. For this route, `PDF_MD_API_KEY` holds the Nexus credential, not a separate
+OpenAI Platform key. `--ask-key` reads it privately into process memory from an interactive terminal;
+it writes no credential file. Env files are not implicitly loaded. `parameters` carries optional
+
+
+--- Original lines 117-119 ---
+Local development may store the authorized key in ignored `private/api-key.txt`. The file contains only one credential; no quotes, `KEY=` prefix or extra lines. `private/provider.json` contains endpoint, protocol, configured model, `api_key_env` and runtime settings, never the key itself. Local setup may start with a candidate config and empty key template; current readiness belongs in CURRENT_STATE, and private files are not distributed through Git. Fill the key privately, without putting it in a prompt, command argument, transcript, screenshot or log. Ignoring a file excludes normal Git staging; it does not encrypt it.
+
+The versioned `tools/run-local-agent.ps1` launcher requires PowerShell 7+. It reads the local key without displaying it, starts Python with `-m pdf_to_md_agent.agent` and passes the key through the child-only `ProcessStartInfo.Environment` entry named by `api_key_env`. It uses `ArgumentList` rather than shell-built command text. Parent/user/machine environment variables are not modified, and the launcher's environment copy/key reference is cleared on exit. The launcher does not alter provider/schema/controller behavior; direct process-environment and interactive `--ask-key` routes also work. There is no automatic dotenv or credential-file loading inside the app.
+
+
+--- Original lines 137-141 ---
+Without `-PrivateDirectory`, an existing checkout-local `private/provider.json` selects that private directory; otherwise Git's primary-worktree path selects shared `private/`. Missing files are errors, not an invitation to search arbitrary folders or chats. `-Config` changes the provider-config path only; the key stays in the chosen private directory. Another clone/machine needs its own local setup or an explicit accessible directory. Private files and virtual environments are not copied by Git/worktrees.
+
+The default interpreter is this checkout's `.venv/Scripts/python.exe`; set up its locked environment locally. `-PythonPath` explicitly selects another suitable project interpreter. Mutable runs, task paths and outputs belong to separate task directories in the primary checkout, not the private directory. Shared configs/credentials need not be rewritten by conversion. The candidate URL/model/settings require confirmation and a frozen comparison plan; the launcher does not change context modes, retry policy or job limits.
+
+`-CheckOnly` reads local files but starts no agent and makes no network call. It reports paths/fixed issues without credential contents. Exit 0 means these local file checks passed, exit 2 means missing/empty local prerequisites, and exit 1 means invalid arguments/config or launcher failure. It does not validate installed dependencies, the complete app schema, key validity, endpoint connectivity or model access. It is not authorization to run a comparison. An actual launch returns the child exit code. `-AllowHostScripts` forwards the explicit opt-in; `-RemoteSettled` applies only with `-Resume` and records a caller assertion, not remote cancellation/query. Normal cancellation uses the existing workspace `--cancel` command; stopping a launcher is not proof a local/remote job has settled.
+
+
+--- Original lines 487-487 ---
+| `ocr` | `document`, `pages`, optional `languages` (default `["chi_tra","eng"]`), `dpi` (300), `region`, `psm` (3), per-page `timeout` (120 seconds, max 300): fresh local candidates/positions/status and diagnostics |
+
+
+--- Original lines 493-493 ---
+| `export` | `document`, optional `version`: one ZIP from that saved snapshot, including Markdown, JSON, safe HTML preview, manifest and only referenced assets |
+
+
+--- Original lines 514-518 ---
+`view_preview` reopens and integrity-checks the chosen immutable snapshot, freezes its saved HTML
+and referenced image bytes, and renders those unchanged bytes in Chromium. A virtual origin is
+fulfilled entirely by exact saved files through Playwright routing; there is no listening HTTP
+service and all other requests are blocked. Page scripts, service workers and downloads are disabled.
+It does not render mutable draft/task images or regenerate the preview. The returned actual PNG
+
+
+--- Original lines 538-561 ---
+The initial engine is Tesseract.js 6.0.1/core 6.1.2 with local chi_tra/eng best_int data. No source,
+image or text is sent to a recognition service. Other languages need an intentionally installed
+matching data package; a missing language returns a failed run, never silent English fallback.
+
+```json
+{"operation":"ocr","args":{"document":"<imported-id>","pages":[10,11],"languages":["chi_tra","eng"],"dpi":300,"psm":3}}
+```
+
+Regions use the same unrotated PDF points as other tools. PSM 3 is automatic layout, 6 assumes a
+text block, 7 a line and 11 sparse text. OSD is not installed; use a supported recognition mode.
+These are selectable tactics, not a conversion recipe. Each selected image is a new render and
+fresh recognition; existing PDF text is not reused as OCR output. Installed language files are
+checked before initialization. Each requested language is initialized independently, then combined;
+returned language records include package version, uncompressed SHA-256/size and initialization state.
+Any engine language-load diagnostic prevents a successful recognition claim.
+
+OCR returns raw text, blocks, TSV and word candidates with confidence, render-pixel boxes and
+unrotated `bbox_pdf` boxes. Low confidence (below 80) and empty recognition warn; even high confidence
+does not establish accurate content or table relationships. `status` and per-page execution state
+distinguish failures/timeouts. `workspaces/<document>/ocr/<run>/` retains requests, raw recognition,
+logs and current/final batch status. Completed page results survive a later failure/cancellation;
+scratch OCR evidence is excluded from document export. The agent composes and checks saved content.
+The Node worker uses worker threads in one process; killing that process stops its recognition.
+Windows bundled distribution and performance beyond the tested excerpts are not verified.
+
+
+--- Original lines 617-619 ---
+separate from the faithful image. Refer to registered assets using `assets/<hash>.<ext>` in Markdown
+images or HTML `src`/`href`. No external image files are fetched. The offline preview blocks remote
+resources and active HTML, preserving table spans; sanitization never rewrites saved Markdown.
+
+
+--- Original lines 629-634 ---
+Each save copies referenced assets into an immutable version directory and generates all artifacts
+from that content. File locks serialize writers; a stale `base_version` fails instead of overwriting
+someone else's content. Atomic publication leaves the previous version usable on failure. Reopen
+checks saved file hashes and Markdown/JSON identity. Export uses that snapshot, not mutable task assets
+or a recursive shared workspace. The ZIP's `manifest.json` records file hashes and the version.
+Hashes establish integrity, not content fidelity or adversarial tamper resistance.
+
+
+--- Original lines 646-650 ---
+`--allow-host-scripts` enables `transform` for trusted tasks for that server/CLI process. It is off by
+default, and enabling it once does not require per-script repair approvals. It executes the saved
+Python script using this project's interpreter and packages, with cwd `scripts/<run>/` and
+`PDF_MD_TASK` pointing to its document. A reduced environment omits inherited API credentials.
+stdout/stderr, the script and atomic status JSON remain in that run directory. Useful transformation
+

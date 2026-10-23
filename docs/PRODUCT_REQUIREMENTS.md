@@ -44,6 +44,16 @@ Use English HTML comments for Markdown page markers. Account for every physical 
 
 Grouped ranges/lists must not imply that unused intervening pages contributed. Hidden Markdown comments and structured page metadata must agree. Free-text notes remain source-supported.
 
+These retained [syntax examples](reference/sources/support/SUP-01.txt) illustrate English page comments. They do not define an exclusive grammar or finalize the Q1 serializer contract.
+
+```html
+<!-- PDF page: 1 | printed page: none | note: cover spread -->
+
+<!-- PDF pages: 5-6 | printed pages: unknown | section: preface -->
+
+<!-- PDF page: 7 | printed page: iii -->
+```
+
 Parse and render the assembled Markdown document as a whole so cross-block definitions and references can resolve. Per-block editing/storage may coexist with whole-document semantics. A parser feature such as footnote support must be checked for the selected renderer, not inferred from the word Markdown.
 
 ## Agent autonomy and source access
@@ -69,6 +79,8 @@ The agent must be able to reopen saved content and inspect real saved-output pix
 Check the complete declared scope against the source, including relationships, page identity, image fidelity and the actual saved/reopened/exported version. Use proportional software, offline and source-led checks. No universal review count, compulsory image audit, separate approval receipt or extra model-call ritual is required.
 
 Examples and AI-produced reference Markdown are useful reading examples, not certified answers, a quality ceiling or a prescribed workflow. Source PDFs govern. A formal converter must not receive the matching-range answer, developer transcription or another comparison arm's output. Reviewers may use examples. Previously OCR-processed source files do not establish that the app performed the preprocessing.
+
+The [historical reference-input notes](reference/REFERENCE_INPUTS.md) identify the five packages and their known limits. They explain lossy or edited example images, prior OCR, source-spelling corrections and unverified coverage claims. These records create no mandatory benchmark set.
 
 Availability, invocation, execution, actual model input consumption, natural adoption, source quality and net benefit are distinct. Prescribed mechanism exercises do not establish natural adoption. Non-use alone establishes neither no need nor misunderstanding.
 
