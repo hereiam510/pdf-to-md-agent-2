@@ -12,12 +12,12 @@ Updated 2026-10-23, Asia/Hong_Kong. This records documentation scope, technical-
 | Attachments | All 30 exact attachments bundled: 28 pasted-text files and two forum HTML files stored as inert text |
 | Forum figures | All 14 ATT-01 research illustrations and all 10 ATT-02 substantive image pages retain original decoded WebP bytes. Offline readers are local. |
 | Continuing requirements | Relevant SUP-01/02 verbatim excerpt ranges include source and excerpt hashes. The rebuild does not import old active documents/defaults/permissions. |
-| Historical engineering details | SUP-03–07 retain selected facts about reference inputs, tools, export filenames and a source-spelling correction. Maintained explanations distinguish history from requirements. |
+| Historical engineering details | SUP-03–12 retain selected input, tool, protocol, export and lifecycle facts. Maintained explanations distinguish history, later corrections and current requirements. |
 | Later requests | LIVE-01 through LIVE-09 preserved locally, including self-containment, technical detail and direct-conversation review |
-| Point ledger | 325 entries. These include 102 foundations, 116 context/state and 65 delivery/recovery points. Another 29 map owners/scope, and 13 restore historical details. |
-| Source dispositions | 254 sources. Of these, 251 map to retained points. One saved final message is empty, and two messages concern export administration. No classification remains unresolved. |
-| Development-detail map | All 325 point IDs mapped: 253 explained, 54 historical references, 18 scope notes |
-| Bundled-file integrity | 482 files registered with local hashes and a separate versioned bundle manifest. Verification scope appears below. |
+| Point ledger | 333 entries. These include 102 foundations, 116 context/state and 65 delivery/recovery points. Another 29 map owners/scope, and 21 preserve additional details. |
+| Source dispositions | 259 sources. Of these, 256 map to retained points. One saved final message is empty, and two messages concern export administration. No classification remains unresolved. |
+| Development-detail map | All 333 point IDs mapped: 256 explained, 59 historical references, 18 scope notes |
+| Bundled-file integrity | 487 files registered with local hashes and a separate versioned bundle manifest. Verification scope appears below. |
 
 The [point ledger](POINT_COVERAGE.json), [detail map](DEVELOPMENT_COVERAGE.json), [source dispositions](SOURCE_COVERAGE.json) and [source index](SOURCE_INDEX.md) serve different purposes. Counts are not independent feature counts: some owner mappings overlap the detailed records, and a point can contain several connected nuances. A source ID alone is not an adequate technical explanation.
 
@@ -82,8 +82,8 @@ A clean copy was made from the Git index, containing only intended versioned fil
 The copy passed:
 
 - Documentation and image links, anchors, source IDs, all retained point/detail mappings and source dispositions.
-- Hash/size verification of all 482 bundled files, including exact event/attachment identity checks and the 24 figures.
-- Local lookup for inherited/empty/final messages, text/forum attachments, all seven supporting excerpts and a later human request.
+- Hash/size verification of all 487 bundled files, including exact event/attachment identity checks and the 24 figures.
+- Local lookup for inherited/empty/final messages, text/forum attachments, all twelve supporting excerpts and a later human request.
 - Exact event-JSON reading, offline forum-reader routing and local later-request reading.
 - A negative check: a modified copied source was refused on hash mismatch, then the test copy was restored.
 - Syntax parsing of the two standard-library utilities.
@@ -129,6 +129,37 @@ After integration, the repository-only copy passed 19 checks. These included all
 A fresh comparison preserved the old repository's HEAD, status and all 103 tracked or nonignored file hashes. The user's untracked `docs_bundle.txt` also remained unchanged and outside the commit. These checks did not inspect ignored runtime trees or prove application behavior.
 
 No new PDF inspection, OCR run, provider call, dependency installation or current upstream compatibility survey occurred. The work restores documented lessons and their limits. The [reference-input note](REFERENCE_INPUTS.md) and technical guides explain those lessons without requiring the old checkout or conversation export.
+
+<a id="seven-detail-review"></a>
+## Seven-detail review and corrected interpretations
+
+The next review checked seven suggested omissions against `4125332`, original discussion and selected historical file snapshots. Three reviewers divided the source areas. The first six topics needed more concrete engineering explanations. The seventh already had a corrected contract elsewhere, but needed its example and correction beside rolling compaction.
+
+| Suggested detail | Disposition |
+| --- | --- |
+| Stateless encrypted reasoning | Preserve the old `include` default and `store=False`. Current official Responses guidance does not require explicit inclusion. No official API statement verifies Nexus compatibility. |
+| Safe error metadata | Explain allowlisted labels, decoded credential filtering and withheld-fragment metadata. Do not discard valid native frames merely because another frame contains an error. |
+| Wire quirks | Preserve the actual `auto` to `default` metadata correction and scoped proxy conditions. These are not proof of a current SDK defect or remote settlement. |
+| Windows replacement errors | Preserve the old retry allowlist. Error 1176 depends on the backup argument. Error 1175 does not guarantee full rollback or eventual success. |
+| Playwright cancellation | Preserve worker ownership and waiting for active browser work and cleanup. Async support does not imply supported cancellation during an active API call. No browser-pipe diagnosis was established here. |
+| Retry hierarchy | Preserve positive-automatic, queue-only and explicit-resume branches. Old numerical allowances are examples, not rebuild defaults. Resume never manufactures another allowance. |
+| Unseen evidence | Preserve pending scope and immutable-manifest access. Reject invented summaries without requiring all originals or every evidence ID in every request. |
+
+The review also checked two claimed supersessions. Fixed SQL drafts remain historical, while the selected responsibility boundaries remain intact. `produced_revision` and `preview_on_commit` clarify explicit version dependencies. Separate `commit_status` and `preview_status` do not make commit and preview one atomic effect.
+
+The early attachment described a two-stage handshake, not necessarily two model turns. Later corrections rejected compulsory handoffs for every threshold crossing or evidence release. Rolling compaction and self-sufficient handoffs address related but distinct problems. The history does not prohibit every future handshake or dependency scheduler.
+
+Some suggested event IDs did not identify the claimed supporting text in the supplied export. The review used actual file snapshots and exact source ranges instead. SUP-08–12 preserve those selected facts locally, including inert request-setting code and the `3301bf0` correction identity. Existing conversation and attachment bytes remain unchanged.
+
+The official API and platform checks are dated 2026-10-23. The guides cite the OpenAI reasoning/streaming references, Microsoft `ReplaceFileW` reference and Playwright lifecycle guidance. These checks establish the stated documentation boundaries, not measured behavior of a Nexus route or the rebuilt app.
+
+Three reviewers cross-checked the additions against other guides and relevant sources. The review corrected wording that could imply a global browser-lifecycle timeout. Source-aware reading preserved historical qualifiers, later corrections and open contracts. The changed-line language scan retained two passive descriptions with irrelevant actors. It found no new sentence-length violation. This does not establish formal ASD certification.
+
+The repository-only copy passed 24 checks with outside source reads denied. It verified 25 Markdown files, 487 bundled files and all 333 point/detail mappings. All 481 prior source payloads remained byte-identical. Only their navigation index changed.
+
+The five new support files contain 18 verified excerpt ranges or sentence spans. The old repository's HEAD, status and 103 tracked or nonignored file hashes remained unchanged. The user's untracked `docs_bundle.txt` remained unchanged and outside the commit.
+
+No new provider request, conversion, dependency installation, benchmark or app implementation followed from this review. Q1–Q3 remain open. The work adds technical explanations and corrects overstrong wording within the existing architecture.
 
 ## Original-project boundary and remaining limits
 

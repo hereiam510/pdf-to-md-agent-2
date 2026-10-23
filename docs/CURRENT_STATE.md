@@ -36,6 +36,8 @@ The later attachment review found concrete historical details missing from maint
 
 Selected SUP-03–07 excerpts now support these explanations inside the repository. Historical filenames, versions and mechanisms retain their original status. They create no new benchmark obligation, runtime implementation or dependency pin. [The gap-review record](reference/PRESERVATION_AUDIT.md#verified-historical-detail-gaps) states the evidence, corrections and review limits.
 
+A further seven-point review restored outbound request settings, safe error handling, stream metadata cases, Windows replacement outcomes and preview-worker lifetime. It also expanded retry-budget examples and the correction to blind summarization. SUP-08–12 preserve the relevant historical evidence locally. The [review disposition](reference/PRESERVATION_AUDIT.md#seven-detail-review) distinguishes genuine omissions from overstrong rules and current official API changes. Q1–Q3 and the reconstruction baseline remain unchanged.
+
 A working Python 3.9+ interpreter is the only dependency of the documentation utilities. The current portable check uses a standalone bundled Python 3.12.14 interpreter outside both repositories. The initial review used an existing Python 3.13.16 interpreter read-only, with bytecode writing disabled. No dependency installation or global settings change is required.
 
 Document/hash/detail-coverage checks establish structural consistency and local availability, not runtime correctness or mathematical semantic completeness. Missing original screenshot text or an empty saved message is disclosed rather than invented. The original project's results remain historical observations, not acceptance of this unimplemented application.

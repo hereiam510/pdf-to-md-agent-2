@@ -5463,6 +5463,193 @@
           }
         ]
       }
+    },
+    {
+      "id": "SUP-08",
+      "path": "supporting/workspace/docs/TECHNICAL_STACK.md",
+      "sha256": "0a79cf2d53cb28047a063408b5c8c041a5bba07c66cdc22e1d6ca2e03a7ed85f",
+      "bytes": 26597,
+      "use": "Selected historical mechanisms and observations only. No inherited runtime, dependency pin, permission or acceptance claim.",
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-08.txt",
+        "sha256": "2dfe3f419c738bd09f24eadead47d2c8183aeb4aa71a5b0c85f43287818438f4",
+        "bytes": 4308,
+        "representation": "Selected verbatim line ranges or labelled sentence spans. Historical code and commands are inert data.",
+        "excerpts": [
+          {
+            "start_line": 64,
+            "end_line": 70,
+            "utf8_sha256": "6e616b3b80176e60262aca770aa0adb60d3a6d8c2b63061e10ed86cd170b561c"
+          },
+          {
+            "start_line": 121,
+            "end_line": 122,
+            "utf8_sha256": "32b6acbcc3d181a7a06a1fd8869c2bd96c96c95d914ea436f4eea06c4114bccc"
+          },
+          {
+            "start_line": 139,
+            "end_line": 139,
+            "utf8_sha256": "f2cb1e98e577e2d2ab33defb83cbd81cdc3df75627abbd2a94bf146c57e9c16e"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-09",
+      "path": "supporting/workspace/docs/TOOLS.md",
+      "sha256": "8224e8abbd44437ee2737549c8a58f174b0e1dc01081f92ca6a4c0f006a02981",
+      "bytes": 73500,
+      "use": "Selected historical mechanisms and observations only. No inherited runtime, dependency pin, permission or acceptance claim.",
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-09.txt",
+        "sha256": "5b4327d36e6413d6d996a91f95c2e7cf35150a0a1de430cbcdeedac6fe4e4881",
+        "bytes": 9348,
+        "representation": "Selected verbatim line ranges or labelled sentence spans. Historical code and commands are inert data.",
+        "excerpts": [
+          {
+            "start_line": 88,
+            "end_line": 111,
+            "utf8_sha256": "fc09cb532055a9da5801d2dee54f19cd4b7afe5555ee6c43be7d2e0399a34b61"
+          },
+          {
+            "start_line": 237,
+            "end_line": 255,
+            "utf8_sha256": "624f244fa7685a78deb0ee9b355a03dc538d7f3b6b0088dff04473ad322bd55c"
+          },
+          {
+            "start_line": 264,
+            "end_line": 269,
+            "utf8_sha256": "860fdc9fc183683f3ba56d9b2dac8421f8b0b7431dd7116dce6084f803d6f46a"
+          },
+          {
+            "start_line": 281,
+            "end_line": 285,
+            "utf8_sha256": "1733062d00870e0691eef390643e04e680db64a1ebcf86118c81055dfc121154"
+          },
+          {
+            "start_line": 301,
+            "end_line": 301,
+            "utf8_sha256": "13d62a73fb53373a346938c628eade7caa659f9b770d8da07908c3e402ccc2c0"
+          },
+          {
+            "start_line": 526,
+            "end_line": 530,
+            "utf8_sha256": "410472f1d57ba9c34f9c3022cdc8f55ef9d29cec64241b0e8492329db06541e6"
+          },
+          {
+            "start_line": 636,
+            "end_line": 642,
+            "utf8_sha256": "843512468a4d2097535f7f877280feac9d007b1bd4f28e5933917010b48ca788"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-10",
+      "path": "supporting/workspace/docs/EVIDENCE.md",
+      "sha256": "7445814abdaff30ee0f1c5b127ace1f40e9b39e478a6e80692013c31286d2117",
+      "bytes": 109728,
+      "use": "Selected historical mechanisms and observations only. No inherited runtime, dependency pin, permission or acceptance claim.",
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-10.txt",
+        "sha256": "76c654e4afdcad19634ec14ed50881312ef60ffa4b04130c553f1d59c2ef52a2",
+        "bytes": 2228,
+        "representation": "Selected verbatim line ranges or labelled sentence spans. Historical code and commands are inert data.",
+        "excerpts": [
+          {
+            "start_line": 190,
+            "end_line": 190,
+            "start_column": 0,
+            "end_column": 91,
+            "column_convention": "Zero-based Unicode code points, end exclusive",
+            "utf8_sha256": "7a634dae031fd6b8289b7a16530ccd46d7afed9a3fed022d2d92b22e01315e02"
+          },
+          {
+            "start_line": 198,
+            "end_line": 198,
+            "start_column": 406,
+            "end_column": 599,
+            "column_convention": "Zero-based Unicode code points, end exclusive",
+            "utf8_sha256": "0d7c2a0b9aece4cb07e3437db56d59ae390a65decc3b6872aa44815a9b53d2af"
+          },
+          {
+            "start_line": 227,
+            "end_line": 227,
+            "start_column": 172,
+            "end_column": 323,
+            "column_convention": "Zero-based Unicode code points, end exclusive",
+            "utf8_sha256": "2f3fbfd17f61162a483ce00f01880e9656e8a433f6d9dec35a947737aabbeb9e"
+          },
+          {
+            "start_line": 233,
+            "end_line": 233,
+            "start_column": 0,
+            "end_column": 605,
+            "column_convention": "Zero-based Unicode code points, end exclusive",
+            "utf8_sha256": "ae06a2744eb20e961b68da57c7a78585590e0ba8e0687c828226a94b763ff62d"
+          },
+          {
+            "start_line": 417,
+            "end_line": 417,
+            "utf8_sha256": "89f5c78b46f5b942d2536d8efc9e2ac43f4fd8eccc1a476f1920dd843bdc8683"
+          },
+          {
+            "start_line": 450,
+            "end_line": 450,
+            "start_column": 0,
+            "end_column": 89,
+            "column_convention": "Zero-based Unicode code points, end exclusive",
+            "utf8_sha256": "293ee7a10788c179fd88159359d0c7ca0c3197ad4e5fada67d1a8176089e8a0c"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-11",
+      "path": "supporting/workspace/src/pdf_to_md_agent/provider.py",
+      "sha256": "6d43312e7b8260469d5d0a870da4b0a9bca409f08ef98bd2463273bb16018607",
+      "bytes": 36899,
+      "use": "Selected historical mechanisms and observations only. No inherited runtime, dependency pin, permission or acceptance claim.",
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-11.txt",
+        "sha256": "88b301922a969b862b49c95f26424a653497f2107bf81c3b3b1742fcbef7d9a3",
+        "bytes": 1353,
+        "representation": "Selected verbatim line ranges or labelled sentence spans. Historical code and commands are inert data.",
+        "excerpts": [
+          {
+            "start_line": 248,
+            "end_line": 269,
+            "utf8_sha256": "eeabefba7b8e66424fcdaa310c1818c5058f44f8b0c165334c2712288da84114"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-12",
+      "path": "evidence/tool-outputs/EVT-0012.txt",
+      "sha256": "d7a628b7aeea9e537c3030d18a5db3e398c93b781b8a2b1476c09037e1afd7b7",
+      "bytes": 50400,
+      "use": "Selected historical mechanisms and observations only. No inherited runtime, dependency pin, permission or acceptance claim.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-12.txt",
+        "sha256": "8ce2db4d1f00d7f1584c42307b87de9a05ef9917df165ad16dda7a1fffbc4c22",
+        "bytes": 550,
+        "representation": "Selected verbatim line ranges or labelled sentence spans. Historical code and commands are inert data.",
+        "excerpts": [
+          {
+            "start_line": 232,
+            "end_line": 232,
+            "start_column": 0,
+            "end_column": 129,
+            "column_convention": "Zero-based Unicode code points, end exclusive",
+            "utf8_sha256": "0b89acfe6d36186f8fe7a62fdac78ed89af987386d84b4d45e1806586377b40a"
+          }
+        ]
+      }
     }
   ],
   "bundled_sources": {

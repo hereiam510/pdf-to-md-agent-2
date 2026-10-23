@@ -335,7 +335,8 @@
       "P2-074",
       "P2-080",
       "P2-087",
-      "P2-088"
+      "P2-088",
+      "H-021"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -357,7 +358,8 @@
       "P2-088",
       "P2-089",
       "P2-106",
-      "P2-108"
+      "P2-108",
+      "H-020"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -2546,7 +2548,8 @@
       "P2-077",
       "P2-086",
       "P2-087",
-      "P2-096"
+      "P2-096",
+      "H-021"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -2746,7 +2749,8 @@
       "P2-088",
       "P2-089",
       "P2-106",
-      "P2-108"
+      "P2-108",
+      "H-020"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -4026,5 +4030,53 @@
       "H-011"
     ],
     "reason": "Selected historical facts are explained locally. They introduce no old implementation authority, dependency pin or execution permission."
+  },
+  {
+    "source_id": "SUP-08",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-014",
+      "H-017",
+      "H-018"
+    ],
+    "reason": "Selected historical mechanics are explained with later corrections. They do not create runtime authority or close the open contracts."
+  },
+  {
+    "source_id": "SUP-11",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-014",
+      "H-016"
+    ],
+    "reason": "Selected historical mechanics are explained with later corrections. They do not create runtime authority or close the open contracts."
+  },
+  {
+    "source_id": "SUP-09",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-015",
+      "H-016",
+      "H-017",
+      "H-018",
+      "H-019"
+    ],
+    "reason": "Selected historical mechanics are explained with later corrections. They do not create runtime authority or close the open contracts."
+  },
+  {
+    "source_id": "SUP-10",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-015",
+      "H-016"
+    ],
+    "reason": "Selected historical mechanics are explained with later corrections. They do not create runtime authority or close the open contracts."
+  },
+  {
+    "source_id": "SUP-12",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-016"
+    ],
+    "reason": "Selected historical mechanics are explained with later corrections. They do not create runtime authority or close the open contracts."
   }
 ]

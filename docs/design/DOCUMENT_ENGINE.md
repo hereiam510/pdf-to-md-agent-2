@@ -299,6 +299,25 @@ Do not delete unreferenced attempt/version files simply because they are not reg
 
 **Source basis:** EVT-0968, EVT-1005, EVT-1040, EVT-1068, EVT-1107, EVT-1147, EVT-1166. ATT-25–ATT-30.
 
+<a id="historical-windows-publication"></a>
+### Historical Windows replacement behavior
+
+The historical JSON readers used `CreateFileW` with READ/WRITE/DELETE sharing. Existing-file publication used `ReplaceFileW`. In that Windows environment, `os.replace` / `MoveFileEx` failed against an open reader. Selected native sharing/access failures received eight attempts, with under one second of total retry delay. These included observed error 1175. Persistent failures still surfaced.
+
+Microsoft documents distinct failure states for these errors:
+
+| Error | Documented state | Historical retry policy |
+|---|---|---|
+| 1175 / `ERROR_UNABLE_TO_REMOVE_REPLACED` | The destination cannot be deleted. Both files retain their original names. | Eligible for bounded replacement retry. |
+| 1176 / `ERROR_UNABLE_TO_MOVE_REPLACEMENT` | The replacement cannot be renamed. With a backup name, both files retain original names. Without one, the destination no longer exists. | Excluded from replacement retry. |
+| 1177 / `ERROR_UNABLE_TO_MOVE_REPLACEMENT_2` | The replacement retains its name but inherits destination streams and attributes. The old destination has another name, using the backup name when supplied. | Excluded from replacement retry. |
+
+The 1176 outcome depends on the backup argument. Thus, partial mutation is not a universal explanation for both excluded errors. The retained names for 1175 do not establish complete metadata rollback, eventual success or crash durability. The bounded allowlist was a historical implementation choice.
+
+Readers with an open snapshot handle retained the complete old or new JSON. New readers also retried brief native name-transition errors. This mechanism avoided in-place JSON truncation. The rebuild still needs its own filesystem and visibility choices within the staged-file and metadata-commit contract.
+
+**Source basis:** SUP-08 and SUP-09. The conditional error descriptions follow [Microsoft's `ReplaceFileW` documentation](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-replacefilew), checked 2026-10-23.
+
 <a id="rendering-and-preview"></a>
 ## 8. Rendering, reading, and precise comparison
 
@@ -326,6 +345,19 @@ Preview sanitization must not rewrite saved Markdown or delete its page-marker c
 Bind preview document assets to the selected immutable version. Load those assets from registered local bytes. Block external resource requests and source-provided active content. A link in the document is not permission to fetch its target automatically. Report unavailable resources instead of substituting mutable workspace files or remote content.
 
 The old Playwright view froze the saved HTML and image bytes before rendering. It fulfilled a virtual origin through local routing, without a listening HTTP server. It blocked all other requests and disabled page scripts, service workers and downloads. This mechanism made the preview reproducible and prevented source content from contacting external services. See SUP-05 for the historical mechanism and SUP-04 for the saved-comment rule. A future Electron renderer needs its own verification of this boundary.
+
+<a id="historical-preview-worker-lifetime"></a>
+### Historical preview worker lifetime
+
+The old preview used a dedicated synchronous worker thread. That worker owned Playwright creation, browser calls and cleanup. The caller waited for the worker, then checked pending cancellation before recording success. A failed or cancelled preview preserved the saved document version.
+
+Playwright supports both synchronous and asynchronous APIs. Its documentation identifies cancellation of an `asyncio` task during a Playwright call as unsupported, with undefined behavior. Its threading guidance calls for a separate Playwright instance per thread. These limits explain the historical lifecycle choice. They do not establish a browser-pipe failure diagnosis or prohibit the asynchronous API.
+
+AnyIO's default worker wait shields cancellation. Setting `abandon_on_cancel=True` instead lets the caller stop waiting while the thread continues. The historical code retained the worker through cleanup. This arrangement delayed cancellation delivery. It did not forcefully stop the browser or guarantee one global timeout for all browser operations.
+
+The rebuild must define its renderer's cancellation and cleanup lifecycle. The historical worker arrangement is an implementation example, not a mandatory Electron or Python threading design.
+
+**Source basis:** SUP-08 and SUP-09. See [Playwright's API, threading and cancellation guidance](https://playwright.dev/python/docs/library) and [AnyIO's worker-thread cancellation behavior](https://anyio.readthedocs.io/en/stable/threads.html), checked 2026-10-23.
 
 <a id="parser-source-map-mechanics"></a>
 ### How the proposed source-line map would locate output

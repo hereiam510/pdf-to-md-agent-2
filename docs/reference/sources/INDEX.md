@@ -54,6 +54,11 @@ Historical file paths and source URLs inside verbatim messages remain original t
 | [SUP-05](support/SUP-05.txt) | Historical credential, OCR, preview, export and script mechanisms |
 | [SUP-06](support/SUP-06.txt) | Inert code excerpt identifying historical package members |
 | [SUP-07](support/SUP-07.txt) | Exact sentence span correcting the repeated-glyph allegation |
+| [SUP-08](support/SUP-08.txt) | Historical protocol, replacement and preview lifecycle notes |
+| [SUP-09](support/SUP-09.txt) | Historical diagnostics, attempt budgets and local lifecycle contracts |
+| [SUP-10](support/SUP-10.txt) | Selected error and stream observations, excluding surrounding work permissions |
+| [SUP-11](support/SUP-11.txt) | Inert code for historical outbound reasoning and usage settings |
+| [SUP-12](support/SUP-12.txt) | Historical service-tier parser correction identity |
 
 ## Discussion and inherited handoff
 

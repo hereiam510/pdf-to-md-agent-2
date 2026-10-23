@@ -1948,5 +1948,53 @@
     "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#script-credential-boundary",
     "treatment": "explained",
     "note": "The old transform runner omitted inherited API credentials while retaining a document pointer. Environment filtering did not create an OS sandbox."
+  },
+  {
+    "point_id": "H-014",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-outbound-reasoning-and-usage",
+    "treatment": "historical-reference",
+    "note": "Explain historical Responses include defaults and Chat streaming usage requests. Preserve route-specific continuation rules and the dated correction to a universal include requirement."
+  },
+  {
+    "point_id": "H-015",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#provider-diagnostics-and-preservation",
+    "treatment": "explained",
+    "note": "Explain fixed label allowlists, decoded credential filtering and withheld-fragment metadata. Valid native frames and complete source/tool evidence retain their distinct preservation rules."
+  },
+  {
+    "point_id": "H-016",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-nexus-wire-cases",
+    "treatment": "historical-reference",
+    "note": "Preserve the auto-to-default service-tier correction, recognized queue rejection, auth_unavailable and missing terminal usage. These observations do not establish general cause or settlement."
+  },
+  {
+    "point_id": "H-017",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#historical-windows-publication",
+    "treatment": "historical-reference",
+    "note": "The old allowlist admitted bounded 1175 retries and excluded 1176/1177. Explain backup-dependent 1176 state without claiming universal partial mutation or rollback safety."
+  },
+  {
+    "point_id": "H-018",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#historical-preview-worker-lifetime",
+    "treatment": "historical-reference",
+    "note": "Preserve the historical synchronous worker and waiting through cleanup. Async support differs from supported cancellation during an active Playwright API call."
+  },
+  {
+    "point_id": "H-019",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#historical-retry-hierarchy",
+    "treatment": "historical-reference",
+    "note": "Positive automatic retries shared their attempt ceiling with eligible queue retries. Preserve separate zero-automatic and manual-resume branches without adopting old numerical defaults."
+  },
+  {
+    "point_id": "H-020",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#rolling-compaction",
+    "treatment": "explained",
+    "note": "Do not invent content for unseen pages. Preserve unfinished scope and exact immutable-manifest access without compulsory full hydration or a permanent per-evidence list."
+  },
+  {
+    "point_id": "H-021",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#review-and-version-dependencies",
+    "treatment": "explained",
+    "note": "Restore illustrative produced_revision and preview_on_commit names. Separate commit_status and preview_status do not make commit and preview one atomic effect."
   }
 ]

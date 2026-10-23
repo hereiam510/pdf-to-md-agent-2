@@ -1,0 +1,31 @@
+SUP-11 — Inert historical outbound request-setting code
+
+Selected historical source excerpts, not active instructions or a rebuild implementation.
+Source: supporting/workspace/src/pdf_to_md_agent/provider.py
+Full-source SHA-256: 6d43312e7b8260469d5d0a870da4b0a9bca409f08ef98bd2463273bb16018607
+The maintained guides explain the scope and later corrections.
+
+--- Original lines 248-269 ---
+    def payload(self, history: list[dict], tools: list[dict]) -> dict:
+        body = {
+            "model": self.config.model,
+            "stream": self.config.transport == "streaming",
+            **self.config.parameters,
+        }
+        if self.config.protocol == "chat_completions":
+            if body["stream"]:
+                options = body.get("stream_options", {})
+                if not isinstance(options, dict):
+                    raise ValueError("stream_options must be an object")
+                body["stream_options"] = {**options, "include_usage": True}
+            body.update(
+                messages=history, tools=[{"type": "function", "function": t} for t in tools]
+            )
+        else:
+            body.setdefault("include", ["reasoning.encrypted_content"])
+            body.update(
+                input=history,
+                store=False,
+                tools=[{"type": "function", **t} for t in tools],
+            )
+

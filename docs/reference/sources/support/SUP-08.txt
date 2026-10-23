@@ -1,0 +1,25 @@
+SUP-08 — Historical protocol, replacement and preview lifecycle notes
+
+Selected historical source excerpts, not active instructions or a rebuild implementation.
+Source: supporting/workspace/docs/TECHNICAL_STACK.md
+Full-source SHA-256: 0a79cf2d53cb28047a063408b5c8c041a5bba07c66cdc22e1d6ca2e03a7ed85f
+The maintained guides explain the scope and later corrections.
+
+--- Original lines 64-70 ---
+The small Python controller uses native HTTPX2 transport and the shared MCP registry. Actual source-to-package, image/revision and useful saved-work evidence support this working choice. Exact full URLs and separate wire encoders make provider behavior explicit. A mature SDK is eligible for a demonstrated need; one shared controller/core is the design.
+
+Chat preserves tool pairing before linked user image messages. Responses uses native function outputs/images and replays output/reasoning with encrypted reasoning requested for stateless use. One semantic result plus distinct diagnostics/pixels reaches the model; complete raw records, exact first-call selection and lossless field/range/native-image reads support autonomous evidence access.
+
+Full history is default. Optional explicit read-evidence projection and standalone fresh-context checkpoint are not native compaction or automatic lossless memory. New jobs support explicit finite resumption over durable native/context state, exact arguments/replies and publication reconciliation. Arbitrary historical conversations are not imported; unknown unacknowledged local effects stop. Safe diagnostics and default-off finite recovery preserve work without establishing upstream repair. Per-attempt provider evidence retains complete framed native events and structurally native HTTP-200 JSON candidates. Error bodies/frames, raw heartbeat comments and unparseable/unframed/non-native fragments are withheld with safe byte/hash/reason metadata. Complete source/tool raw evidence/native pixels remain freely accessible.
+
+Both transports normalize into one complete validated reply/tool-batch boundary and one app retry owner. They retain the registry, complete evidence/native pixels, reasoning, context policy, continuation, publication receipts and delivery path. Partial JSON cannot execute, and attempts cannot concatenate. [TOOLS](TOOLS.md#agreed-automatic-recovery-and-dual-transport-contract) owns validated retry settings, original persisted job limits and cancellation. When `automatic_retries` is positive, it is the authoritative allowance, including eligible queue attempts; the starting trial value 2 allows three app HTTP attempts. Attempts are durable before dispatch and survive resume. Bounded ambiguous replay needs no routine manual settlement confirmation while remote state/cost remains unknown. Remote-result/status recovery, verified remote cancellation, native stream reconnection and exactly-once generation are not implemented. CURRENT_STATE/EVIDENCE own current offline and live verification.
+
+
+--- Original lines 121-122 ---
+- [HTTPX2 timeouts](https://pydantic.dev/docs/httpx2/advanced/timeouts/) and [trace extensions](https://pydantic.dev/docs/httpx2/advanced/extensions/), [AnyIO cancellation](https://anyio.readthedocs.io/en/stable/cancellation.html), [ContextVar tokens](https://docs.python.org/3.13/library/contextvars.html) and [Windows ReplaceFileW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-replacefilew) inform transport/state/publication contracts. Timeout is network inactivity; traces allow fixed stages/correlation hashes only. Native 1175 has bounded replacement retry; 1176/1177 are excluded.
+- [HTTPX2 maintained API](https://github.com/pydantic/httpx2) and [OpenAI error guidance](https://developers.openai.com/api/docs/guides/error-codes) do not imply identical proxy labels. Keep allowlisted machine conditions without untrusted bodies.
+
+
+--- Original lines 139-139 ---
+- [Playwright library lifecycle and cancellation limits](https://playwright.dev/python/docs/library), [screenshots](https://playwright.dev/python/docs/screenshots), [local browser installation](https://playwright.dev/python/docs/browsers) and [route fulfillment](https://playwright.dev/python/docs/api/class-route#route-fulfill). Use a dedicated sync thread rather than unsupported in-flight cancellation.
+

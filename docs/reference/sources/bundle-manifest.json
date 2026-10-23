@@ -3339,8 +3339,8 @@
     },
     {
       "path": "docs/reference/sources/INDEX.md",
-      "sha256": "2ceaa787d7f06f27e50208a6219b503c8c532091ef9ab909a5d0202fca4e75ca",
-      "bytes": 63645,
+      "sha256": "c14ea69610efc9062bb9f461fdda2cf9177a580422343cd5bc4ce0e261134495",
+      "bytes": 64145,
       "role": "source-navigation",
       "source_id": "bundle"
     },
@@ -3378,6 +3378,41 @@
       "bytes": 801,
       "role": "selected-supporting-excerpt",
       "source_id": "SUP-07"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-08.txt",
+      "sha256": "2dfe3f419c738bd09f24eadead47d2c8183aeb4aa71a5b0c85f43287818438f4",
+      "bytes": 4308,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-08"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-09.txt",
+      "sha256": "5b4327d36e6413d6d996a91f95c2e7cf35150a0a1de430cbcdeedac6fe4e4881",
+      "bytes": 9348,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-09"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-10.txt",
+      "sha256": "76c654e4afdcad19634ec14ed50881312ef60ffa4b04130c553f1d59c2ef52a2",
+      "bytes": 2228,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-10"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-11.txt",
+      "sha256": "88b301922a969b862b49c95f26424a653497f2107bf81c3b3b1742fcbef7d9a3",
+      "bytes": 1353,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-11"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-12.txt",
+      "sha256": "8ce2db4d1f00d7f1584c42307b87de9a05ef9917df165ad16dda7a1fffbc4c22",
+      "bytes": 550,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-12"
     }
   ]
 }

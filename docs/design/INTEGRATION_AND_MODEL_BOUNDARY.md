@@ -240,9 +240,20 @@ In the discussed Chat response, `message.model_extra.get("reasoning_content")` a
 
 **Payload sources:** ATT-03 and the corrections in EVT-0318, final responsibilities in EVT-1166. These are historical examples, not current external API verification or a final application schema.
 
+<a id="historical-outbound-reasoning-and-usage"></a>
+### Historical outbound reasoning and usage settings
+
+The old Responses encoder always set `store=False`. If `include` was absent, it defaulted to `["reasoning.encrypted_content"]`. A caller-supplied `include` value remained unchanged. The purpose was to request replayable encrypted reasoning for stateless continuation. The adapter still needed to preserve returned native items and follow the actual route's continuation rules.
+
+The [official Responses guide](https://developers.openai.com/api/docs/guides/reasoning) checked on 2026-10-23 says stateless reasoning returns encrypted content by default. That documented API accepts the legacy `include` setting without requiring it. The historical setting is therefore not a universal prerequisite. Neither the old default nor current official documentation verifies a particular Nexus route.
+
+For streaming Chat Completions, the old encoder merged `stream_options` and forced `include_usage=True`. That option requests a final aggregate usage chunk. An interruption can prevent its arrival even with the option enabled. Missing usage remains unknown and does not imply zero charges. The [official Chat streaming reference](https://developers.openai.com/api/reference/resources/chat/subresources/completions/streaming-events) describes this limitation.
+
+**Historical sources:** [SUP-08](../reference/sources/support/SUP-08.txt), old `TECHNICAL_STACK.md` lines 64–70. [SUP-11](../reference/sources/support/SUP-11.txt) preserves the request encoder at `provider.py` lines 248–269. These are request settings, not guarantees of server storage, complete reasoning or reported usage.
+
 Receive and retain native data before framework decoding can discard useful content. Then distinguish complete accepted response, executable tool call, rejected arguments, and incomplete received content. The framework may represent malformed JSON as `invalid_tool_calls` or omit it from ordinary ToolNode dispatch. Thus, that content may never reach tool middleware. The common pre-validation entry must preserve successfully decoded but schema/domain-invalid arguments before rejection.
 
-Retention preserves useful work and diagnosis. It does not permit execution of partial JSON or joining separate attempts. Exact candidate semantics belong to the [document guide](DOCUMENT_ENGINE.md#candidate-capture).
+Retention preserves useful work and diagnosis. It does not permit execution of partial JSON or joining separate attempts. Exact candidate semantics belong to the [document guide](DOCUMENT_ENGINE.md#candidate-capture). Provider-error filtering follows the [diagnostic boundary](#provider-diagnostics-and-preservation) below.
 
 The adapter also preserves the response-to-request relationship. A historical LangChain integration proposed a namespaced application entry in `response_metadata`, while keeping provider metadata and the full `ModelResponse`. `additional_kwargs` can contain provider encoding data and is not a freely interchangeable slot. Middleware may invoke a handler more than once or return multiple messages. Thus, associating a tool with “the most recent input view” globally is unsafe. The accepted reply must carry its own actual input identity.
 
@@ -412,6 +423,28 @@ These cases explain contract boundaries. They do not claim that the rebuild enco
 | A wrapper passes old fixture tests | Tests may exercise old modules or a mock that ignores the actual assembled context | Verify changed boundaries and actual authorized source output. Inherited counts are not evidence of a new adapter. |
 
 Generic 500/502, context overflow, HTTP payload size, authentication failure, incomplete response, and user cancellation are not interchangeable errors. Context-specific re-preparation changes the selected input. Eligible transient replay preserves frozen input. The same shared service accounts for ordinary and compaction calls so wrappers cannot multiply retries or bypass cancellation. Broader network features such as circuit breakers, shared traffic controls, background retrieval, and universal remote cancellation remain deferred rather than becoming prerequisites here.
+
+<a id="provider-diagnostics-and-preservation"></a>
+### Provider diagnostics and the native-preservation boundary
+
+The old client shared a fixed `error.type`/`error.code` allowlist across HTTP and in-band service errors. It checked decoded labels for credential text before audit or exception exposure. Raw-string replacement alone was insufficient because JSON escapes could conceal credential text until decoding. The filter excluded free-form messages, unknown labels, params, arbitrary headers and URLs. Unrecognized HTTP errors retained a status-only fallback.
+
+The client withheld raw HTTP error bodies, in-band service-error frames, raw SSE heartbeat comments and unparseable, unframed or non-native provider fragments. It kept safe byte counts, SHA-256 hashes and fixed withholding reasons where recorded. Safe status, allowlisted labels, timing and validated `Retry-After` remained separate diagnostic metadata. These records did not prove remote generation, cancellation or settlement.
+
+The client retained complete structurally native HTTP-200 JSON replies and complete framed native model events. These included refused or argument-invalid native replies and complete model frames received before interruption. Preservation did not accept those replies or authorize execution. Complete preceding native frames survived even when their transport chunk also contained an excluded service-error frame. The client redacted known credential literals from retained provider evidence. Source/tool raw records and native-image access remained complete and independent of provider-error filtering.
+
+**Historical sources:** [SUP-08](../reference/sources/support/SUP-08.txt), old `TECHNICAL_STACK.md` line 68. [SUP-09](../reference/sources/support/SUP-09.txt) preserves old `TOOLS.md` lines 88–111 and 237–255. [SUP-10](../reference/sources/support/SUP-10.txt) preserves the shared allowlist and decoded-label correction from old `EVIDENCE.md` lines 190 and 198.
+
+<a id="historical-nexus-wire-cases"></a>
+### Historical Nexus wire cases and their limits
+
+In the recorded streaming pilot, `service_tier` changed from `auto` to `default` while completion identities stayed stable. The old app parser treated the tier change as an identity mismatch. The correction at `3301bf0` separated processing metadata from completion identity. It kept the latest non-null tier while preserving completion, tool and terminal validation. Replaying the old interrupted stream still lacked `[DONE]` and did not turn its historical failure into success. This does not establish a current SDK defect or make every `auto` value invalid.
+
+An earlier HTTP 504 case explicitly reported `INFERENCE_QUEUE_TIMEOUT` as pre-generation queue rejection. Only that recognized condition entered the old queue-only replay path. An incomplete stream may already contain generated output and did not qualify. Shared recovery, when enabled, still used the original persistent retry and time budgets. A generic HTTP 504 does not establish pre-generation rejection.
+
+Another recorded failure paired `auth_unavailable` with `Retry-After: 59` after an upstream HTTP/2 `PROTOCOL_ERROR`. This reported proxy condition did not prove an invalid configured key or context overflow. The deeper peer/network cause and subsequent repair remained unestablished. The old parser accepted only validated bounded integer or HTTP-date `Retry-After` values, represented as `retry_after_seconds`. Retry eligibility, cancellation and remaining task time still controlled replay.
+
+**Historical sources:** [SUP-09](../reference/sources/support/SUP-09.txt), old `TOOLS.md` lines 88–111, 253–255 and 281–285. [SUP-10](../reference/sources/support/SUP-10.txt) preserves relevant sentences from old `EVIDENCE.md` lines 227, 233, 417 and 450. [SUP-12](../reference/sources/support/SUP-12.txt) identifies the narrow `3301bf0` correction. These scoped observations do not establish current Nexus behavior or a new network-research prerequisite.
 
 **Source basis:** EVT-0068, EVT-0137, EVT-0318, EVT-0382, EVT-0414, EVT-0534, EVT-0595, EVT-0730, EVT-0826, EVT-0914, EVT-0942, EVT-0968, EVT-1005, EVT-1107, EVT-1166.
 

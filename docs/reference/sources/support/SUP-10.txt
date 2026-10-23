@@ -1,0 +1,25 @@
+SUP-10 — Selected historical error and stream observations
+
+Selected historical source excerpts, not active instructions or a rebuild implementation.
+Source: supporting/workspace/docs/EVIDENCE.md
+Full-source SHA-256: 7445814abdaff30ee0f1c5b127ace1f40e9b39e478a6e80692013c31286d2117
+The maintained guides explain the scope and later corrections.
+
+--- Original line 190, columns 0-91 (zero-based code points, end exclusive) ---
+Safe in-band machine type/code diagnostics now use the same fixed allowlist as HTTP errors.
+
+--- Original line 198, columns 406-599 (zero-based code points, end exclusive) ---
+Decoded service labels are now credential-filtered before audit/exception exposure; twelve literal/escaped cases cover HTTP control and Chat/Responses SSE/JSON, including flat Responses errors.
+
+--- Original line 227, columns 172-323 (zero-based code points, end exclusive) ---
+Each HTTP200 stream was rejected at terminal metadata: `service_tier` auto→default with stable id/created/model. No context or content verdict follows.
+
+--- Original line 233, columns 0-605 (zero-based code points, end exclusive) ---
+Official [Chat streaming chunk contract](https://developers.openai.com/api/reference/resources/chat/subresources/completions/streaming-events) makes completion id/created invariant; service_tier describes actual processing metadata resolving auto and is not that identity. A scoped parser correction validates documented tier/null and keeps latest non-null tier while preserving true identity/tool/terminal checks. Offline replay of each unchanged original stream then reaches incomplete_stream because DONE was not received after rejection; it never changes old outcomes or accepts fabricated completion.
+
+--- Original lines 417-417 ---
+Matched proxy evidence identifies A's upstream HTTP/2 PROTOCOL_ERROR, then B's `auth_unavailable` referring to that condition with Retry-After 59. Deeper peer/network cause is unknown; this is not demonstrated context overflow. A later successful small request cannot establish root cause or repair.
+
+
+--- Original line 450, columns 0-89 (zero-based code points, end exclusive) ---
+Initial 504 `INFERENCE_QUEUE_TIMEOUT` explicitly reported pre-generation queue rejection.

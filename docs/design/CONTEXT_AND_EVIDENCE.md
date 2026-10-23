@@ -490,6 +490,10 @@ Evidence release changes selected payloads. Semantic history compaction asks a m
 
 An already oversized history cannot simply be resent in full with “please summarize.” Removing OCR/images may help, but long human requirements, authored drafts, scripts, and tool exchanges can still exceed capacity. Select a fitting portion with effective requirements, current work anchors, relevant exact evidence, and control/output allowance appropriate to that request. Each actual compaction request must itself fit its selected route's request limits. The total outstanding working history can remain too large for normal inference while several such requests make progress.
 
+In ATT-17's example, a read saves evidence for pages 12–20. Only pages 12–14 enter the model input. Pages 15–20 remain pending. Compaction must not invent a content summary for the unseen pages. Preserve their unfinished scope and an exact entry to the immutable evidence manifest.
+
+EVT-0730 corrects ATT-17's blanket “No Summarization Without Hydration” rule. The complete index can remain in the document/evidence service. Each request need not contain every evidence ID or fully hydrate the originals. Previously recorded notes may remain useful even when their sources are not rehydrated in this compaction request. See [unfinished evidence](#indexes-and-unfinished-evidence) for the distinction between operation facts and content knowledge.
+
 For each compaction, the app records:
 
 * The actual supplied message IDs/ranges.
@@ -517,7 +521,7 @@ Compacting the oldest prefix is a reasonable initial strategy, but not the corre
 
 Q2 still needs the precise revision-application, replacement, rejection, progress, capacity-estimate, and finite-stop semantics. These mechanics explain the choices already discussed rather than resolving them by inventing an API. See [the execution boundary](EXECUTION_AND_DELIVERY.md#context-work-and-frozen-input).
 
-Sources: [P2-041–044](../reference/02-context-state-and-evidence.md#p2-041), EVT-1040, EVT-1068, EVT-1107, EVT-1147, EVT-1166.
+Sources: [P2-035](../reference/02-context-state-and-evidence.md#p2-035), [P2-041–044](../reference/02-context-state-and-evidence.md#p2-041), ATT-17, EVT-0730, EVT-1040, EVT-1068, EVT-1107, EVT-1147, EVT-1166.
 
 <a id="handoff-and-working-notes"></a>
 ## 17. Self-sufficient handoff and working notes
@@ -715,13 +719,15 @@ A preview or review names the actual source, output version, scope and aspect in
 
 Different aspects can change independently: characters/numbers, meaningful emphasis, superscripts, reading order, cross-page relations, crop content and rendered layout. Unchanged characters do not prove all text fidelity if superscript positioning or emphasis changed. Appending a table row can change shared-header/unit/footnote interpretation. Preserve unaffected checks where justified and support targeted reconsideration. Do not invalidate an entire page after every edit or install a universal approval gate.
 
-An edit and an implicit-latest preview issued together can race: the preview may read the old version while the agent believes it saw the edit. The edit should return its produced version. Readback/preview/export can then select that exact version. An optional commit-plus-preview convenience must report both outcomes separately, since preview failure does not undo a committed edit.
+An edit and an implicit-latest preview issued together can race. The preview may read the old version while the agent believes it saw the edit. The edit should return its produced version, illustrated by `produced_revision` in EVT-0674. The agent can then choose that exact version for readback, preview, or export.
+
+`preview_on_commit` was ATT-16's optional parameter for requesting a preview after a successful commit. It illustrated a document-service convenience, with separate `commit_status` and `preview_status`. These names remain examples. The convenience does not make commit and preview one atomic effect. Preview failure does not undo a committed edit or justify repeating it.
 
 A general `after_batch_mutation` scheduler was not made necessary. Multiple edits, failed edits, stale bases and resume create dependencies that a generic hook name does not resolve. Explicit old-version or rejected-candidate preview remains useful.
 
 Source/output comparison can use independent regions or a contact sheet with labels outside source pixels and adequate surrounding context. The agent decides the needed comparison. Contact sheets, ink ratios, registered assets and successful image decoding do not certify interpretation. Precise local originals and exact saved-version readback are the underlying capabilities. Preview rendering mechanics belong in [the document guide](DOCUMENT_ENGINE.md#rendering-and-preview).
 
-Sources: [P2-093–098](../reference/02-context-state-and-evidence.md#p2-093).
+Sources: [P2-093–098](../reference/02-context-state-and-evidence.md#p2-093), ATT-15, ATT-16, EVT-0674.
 
 <a id="framework-and-native-boundary"></a>
 ## 24. Framework and native-protocol lessons retained

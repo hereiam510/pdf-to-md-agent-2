@@ -12,6 +12,7 @@ The development knowledge is explained in [DEVELOPMENT_GUIDE](../DEVELOPMENT_GUI
 | Two supplied forum pages | Exact HTML as inert text, extracted article text and offline image readers | All 24 substantive embedded figures are local and byte-preserved. Forum claims retain their credibility limits. |
 | SUP-01/02 continuing requirements | Explicit verbatim excerpt ranges with original/full-source hashes | Preserve the relevant product/platform and guidance rules without importing whole old development documents |
 | SUP-03–07 historical engineering evidence | Selected reference, stack, tool, code and correction excerpts | Support concrete examples and lessons. They introduce no old runtime, version pin or execution permission. |
+| SUP-08–12 protocol and lifecycle evidence | Selected tool contracts, observations, request-setting code and correction identity | Preserve exact mechanics and their limits. Later discussion and dated official checks control overstrong interpretations. |
 | Nine later human decisions | [LATER_DECISIONS](LATER_DECISIONS.md) | Includes self-containment, technical-detail preservation and direct-conversation review requirements |
 | Point-to-detail mapping | [DEVELOPMENT_COVERAGE](DEVELOPMENT_COVERAGE.json) | Explains where each preserved point is developed or retained as historical rationale |
 

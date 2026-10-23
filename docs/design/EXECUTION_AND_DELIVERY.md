@@ -203,6 +203,27 @@ Unknown remote generation and unknown local effects have different handling. Whe
 
 The app can read already durable accepted results when the model allowance is exhausted. Reading them does not send a request. This does not grant authority for every unfinished tool to run past another applicable limit. Preserve the pending batch/stop reason and useful work. Host-callable export of a specified saved version remains possible without further model tokens, subject to its own execution time, storage, cancellation, and publication rules.
 
+<a id="historical-retry-hierarchy"></a>
+### Historical retry hierarchy and manual resume
+
+The old controller distinguished three modes. These names and limits explain its policy. They do not select rebuild defaults.
+
+| Historical configuration | Automatic eligibility | Ceiling per preserved model round |
+|---|---|---|
+| `automatic_retries > 0` | Eligible transient replay, including recognized queue failures. | `1 + automatic_retries` app HTTP attempts, including the original. Queue attempts consume this allowance even when `queue_retries` is larger. |
+| `automatic_retries = 0`, `queue_retries > 0` | Only recognized pre-generation queue failures. | `1 + queue_retries` app HTTP attempts, including the original. |
+| Both options equal zero | No automatic replay. | The original attempt plus at most two explicit resumptions retains a three-attempt ceiling. |
+
+Thus, `automatic_retries: 2` allowed three app HTTP attempts for that preserved round. The queue option did not add another retry allowance. The controller persisted attempts and consumed budget before dispatch. Resume and restart retained the original turn, active-time and per-round attempt budgets. Two permitted explicit resumptions did not replenish those budgets.
+
+All attempts and waits shared the original cumulative active deadline and maximum turns. A retry was not a new model round. Successful recovery preserved earlier unknown attempts and their unresolved usage. A later local-only continuation did not charge the same accepted historical ambiguity again.
+
+The old policy specified one accountable app retry owner to prevent configurable SDK or proxy layers from silently multiplying its allowance. Opaque upstream retries remained a limitation. Three app attempts did not guarantee three upstream generations or a monetary ceiling.
+
+This hierarchy covered the historical transport and recognized-queue policy. It did not settle every future admission or capacity-recovery policy. The rebuild retains durable accounting and explicit bounded eligibility. [Capacity re-preparation](#capacity-rejection-is-not-ordinary-same-input-retry) still needs its separate rules while sharing task totals.
+
+**Source basis:** SUP-09, historical TOOLS retry-budget and retry-owner passages.
+
 <a id="send-boundary-sequence"></a>
 ### Same-request recovery at the service boundary
 

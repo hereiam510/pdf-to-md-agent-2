@@ -1,0 +1,94 @@
+SUP-09 — Historical provider diagnostics, attempt accounting and local lifecycle contracts
+
+Selected historical source excerpts, not active instructions or a rebuild implementation.
+Source: supporting/workspace/docs/TOOLS.md
+Full-source SHA-256: 8224e8abbd44437ee2737549c8a58f174b0e1dc01081f92ca6a4c0f006a02981
+The maintained guides explain the scope and later corrections.
+
+--- Original lines 88-111 ---
+`queue_retries` remains available for recognized pre-generation HTTP 504 `INFERENCE_QUEUE_TIMEOUT`
+when automatic recovery is disabled. Attempts preserve the exact payload, original job limits and
+unknown usage, including when eventual conversion succeeds. No hidden retry occurs with both options
+omitted. Non-200 responses retain HTTP status and recognized safe machine
+`error.type`/`error.code` labels in the exception and request audit, including `context_too_large`
+and `context_length_exceeded`. Context errors explain that active input must be reduced without
+narrowing the requested conversion scope. Only explicitly allowlisted labels are retained;
+free-form messages, params, unknown labels and malformed/non-JSON bodies are not exposed
+or saved as error responses. The diagnosed proxy chain additionally retains fixed
+`auth_unavailable`/`http2_protocol_error`/`stream_incomplete` markers, recognized proxy codes
+(including `request_timeout`) and only valid bounded integer or HTTP-date
+`Retry-After` as `retry_after_seconds`; no other header/message/URL is copied. These are
+reported diagnostic conditions, not proof of deeper cause. Explicit retry configuration and
+structured eligibility determine replay.
+Unknown errors keep the status-only fallback. An incomplete upstream stream may already have
+generated content; it is not a pre-start queue failure and is never replayed by the queue option.
+Observed numeric failed-attempt usage is recorded separately; unreported failed-call usage and
+charges remain unknown. Labels never trigger context truncation or a larger window; useful saved
+work remains reopenable. HTTP error bodies and in-band service-error frames are excluded from raw
+native diagnostics. Complete framed native model events and complete structurally native HTTP-200
+JSON replies remain separate attempt evidence, including refused/argument-invalid native replies.
+Unparseable/unframed/non-native provider fragments and raw heartbeat comments are withheld with
+safe byte-count/hash/fixed-reason metadata. Heartbeat timing and complete source/tool raw access
+remain available.
+
+
+--- Original lines 237-255 ---
+Transport diagnostics record UTC attempt/receipt timestamps, concrete timeout/connection classes,
+allowlisted event timings and SHA-256 values for recognized correlation headers. Headers, first
+body byte, heartbeat, first/last meaningful native data, chunk arrivals and final accepted completion
+are distinct observations. Complete structurally native HTTP-200 JSON replies are stored as
+`raw-response-...json`, and complete framed native model events as `stream-...sse`, with the audit's
+`raw_response_file` locator. Valid native refused/argument-invalid replies and complete model frames
+before interruption remain diagnostic candidates, never an accepted reply or executable content;
+`response-NNN.json` is written only after validation. Non-200 bodies, in-band service-error frames,
+raw heartbeat comments and unparseable/unframed/non-native fragments are withheld, with byte
+counts/hashes/fixed reasons recorded. Complete preceding native frames survive even when a shared
+chunk also carries an error. The configured credential is redacted. Source/tool raw records and
+native-image access remain complete and independent of this provider-error filtering.
+Trace info, arbitrary error messages, raw headers and credentials are excluded. These client-side
+observations do not establish upstream generation/settlement. `request_timeout` is HTTPX2's scalar
+network inactivity bound across connect/read/write/pool phases, not an overall generation timer.
+`transport` selects the wire `stream` value; `parameters` cannot override it. Chat chunk completion
+id/created/model/system_fingerprint remain consistent; documented service_tier is enum/null
+processing metadata, retaining the latest non-null actual tier rather than requiring an echoed
+auto tier to stay unchanged. This does not relax native tool/choice identities or terminal checks.
+
+
+--- Original lines 264-269 ---
+| `automatic_retries` | 0; integer 0–2 | Positive value enables eligible transient replay and is the authoritative shared per-round retry allowance, including recognized queue failures. |
+| `retry_initial_delay` | 2 seconds; 0–60 | Initial exponential backoff for automatic recovery. |
+| `retry_max_delay` | 30 seconds; 0–300 | Caps local exponential backoff plus jitter; valid Retry-After may require a longer wait within remaining active time. |
+| `retry_jitter` | 0.25; 0–1 | Nonnegative proportional jitter added to local backoff before the cap. |
+| `queue_retries` | 0; integer 0–2 | Legacy recognized pre-generation queue-only retry allowance when automatic retries is 0; never adds attempts when automatic recovery is enabled. |
+| `queue_retry_delay` | 15 seconds; 0–60 | Minimum legacy queue-only delay, also respecting valid Retry-After. |
+
+
+--- Original lines 281-285 ---
+Retry transient connection/handshake/disconnect/timeout and explicitly eligible service conditions with bounded cancellable backoff and jitter, respecting a valid bounded `Retry-After` within remaining job limits. Do not automatically retry authentication/permission failures, invalid certificates, bad requests/configuration/parameters, context-limit errors, valid model refusals, tool-argument errors or user cancellation as transport faults; surface their actual reason. Preserve safe structured classifications; raw messages, auth logs, keys and arbitrary headers are not diagnostic records. A generic error can remain unknown without being mislabeled as pre-send.
+
+**Starting trial budget:** `automatic_retries: 2` permits at most **three app HTTP attempts including the original** per preserved model round. Whenever automatic retries is positive, the ceiling is exactly `1 + automatic_retries`; eligible queue attempts consume it even if `queue_retries` is larger. When automatic retries is 0 and legacy queue retries is positive, only recognized pre-generation queue failures can automatically retry, under `1 + queue_retries`. With both at 0, no automatic replay occurs and initial plus at most two explicit resumptions retains a three-attempt ceiling. Attempts and consumed budget are persisted before dispatch, so resume/restart cannot reset them. Successful recovery neither erases earlier unknown attempts nor charges the same accepted historical ambiguity again at a later local-only continuation. All attempts and waits share the original cumulative active deadline and maximum turns; a retry is not a new model round. Two explicit resumptions do not add retry budgets. Freeze deliberate policy changes in the plan and affected owners.
+
+Use one accountable app retry owner. Record known SDK, Nexus and CLIProxy retry settings/attempts; prevent configurable layers from silently multiplying the app allowance. When upstream internal retries are opaque, state that limit: three app attempts do not guarantee three upstream generations or a monetary ceiling. No new SDK/framework or proxy reconfiguration is required merely to borrow a recovery pattern.
+
+
+--- Original lines 301-301 ---
+Transport tests freeze mode and record every attempt. Do not hide a switch/fallback inside a comparison. A heartbeat can prevent idle timeout without useful content; measure headers, first byte/heartbeat, first/last meaningful data, chunk arrivals and final completion separately. Streaming can fail before its first event; non-streaming can buffer productive upstream work. Neither guarantees settlement, better quality or lower cost. Preserve available final/observed numeric usage and unknown failed/missing usage separately. [ACCEPTANCE](ACCEPTANCE.md#transport-and-recovery-validation) defines offline, paired live and three-method checks.
+
+
+--- Original lines 526-530 ---
+Playwright's current official guidance does not support cancelling in-flight API calls. A dedicated
+sync worker thread owns and closes the browser; cancellation waits for the active bounded operation
+and cleanup rather than abandoning that thread. Ordinary browser calls use 15-second timeouts,
+launch uses Playwright's 30-second default; hard OS-crash recovery is not promised. Failed/cancelled
+inspection records a terminal status and leaves saved versions usable.
+
+
+--- Original lines 636-642 ---
+Windows JSON readers use `CreateFileW` with READ/WRITE/DELETE sharing and retain a complete old or new
+snapshot handle. Existing-file publication uses `ReplaceFileW`; plain `os.replace`/`MoveFileEx` failed
+against an open reader in this Windows environment. Only native sharing/access errors get finite
+replacement retries (eight attempts, under one second of delay), including observed Windows 1175,
+which leaves both original names intact; new readers also retry a brief
+native name-transition error. Other errors propagate. A persistent lock/permission failure is not
+hidden, and no in-place JSON truncation is used. Use `read_json` for status polling.
+

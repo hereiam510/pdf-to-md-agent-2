@@ -5176,5 +5176,94 @@
       "SUP-05"
     ],
     "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#script-credential-boundary"
+  },
+  {
+    "id": "H-014",
+    "topic": "Outbound reasoning and usage settings",
+    "summary": "Explain historical Responses include defaults and Chat streaming usage requests. Preserve route-specific continuation rules and the dated correction to a universal include requirement.",
+    "status": "historical-mechanism-with-current-correction",
+    "source_ids": [
+      "SUP-08",
+      "SUP-11"
+    ],
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-outbound-reasoning-and-usage"
+  },
+  {
+    "id": "H-015",
+    "topic": "Provider error filtering and withheld fragments",
+    "summary": "Explain fixed label allowlists, decoded credential filtering and withheld-fragment metadata. Valid native frames and complete source/tool evidence retain their distinct preservation rules.",
+    "status": "retained-boundary-with-historical-mechanism",
+    "source_ids": [
+      "SUP-09",
+      "SUP-10"
+    ],
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#provider-diagnostics-and-preservation"
+  },
+  {
+    "id": "H-016",
+    "topic": "Observed stream and proxy conditions",
+    "summary": "Preserve the auto-to-default service-tier correction, recognized queue rejection, auth_unavailable and missing terminal usage. These observations do not establish general cause or settlement.",
+    "status": "historical-observation",
+    "source_ids": [
+      "SUP-09",
+      "SUP-10",
+      "SUP-11",
+      "SUP-12"
+    ],
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-nexus-wire-cases"
+  },
+  {
+    "id": "H-017",
+    "topic": "Windows replacement failure distinctions",
+    "summary": "The old allowlist admitted bounded 1175 retries and excluded 1176/1177. Explain backup-dependent 1176 state without claiming universal partial mutation or rollback safety.",
+    "status": "historical-mechanism-with-correction",
+    "source_ids": [
+      "SUP-08",
+      "SUP-09"
+    ],
+    "destination": "docs/design/DOCUMENT_ENGINE.md#historical-windows-publication"
+  },
+  {
+    "id": "H-018",
+    "topic": "Preview worker ownership and cancellation",
+    "summary": "Preserve the historical synchronous worker and waiting through cleanup. Async support differs from supported cancellation during an active Playwright API call.",
+    "status": "historical-mechanism-with-correction",
+    "source_ids": [
+      "SUP-08",
+      "SUP-09"
+    ],
+    "destination": "docs/design/DOCUMENT_ENGINE.md#historical-preview-worker-lifetime"
+  },
+  {
+    "id": "H-019",
+    "topic": "Historical retry eligibility hierarchy",
+    "summary": "Positive automatic retries shared their attempt ceiling with eligible queue retries. Preserve separate zero-automatic and manual-resume branches without adopting old numerical defaults.",
+    "status": "historical-mechanism",
+    "source_ids": [
+      "SUP-09"
+    ],
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#historical-retry-hierarchy"
+  },
+  {
+    "id": "H-020",
+    "topic": "Pending evidence through compaction",
+    "summary": "Do not invent content for unseen pages. Preserve unfinished scope and exact immutable-manifest access without compulsory full hydration or a permanent per-evidence list.",
+    "status": "corrected-retained-boundary",
+    "source_ids": [
+      "ATT-17",
+      "EVT-0730"
+    ],
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#rolling-compaction"
+  },
+  {
+    "id": "H-021",
+    "topic": "Version chaining and preview outcomes",
+    "summary": "Restore illustrative produced_revision and preview_on_commit names. Separate commit_status and preview_status do not make commit and preview one atomic effect.",
+    "status": "illustrative-mechanism-with-correction",
+    "source_ids": [
+      "ATT-16",
+      "EVT-0674"
+    ],
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#review-and-version-dependencies"
   }
 ]
