@@ -1,6 +1,6 @@
 # Rebuild architecture
 
-Status: settled responsibility boundaries and preferred implementation baseline. This repository contains no implemented application. EVT-1068, EVT-1107 and EVT-1166 consolidate this direction. The earlier Pi-first and LangChain `create_agent` recommendations remain documented in the reference discussion with their corrections.
+Status: responsibility boundaries implemented in the first application increment on 2026-10-23. EVT-1068, EVT-1107 and EVT-1166 consolidate this direction. The earlier Pi-first and LangChain `create_agent` recommendations remain documented in the reference discussion with their corrections. [CURRENT_STATE](CURRENT_STATE.md) separates implementation from verified scope.
 
 For shared terms, an end-to-end example and the module-specific engineering explanations, read [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md). It links to detailed local guides. Source IDs provide optional provenance. They are not prerequisites for understanding this architecture.
 
@@ -24,7 +24,7 @@ A graph can express a dynamic model/tool loop. Graph-based execution does not re
 
 The model selects source access, OCR, scripts and reconstruction scope. The app checks capacity, maintains identities and accepts complete native replies. The dispatcher executes only validated calls. Before the assembler builds the next model input, the dispatcher records each accepted batch member's success, rejection or failure. A complete accepted reply does not imply that every proposed operation passes domain validation. Context work occurs at a defined safe boundary with the same durable request and budget handling as other model calls.
 
-The exact nodes/edges and their schemas are implementation details to settle with [the three contracts](CONTRACTS.md). A simple `prepare -> model -> tools` sketch is not a guarantee that every recovery or cancellation branch is correct.
+The implemented graph has `prepare`, `model`, `tools`, and `compact` nodes. `prepare` assembles a fitting normal request or a fitting compaction request; both use the same persistent Nexus service. `tools` settles the accepted batch sequentially before another request. An explicit report or a no-tool reply ends that invocation. Exact state and recovery semantics are in [the implemented contracts](CONTRACTS.md#implemented-first-version-contracts).
 
 ## Content and context are separate
 
@@ -63,3 +63,30 @@ The preferred small StateGraph keeps the Python core and native Nexus service ex
 ## Implementation boundary
 
 No backward compatibility or old-run migration is required. Useful old code can be reviewed for selective reuse, with the original repository preserved. Dependency versions, exact API/schema names and desktop packaging details are not silently copied from an old environment. Network transport expansion remains deferred. CONTRACTS retains the discussed execution boundaries necessary for context and durable work.
+
+## Implementation map and selected dependencies
+
+| Source | Effective responsibility |
+| --- | --- |
+| `src/desktop/main.ts`, `preload.ts` | Sandboxed renderer, explicit IPC actions, native file dialogs, encrypted connection settings, authenticated loopback engine, isolated preview worker |
+| `src/renderer/` | Source/scope selection, source-page display, agent activity, saved preview/Markdown/evidence, local block edits, version selection and ZIP export |
+| `src/pdfmd/server.py`, `runtime.py` | Task lifecycle, one executor per job, `StateGraph` and SQLite checkpointer |
+| `nexus.py`, `context.py` | Complete native replies, frozen attempts, shared limits, transient context projection and rolling handoffs |
+| `storage.py`, `schema.py`, `documents.py` | Immutable objects, metadata transactions, typed document edits, candidates, version integrity and export |
+| `evidence.py`, `tools.py`, `tools/ocr-worker.cjs` | PDF text/layout/raw/pixel access, shared dispatch, local Tesseract OCR, saved-output screenshots and opt-in host scripts |
+
+The engine prints a bounded startup announcement and serves only an ephemeral loopback port with a random per-launch bearer token. Electron's renderer has no Node or generic filesystem/network IPC access. Its main process holds the credential and sends it only to the local engine for the configured model request. Important results survive in storage rather than relying on UI event delivery. Closing the app terminates the local child; reopening reads saved state and requires an explicit continuation.
+
+Saved-output previews record the actual scroll position and CSS viewport/document dimensions, the display scale and actual PNG dimensions, as well as the requested viewport. This distinguishes a clamped scroll/window request from the pixels that were captured. The screenshot covers that viewport; it is not a claim to have reviewed the complete document.
+
+`uv.lock` and `pnpm-lock.yaml` record full dependency resolutions. The selected main versions are Python 3.12, LangGraph 1.2.16, SQLite checkpointer 3.1.2, HTTPX 0.28.1, Pydantic 2.14.1, PyMuPDF 2.0, FastAPI 0.161.1, Electron 45.0.0, React 19.3.1, TypeScript 7.0.2, electron-vite 6.0.0 and Tesseract.js 7.0.0. PyInstaller 6.22.3 bundles the engine. These pins are implementation choices, not inherited old-environment requirements.
+
+Official guidance consulted for this implementation:
+
+- [LangGraph persistence](https://docs.langchain.com/oss/python/langgraph/persistence): checkpoint lifecycle and synchronous durability; installed SQLite saver signatures were also inspected.
+- [Electron security](https://www.electronjs.org/docs/latest/tutorial/security) and [safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage): process isolation, narrow IPC and the asynchronous encryption API.
+- [electron-vite](https://electron-vite.org/guide/) and [pnpm settings](https://pnpm.io/settings): supported desktop build structure and explicit dependency build-script policy.
+- [Native function calls](https://developers.openai.com/api/docs/guides/function-calling) and [Responses](https://developers.openai.com/api/reference/resources/responses/methods/create): protocol field/call identity guidance. Actual Nexus route support remains separately verified.
+- [HTTPX timeouts](https://www.python-httpx.org/advanced/timeouts/), [PyMuPDF](https://pymupdf.readthedocs.io/en/latest/tutorial.html), [image recipes](https://pymupdf.readthedocs.io/en/latest/recipes-images.html), [Tesseract.js API](https://github.com/naptha/tesseract.js/blob/master/docs/api.md), and [PyInstaller usage](https://pyinstaller.org/en/stable/usage.html): request lifecycle, source access, OCR worker and packaged-resource handling.
+
+The Windows build preserves PyMuPDF's required resource data. When the selected Python distribution has an SSL distrust resource beside `ssl.py`, the build also preserves it. A frozen-engine check initializes verified TLS and the HTTP client before desktop packaging. It does not disable certificate verification or send a model request.

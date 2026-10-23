@@ -1,8 +1,34 @@
 # pdf-to-md-agent-2
 
-This repository contains the design for rebuilding an independent PDF-to-Markdown agent app. The agent completes the conversion. The app supplies reliable source access, document editing, context management, persistence and delivery tools.
+PDF Markdown Workbench is a local Electron app with a Python agent engine. The agent completes the conversion through Nexus. The app supplies source access, local OCR, document editing, context management, durable execution and explicit-version export.
 
-**This repository currently contains the rebuild design and its discussion record. It does not yet contain an implemented application.** It has an independent Git history. The original project and the supplied chat export remain separate and unchanged.
+**The first application increment is implemented.** It includes a Windows folder build and a desktop workflow for importing a PDF, specifying a scope, running an autonomous agent, reviewing or editing saved versions, and exporting a portable ZIP. See [current state](docs/CURRENT_STATE.md) for actual verification and limits. The original project remains unchanged.
+
+## Run locally
+
+Install Python 3.12 through `uv`, Node.js 24 and `pnpm`. From this repository:
+
+```powershell
+.\tools\setup.ps1
+.\tools\start.ps1
+```
+
+The setup script uses the committed Python and JavaScript lockfiles. `-Uv` and `-Pnpm` accept executable paths. The launcher uses ignored `workspaces/default`; `-Workspace` selects a separate task store. Direct `pnpm dev` uses Electron's user-data directory instead.
+
+Open **Nexus connection**, enter the full Chat Completions or Responses endpoint, model alias and credential, and configure the route's capacity and output allowance. Image inputs require a conservative per-image allowance. These are user configuration values, not discovered model specifications. Credentials can be remembered with Windows encryption; they are never stored in task journals. Choose a PDF, describe the whole document or complete section, and start conversion. Trusted host scripts are off by default.
+
+To build and run the Windows folder app:
+
+```powershell
+.\tools\build-windows.ps1
+.\tools\start.ps1 -Packaged
+```
+
+The folder app includes its Python engine. The build script's `-Installer` option creates an NSIS installer. Building an installer does not install it. The Windows build is unsigned. Local Tesseract OCR downloads requested language data on first use and caches it in the workspace.
+
+For the current local build, double-click `Start Workbench.cmd` to open the saved Nexus test workspace. The installer is `release/PDF Markdown Workbench Setup 0.1.0.exe`. An installed copy uses its own user-data directory by default; it does not automatically import this checkout's private files or task store.
+
+The authorized local `references/` and `private/` copies are ignored. They are not part of the app or public source distribution. Do not commit credentials, task stores or conversion outputs.
 
 ## Start here
 
@@ -12,9 +38,9 @@ Read [the working agreement](AGENTS.md). Read [current state](docs/CURRENT_STATE
 | --- | --- |
 | [Product requirements](docs/PRODUCT_REQUIREMENTS.md) | User outcomes, fidelity, autonomy and observable acceptance |
 | [Architecture](docs/ARCHITECTURE.md) | Settled responsibilities and the preferred implementation baseline |
-| [Contracts](docs/CONTRACTS.md) | Document, context and recovery boundaries, with explicit unresolved details |
+| [Contracts](docs/CONTRACTS.md) | Document, context and recovery boundaries and the implemented first-version schemas |
 | [Decisions](docs/DECISIONS.md) | Effective choices, rationale and consequential alternatives |
-| [Open questions](docs/OPEN_QUESTIONS.md) | Only the three contracts that need resolution for first-version delivery |
+| [Open questions](docs/OPEN_QUESTIONS.md) | Closure of the three first-version contracts and limits of that closure |
 
 Continue with the [development handoff](docs/DEVELOPMENT_GUIDE.md) and its four technical guides. These explain state/data responsibilities, mechanisms, concrete examples, failure handling and tradeoffs. They explain the development knowledge directly. Reading the original conversation is unnecessary.
 
@@ -32,7 +58,7 @@ The [source index](docs/reference/SOURCE_INDEX.md), detailed discussion records 
 - Provider-portable context handling through Nexus, including monthly-subscription connections. Provider-native compaction, background retrieval and remote cancellation are not baseline dependencies.
 - Exact reusable evidence and candidate content, local edits, immutable saved versions and explicit-version export.
 
-These are design responsibilities and a preferred reconstruction route, not implementation or measured-superiority claims. Backward compatibility is unnecessary. Reuse useful components only where they fit the new contracts.
+The implementation follows these responsibility boundaries. Framework choice is not a measured-superiority claim. Backward compatibility with the original project is unnecessary.
 
 ## Document checks
 
@@ -43,4 +69,14 @@ With a working Python 3.9+ interpreter, run the following from this repository (
 
 The first command checks documentation/image links, local source hashes and point/detail coverage. The second reads a bundled source without accessing an external export. They do not test an agent implementation or certify semantic completeness. [Current state](docs/CURRENT_STATE.md) records the actual review and its limits.
 
-The public repository is [hereiam510/pdf-to-md-agent-2](https://github.com/hereiam510/pdf-to-md-agent-2). It includes the maintained documentation, bundled discussion sources and Git history. It has no published application release, runtime dependency lock or provider configuration. Git ignores local environment files, private inputs and source-review working files.
+Application checks:
+
+```powershell
+.venv\Scripts\python.exe -m pytest
+pnpm build
+pnpm test:desktop
+```
+
+The desktop test uses a local model fixture and makes no provider calls. Set `PDFMD_PACKAGED_EXE` to the built executable to test the packaged app. Live Nexus calls require an explicit task and credential; they are not part of automated tests.
+
+The public repository is [hereiam510/pdf-to-md-agent-2](https://github.com/hereiam510/pdf-to-md-agent-2). Local build artifacts and private configuration are excluded from Git. No GitHub application release has been published.

@@ -10,12 +10,12 @@ This is the effective rebuild decision record. Detailed proposals, evidence limi
 | Separate evidence retrieval/retention from history compaction | Agreed design | Retrieval is reversible against originals. Summaries are semantic and potentially lossy. | EVT-0137, EVT-0188–0191, EVT-1166 |
 | Combine agent relevance judgment with app capacity enforcement | Agreed design | Pure model initiative can miss overflow. Rigid eviction can remove needed evidence. | EVT-0189–0191, EVT-1166 |
 | Preserve originals/useful work before context release or validation rejection | Agreed constraint | Saved correct content should be reusable without another generation | EVT-0855, EVT-0914, EVT-1166 |
-| Small Python StateGraph, shared Nexus/dispatcher, document/evidence core | Preferred reconstruction baseline | Reuse orchestration primitives while keeping native protocol and domain contracts explicit | EVT-0968, EVT-1068, EVT-1107, EVT-1166 |
-| SQLite metadata with external immutable content | Preferred persistence baseline | Short authoritative metadata commits and operation receipts without duplicate mutable body authority | EVT-1040, EVT-1068, EVT-1166 |
+| Small Python StateGraph, shared Nexus/dispatcher, document/evidence core | Implemented baseline | Reuse orchestration primitives while keeping native protocol and domain contracts explicit | EVT-0968, EVT-1068, EVT-1107, EVT-1166 |
+| SQLite metadata with external immutable content | Implemented baseline | Short authoritative metadata commits and operation receipts without duplicate mutable body authority | EVT-1040, EVT-1068, EVT-1166 |
 | Keep small context policy in graph state with one settlement writer | Retained simplification | External request budgets/document effects remain durable. The design removes unnecessary parallel policy-version/activation tables. | EVT-0872, EVT-0878 |
-| One active writer per task, with exact batch/operation replay | First-version recommendation | Avoid unnecessary concurrent-policy merge/branch infrastructure while protecting effects | EVT-1166 |
-| Exact complete-candidate reuse and insertion/metadata edits first | First-version recommendation. Contract details remain open. | Addresses observed regeneration and full-map friction | EVT-1166, Q1 |
-| Self-sufficient handoff and incremental capacity reduction | First-version recommendation. Contract details remain open. | Avoid dangling delta anchors and all-or-nothing compaction deadlock | EVT-1107, EVT-1147, EVT-1166, Q2 |
+| One active writer per task, with exact batch/operation replay | Implemented first-version contract | Avoid unnecessary concurrent-policy merge/branch infrastructure while protecting effects | EVT-1166 |
+| Exact complete-candidate reuse and insertion/metadata edits first | Implemented Q1 contract | Addresses observed regeneration and full-map friction | EVT-1166, Q1 |
+| Self-sufficient handoff and incremental capacity reduction | Implemented Q2 contract; summary quality remains model-dependent | Avoid dangling delta anchors and all-or-nothing compaction deadlock | EVT-1107, EVT-1147, EVT-1166, Q2 |
 | Shared durable budgets/cancellation for normal and summary calls | Agreed execution boundary | Context work must not bypass recovery, spend limits or explicit stop | EVT-1040, EVT-1107, EVT-1166, Q3 |
 | Explicit immutable-version export independent of model budget | Agreed delivery boundary | Useful saved work remains deliverable after inference stops | EVT-1107, EVT-1166 |
 | Backward compatibility is unnecessary. Reconstruction is allowed. | Explicit user choice | Do not preserve old APIs/run formats merely for migration compatibility | EVT-0240, EVT-0319 and repeated attachment-review requests |
@@ -36,6 +36,6 @@ The repository is a self-contained technical handoff (LIVE-06/07). [DEVELOPMENT_
 
 ## Reopening policy
 
-Only the three contracts in OPEN_QUESTIONS remain first-version design blockers. A framework comparison, hypothetical failure mode or historical unverified capability does not automatically create a task. Preserve useful observations. Reopen the relevant decision when actual implementation/delivery evidence or the user changes its premise.
+The three contracts in OPEN_QUESTIONS have selected executable forms. A framework comparison, hypothetical failure mode or historical unverified capability does not automatically create a task. Preserve useful observations. Reopen the relevant decision when actual implementation/delivery evidence or the user changes its premise.
 
-This repository's application remains unimplemented and untested. Historical facts that motivate a decision remain observations of their original scope. They are not rebuild verification or inherited permission to run experiments.
+The first application increment is implemented; CURRENT_STATE records its checks and limitations. Historical facts that motivate a decision remain observations of their original scope. They are not rebuild verification or inherited permission to run experiments.

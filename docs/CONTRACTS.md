@@ -1,6 +1,6 @@
 # Rebuild contracts
 
-These contracts consolidate the agreed boundaries and the final recommended tradeoffs in EVT-1166. The exact schemas and transition details listed in [OPEN_QUESTIONS](OPEN_QUESTIONS.md) remain open. No pseudocode or example here certifies an implementation. Additional mechanisms from the discussion are preserved in the reference records with their status.
+These contracts consolidate the agreed boundaries and the final recommended tradeoffs in EVT-1166. The [implemented first-version contracts](#implemented-first-version-contracts) below select the exact schemas and transitions for Q1–Q3. The earlier mechanism examples remain explanatory. Additional mechanisms from the discussion retain their status in the reference records.
 
 Detailed local explanations accompany these contracts: [document engine](design/DOCUMENT_ENGINE.md), [context and evidence](design/CONTEXT_AND_EVIDENCE.md), and [execution and delivery](design/EXECUTION_AND_DELIVERY.md). These explain data shapes, sequencing, examples and failure cases without requiring the chat export. Illustrative field names do not silently close open schema choices.
 
@@ -150,3 +150,45 @@ Verify actual intended members and bytes. A manifest identity alone does not est
 Persist important results/receipts. Allow coalescing or dropping obsolete progress events. A bounded queue cannot simultaneously promise lossless unlimited events and never block when the consumer stops. Avoid coupling durable tool completion to UI stdout consumption. A reconnecting UI should read committed state.
 
 Protocol output and diagnostics require a deliberate process/channel boundary, but mandatory first-line `os.dup2` was not established as the universal remedy. Native libraries, callbacks, threads and process shutdown need proportionate implementation checks. These considerations do not require a new distributed infrastructure or a separate network research phase before document/context contracts can be written.
+
+## Implemented first-version contracts
+
+These are the selected executable contracts as of 2026-10-23. They close Q1–Q3 at the design level. [CURRENT_STATE](CURRENT_STATE.md) records which behavior was tested. The first transport is non-streaming; the earlier dual-transport discussion remains a future compatibility boundary.
+
+### Q1: document schema and commit
+
+`schema.py` defines `Document` with `title`, `scope`, ordered `blocks`, a complete physical-page `pages` map, `claim` (`partial` or `complete`), and `known_gaps`. Each block has a stable task-local `id`, exact `markdown`, physical `pages`, and optional `source_note`. Each page has `printed`, `disposition`, and `note`. Disposition is `unprocessed`, `included`, `outside_scope`, or `omitted_non_content`. Printed labels remain strings; `unknown` and `none` have different meanings.
+
+`edit_document` requires `base_version` and `expected_head`. Null selects the initial empty document/head. The base supplies content; the expected head is the commit precondition. The caller can deliberately select a different saved base, but a stale expected head fails without overwriting newer work. Omitted content and metadata remain unchanged. `replace_blocks` replaces the full ordered list; `reuse_candidate` copies the exact list at a task-owned candidate's RFC 6901 JSON Pointer. These alternatives cannot be combined. Neither replays the candidate's old operation.
+
+Sequential `operations` support `insert` after an existing ID (null means beginning), `replace`, `delete`, and `patch`. Patch offsets are zero-based, half-open Unicode code-point positions in the current block after earlier operations in this request. `expected` must match exactly. `page_updates` merges only supplied page fields before validating the entire result. The tool schema exposes the page fields and disposition values to the model.
+
+Every accepted call's raw argument string is retained as `candidate:<request>:<call-index>` before domain validation. Reuse works after rejection or a later save. The full native response is retained earlier, before native parsing. Invalid and truncated calls remain non-executable.
+
+The document core writes immutable version files, flushes them, then commits the version registration, head and original operation receipt in one SQLite transaction. Unregistered prepared/version directories remain preserved but invisible; there is no automatic destructive cleanup. A replay returns its original receipt/version without rewinding a newer head. The whole Markdown document is parsed together, so cross-block references and footnotes can resolve. Preview sanitization does not rewrite saved Markdown. Image links must name registered local assets; version files and exports preserve those bytes.
+
+`complete` is an agent content claim with structural checks: no known gaps or unprocessed pages, output provenance for included pages, and a note for outside-scope/non-content pages. These checks cannot establish source fidelity. Partial versions can be saved and exported at any time.
+
+### Q2: context transitions
+
+Graph state holds request IDs, the handoff reference, history revision, released/pinned references and continuity notes. Full native responses, candidates, evidence and frozen inputs remain in immutable external objects. Request assembly is transient. Native call/result pairs and required reasoning items remain in the projection. Released authored arguments become explicit archive references only in that projection; execution always uses the original accepted call.
+
+The current portable estimator charges the UTF-8 byte length of the complete assembled non-image payload, plus 1,024 units and a configured allowance per native image. It then reserves configured output capacity. This is a conservative heuristic, not provider token usage or a proven upper bound for every route. Missing image allowances block a pixel request. Capacity values must be configured for the route; a generic HTTP failure does not change them.
+
+`context_update` lets the agent release/pin complete saved results, candidates or images and replace its continuity notes. Release changes input retention, not storage. One writer settles intents in accepted batch order. If normal input still exceeds capacity, the app chooses a fitting oldest complete batch prefix for compaction. It does not remove pinned prefix material. If a single batch is too large, its exact bodies can be explicitly deferred to saved references for the summary request; their semantic relevance remains unresolved. If no fitting segment exists, execution stops with `capacity_blocked` and keeps all work.
+
+The summary request uses the same frozen-request service, budgets and cancellation gate. Its six fields are `task`, `current_state`, `unfinished_work`, `dependencies`, `references`, and `cautions`, each a string or string list. The replacement must carry needed facts from its predecessor. The app records exact covered request IDs, source references, deferred bodies and history revision independently of the summary text.
+
+A handoff applies only to the matching prefix/revision and only if it reduces the entire normal input, including its own references. It can apply even when more compaction is needed. Uncovered history remains. A schema, revision, reduction or request failure leaves the previous context active. Original handoffs and their archive links remain retrievable. Schema validity and net reduction do not prove semantic completeness.
+
+### Q3: execution, recovery and delivery
+
+`catalog.sqlite` owns jobs, requests, attempts, operation receipts, version registration and exports. `graph.sqlite` owns LangGraph checkpoints with synchronous durability. External immutable objects own the retained bytes. A cross-process file lock permits one task executor; manual editing uses the same lock. Independent jobs can run separately. These stores do not form a shared transaction.
+
+Request identity is `<job>:<sequence>:<revision>`; member operation identity appends the accepted call index. A frozen request wins on node re-entry. An accepted reply wins over a new send. The receiver reconciles an already saved `accepted:<request>` object if its request pointer was not committed. The dispatcher similarly reconciles `result:<operation>` before repeating work. A committed document can reconstruct its missing projection from the atomic original receipt. A complete batch replays its deterministic context intents before proceeding. An interrupted OCR/script operation without a settled result stops as `local_outcome_unknown`.
+
+Attempts and request-budget consumption commit before dispatch. Defaults are 80 model attempts, 7,200 active seconds, no automatic retry, and no unknown-outcome replay. Optional bounded replay applies only on re-entry and retains the original limits. Normal and compaction calls share the gate. Active-time and cancellation checks also precede new tools. Network waits are polled locally for stop/budget conditions. An abrupt process death leaves an unresolved interval that is conservatively charged through restart; a local stop never establishes remote cancellation or known cost.
+
+A no-tool answer pauses. `report` selects `complete`, `partial`, or `waiting`; completion requires an explicit structurally complete saved version. The run stop reason, selected version's claim and export verification remain separate. Reopening does not itself resume or spend inference. The user can resume, reply, or export saved work.
+
+Export takes an immutable version and an explicit external ZIP path. It verifies actual ZIP names and bytes against that version, publishes without replacing an existing unrelated file, and reconciles an existing known export. Markdown, structured document, preview, manifest and assets come from that version. It needs no model call. The local filesystem must support the current exclusive hard-link publication operation; other filesystem publication strategies are unverified.

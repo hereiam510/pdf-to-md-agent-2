@@ -2,6 +2,8 @@
 # Bundled design sources are versioned.
 .local/
 private/
+# Copied reference PDFs and example outputs are local test inputs.
+/references/
 workspaces/
 outputs/
 .env
@@ -13,3 +15,10 @@ __pycache__/
 node_modules/
 dist/
 build/
+out/
+release/
+.pytest_cache/
+test-results/
+playwright-report/
+*.egg-info/
+.tools/

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pdf-md-workbench"
+version = "0.1.0"
+description = "A local, autonomous PDF-to-Markdown workbench with Nexus model access"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "langgraph==1.2.16",
+  "langgraph-checkpoint-sqlite==3.1.2",
+  "httpx[http2]==0.28.1",
+  "pydantic==2.14.1",
+  "PyMuPDF==2.0",
+  "markdown-it-py==4.2.0",
+  "mdit-py-plugins==0.6.1",
+  "nh3==0.3.7",
+  "fastapi==0.161.1",
+  "uvicorn==0.54.0",
+  "filelock==4.2.4",
+]
+
+[dependency-groups]
+dev = ["pytest==9.1.1", "pyinstaller==6.22.3"]
+
+[project.scripts]
+pdf-md-engine = "pdfmd.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdfmd"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

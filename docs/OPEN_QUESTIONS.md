@@ -1,6 +1,6 @@
 # First-version open questions
 
-The user explicitly stopped incremental design expansion (EVT-1148). EVT-1166 consolidated three unresolved contracts. Preserve the following distinction. The responsibilities and recommended tradeoffs are known. Exact executable schemas and transition semantics still need a coherent specification and implementation. This file does not queue model experiments.
+The user explicitly stopped incremental design expansion (EVT-1148). EVT-1166 consolidated three contracts. Authorized implementation on 2026-10-23 selected their executable schemas and transitions in [CONTRACTS](CONTRACTS.md#implemented-first-version-contracts). Q1–Q3 are now closed as design choices. Implementation, live source fidelity and distribution readiness still require distinct evidence; [CURRENT_STATE](CURRENT_STATE.md) records that evidence. This file does not queue additional model experiments.
 
 The detailed engineering background is local in [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md) and its linked guides. These open choices are not permission to leave previously discussed mechanisms unexplained or send the next developer back to a conversation archive.
 
@@ -19,7 +19,7 @@ The detailed engineering background is local in [DEVELOPMENT_GUIDE](DEVELOPMENT_
 
 Immutable version files own body content. SQLite owns registration/pointers/receipts. Retain malformed originals without requiring automatic salvage.
 
-**Still to specify:** reference identity and applicability, patch/merge semantics, omitted-field behavior, operation success/visibility boundary and the receipt returned on replay.
+**Implemented selection:** task-owned immutable candidate references with JSON Pointers; explicit base/expected-head edits; sequential insert/replace/delete/exact code-point patches; supplied-field-only page merges; immutable version files with atomic registration/head/receipt. Rejected-candidate reuse, insertion, metadata patches and historical receipt replay are covered by offline tests.
 
 **Design closure:** the contract can express these actions unambiguously:
 
@@ -46,13 +46,14 @@ For each action, identify the original, changed fields, unchanged fields and suc
 
 Latest drafts/unfinished candidates may be partially released. Do not freeze a universal recent-turn count or percentage.
 
-**Still to specify:**
+**Implemented selection:**
 
-- Handling of capacity and unknown estimates.
-- Exact history coverage and revision application.
-- Summary replacement and rejection behavior.
-- The handoff content contract.
-- The stop path when no fitting request can be assembled within budget.
+- A complete-input UTF-8 byte heuristic with explicit output and image allowances; unknown image cost blocks sending.
+- Oldest fitting complete history batches, exact request coverage and a revision precondition.
+- Six-field self-sufficient handoff, applied only when the entire assembled input decreases; uncovered history survives.
+- Original retention on any rejection, and finite `capacity_blocked`/budget stop paths.
+
+These transitions pass offline boundary checks. Those checks do not prove the quality of arbitrary model summaries or equal-quality cost savings.
 
 **Design closure:**
 
@@ -80,13 +81,13 @@ A universal optimum threshold and guaranteed compaction count are unnecessary.
 - Export saved versions independently.
 - Label partial work.
 
-**Still to specify:** the owners and recovery transitions at frozen-request, accepted-reply, committed-tool and graph-checkpoint boundaries. These must cover complete batch progress, context effects, cancellation, waiting and publication reconciliation.
+**Implemented selection:** one executor lock, external immutable originals, SQLite request/attempt/effect records, and compact LangGraph checkpoints. Re-entry reconciles accepted-reply and tool-result objects, reuses committed document receipts, and settles the pending batch before another model request. Limits persist across resume. Unknown OCR/script effects stop. Explicit-version export is independent. Offline fault tests cover the selected commit/checkpoint gaps; they are not a guarantee for every hard crash or remote outcome.
 
 **Design closure:** each boundary in CONTRACTS has a defined re-entry outcome and state owner. No unconditional arbitrary-old-job migration or universal hard-crash guarantee is required.
 
 ## Scope of closure
 
-Design closure requires coherent contracts, not proof that software already implements them. Implementation then needs proportional offline checks and source-led verification of an actual requested PDF/complete section. Desktop UI/backend integration and Windows delivery remain known product implementation work, not a fourth unresolved context-architecture question.
+No unresolved first-version architecture choice currently blocks the implemented path. Desktop/backend integration and Windows folder delivery have been exercised with a local fixture. The user has authorized source-led Nexus verification using copied references and the private credential. Its observed result and any actual blocker belong in CURRENT_STATE; a hypothetical all-provider or whole-book issue does not reopen the design.
 
 The reference discussion preserves these options:
 

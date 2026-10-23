@@ -2,13 +2,13 @@
 
 This repository is the development record for the reconstruction. A developer must be able to understand the requirements, mechanisms, rationale, historical corrections and remaining choices from this repository. The original chat export, old checkout and private review files must not be necessary. The source bundle is optional audit material, not a substitute for technical explanation.
 
-There is no implemented application yet. The status labels have these meanings:
+The first application increment is implemented. [CONTRACTS](CONTRACTS.md#implemented-first-version-contracts) owns its selected schemas and transitions; [CURRENT_STATE](CURRENT_STATE.md) owns verified scope. Older explanatory examples retain these status meanings:
 
 - The label “Settled” means an agreed outcome or responsibility.
 - The label “recommended” means the retained design direction.
 - The label “illustrative” means a way to express a discussed mechanism whose exact schema/API is still open.
 
-A historical mechanism is retained for its lesson, not automatically selected. The three unresolved contracts in [OPEN_QUESTIONS](OPEN_QUESTIONS.md) remain explicit.
+A historical mechanism is retained for its lesson, not automatically selected. [OPEN_QUESTIONS](OPEN_QUESTIONS.md) records the closure of the three contracts and the limits of that closure.
 
 ## Reading by implementation concern
 
@@ -96,15 +96,15 @@ These are historical observations, not measurements of this repository. The desi
 
 Research/framework mechanisms are retained with status. A paper's compression ratio does not establish equal-quality conversion savings. A framework example does not settle an app schema. A citation does not replace an explanation of why the discussion considered a mechanism.
 
-## What remains deliberately open
+## Implementation choices and deferred scope
 
-Documentation must not invent decisions merely to appear complete.
+Implementation selected Q1–Q3 without reopening the retained outcomes. The detailed guides preserve their rationale and alternatives; the executable contract section governs exact current names and transitions.
 
-- Q1 needs executable reference/patch/omission/commit semantics. The document guide preserves considered options and cases. Closure requires unambiguous metadata-only correction, insertion and exact candidate reuse.
-- Q2 needs capacity/unknown-estimate/coverage/application/failure transitions. The context guide explains rolling progress, self-sufficient handoff and original retention without inventing universal watermarks or a perfect token counter.
-- Q3 needs exact ownership/re-entry/cancellation/wait/publication semantics. The execution guide explains finite boundaries without claiming universal hard-crash recovery or remote exactly-once generation.
+- Q1 uses explicit base/head edits, precise candidate reuse and atomic metadata registration with immutable files.
+- Q2 uses complete-input capacity checks, preserved originals, fitting batch compaction and a self-sufficient handoff. The estimator is a heuristic.
+- Q3 uses stable request/member identities, a single executor, durable limits and finite receipt reconciliation. It does not promise remote exactly-once generation.
 
-Exact library versions, module/table counts, class names, IPC schemas, thresholds and tokenizer/model routes were not all finally agreed. Select them during authorized implementation using recorded responsibilities and closure conditions and current official guidance for the selected version. An undecided API is not a reason to omit the constraints and alternatives that determine it.
+The lockfiles pin selected dependencies. [ARCHITECTURE](ARCHITECTURE.md#implementation-map-and-selected-dependencies) maps the current modules and official guidance. The technical examples are not automatic requirements for additional tables, frameworks or transport mechanisms.
 
 Broader network design remains deferred. The documents record necessary execution boundaries because context work and useful results must survive interruption. This does not reopen general network research.
 
@@ -119,4 +119,4 @@ With a working Python 3.9+ interpreter, run:
     python tools/check_docs.py
     python tools/source_lookup.py EVT-1166
 
-Checks use repository files only. Counts/hashes do not prove semantic completeness or runtime correctness. Source-aware review and independent repository-only reading supplement them. [CURRENT_STATE](CURRENT_STATE.md) records actual checks and the unimplemented status.
+Checks use repository files only. Counts/hashes do not prove semantic completeness or runtime correctness. Source-aware review and independent repository-only reading supplement them. [CURRENT_STATE](CURRENT_STATE.md) records documentation checks separately from application checks.

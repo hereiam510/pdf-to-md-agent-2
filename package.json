@@ -1,0 +1,44 @@
+{
+  "name": "pdf-md-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An autonomous PDF-to-Markdown desktop workbench",
+  "author": "PDF Markdown Workbench contributors",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "tsc --noEmit && electron-vite build",
+    "start": "electron-vite preview",
+    "test:desktop": "playwright test",
+    "package:win": "pnpm build && electron-builder --win --dir"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tesseract.js": "7.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "electron": "45.0.0",
+    "electron-builder": "26.15.3",
+    "electron-vite": "6.0.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  },
+  "build": {
+    "appId": "io.pdfmd.workbench",
+    "productName": "PDF Markdown Workbench",
+    "directories": {"output": "release"},
+    "files": ["out/**", "package.json"],
+    "extraResources": [
+      {"from": "build/engine", "to": "engine"},
+      {"from": "tools/ocr-worker.cjs", "to": "ocr-worker.cjs"}
+    ],
+    "win": {"target": "nsis", "signAndEditExecutable": false},
+    "nsis": {"oneClick": false, "allowToChangeInstallationDirectory": true}
+  }
+}

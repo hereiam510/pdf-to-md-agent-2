@@ -2,7 +2,7 @@
 
 This note preserves five reference packages from the earlier project. Their recorded conditions and defects are historical observations. They are not validation results for the rebuilt app.
 
-The PDFs, example Markdown and image assets are not bundled in this repository. The package IDs below identify those historical inputs. The locally bundled discussion sources preserve the relevant development lessons.
+On 2026-10-23, the user authorized copying all five packages into local `references/` and the credential/configuration into local `private/`. The copy preserved source bytes and verified all 46 manifest entries; the manifest itself makes 47 reference files. All five PDFs contain real PDF bytes. These directories are Git-ignored and are not bundled in the public repository. The package IDs below identify the inputs; the locally bundled discussion sources preserve their development lessons.
 
 <a id="package-identities"></a>
 ## Package identities
@@ -17,7 +17,7 @@ The PDFs, example Markdown and image assets are not bundled in this repository. 
 
 These counts describe physical positions in the supplied PDFs. They do not establish printed page labels or the completeness of a published book. The linked-image counts describe the supplied Markdown examples, not the source PDFs' graphics.
 
-The original manifest identified five PDFs, five Markdown examples, 33 images and three guidance pointers. File identity and package integrity did not certify content. This rebuild does not include that 46-file package collection.
+The original manifest identifies five PDFs, five Markdown examples, 33 images and three guidance pointers. File identity and package integrity do not certify content. The local copy receipt is `.local/reference-copy-report.json`. A converter receives only the chosen source PDF and task scope; reference-output answers are available to reviewers, not injected into the conversion.
 
 Historical inventory and limits: [SUP-03](sources/support/SUP-03.txt). The original handoff names all five packages and distinguishes their role from app capability: [EVT-0001](sources/text/EVT-0001.txt).
 
