@@ -51,7 +51,8 @@
     "point_ids": [
       "P1-044",
       "P1-045",
-      "P1-048"
+      "P1-048",
+      "H-022"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -336,7 +337,8 @@
       "P2-080",
       "P2-087",
       "P2-088",
-      "H-021"
+      "H-021",
+      "H-039"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -359,7 +361,8 @@
       "P2-089",
       "P2-106",
       "P2-108",
-      "H-020"
+      "H-020",
+      "H-039"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -402,7 +405,8 @@
       "P2-073",
       "P2-090",
       "P2-091",
-      "P2-092"
+      "P2-092",
+      "H-039"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -618,7 +622,8 @@
       "P3-062",
       "P3-063",
       "R-013",
-      "R-014"
+      "R-014",
+      "H-036"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -1342,7 +1347,8 @@
       "P1-045",
       "P1-047",
       "P1-048",
-      "P1-050"
+      "P1-050",
+      "H-022"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -1439,7 +1445,8 @@
       "P1-082",
       "P1-083",
       "P1-084",
-      "P1-095"
+      "P1-095",
+      "H-023"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -1511,7 +1518,8 @@
       "P1-094",
       "P1-095",
       "P1-096",
-      "P1-097"
+      "P1-097",
+      "H-023"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -2639,7 +2647,8 @@
       "P2-074",
       "P2-080",
       "P2-087",
-      "P2-088"
+      "P2-088",
+      "H-039"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -2750,7 +2759,8 @@
       "P2-089",
       "P2-106",
       "P2-108",
-      "H-020"
+      "H-020",
+      "H-039"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -2850,7 +2860,8 @@
       "P2-082",
       "P2-090",
       "P2-092",
-      "P2-108"
+      "P2-108",
+      "H-039"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -3684,7 +3695,8 @@
       "R-018",
       "R-019",
       "R-020",
-      "R-021"
+      "R-021",
+      "H-036"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -3755,7 +3767,8 @@
       "P3-063",
       "R-014",
       "R-016",
-      "R-021"
+      "R-021",
+      "H-036"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -3866,7 +3879,10 @@
       "R-018",
       "R-019",
       "R-020",
-      "R-022"
+      "R-022",
+      "H-022",
+      "H-024",
+      "H-036"
     ],
     "reason": "The retained points explicitly cite the reviewed source. Their destinations preserve statuses and later corrections."
   },
@@ -3988,7 +4004,9 @@
       "H-008",
       "H-009",
       "H-012",
-      "H-013"
+      "H-013",
+      "H-031",
+      "H-032"
     ],
     "reason": "Selected historical facts are explained locally. They introduce no old implementation authority, dependency pin or execution permission."
   },
@@ -3996,7 +4014,8 @@
     "source_id": "SUP-06",
     "disposition": "preserved-in-point-ledger",
     "point_ids": [
-      "H-002"
+      "H-002",
+      "H-035"
     ],
     "reason": "Selected historical facts are explained locally. They introduce no old implementation authority, dependency pin or execution permission."
   },
@@ -4058,7 +4077,11 @@
       "H-016",
       "H-017",
       "H-018",
-      "H-019"
+      "H-019",
+      "H-032",
+      "H-037",
+      "H-042",
+      "H-043"
     ],
     "reason": "Selected historical mechanics are explained with later corrections. They do not create runtime authority or close the open contracts."
   },
@@ -4078,5 +4101,153 @@
       "H-016"
     ],
     "reason": "Selected historical mechanics are explained with later corrections. They do not create runtime authority or close the open contracts."
+  },
+  {
+    "source_id": "ATT-31",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-022",
+      "H-023",
+      "H-024"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-13",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-025",
+      "H-026",
+      "H-027"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-26",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-025",
+      "H-026",
+      "H-027",
+      "H-028",
+      "H-030",
+      "H-033",
+      "H-034",
+      "H-035",
+      "H-044"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-14",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-028"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-15",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-029",
+      "H-030",
+      "H-035"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-19",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-029",
+      "H-031"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-20",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-031"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-18",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-032",
+      "H-033",
+      "H-034"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-27",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-032"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-16",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-034",
+      "H-035"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-17",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-037"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-21",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-038"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-22",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-038"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-23",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-040",
+      "H-041",
+      "H-043"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-24",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-042"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
+  },
+  {
+    "source_id": "SUP-25",
+    "disposition": "preserved-in-point-ledger",
+    "point_ids": [
+      "H-044"
+    ],
+    "reason": "Selected historical details and proposals have local explanations. Their status does not create implementation authority or close open contracts."
   }
 ]

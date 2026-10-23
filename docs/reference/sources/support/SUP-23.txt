@@ -1,0 +1,151 @@
+SUP-23 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/provider.py
+Full-source SHA-256: 6d43312e7b8260469d5d0a870da4b0a9bca409f08ef98bd2463273bb16018607
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 59-61 ---
+class ModelTimeoutError(TimeoutError):
+    retryable = True
+    reason = "request_timeout"
+
+
+--- Original lines 215-235 ---
+class ProviderConfig(Model):
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
+
+    endpoint: str
+    protocol: Literal["chat_completions", "responses"]
+    model: str = Field(min_length=1)
+    api_key_env: str = "OPENAI_API_KEY"
+    request_timeout: float = Field(default=180, gt=0)
+    transport: Literal["non_streaming", "streaming"] = "non_streaming"
+    parameters: dict = Field(default_factory=dict)
+
+    def validate_connection(self):
+        url = urlsplit(self.endpoint)
+        local = url.hostname in {"localhost", "127.0.0.1", "::1"}
+        if not url.hostname or url.username or url.password or url.fragment:
+            raise ValueError("Use a complete endpoint URL without credentials or fragment")
+        if url.scheme != "https" and not (url.scheme == "http" and local):
+            raise ValueError("Endpoint needs HTTPS (HTTP is allowed only on loopback)")
+        reserved = {"model", "messages", "input", "tools", "stream", "store", "instructions"}
+        if reserved & self.parameters.keys():
+            raise ValueError("parameters cannot override model, context, tools, stream or store")
+
+
+--- Original lines 553-603 ---
+        result = process(decoder.feed(b"", final=True))
+        if result is not None:
+            return result
+        raise ModelTransportError("incomplete_stream", retryable=True)
+
+    @staticmethod
+    def _record_usage(raw, audit):
+        # Failed-attempt diagnostics admit only known numeric usage fields.
+        if not isinstance(raw, dict):
+            return
+        allowed = {
+            "input_tokens",
+            "output_tokens",
+            "total_tokens",
+            "prompt_tokens",
+            "completion_tokens",
+            "cost",
+            "cached_tokens",
+            "reasoning_tokens",
+            "cache_write_tokens",
+            "audio_tokens",
+            "accepted_prediction_tokens",
+            "rejected_prediction_tokens",
+            "text_tokens",
+            "image_tokens",
+        }
+        details = {
+            "input_tokens_details",
+            "output_tokens_details",
+            "prompt_tokens_details",
+            "completion_tokens_details",
+        }
+
+        def clean(value):
+            result = {}
+            for key, item in value.items():
+                if (
+                    key in allowed
+                    and isinstance(item, (int, float))
+                    and not isinstance(item, bool)
+                    and (not isinstance(item, float) or math.isfinite(item))
+                    and item >= 0
+                ):
+                    result[key] = item
+                elif key in details and isinstance(item, dict):
+                    result[key] = clean(item)
+            return result
+
+        observed = clean(raw)
+        if observed:
+            audit["observed_usage"] = observed
+
+
+--- Original lines 605-627 ---
+    def _raise_http_error(self, response, audit, content):
+        # Only recognized machine labels may leave an untrusted proxy response. Even
+        # apparently short messages, params, unknown labels and headers can contain secrets.
+        try:
+            body = json.loads(content)
+        except (ValueError, UnicodeError):
+            body = None
+        error = body.get("error") if isinstance(body, dict) else None
+        safe = safe_error_labels(error, secret=self.key)
+        if isinstance(error, dict):
+            # Report only fixed diagnostic markers, never the upstream message or URL.
+            message = error.get("message")
+            if isinstance(message, str):
+                if message.startswith("auth_unavailable:"):
+                    safe["condition"] = "auth_unavailable"
+                if "stream error:" in message and "PROTOCOL_ERROR; received from peer" in message:
+                    safe["upstream_condition"] = "http2_protocol_error"
+                elif (
+                    "stream disconnected before completion" in message
+                    and "stream closed before response.completed" in message
+                ):
+                    safe["upstream_condition"] = "stream_incomplete"
+        safe = {field: value for field, value in safe.items() if self.key not in value}
+
+
+--- Original lines 662-675 ---
+        if safe.get("code") in {"context_too_large", "context_length_exceeded"}:
+            hint = (
+                "model context limit exceeded; reduce active input while preserving the "
+                "requested conversion scope; saved work is preserved"
+            )
+        elif safe.get("condition") == "auth_unavailable" or safe.get("code") in {
+            "auth_unavailable",
+            "model_cooldown",
+        }:
+            hint = "proxy reports unavailable auth/cooldown; verify service recovery before replay"
+        elif safe.get("upstream_condition") == "http2_protocol_error":
+            hint = "upstream HTTP/2 stream protocol error; inspect proxy/upstream transport"
+        elif safe.get("upstream_condition") == "stream_incomplete":
+            hint = "upstream stream ended before completion; saved work and unknown usage retained"
+
+
+--- Original lines 852-866 ---
+def usage(response: dict) -> dict:
+    raw = response.get("usage") or {}
+    return {
+        "input_tokens": raw.get("input_tokens", raw.get("prompt_tokens")),
+        "output_tokens": raw.get("output_tokens", raw.get("completion_tokens")),
+        "total_tokens": raw.get("total_tokens"),
+        "cached_input_tokens": (
+            raw.get("input_tokens_details") or raw.get("prompt_tokens_details") or {}
+        ).get("cached_tokens"),
+        "reasoning_tokens": (
+            raw.get("output_tokens_details") or raw.get("completion_tokens_details") or {}
+        ).get("reasoning_tokens"),
+        "cost": raw.get("cost"),
+        "raw": raw,
+    }
+

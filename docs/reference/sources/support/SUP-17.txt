@@ -1,0 +1,97 @@
+SUP-17 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/persistence.py
+Full-source SHA-256: 60022c3bafdeeb1ed61899a61899daed0265aaec8efae3f04fa2a3ea2843f5eb
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 10-18 ---
+def _replace_once(source: Path, destination: Path):
+    if os.name != "nt" or not destination.exists():
+        os.replace(source, destination)
+        return
+    import ctypes
+    from ctypes import wintypes
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    replace = kernel.ReplaceFileW
+
+
+--- Original lines 28-29 ---
+    if not replace(str(destination.resolve()), str(source.resolve()), None, 0, None, None):
+        raise ctypes.WinError(ctypes.get_last_error())
+
+
+--- Original lines 32-71 ---
+def replace_file(source: Path, destination: Path):
+    # Ordinary Windows readers and scanners may briefly deny DELETE sharing. Retry only
+    # those native errors, with a finite budget; permanent failures must still surface.
+    for attempt in range(8):
+        try:
+            _replace_once(source, destination)
+            return
+        except OSError as error:
+            # ERROR_UNABLE_TO_REMOVE_REPLACED (1175) also leaves both original names intact.
+            # Unlike 1176/1177, retrying it cannot adopt an indeterminate replacement.
+            if os.name != "nt" or error.winerror not in {5, 32, 33, 1175} or attempt == 7:
+                raise
+            time.sleep(min(0.01 * 2**attempt, 0.16))
+
+
+def write_json(path: Path, data):
+    temporary = path.with_name(f".{path.name}-{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary.open("w", encoding="utf-8", newline="\n") as stream:
+            stream.write(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        replace_file(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def shared_read(path: Path):
+    """Open a stable old-or-new snapshot, allowing Windows atomic rename while reading."""
+    if os.name != "nt":
+        return path.open("rb")
+    # ReplaceFileW can expose a brief name-transition window to a new opener.
+    # Never return partial JSON; only transient Windows open errors are retried.
+    for attempt in range(8):
+        try:
+            return _windows_read(path)
+        except OSError as error:
+            if error.winerror not in {2, 5, 32, 33} or attempt == 7:
+                raise
+            time.sleep(min(0.01 * 2**attempt, 0.16))
+
+
+--- Original lines 74-80 ---
+def _windows_read(path: Path):
+    import ctypes
+    import msvcrt
+    from ctypes import wintypes
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    create = kernel.CreateFileW
+
+
+--- Original lines 90-107 ---
+    create.restype = wintypes.HANDLE
+    # GENERIC_READ; FILE_SHARE_READ | WRITE | DELETE; OPEN_EXISTING; NORMAL.
+    handle = create(str(path.resolve()), 0x80000000, 7, None, 3, 0x80, None)
+    if handle == wintypes.HANDLE(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        descriptor = msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
+    except BaseException:
+        close = kernel.CloseHandle
+        close.argtypes = [wintypes.HANDLE]
+        close(handle)
+        raise
+    return os.fdopen(descriptor, "rb")
+
+
+def read_json(path: Path):
+    with shared_read(path) as stream:
+        return json.load(stream)
+

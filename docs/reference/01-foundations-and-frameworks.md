@@ -40,6 +40,8 @@ These definitions unpack the discussion's responsibilities rather than prescribe
 
 ## Reading scope and limits
 
+The later [ATT-31 supplement](#supplemental-first-response) preserves a response from a separately supplied document. It was not among the original 30 exported attachments. Its historical proposals do not change the final architecture.
+
 The review read the complete EVT-0002–EVT-0414 source packet: 120,772 decoded characters and 2,680 lines after newline normalization. It also read the full initial handoff EVT-0001 (11,695 normalized characters) and the complete final consolidation EVT-1166. It read ATT-03 through ATT-06 in full where inserted into the packet.
 
 The review parsed the two forum HTML originals as inert data. ATT-01 yielded 17,303 readable text characters and 14 embedded illustrations. ATT-02 yielded 1,189 text characters and 10 substantive image pages. The review inspected all those texts and images. Byte comparison found that the ten preserved `answer-01.webp` through `answer-10.webp` files matched the images embedded in ATT-02.
@@ -1416,3 +1418,74 @@ Revisit the corresponding design only when implementation or actual delivery exp
 Use the repository-local [discussion-source archive](sources/INDEX.md) for readable event text, attachment text, and forum pages/images. [SOURCE_INDEX.md](SOURCE_INDEX.md) and the public `source-inventory.json` describe exact `EVT` and `ATT` identities and provenance. Every substantive point has an explicit `p1-001` through `p1-102` anchor. The explanations and worked examples above carry the useful rationale. Reading the original sources is optional unless a reader needs exact wording or additional source detail. Understanding this reference requires no old checkout, external export folder, or private review scratch.
 
 Each substantive point covers the repeated commentary that previews it, without reproducing that commentary as another decision. EVT-0258 has an empty final-answer body and adds no substantive claim. The adjacent reference documents preserve the broader later discussion. This reference repeats only its final controlling reset to distinguish historical options from active requirements.
+
+
+<a id="supplemental-first-response"></a>
+## Separately recovered first architecture response
+
+ATT-31 preserves lines 109–309 of the separately supplied `conversation 2.md`. The excerpt contains 8,631 characters, including its `response:` label. ATT-04 instead matches EVT-0349 after surrounding whitespace removal. That duplication establishes which text the exported attachment held. It does not establish the clipboard's cause or every message another assistant received.
+
+The supplement supplies an earlier critique of the Pi-first proposal. It is not an omitted adopted decision. The final Python `StateGraph` baseline still controls. Its detailed proposals and qualifications are preserved below.
+
+### Proposed ownership and the reason for it
+
+The response proposed this alternative arrangement:
+
+```text
+Electron UI / preview
+        |
+Node host: Pi SDK + session / operation / version ledger
+        |-- Nexus adapter: stream assembly and bounded retries
+        |-- PDF context extension: read structured work state
+        |-- Tesseract.js workers
+        |-- Electron BrowserWindow / webContents.capturePage()
+        |-- Stateless Python operators: PyMuPDF + Pillow
+        `-- Store: Node owns state, versions and evidence registration
+```
+
+The proposed Python operators returned extracted text, coordinates, native images or rendered files with metadata. They held no job state or version lock. Node would own `save`, `revise`, `reopen`, export, validation and state registration. Node would validate Markdown/JSON, generate HTML with an nh3-equivalent sanitizer and build ZIP packages. The proposal also moved OCR into Node and reused Electron for preview.
+
+The motivation was to avoid conflicting store owners and duplicated state schemas across runtimes. One process does not itself guarantee correct persistence or recovery. The diagram still allowed Python to write output files. File creation and authoritative state registration therefore needed distinct ownership. Claimed reductions in package size, failure rate and maintenance cost were predictions, not measured results.
+
+The response ranked Pi first, LangGraph second and Deep Agents third. It asserted that overriding middleware always cost more than building a thin graph. That universal ranking was not established. The [framework history](../design/INTEGRATION_AND_MODEL_BOUNDARY.md#framework-choice-and-history) explains the later responsibility-based choice.
+
+### Intake, cache and working-ledger proposals
+
+The response connected large first reads, later evidence release and prompt-cache cost. It proposed small default returns and batched projection at capacity or saved-chapter boundaries. It also cited historical large-payload and cache measurements. Those observations did not isolate a universally superior context policy or prove lower cost at equal fidelity.
+
+The retained boundary allows precise first-call selection and full evidence access. It does not mandate summary-first intake, permanent append-only history or one chapter-based release schedule. [Cache tradeoffs](../design/CONTEXT_AND_EVIDENCE.md#prompt-cache-and-cost) include retrieval cost, request timing, capacity and source fidelity.
+
+The proposed `WorkingLedger` held effective requirements, saved versions, page coverage, pending candidates and open cross-page dependencies. It proposed updates through `save` / `revise` or a separate state tool. Deterministic code would prepend that ledger at every compaction, outside model-selected summary retention. That was the proposed mechanism, not a guarantee of semantic correctness. Its example was:
+
+```json
+{
+  "type": "continued_table",
+  "from_pdf_page": 14,
+  "header_columns": ["..."],
+  "evidence_ref": "..."
+}
+```
+
+The original sketch used `header_columns: [...]` as pseudocode. The quoted form above uses a placeholder string for valid JSON. The response placed this optional record in `open_dependencies`. It also named `pending_candidate_ref`. It did not use the later audit's `from_page`, `table_continuation` or `header_ref` fields in this passage.
+
+These names illustrate semantic dependencies, not a final schema. The response's claim that deterministic injection makes compaction fully reliable was too strong. The app can preserve recorded facts and references. The agent must still interpret the source and record useful unresolved meaning. A structured field alone cannot establish completeness or prevent an incorrect dependency assessment.
+
+The response also proposed `append_blocks`, `patch_blocks` and partial page-map updates to avoid resending a complete map for every local edit. The retained design supports useful local changes with whole-document consistency checks. [Q1](../OPEN_QUESTIONS.md#q1-document-update-and-candidate-reference-contract) still owns exact update and reference semantics.
+
+### Five proposed Pi proof-of-concept checks
+
+The original response proposed five checks before adopting Pi. Their scenarios remain useful historical comparison ideas:
+
+| Proposed check | Scenario and retained limit |
+| --- | --- |
+| Nexus protocol compatibility | Exercise Chat Completions and Responses with images, tool calls, `service_tier` and custom reasoning fields. A configured route does not imply full protocol compatibility. |
+| Interruption and recovery | Use a 90-second fault interval and an interrupted SSE tool-argument stream. Check partial-call exclusion, bounded replay and reconciliation of committed effects. |
+| Projection and cache | Compare reported `cached_tokens` before and after `context_edit`. Cache counts alone do not establish price-weighted savings or equal-quality delivery. |
+| Exact retrieval | Release an image or OCR result, then compare the native PNG SHA-256 or retrieve a selected JSON Pointer field. Representation and source identity must remain explicit. |
+| Compaction continuity | Combine a table spanning pages 14–15 with a rejected `revise` candidate. Check retained requirements, table meaning and exact candidate reuse after organization. |
+
+The second item described a proposed fault scenario. It was not a precise description of every historical relay injection mode. The response's loopback URL was an example, not a production endpoint or current configuration.
+
+These checks were proposals, not completed validation, fresh permission for provider calls or additional first-version prerequisites. The final consolidation reduced open work to Q1–Q3. The response's closing Node-versus-Python ownership question was later superseded by the preferred Python controller arrangement.
+
+**Sources:** ATT-31, ATT-04, EVT-0349, EVT-0382, EVT-0414, EVT-1148 and EVT-1166.

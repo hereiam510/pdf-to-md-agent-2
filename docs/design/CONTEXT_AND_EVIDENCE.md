@@ -182,6 +182,39 @@ These precise-read capabilities belong in the common document/evidence service u
 
 Sources: [P2-034–037](../reference/02-context-state-and-evidence.md#p2-034), [P2-046](../reference/02-context-state-and-evidence.md#p2-046), [P2-052](../reference/02-context-state-and-evidence.md#p2-052), EVT-0878, EVT-1107.
 
+<a id="historical-evidence-access"></a>
+### Historical selection roots, ranges, and native images
+
+The old app adapter used different roots for initial selection, saved results, and preserved arguments. These examples explain that distinction. They do not select the rebuild's signatures or defaults.
+
+| Historical operation | Pointer root and example |
+|---|---|
+| `_select` on the original tool call | The structured result itself: `/pages/0/text`. |
+| `read_evidence` on a saved raw MCP result | The raw wrapper: `/structuredContent/pages/0/text`. |
+| `read_evidence` on one raw content block | The raw content array: `/content/1`, when that image's recorded pointer identifies index 1. |
+| `read_evidence` with `arguments:true` | The preserved `{tool, arguments}` object: `/arguments/content/blocks`, not `/content/blocks`. |
+
+Omitting `_select`, or supplying `[""]`, returned the full structured result on the first call. Selection copied exact values rather than summarizing them. Nonduplicate diagnostic content and returned images survived selection. Coverage identified selected pointers, omitted values, source scope and original access. A missing selected field could fail projection after the operation succeeded. The operation receipt then mattered before repeating a write.
+
+For a saved-record reread, `coverage.images[].raw_pointer` identified each original image block. Selecting that individual block promoted its original bytes to native image input. The old adapter requested high detail through Chat `image_url` or Responses `input_image` content. Reading a whole record's nested base64 as text did not restore vision. `describe:true` also returned no pixels. Requested high detail did not prove the route's internal image resolution.
+
+The old reader applied `offset` and `limit` only to a selected string or array. `offset` was zero-based, and `limit` was a positive item or character count. String offsets counted Unicode code points, not UTF-8 bytes. The range response reported `total`, `offset`, exclusive `end`, and `next_offset`, which was null at the end. Omitting `limit` returned the remainder. `complete` described coverage of that selected value, not every field in the raw record.
+
+Omitting `evidence` selected the prior-evidence metadata index, which supported the same ranges without loading source bodies. `arguments:true` required an evidence ID. An empty pointer selected the whole addressed record. Array index 0 meant the first array entry, not physical PDF page 0.
+
+Optional `describe:true` replaced returned values with structure metadata after any range selection. It reported JSON types, object field pointers, array item counts, and string `characters` and `utf8_bytes`. Object descriptions identified immediate child fields without copying their source values. This provided a navigation aid for exact reads or scripts, not a content summary or proof of source coverage.
+
+Sources: [SUP-13](../reference/sources/support/SUP-13.txt), [SUP-26](../reference/sources/support/SUP-26.txt). The [native payload examples](INTEGRATION_AND_MODEL_BOUNDARY.md#native-payload-examples) explain the protocol image forms.
+
+<a id="historical-release-diagnostics"></a>
+### Historical diagnostic retention during release
+
+The old `EvidenceHistory.project` built an explicit absence/retrieval receipt when the agent released an eligible reply. It retained coverage, nonduplicate content, the error flag, and diagnostic fields from the reply's result. Its recursive helper walked objects and arrays. It copied values under keys named `warnings`, `uncertainties`, or `limitations`, with exact JSON Pointer paths.
+
+The helper escaped each object key using RFC 6901: `~` became `~0`, and `/` became `~1`. Array positions used decimal index segments. For example, a `warnings` field inside key `source/region` had path `/source~1region/warnings`. This preserved named diagnostic fields by structure, without judging their meaning. It could not recover a field absent from that reply's selected result or identify every possible diagnostic by semantics.
+
+Sources: [SUP-14](../reference/sources/support/SUP-14.txt), [SUP-26](../reference/sources/support/SUP-26.txt). This historical helper does not select a universal diagnostic schema for the rebuild.
+
 <a id="indexes-and-unfinished-evidence"></a>
 ## 6. Indexes, stubs, and unfinished evidence
 
@@ -637,11 +670,13 @@ Two historical projection strategies illustrate the tradeoff:
 
 Ordinary tool results can convey normal changes without injecting a duplicate full state snapshot each turn. A current-state supplement is useful on recovery, handoff, or a real information gap. Whatever strategy the app uses, it must communicate an effective user amendment explicitly. A new requirements revision number alone does not say what changed.
 
+ATT-30 called recent original-argument retention a **Sliding Verbatim Window**. It proposed retaining recent `save_draft` and `edit_document` arguments for immediate editing and append-only input prefixes. After saving a paragraph, the next turn might correct two characters without rereading that paragraph. Immediate withdrawal could add an unnecessary read, while permanent retention could accumulate obsolete draft bodies. The useful criterion is current work and capacity, not a mandatory recent-K window or a requirement that another version first replace the draft.
+
 Recently generated tool arguments have a distinct timing fact: they were output from the last request and were not yet part of that request's input. Projecting them before their first return therefore need not invalidate the prefix of the last input. Rewriting older already-sent history is a different change. Frozen request snapshots preserve same-request replay. Permanent verbatim retention of recent history is unnecessary for that purpose. A moving hard recent-K window can itself rewrite history every turn.
 
 Deferred release can preserve a reusable prefix when consistent with the agent's intent. An immediate-release instruction removes stale or distracting material from the next view. Neither cache policy decides semantic relevance. Compare whole-task price-weighted input/output, additional reads or compaction, latency and achieved fidelity, preserving unknown fees/usage. Shorter JSON, fewer characters, lower total tokens, or a higher hit percentage alone cannot establish equal-quality savings. This task selects no cache experiment or new billing assumption.
 
-Sources: [P2-048–049](../reference/02-context-state-and-evidence.md#p2-048), EVT-1107, EVT-1147, EVT-1166.
+Sources: [P2-048–049](../reference/02-context-state-and-evidence.md#p2-048), ATT-30, EVT-1107, EVT-1147, EVT-1166.
 
 <a id="computation-reuse"></a>
 ## 21. Computation reuse, exact reads, and operation replay
@@ -708,9 +743,18 @@ A separate successful salvage receipt can record useful recovered ranges while t
 
 A built-in OCR/render is not automatically pure because it leaves the PDF unchanged—it can create files/processes. A host script is not automatically unrecoverable merely because its marker is missing. Stop only on the effects that remain unreconciled under the execution contract.
 
+<a id="historical-decoding-and-process-names"></a>
+### Historical decoder and process names
+
+EVT-0759 contrasted Pillow `verify()` with `load()`. ATT-19 expressed the decoding sequence as `Image.open()` followed by `Image.load()`. The latter means calling `load()` on the returned image object. The corresponding `verify()` check differs from loading pixels. Successful decoding still cannot certify source fidelity or completion of every requested page.
+
+The Windows proposal used `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`. That flag terminates assigned processes when the last job handle closes. Handle inheritance, assignment and breakaway affect which processes remain controlled. It does not roll back file changes. Controller exit alone is not unconditional proof that all descendants stopped.
+
+The later correction identified a gap between `CreateProcessW(..., CREATE_SUSPENDED, ...)` and `AssignProcessToJobObject`. A crash there can leave a suspended process outside the job. Supported Windows versions can use `PROC_THREAD_ATTRIBUTE_JOB_LIST` during process creation to avoid that particular gap. A job may already be destroyed when recovery starts, so recovery cannot assume it can query that job. These are historical supervision options, not a selected rebuild implementation or a compulsory compaction step.
+
 Historical Windows supervision and file-sharing details remain in [P2-088](../reference/02-context-state-and-evidence.md#p2-088) and [P2-091](../reference/02-context-state-and-evidence.md#p2-091). These cover Job Object handle/assignment/descendant limits, the suspended-launch gap, and share-mode errors. Do not turn these details into universal guarantees. They are implementation options to consult for a relevant process need, not prerequisites for context work. The current lifecycle owner is [execution and delivery](EXECUTION_AND_DELIVERY.md#process-and-progress).
 
-Sources: [P2-086–092](../reference/02-context-state-and-evidence.md#p2-086), [P2-102](../reference/02-context-state-and-evidence.md#p2-102).
+Sources: [P2-086–092](../reference/02-context-state-and-evidence.md#p2-086), [P2-102](../reference/02-context-state-and-evidence.md#p2-102), ATT-16, ATT-17, ATT-19, EVT-0701, EVT-0730, EVT-0759.
 
 <a id="review-and-version-dependencies"></a>
 ## 23. Review applicability and version-dependent reading

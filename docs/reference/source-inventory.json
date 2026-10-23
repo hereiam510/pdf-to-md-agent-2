@@ -1,6 +1,6 @@
 {
   "format_version": 2,
-  "scope": "The inventory covers the available exported visible conversation and attachments. Later visible human decisions supplement them. It does not reconstruct private reasoning.",
+  "scope": "The inventory covers the available exported visible conversation and attachments. Later visible human decisions supplement them. It does not reconstruct private reasoning. ATT-31 supplements the original export with an exact excerpt from a separately identified document.",
   "export_folder": "pdf-to-md-agent - 整體進度與方向審閱",
   "thread_id": "01a16312-5a97-78a0-a735-d7b213ce0fa4",
   "exported_at": "2026-10-22T18:18:35+08:00",
@@ -5126,6 +5126,30 @@
         "bytes": 20289,
         "representation": "The copy retains exact attachment bytes. HTML uses .html.txt so it is not an executable page."
       }
+    },
+    {
+      "id": "ATT-31",
+      "path": "conversation 2.md",
+      "name": "First external architecture response (separate document excerpt)",
+      "sha256": "916fe7aedeab913c84c95cb1090a4e05f87cfd59e4685bbebfea9f52f1428f6c",
+      "bytes": 781285,
+      "event_ids": [],
+      "kind": "separate-document-excerpt",
+      "snapshot": "User-identified separate document, reviewed 2026-10-23. Original container: Documents/Obsidian Vault. Not an original export attachment.",
+      "local": {
+        "path": "docs/reference/sources/attachments/ATT-31.txt",
+        "sha256": "2862d4fe65d2340c537d38dc68994f65c7aa54c86dd6ca8d9a762de330a19c56",
+        "bytes": 15257,
+        "representation": "Exact UTF-8 excerpt, original lines 109-309 including the response label. This separate document was not in the original export.",
+        "excerpts": [
+          {
+            "start_line": 109,
+            "end_line": 309,
+            "utf8_sha256": "2862d4fe65d2340c537d38dc68994f65c7aa54c86dd6ca8d9a762de330a19c56"
+          }
+        ]
+      },
+      "source_container": "Separate user-identified document, not the original export directory"
     }
   ],
   "live_sources": [
@@ -5650,13 +5674,551 @@
           }
         ]
       }
+    },
+    {
+      "id": "SUP-13",
+      "path": "supporting/workspace/src/pdf_to_md_agent/agent_tools.py",
+      "sha256": "80957c8724a46f3274a3907a61d2c880a87128555d0efcab5fbd86e6790ea8ef",
+      "bytes": 27399,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "Exact JSON Pointer decoding and descriptor fields. range semantics. individual-image promotion. selection failure and coverage image pointers. No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-13.txt",
+        "sha256": "77e96d5c486fded917cfe4e8865e3d1285bb3b6ef10aff5d1212991619f3ddc3",
+        "bytes": 7150,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 87,
+            "end_line": 128,
+            "utf8_sha256": "aa88a4e708c839eb8ed9256ac60ca71aeae08011cd4885bbe09efe72d28fd7f4"
+          },
+          {
+            "start_line": 303,
+            "end_line": 350,
+            "utf8_sha256": "3b786f5e389ac4bc209422d918212681f93c9acb41c39d91074df0867c99f84a"
+          },
+          {
+            "start_line": 449,
+            "end_line": 462,
+            "utf8_sha256": "64835b09d066fc33f2d666fc0e766d1eeef4c457228682a6465fe4be4d17c851"
+          },
+          {
+            "start_line": 498,
+            "end_line": 550,
+            "utf8_sha256": "2248bcf408832d3ab1539831ca959a1b9baaf0efaacf2db9d94a3638c99e06d5"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-14",
+      "path": "supporting/workspace/src/pdf_to_md_agent/evidence_history.py",
+      "sha256": "034f442212b09699e597be02bdc93c7076d12e7953b7e2fcbc3400abb363c718",
+      "bytes": 7249,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "Recursive named-diagnostic retention with RFC 6901 escaping and the released-reply receipt's actual source fields. No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-14.txt",
+        "sha256": "dee687f43d21468cf111c5c48b83ccb0129f0882aaa4d24946c3a97570806666",
+        "bytes": 3138,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 18,
+            "end_line": 31,
+            "utf8_sha256": "5d321648297f7fd24bbb763e5dc9ecb600df8c726ed7a5194a1ff1579bf41d85"
+          },
+          {
+            "start_line": 86,
+            "end_line": 127,
+            "utf8_sha256": "4c5fe81e01fa27f8c78eca02ac258f816051c0d5c2871d8c702cff9a19990180"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-15",
+      "path": "supporting/workspace/src/pdf_to_md_agent/core.py",
+      "sha256": "19d6b8cd8d19203694ae426910ad190543965e8db3d4f2e64ab9cf909a4c2f4b",
+      "bytes": 20898,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "Physical page and region convention, inspect image scope, rotated render metadata, native image mask guards, and save validation. Existing SUP-06 already preserves snapshot fields at lines 318–331. No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-15.txt",
+        "sha256": "313c633efd8d3c473cd7d5ea92e5bb20081ec44bef98773da3c2ff5dcffff0a9",
+        "bytes": 7504,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 81,
+            "end_line": 94,
+            "utf8_sha256": "ce1ae9589226aa9d2a121817ec2503558ec3be050e933745495eb0ae5a72c5d6"
+          },
+          {
+            "start_line": 116,
+            "end_line": 163,
+            "utf8_sha256": "6b3dfb0f1bcc2d99a93f4998dced7a1b4b4d81c4e493cb561cc22d46aeecdfb9"
+          },
+          {
+            "start_line": 176,
+            "end_line": 202,
+            "utf8_sha256": "28f11ee7c7de6d2e36f90105ce390a02058ef704c1f82cf95efead30766ed14a"
+          },
+          {
+            "start_line": 256,
+            "end_line": 305,
+            "utf8_sha256": "f3ab2b54503a27be6b59c922d80115983747ef0f8fe217cbffc49328a8a86d4f"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-16",
+      "path": "supporting/workspace/src/pdf_to_md_agent/models.py",
+      "sha256": "3ef4d7d5195dde53703afa7dc367a7ae830daa7532052fa1af320eee1d71472c",
+      "bytes": 1424,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "Historical Content/Page/Block fields, defaults, extra-field rejection and language pattern. No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-16.txt",
+        "sha256": "7408ae1aa32a0e569fbc6a9140cf3bf8800c025bf813d55810e7c5627fa7c659",
+        "bytes": 1246,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 8,
+            "end_line": 33,
+            "utf8_sha256": "27db20ae0dd3b52da68c796957a3b14764ec3ea8bb4d357376ce1c85920137f3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-17",
+      "path": "supporting/workspace/src/pdf_to_md_agent/persistence.py",
+      "sha256": "60022c3bafdeeb1ed61899a61899daed0265aaec8efae3f04fa2a3ea2843f5eb",
+      "bytes": 3609,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "Replacement dispatch, exact retry allowlists/backoff, JSON fsync sequence, sharing flags and handle-backed JSON parsing. Native ctypes type declarations are omitted from this inert excerpt. No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-17.txt",
+        "sha256": "7de375a32d68f702dcab560ff8ba3c9b8a3a36e9e9cc263ffd62609ba271758d",
+        "bytes": 3517,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 10,
+            "end_line": 18,
+            "utf8_sha256": "b52e9e761b3fe4d3dcdc3304211651daa9bc4f4732477e7965e0ff5eae58d78a"
+          },
+          {
+            "start_line": 28,
+            "end_line": 29,
+            "utf8_sha256": "76e529f6ea2f8ca20b9f5e32012ce22e398adadc9c9c59c91d0e2cc16a0105bd"
+          },
+          {
+            "start_line": 32,
+            "end_line": 71,
+            "utf8_sha256": "8886c72d2fbdbb41929b1e5b71d58b0964454aee07fd5b4ef692e15833bc23db"
+          },
+          {
+            "start_line": 74,
+            "end_line": 80,
+            "utf8_sha256": "546bf5cab548345c6e51a54b2474b10e4d4dbf4a486d8888d1ae0456ffba7749"
+          },
+          {
+            "start_line": 90,
+            "end_line": 107,
+            "utf8_sha256": "e20e539d51ecd1bd79196fc66e569a96e1204c5c42436f2ed6965d720ba4be5c"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-18",
+      "path": "supporting/workspace/src/pdf_to_md_agent/preview.py",
+      "sha256": "88c3952447e0c75982fa4c0805a4e1129afb7fce85c2a4443734e5c74586ead9",
+      "bytes": 3296,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "CommonMark-plus-table renderer, preserved safe table attributes, derived sanitized view and escaped HTML language value. No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-18.txt",
+        "sha256": "0256b75d877d10ae779cbb1debc4805c31ce80dba4821c498e4a5a87fa235ad5",
+        "bytes": 1111,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 22,
+            "end_line": 23,
+            "utf8_sha256": "c48ab72e66e5c57028e1442bda70d466a267567a95b8b16d3b3aab9c69a5e9ee"
+          },
+          {
+            "start_line": 47,
+            "end_line": 51,
+            "utf8_sha256": "8b2034a93a4610f0083dc80601ed57e4fec7de3e728f8289bab2615f4604b07a"
+          },
+          {
+            "start_line": 62,
+            "end_line": 66,
+            "utf8_sha256": "c0d7e836fa3fb520658edb4fecefd35be929a3fb59069baff60e031a21d74c16"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-19",
+      "path": "supporting/workspace/src/pdf_to_md_agent/ocr.py",
+      "sha256": "4466ae290173dba1032920dc34e1487ed1ebb2db5c274e55f29a3bd2741aa3eb",
+      "bytes": 7896,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "OCR defaults and accepted PSMs. No installed OSD. Per-page Node process. Empty text and word confidence warnings. Pixel/PDF word boxes, including rotation mapping requested by delivery reviewer No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-19.txt",
+        "sha256": "9fa7c773dddb7a045439a8fd7b76394ed5c439ea62bdd129de806f391fd3c574",
+        "bytes": 5650,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 29,
+            "end_line": 61,
+            "utf8_sha256": "78d5feb1d8ff4fec69b4ba1f7d889eac6f3e53330bdd32e78cb8fa8b7c68760a"
+          },
+          {
+            "start_line": 82,
+            "end_line": 100,
+            "utf8_sha256": "a591a3246cf769a54499d7cf80d2c03888f9191969ab18f141f72d94a5f1f367"
+          },
+          {
+            "start_line": 110,
+            "end_line": 163,
+            "utf8_sha256": "39357f346ccf06df971f9c530b2a2dfda7440c5a048096746e92621dd3b38df9"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-20",
+      "path": "ocr/worker.cjs",
+      "sha256": "4495b211cb29b5af14e8a39ef276b7f007bb8861d1450b44c5315b771fdb12eb",
+      "bytes": 2928,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original repository Git snapshot; no matching export workspace file",
+      "use": "Local language initialization and worker termination. Combined recognition settings and retained text/TSV/blocks/confidence No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-20.txt",
+        "sha256": "969d954eb39d91964b51e05632e1850c06ae0cec306212bdc6808890ae413f11",
+        "bytes": 3146,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 1,
+            "end_line": 53,
+            "utf8_sha256": "ae0898d7d0c34e471108c6d02b8c47adab51225a5aa710b2a66a1078982b704a"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-21",
+      "path": "supporting/workspace/src/pdf_to_md_agent/scripts.py",
+      "sha256": "d22628a3b1bbef0ebb84e52b32b69558ea0acc7844c0e4f5255248870d8dcd7d",
+      "bytes": 1135,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "Process opt-in. Case-insensitive environment allowlist plus PDF_MD_TASK. Exact Python invocation and working directory. 30-second default and greater-than-zero through 300-second bound No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-21.txt",
+        "sha256": "1c351a87b6bc704f751fb6c636bdf37519df1655cf2b28e63114d5b5c43a1ff8",
+        "bytes": 1279,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 12,
+            "end_line": 34,
+            "utf8_sha256": "cb95bd72056e0ab79d22744c4b6846f659ea842f05667a783d3bb9c067cd1be8"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-22",
+      "path": "supporting/workspace/src/pdf_to_md_agent/processes.py",
+      "sha256": "40d4ad1e9f39e7fac70816c8a1be6cb2658bb8ce76cc1e06179c1832185bd07a",
+      "bytes": 2697,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "Wait timeout after spawn. Shielded direct-process cleanup with separate five-second limit. Complete stdout/stderr files. Exactly 16000 bytes per inline field, UTF-8 replacement decoding No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-22.txt",
+        "sha256": "ede6accd6dbf822eea68ec8627c441cb47f100d958d37fb69a792b9f4b98d7fd",
+        "bytes": 2854,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 13,
+            "end_line": 64,
+            "utf8_sha256": "137ff1c8e34cbec31f2b733b45922d4e94ae406432a99acc487645ff28909574"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-23",
+      "path": "supporting/workspace/src/pdf_to_md_agent/provider.py",
+      "sha256": "6d43312e7b8260469d5d0a870da4b0a9bca409f08ef98bd2463273bb16018607",
+      "bytes": 36899,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "URL and reserved-parameter checks. Local request_timeout and incomplete_stream classifications. Allowlisted numeric observed usage and nested detail containers. Fixed HTTP diagnostic markers and credential filtering. Exact final usage normalization, including absent-key versus null behavior No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-23.txt",
+        "sha256": "421d4cf86a1941658136899522523849ac742537ddefb0e2dc52d32cce2dced2",
+        "bytes": 6266,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 59,
+            "end_line": 61,
+            "utf8_sha256": "779af74f51e70dc1c28cd6c1223d393dc5218768ec807565b1f32bd886db3f80"
+          },
+          {
+            "start_line": 215,
+            "end_line": 235,
+            "utf8_sha256": "0a1b8ce428c1b1357f03af398a0c0a3330a51e2fb8b7272f31c5edff4944f840"
+          },
+          {
+            "start_line": 553,
+            "end_line": 603,
+            "utf8_sha256": "e6eba6da89f9899c90c8faf41238c46ad7a912f161b940a94e6803a7fce592fa"
+          },
+          {
+            "start_line": 605,
+            "end_line": 627,
+            "utf8_sha256": "8bb32eca9652780157768f3341ed370c3b220b9ccd62689501bb7b568d7a9bb0"
+          },
+          {
+            "start_line": 662,
+            "end_line": 675,
+            "utf8_sha256": "c6ed3f8ecdf479b88f5e9411687a30125dd84603f34530c5f42964e26d8429cf"
+          },
+          {
+            "start_line": 852,
+            "end_line": 866,
+            "utf8_sha256": "f44c71c72dd246381d1fb3a72a71c6f92d9e7b587282fd06adec215d2d0718cd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-24",
+      "path": "supporting/workspace/src/pdf_to_md_agent/agent.py",
+      "sha256": "32aed6f320adc5d1dc1e4726f9647f648f24d2570da0a3fb99e1a18a0012ec45",
+      "bytes": 45205,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "Historical delay defaults and validated bounds. Exponential delay then nonnegative jitter and second cap. Queue-only replacement before Retry-After maximum. Persistent retry timestamp and remaining cancellable wait No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-24.txt",
+        "sha256": "b69463a9111ce1c68e0ca9bf7677920f49af9e424c4e36094b4d9426a91fe5e9",
+        "bytes": 2925,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 107,
+            "end_line": 112,
+            "utf8_sha256": "3e6385e75275458a4686587e7c1e52e8edb3ab1a1529b6de1db3bab833c4940a"
+          },
+          {
+            "start_line": 357,
+            "end_line": 382,
+            "utf8_sha256": "7be88fe55fb71e5338ce655668550163fb4cd97d82f456f2c6fa4eaf05ba4bd0"
+          },
+          {
+            "start_line": 481,
+            "end_line": 502,
+            "utf8_sha256": "f8f6604be7e90929811b5e15a82ecabd9e98e4f956531351bfe638bcdf2b38e7"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-25",
+      "path": "supporting/workspace/tools/experiment_fault_relay.py",
+      "sha256": "59f12d365ce3d3d1c0ada6cf3cd274aa7a4afaeced048b373db8bb5e88c62ebc",
+      "bytes": 24355,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "Closed-helper purpose and fixed route. 90-second monotonic pre-upstream rejection. Accumulated 64 Unicode alphanumeric native-delta characters. One complete nonterminal-frame cut. Unexercised fault, handle closure and stop-file behavior No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-25.txt",
+        "sha256": "dd286eecd0e5f879c8749ae0aaa116208c320fed4a6dc93a510415e5d3a017d7",
+        "bytes": 9610,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 1,
+            "end_line": 5,
+            "utf8_sha256": "9324392223bb4d1e3764a53ac89b86a347c5fd73b71ef292a87238c61934b654"
+          },
+          {
+            "start_line": 17,
+            "end_line": 21,
+            "utf8_sha256": "6f6ffea74d15f59f1b72f779aaa1e72a0c7cd912719d559d11d216e4ff8c83d3"
+          },
+          {
+            "start_line": 137,
+            "end_line": 215,
+            "utf8_sha256": "39a921674a42091991e1102490ce416a2e4a1df1ffe9e1a076b87f167db74dfb"
+          },
+          {
+            "start_line": 267,
+            "end_line": 273,
+            "utf8_sha256": "8305ce06d43abd278055b8b5f6394f369077e66d72d1a641d9146dec214d71d3"
+          },
+          {
+            "start_line": 285,
+            "end_line": 320,
+            "utf8_sha256": "eb27a74c25471eedcc1220f18bcf34a5d88349dd70b9c0a4a4eb129b8e32e1c0"
+          },
+          {
+            "start_line": 331,
+            "end_line": 333,
+            "utf8_sha256": "35cfaecbd68e1107231226c39d54528576122b4f780cb227abc03764fb331566"
+          },
+          {
+            "start_line": 367,
+            "end_line": 399,
+            "utf8_sha256": "0d32fc7d8bed27df57049c5ef5f48a038a276bb0e4716778d65f181566c8f84b"
+          },
+          {
+            "start_line": 449,
+            "end_line": 465,
+            "utf8_sha256": "f013232a9be3a7f26a2db1b2a0f85a22208443afcb519e2c2912e4bd9fcfa665"
+          },
+          {
+            "start_line": 513,
+            "end_line": 535,
+            "utf8_sha256": "ff790bd38b07875ed30449e477b447c0aa76e7ebe87d63570a6cfb93ad064073"
+          },
+          {
+            "start_line": 563,
+            "end_line": 571,
+            "utf8_sha256": "dec96acd30568726e46a517acbbd692039c3c033d5092a531ab75ae4345fd90b"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-26",
+      "path": "supporting/workspace/docs/TOOLS.md",
+      "sha256": "8224e8abbd44437ee2737549c8a58f174b0e1dc01081f92ca6a4c0f006a02981",
+      "bytes": 73500,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "First-call selection versus raw/prepared pointer roots. native high-detail rereads. index ranges. optional descriptions. release diagnostics and scope. Historical native/render distinction, preview observations, full-map/fill/completion semantics, language metadata and CJK emphasis guidance. SUP-05/SUP-09 already preserve preview resource/lifecycle and Windows publication paragraphs. Helper-only scope. CLI loopback/fixed upstream and saved-work/request guard. Independent source usefulness review. R1/R2 gate definitions No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-26.txt",
+        "sha256": "25e2d80a1ce6630a38876d57736fa83ac645175c710aaa62b60e57ec9ea9b335",
+        "bytes": 11954,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 293,
+            "end_line": 293,
+            "utf8_sha256": "dfa4115265b53065e6802255343191a5de21746b0c7f86684c912b48e0a6fd18",
+            "start_column": 0,
+            "end_column": 878,
+            "column_convention": "Zero-based Unicode code points, end exclusive"
+          },
+          {
+            "start_line": 324,
+            "end_line": 363,
+            "utf8_sha256": "5de29f9cbdba3651677eb947d7a1c111545ea33da95e2b22639d296fda7e50f6"
+          },
+          {
+            "start_line": 392,
+            "end_line": 408,
+            "utf8_sha256": "32aa36509325a88654eab0e1f326ca144f0dac54d809de61ad68aa8c73058be3"
+          },
+          {
+            "start_line": 484,
+            "end_line": 486,
+            "utf8_sha256": "9b1223ecd2a3891e2553d0682e5a72247829372e188ac8c0a5a3633280b02188"
+          },
+          {
+            "start_line": 489,
+            "end_line": 489,
+            "utf8_sha256": "f37efe0f158f959dacb952f136744f8b13aaef1a462b4f185df590be62a60d37"
+          },
+          {
+            "start_line": 496,
+            "end_line": 502,
+            "utf8_sha256": "788f14abec5c866f457dac1e1e6e13ab1aa89b1769135be1adb20d2b623605d4"
+          },
+          {
+            "start_line": 519,
+            "end_line": 525,
+            "utf8_sha256": "c1a67fe6b46015a6a8a910a31d133e98ebd1ebf5f7e1615328c337a9cf12c3a2"
+          },
+          {
+            "start_line": 584,
+            "end_line": 601,
+            "utf8_sha256": "9ba5ee492114f5b5c17610ebea291413cf399f30d69b8b61d103dd38a1d175b5"
+          },
+          {
+            "start_line": 605,
+            "end_line": 611,
+            "utf8_sha256": "9be18b2ddd6e28c656618f8e7d6a8ab253421a0449ca6134777018ca45ee3523"
+          },
+          {
+            "start_line": 613,
+            "end_line": 627,
+            "utf8_sha256": "db997d6deb47417100626037dfecf9b10c24e008ac790d3d4fc1be5e9c311ea6"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SUP-27",
+      "path": "supporting/workspace/src/pdf_to_md_agent/reading.py",
+      "sha256": "4f160b3dc23ae60e4f51cb7a50d73475c71e37650eb8c59f94056671f12f3b7d",
+      "bytes": 6685,
+      "source_commit": "182ea39b31829edf6491a72472004b1cd1068897",
+      "source_container": "Original export workspace copy, matched to original Git commit",
+      "use": "Preview defaults/validation/receipt fields, unconfigured launch, explicit 15000-ms page setting and DOM-image observations. No inherited runtime, dependency pin or execution permission.",
+      "local": {
+        "path": "docs/reference/sources/support/SUP-27.txt",
+        "sha256": "75d3c4ca8f70a5ccde7f44a999031f6af2d394b99c3018dd6a017fed335ed370",
+        "bytes": 4197,
+        "representation": "Selected verbatim line ranges. Historical code and commands remain inert data.",
+        "excerpts": [
+          {
+            "start_line": 26,
+            "end_line": 60,
+            "utf8_sha256": "8bb50ee1edfb14fd2e1a820517c2acd73bb362570112b76d915799788d25b4ec"
+          },
+          {
+            "start_line": 114,
+            "end_line": 156,
+            "utf8_sha256": "5aec5ad63a03e75b1fe10341126fe8303730ba6c3bd3e8717a4579bf8197d097"
+          }
+        ]
+      }
     }
   ],
   "bundled_sources": {
     "index": "docs/reference/sources/INDEX.md",
     "manifest": "docs/reference/sources/bundle-manifest.json",
     "event_records": 208,
-    "attachments": 30,
+    "attachments": 31,
     "substantive_figures": 24,
     "scope": "All visible discussion and all cited rebuild sources are local. This lookup inventory excludes incidental uncited tool-execution records because they are not development sources."
   },

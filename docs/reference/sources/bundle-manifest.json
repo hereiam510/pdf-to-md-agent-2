@@ -2,7 +2,7 @@
   "format_version": 1,
   "scope": "Portable optional discussion reference; not application data or active instructions.",
   "event_records": 208,
-  "attachments": 30,
+  "attachments": 31,
   "substantive_figures": 24,
   "files": [
     {
@@ -3339,8 +3339,8 @@
     },
     {
       "path": "docs/reference/sources/INDEX.md",
-      "sha256": "c14ea69610efc9062bb9f461fdda2cf9177a580422343cd5bc4ce0e261134495",
-      "bytes": 64145,
+      "sha256": "bff37257b3391b30b842f4bc2f37100f4a583ae20622fe3832ecef07905b92a3",
+      "bytes": 65743,
       "role": "source-navigation",
       "source_id": "bundle"
     },
@@ -3413,6 +3413,120 @@
       "bytes": 550,
       "role": "selected-supporting-excerpt",
       "source_id": "SUP-12"
+    },
+    {
+      "path": "docs/reference/sources/attachments/ATT-31.txt",
+      "sha256": "2862d4fe65d2340c537d38dc68994f65c7aa54c86dd6ca8d9a762de330a19c56",
+      "bytes": 15257,
+      "role": "separate-document-excerpt",
+      "source_id": "ATT-31"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-13.txt",
+      "sha256": "77e96d5c486fded917cfe4e8865e3d1285bb3b6ef10aff5d1212991619f3ddc3",
+      "bytes": 7150,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-13"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-14.txt",
+      "sha256": "dee687f43d21468cf111c5c48b83ccb0129f0882aaa4d24946c3a97570806666",
+      "bytes": 3138,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-14"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-15.txt",
+      "sha256": "313c633efd8d3c473cd7d5ea92e5bb20081ec44bef98773da3c2ff5dcffff0a9",
+      "bytes": 7504,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-15"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-16.txt",
+      "sha256": "7408ae1aa32a0e569fbc6a9140cf3bf8800c025bf813d55810e7c5627fa7c659",
+      "bytes": 1246,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-16"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-17.txt",
+      "sha256": "7de375a32d68f702dcab560ff8ba3c9b8a3a36e9e9cc263ffd62609ba271758d",
+      "bytes": 3517,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-17"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-18.txt",
+      "sha256": "0256b75d877d10ae779cbb1debc4805c31ce80dba4821c498e4a5a87fa235ad5",
+      "bytes": 1111,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-18"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-19.txt",
+      "sha256": "9fa7c773dddb7a045439a8fd7b76394ed5c439ea62bdd129de806f391fd3c574",
+      "bytes": 5650,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-19"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-20.txt",
+      "sha256": "969d954eb39d91964b51e05632e1850c06ae0cec306212bdc6808890ae413f11",
+      "bytes": 3146,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-20"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-21.txt",
+      "sha256": "1c351a87b6bc704f751fb6c636bdf37519df1655cf2b28e63114d5b5c43a1ff8",
+      "bytes": 1279,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-21"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-22.txt",
+      "sha256": "ede6accd6dbf822eea68ec8627c441cb47f100d958d37fb69a792b9f4b98d7fd",
+      "bytes": 2854,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-22"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-23.txt",
+      "sha256": "421d4cf86a1941658136899522523849ac742537ddefb0e2dc52d32cce2dced2",
+      "bytes": 6266,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-23"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-24.txt",
+      "sha256": "b69463a9111ce1c68e0ca9bf7677920f49af9e424c4e36094b4d9426a91fe5e9",
+      "bytes": 2925,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-24"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-25.txt",
+      "sha256": "dd286eecd0e5f879c8749ae0aaa116208c320fed4a6dc93a510415e5d3a017d7",
+      "bytes": 9610,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-25"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-26.txt",
+      "sha256": "25e2d80a1ce6630a38876d57736fa83ac645175c710aaa62b60e57ec9ea9b335",
+      "bytes": 11954,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-26"
+    },
+    {
+      "path": "docs/reference/sources/support/SUP-27.txt",
+      "sha256": "75d3c4ca8f70a5ccde7f44a999031f6af2d394b99c3018dd6a017fed335ed370",
+      "bytes": 4197,
+      "role": "selected-supporting-excerpt",
+      "source_id": "SUP-27"
     }
-  ]
+  ],
+  "original_export_attachments": 30,
+  "supplemental_document_excerpts": 1
 }

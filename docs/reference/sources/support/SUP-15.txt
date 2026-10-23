@@ -1,0 +1,157 @@
+SUP-15 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/core.py
+Full-source SHA-256: 19d6b8cd8d19203694ae426910ad190543965e8db3d4f2e64ab9cf909a4c2f4b
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 81-94 ---
+    @staticmethod
+    def page(pdf, number: int):
+        if isinstance(number, bool) or not isinstance(number, int) or not 1 <= number <= len(pdf):
+            raise ValueError(f"PDF page must be an integer in 1..{len(pdf)}")
+        return pdf[number - 1]
+
+    @staticmethod
+    def region(page, region: list[float] | None):
+        # All public coordinates use unrotated PDF points, top left origin.
+        bounds = page.rect * page.derotation_matrix
+        rect = pymupdf.Rect(region) if region is not None else bounds
+        if not all(math.isfinite(v) for v in rect) or rect.is_empty or not bounds.contains(rect):
+            raise ValueError(f"Region must be a finite non-empty rectangle inside {list(bounds)}")
+        return rect
+
+
+--- Original lines 116-163 ---
+                results.append(
+                    {
+                        "pdf_page": number,
+                        "bounds": list(p.rect * p.derotation_matrix),
+                        "rotation": p.rotation,
+                        "region": list(rect),
+                        "text": plain,
+                        "layout": text,
+                        "words": p.get_text("words", clip=rect),
+                        "images": [
+                            {k: v.hex() if isinstance(v, bytes) else v for k, v in im.items()}
+                            for im in p.get_image_info(xrefs=True)
+                        ],
+                        "warnings": warnings,
+                    }
+                )
+        return {"pages": results, "coordinates": "unrotated PDF points; top-left origin"}
+
+    def render(
+        self,
+        document: str,
+        page: int,
+        dpi: int = 150,
+        region: list[float] | None = None,
+        asset: bool = False,
+    ) -> dict[str, Any]:
+        if isinstance(dpi, bool) or not isinstance(dpi, int) or dpi <= 0:
+            raise ValueError("dpi must be a positive integer")
+        task = self.task(document)
+        with self.source(document) as pdf:
+            p = self.page(pdf, page)
+            rect = self.region(p, region)
+            pix = p.get_pixmap(dpi=dpi, clip=rect * p.rotation_matrix, alpha=False)
+            data = pix.tobytes("png")
+            info = {
+                "kind": "page_render",
+                "pdf_page": page,
+                "region": list(rect),
+                "dpi": dpi,
+                "width": pix.width,
+                "height": pix.height,
+                "source_sha256": read_json(task / "source.json")["sha256"],
+            }
+        if asset:
+            return self.store_asset(task, data, "png", info)
+        path = task / "evidence" / f"{uuid.uuid4().hex}.png"
+        path.write_bytes(data)
+        return {**info, "path": str(path)}
+
+
+--- Original lines 176-202 ---
+    def extract_image(self, document: str, page: int, xref: int) -> dict[str, Any]:
+        task = self.task(document)
+        with self.source(document) as pdf:
+            p = self.page(pdf, page)
+            displayed = [im for im in p.get_image_info(xrefs=True) if im["xref"] == xref]
+            if not displayed:
+                raise ValueError("Image xref is not displayed on the requested page")
+            info = pdf.extract_image(xref)
+            if not info:
+                raise ValueError("Image cannot be extracted; use a faithful page-region render")
+            if (
+                info.get("smask")
+                or any(im.get("has-mask") for im in displayed)
+                or pdf.xref_get_key(xref, "ImageMask")[1] == "true"
+            ):
+                raise ValueError("Masked image requires composition; use a faithful region render")
+            meta = {
+                "kind": "embedded_image",
+                "pdf_page": page,
+                "xref": xref,
+                "width": info["width"],
+                "height": info["height"],
+                "source_sha256": read_json(task / "source.json")["sha256"],
+                "encoding": info["ext"],
+                "extraction": "Document.extract_image",
+            }
+            return self.store_asset(task, info["image"], info["ext"], meta)
+
+
+--- Original lines 256-305 ---
+        content = Content.model_validate(content)
+        source = read_json(task / "source.json")
+        pages = {p.pdf_page: p for p in content.pages}
+        physical = set(range(1, source["pages"] + 1))
+        if unmapped_disposition not in {None, "outside_scope", "unprocessed"}:
+            raise ValueError("unmapped_disposition must be 'outside_scope' or 'unprocessed'")
+        if len(pages) != len(content.pages) or not set(pages) <= physical:
+            raise ValueError("Page mapping must cover every physical PDF page exactly once")
+        if unmapped_disposition is not None:
+            for number in sorted(physical - set(pages)):
+                pages[number] = Page(pdf_page=number, disposition=unmapped_disposition)
+            content.pages = [pages[number] for number in sorted(pages)]
+        if set(pages) != physical:
+            raise ValueError(
+                "Page mapping must cover every physical PDF page exactly once. "
+                "To fill only omitted pages with unknown printed labels, explicitly set "
+                "unmapped_disposition to 'outside_scope' or 'unprocessed'; supplied entries "
+                "and authored blocks are preserved."
+            )
+        for p in content.pages:
+            if not p.printed_page.strip() or any(c in p.printed_page for c in "<>\r\n|"):
+                raise ValueError("Printed labels must be visible labels, 'none', or 'unknown'")
+        ids = [b.id for b in content.blocks]
+        if len(set(ids)) != len(ids):
+            raise ValueError("Block IDs must be unique")
+        used = set()
+        parts = [f"> Conversion scope: {content.scope}\n>\n> Status: {content.status}"]
+        for kind, notes in (
+            ("Uncertainty", content.uncertainties),
+            ("Limitation", content.limitations),
+        ):
+            parts.extend(f"> {kind}: {note}" for note in notes)
+        for block in content.blocks:
+            if len(set(block.pages)) != len(block.pages) or any(
+                n not in pages or pages[n].disposition != "in_scope" for n in block.pages
+            ):
+                raise ValueError("Block pages must uniquely refer to in_scope pages")
+            if re.search(r"<!--\s*PDF page", block.markdown, re.I):
+                raise ValueError("Page markers are generated from mapping; omit them in blocks")
+            used.update(block.pages)
+            parts.extend([marker([pages[n] for n in block.pages]), block.markdown])
+        if used != {p.pdf_page for p in content.pages if p.disposition == "in_scope"}:
+            raise ValueError("Each in_scope page needs content")
+        if content.status == "complete" and (
+            content.uncertainties or any(p.disposition == "unprocessed" for p in content.pages)
+        ):
+            raise ValueError("Complete scope cannot contain uncertainty or unprocessed pages")
+        for p in content.pages:
+            if p.pdf_page not in used:
+                parts.append(marker([p])[:-3].rstrip() + f" | scope: {p.disposition} -->")
+

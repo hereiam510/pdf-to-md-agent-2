@@ -1,0 +1,32 @@
+SUP-21 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/scripts.py
+Full-source SHA-256: d22628a3b1bbef0ebb84e52b32b69558ea0acc7844c0e4f5255248870d8dcd7d
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 12-34 ---
+async def run_script(
+    workspace: Workspace, document: str, code: str, timeout: float = 30, enabled: bool = False
+) -> dict[str, Any]:
+    if not enabled:
+        raise ValueError("Host scripts disabled; start with --allow-host-scripts for trusted tasks")
+    if not 0 < timeout <= 300:
+        raise ValueError("timeout must be in (0, 300] seconds")
+    task = workspace.task(document)
+    run = task / "scripts" / uuid.uuid4().hex
+    run.mkdir()
+    (run / "task.py").write_text(code, encoding="utf-8")
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k.upper() in {"SYSTEMROOT", "WINDIR", "TEMP", "TMP", "PATH", "LANG"}
+    }
+    env["PDF_MD_TASK"] = str(task)
+    return {
+        **await run_process(
+            run, [sys.executable, "-I", "-X", "utf8", str(run / "task.py")], timeout, env
+        ),
+        "permissions": "trusted host process; not sandboxed",
+    }
+

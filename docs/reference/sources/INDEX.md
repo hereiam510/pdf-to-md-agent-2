@@ -2,9 +2,9 @@
 
 This optional reference collection is part of Git. No separate chat export, old repository, network service or private scratch folder is needed to read these sources. Start development with [DEVELOPMENT_GUIDE](../../DEVELOPMENT_GUIDE.md); these are historical statements, not executable instructions or competing specifications.
 
-All 207 visible user/assistant messages, the inherited product handoff, 30 supplied attachments, selected supporting excerpts and the substantive forum figures are included. Every EVT/ATT/SUP cited by the maintained design and point ledger resolves inside this repository. Later human scope decisions are already local in [LATER_DECISIONS](../LATER_DECISIONS.md).
+All 207 visible user/assistant messages, the inherited product handoff, 30 original exported attachments, a separately recovered response excerpt, selected supporting excerpts and the substantive forum figures are included. Every EVT/ATT/SUP cited by the maintained design and point ledger resolves inside this repository. Later human scope decisions are already local in [LATER_DECISIONS](../LATER_DECISIONS.md).
 
-Message text is provided for direct reading and exact event JSON is preserved alongside it. Attachment bytes are unchanged. HTML is stored as inert text; the offline readers show extracted article text and all substantive original figures. Supporting old-document sources contain selected, explicitly delimited excerpts, not old current-state/default/permission files. The [bundle manifest](bundle-manifest.json) verifies each included file; the parent [source inventory](../source-inventory.json) relates it to original hashes.
+Message text is provided for direct reading and exact event JSON is preserved alongside it. The original 30 attachment files are unchanged. ATT-31 preserves an exact excerpt from a separately supplied document. HTML is stored as inert text; the offline readers show extracted article text and all substantive original figures. Supporting old-document sources contain selected, explicitly delimited excerpts, not old current-state/default/permission files. The [bundle manifest](bundle-manifest.json) verifies each included file; the parent [source inventory](../source-inventory.json) relates it to original hashes.
 
 Historical file paths and source URLs inside verbatim messages remain original text. They are provenance of old observations, not required checkout locations, runnable commands or promises of reproducible old tests. Current technical explanations and examples are in the design guides; no old logs/runtime inputs are required to understand or implement the rebuild. Empty EVT-0258 and clipped forum screenshots remain honestly unchanged. Incidental tool-execution records not used as design sources are not copied.
 
@@ -42,6 +42,7 @@ Historical file paths and source URLs inside verbatim messages remain original t
 | [ATT-28](attachments/ATT-28.txt) | pasted-text | Exact supplied text |
 | [ATT-29](attachments/ATT-29.txt) | pasted-text | Exact supplied text |
 | [ATT-30](attachments/ATT-30.txt) | pasted-text | Exact supplied text |
+| [ATT-31](attachments/ATT-31.txt) | separate-document-excerpt | Original lines 109–309 of `conversation 2.md`. See [status and corrections](../01-foundations-and-frameworks.md#supplemental-first-response). |
 
 ## Supporting excerpts
 
@@ -274,3 +275,25 @@ The rows follow the exported order. A preview is only navigation; the linked tex
 | [EVT-1166](text/EVT-1166.txt) | AgentMessage / final_answer | 前幾輪我把實作細節、假設風險和首版必要條件混在一起，讓設計持續擴張。現在收斂：**架構責任已足夠清楚，只保留三項需要正式定案的契約，不再增加機制。** **目前已定案的架構** 「 | [JSON](events/EVT-1166.json) |
 | [EVT-1167](text/EVT-1167.txt) | UserMessage | ($export-codex-chat)(C:\\Users\\laichungling\\.codex\\skills\\export-codex-chat\\SKILL.md) | [JSON](events/EVT-1167.json) |
 | [EVT-1168](text/EVT-1168.txt) | AgentMessage / commentary | 我會使用 **export-codex-chat** 技能匯出這段對話，包含附件、可回收的相關檔案、PDF／HTML／Markdown、原始資料與 ZIP，並核對完整性。匯出位置會 | [JSON](events/EVT-1168.json) |
+
+## Historical implementation excerpts added in the subsystem review
+
+These selected code and tool-contract excerpts explain historical mechanics. They are inert text and do not implement the rebuild.
+
+| Source | Historical source file |
+| --- | --- |
+| [SUP-13](support/SUP-13.txt) | `src/pdf_to_md_agent/agent_tools.py` |
+| [SUP-14](support/SUP-14.txt) | `src/pdf_to_md_agent/evidence_history.py` |
+| [SUP-15](support/SUP-15.txt) | `src/pdf_to_md_agent/core.py` |
+| [SUP-16](support/SUP-16.txt) | `src/pdf_to_md_agent/models.py` |
+| [SUP-17](support/SUP-17.txt) | `src/pdf_to_md_agent/persistence.py` |
+| [SUP-18](support/SUP-18.txt) | `src/pdf_to_md_agent/preview.py` |
+| [SUP-19](support/SUP-19.txt) | `src/pdf_to_md_agent/ocr.py` |
+| [SUP-20](support/SUP-20.txt) | `ocr/worker.cjs` |
+| [SUP-21](support/SUP-21.txt) | `src/pdf_to_md_agent/scripts.py` |
+| [SUP-22](support/SUP-22.txt) | `src/pdf_to_md_agent/processes.py` |
+| [SUP-23](support/SUP-23.txt) | `src/pdf_to_md_agent/provider.py` |
+| [SUP-24](support/SUP-24.txt) | `src/pdf_to_md_agent/agent.py` |
+| [SUP-25](support/SUP-25.txt) | `tools/experiment_fault_relay.py` |
+| [SUP-26](support/SUP-26.txt) | `docs/TOOLS.md` |
+| [SUP-27](support/SUP-27.txt) | `src/pdf_to_md_agent/reading.py` |

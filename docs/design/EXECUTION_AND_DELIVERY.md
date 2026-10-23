@@ -179,6 +179,22 @@ Restoring an old graph snapshot cannot erase later committed document versions, 
 
 An exception that runs `finally` and flushes data is not a hard process-kill test. Broken IPC can leave a child working. The old R1/R2 exercises injected bounded network/stream failures. They did not establish arbitrary crash recovery, natural prolonged-outage behavior, or migration of old job formats. No backward compatibility is required for the rebuild.
 
+<a id="historical-fault-relay"></a>
+### Historical fault injection and its exact scope
+
+The old `tools/experiment_fault_relay.py` was a closed experiment helper, not a product API or production transport. Its CLI bound a loopback listener and a fixed Nexus upstream, path and model. It armed faults after matching the controller's request, published draft and receipt, with requested positions still unprocessed. Those structural checks did not establish source usefulness, which required independent review.
+
+| Mode | Historical injected condition |
+| --- | --- |
+| R1 | After the partial-work gate matched, a 90-second monotonic timer controlled local HTTP 503 rejection before any upstream connection. Timer expiry and later forwarding were separate events. |
+| R2 | One cut followed at least 64 accumulated alphanumeric characters from content or tool-argument deltas in complete, nonterminal Chat SSE frames. |
+
+The R2 counter used Python `str.isalnum()`, including qualifying Unicode characters. It did not count bytes, tokens, punctuation, heartbeat comments or mere frame arrivals. The observer disabled further cuts after a finish reason or `[DONE]`. The relay forwarded through the triggering complete frame, then closed both connection handles. Complete frames could still contain incomplete tool arguments, which never authorized execution.
+
+If no qualifying interval appeared, the helper recorded `fault_unexercised`. It forwarded ordinary bytes incrementally without reconstructing or joining attempts. Its records contained safe timestamps, hashes, stages and forwarding facts, not provider bodies, arbitrary headers or credentials. A stop file closed the listener, active handles and timer.
+
+These mechanics explain what the old trials exercised. They do not establish a natural outage, a new application dependency or permission for another trial. [SUP-25](../reference/sources/support/SUP-25.txt) preserves the selected helper logic. [SUP-26](../reference/sources/support/SUP-26.txt) preserves its historical scope description.
+
 **Source basis:** EVT-0942, EVT-0968, EVT-1005, EVT-1040, EVT-1068, EVT-1107, EVT-1147, EVT-1166. Earlier recovery qualifications appear in [reference 02](../reference/02-context-state-and-evidence.md#persistence-and-replay).
 
 <a id="budgets-cancellation-and-stop"></a>
@@ -223,6 +239,34 @@ The old policy specified one accountable app retry owner to prevent configurable
 This hierarchy covered the historical transport and recognized-queue policy. It did not settle every future admission or capacity-recovery policy. The rebuild retains durable accounting and explicit bounded eligibility. [Capacity re-preparation](#capacity-rejection-is-not-ordinary-same-input-retry) still needs its separate rules while sharing task totals.
 
 **Source basis:** SUP-09, historical TOOLS retry-budget and retry-owner passages.
+
+<a id="historical-retry-delay"></a>
+### Historical backoff values and calculation
+
+The old `RunConfig` supplied these defaults and bounds:
+
+| Field | Historical default | Accepted range |
+| --- | --- | --- |
+| `retry_initial_delay` | 2 seconds | 0–60 seconds, inclusive. |
+| `retry_max_delay` | 30 seconds | 0–300 seconds, inclusive. |
+| `retry_jitter` | 0.25 | 0–1, inclusive, as a dimensionless proportion. |
+| `queue_retry_delay` | 15 seconds | 0–60 seconds, inclusive. |
+
+For an eligible automatic retry, `attempt` meant the failed attempt's one-based number, including the original send as 1. The controller calculated:
+
+```text
+local = min(retry_max_delay, retry_initial_delay * 2**(attempt - 1))
+local = min(retry_max_delay, local * (1 + uniform(0, retry_jitter)))
+delay = max(local, retry_after_seconds)
+```
+
+Thus, jitter only added a nonnegative proportion before the second cap. With the defaults, the first local delay ranged from 2 to 2.5 seconds. A valid `Retry-After` of 59 seconds could exceed the 30-second local cap. An absent accepted header contributed zero, not an extra delay.
+
+For recognized queue-only recovery with `automatic_retries=0`, `queue_retry_delay` replaced `local` before the final maximum. It did not add another exponential wait or retry allowance. Positive `automatic_retries` retained the automatic calculation even for eligible queue failures.
+
+The controller persisted `retry_wait_seconds` and `retry_not_before` before its cancellable wait. Resume used the remaining wait against that timestamp instead of drawing fresh jitter. Attempts and waits still shared the original active deadline, cancellation state and attempt allowance. A larger header delay did not extend the task deadline.
+
+[SUP-24](../reference/sources/support/SUP-24.txt) preserves the historical configuration, formula and wait code. These numbers do not choose rebuild defaults or settle the open capacity-recovery policy.
 
 <a id="send-boundary-sequence"></a>
 ### Same-request recovery at the service boundary

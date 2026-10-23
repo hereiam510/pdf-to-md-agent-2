@@ -9,10 +9,12 @@ The development knowledge is explained in [DEVELOPMENT_GUIDE](../DEVELOPMENT_GUI
 | 207 visible user/assistant messages | Complete readable text plus exact original event JSON | Original wording, including corrections. One saved final message is empty. |
 | Initial inherited product handoff | Readable text plus exact EVT-0001 JSON | Background context. The rebuild does not inherit old permissions/defaults. |
 | 28 pasted-text attachments | Exact original text bytes | Complete supplied proposals and critiques, not adopted wholesale as requirements |
+| ATT-31 supplemental first response | Exact lines 109–309 of a separate `conversation 2.md` | Newly recovered proposal, not a retroactive attachment to an exported event. Full-document and excerpt hashes retain its identity. |
 | Two supplied forum pages | Exact HTML as inert text, extracted article text and offline image readers | All 24 substantive embedded figures are local and byte-preserved. Forum claims retain their credibility limits. |
 | SUP-01/02 continuing requirements | Explicit verbatim excerpt ranges with original/full-source hashes | Preserve the relevant product/platform and guidance rules without importing whole old development documents |
 | SUP-03–07 historical engineering evidence | Selected reference, stack, tool, code and correction excerpts | Support concrete examples and lessons. They introduce no old runtime, version pin or execution permission. |
 | SUP-08–12 protocol and lifecycle evidence | Selected tool contracts, observations, request-setting code and correction identity | Preserve exact mechanics and their limits. Later discussion and dated official checks control overstrong interpretations. |
+| SUP-13–27 subsystem mechanics | Selected source-code and tool-contract excerpts | Preserve exact units, fields, guards and failure boundaries. Git identities and available export copies establish historical provenance. |
 | Nine later human decisions | [LATER_DECISIONS](LATER_DECISIONS.md) | Includes self-containment, technical-detail preservation and direct-conversation review requirements |
 | Point-to-detail mapping | [DEVELOPMENT_COVERAGE](DEVELOPMENT_COVERAGE.json) | Explains where each preserved point is developed or retained as historical rationale |
 
@@ -32,7 +34,7 @@ With any working Python 3.9+ interpreter, from the repository root:
     python tools/source_lookup.py EVT-1166 --verify-only
     python tools/check_docs.py
 
-Lookup defaults to versioned local files and verifies their hashes before displaying content. Lookup distinguishes EVT message text from exact event JSON. Attachments retain their bytes. SUP sources show labelled selected excerpts. LIVE sources resolve to local maintained anchors.
+Lookup defaults to versioned local files and verifies their hashes before displaying content. Lookup distinguishes EVT message text from exact event JSON. The original attachments retain their bytes. ATT-31 is an exact excerpt from a separate source document. SUP sources display labelled selected excerpts. Some later supplements come from the original Git snapshot rather than an export workspace copy. LIVE sources resolve to local maintained anchors.
 
 HTML is inert text, with local article/figure readers. Lookup does not execute recorded content.
 

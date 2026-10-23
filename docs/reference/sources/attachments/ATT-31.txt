@@ -1,0 +1,201 @@
+response:
+將 **Pi SDK 排第一** 作為全新架構基線的方向是合理的，特別是考慮到最終產品目標本來就是獨立的 Electron/TypeScript 桌面應用，但這份提案在 **Context 修改與 Prompt Cache 的經濟學衝突**、**Node 與 Python 雙執行期的狀態所有權分裂**、**Deep Agents 與 LangGraph 的維護成本排序**，以及 **Nexus 實戰環境的傳輸容錯邊界** 上存在四個明顯盲點。既然你們明確決定**不考慮向下相容、可以徹底重構**，就不應只是「把舊 Python controller 換成 Pi SDK 外殼」，而應該連同跨語言進程邊界與工具契約一起重新洗牌。
+
+  
+
+## 一、 對提案的四個直接質詢（Confrontations）
+
+### 1. 質詢一：過度迷信逐輪 `context_edit`，忽略了「修改歷史會擊穿 Prompt Cache」的實測教訓
+
+提案將 Pi SDK 的 `context_edit`（保留原始紀錄、將下一次模型輸入中的舊 OCR 替換為證據引用）視為最大賣點。這個機制在「純容量控制」上很優雅，但在成本與延遲上卻有嚴重陷阱：
+
+  
+
+- **In-place 修改會破壞 Prefix Cache：** 在先前的實測與成本審閱中，模型請求之所以能維持低成本（例如 Core Delivery 驗證中 636,591 總輸入 tokens 有高達 537,088 tokens 命中快取），核心前提是 **Request 歷史維持 Append-Only，保留穩定的前缀（Stable Prefix）**。一旦透過 Pi 的 `context_edit` 去原地改寫第 $N$ 輪的工具輸出（例如把已讀完的 OCR 或圖片換成引用標籤），第 $N$ 輪之後的所有對話與工具紀錄在下一次請求時都會發生 **Cache Miss**。
+    
+      
+    
+- **歷史實測已證明「頻繁釋放＋重取」反而更貴：** 在 13 頁與 9 頁的對照測試中，強制或支援選擇性釋放（Selective History）的分支，在釋放後重新取回像素與欄位的過程中，耗用了比 Full History 更多的 Uncached Input、更多請求輪數與更長執行時間。
+    
+      
+    
+- **真正的爆量根源在「首次無過濾讀入（Intake）」，而非事後沒釋放：** 實測紀錄顯示，單次未指定 `_select` 的 `inspect` 就塞入 191,662 字元，而 13 頁 Checkpoint 測試中模型更在壓縮後一次拉取 9 個完整 OCR 物件（高達 1,976,466 字元，導致單輪輸入暴增至 796,420 tokens）。如果工具預設回傳肥大的重疊結構，指望模型事後主動呼叫工具搭配 `context_edit` 釋放，不僅模型在自然任務中極少主動觸發（9 頁自然測試 B/C 分支的選用率為 0），還會反覆破壞快取前缀。
+    
+      
+    
+
+### 2. 質詢二：Mermaid 架構圖中的「雙 Runtime 共享 Store」會製造狀態分裂（Split-Brain）
+
+提案的架構圖讓 Node.js 的 `PDF Context Extension (Policy)` 與 Python 的 `PDF 工具 (Tools)` 同時讀寫底層的 `Store（完整證據、工作狀態、成果版本）`：
+
+  
+
+- **跨進程狀態同步負擔被低估：** 在現有設計中，Python 單一進程同時掌握工具執行、操作收據（Operation Receipts）、投影狀態（Projection Status）與版本鎖（`filelock` / Windows `ReplaceFileW`）。如果改由 Node.js（Pi SDK）負責 Context Policy 與 Compaction，而 Python 負責儲存證據與寫入版本，當某次 `save` 或 `revise` 發生「底層寫入成功、但回傳投影失敗」或「參數驗證被拒但保留了 Prepared Candidate」時（這在 40 頁與 R1/R2 測試中實際發生過多次），Node 端的 `session_before_compact` 要如何即時且精確地感知 Python 端磁碟上的未發布草稿與版本狀態？
+    
+      
+    
+- **雙語言維護同一套 Schema：** 若 Node 的 `Policy` 直接讀取 `Store`，代表你們必須在 TypeScript 與 Python 兩端同時維護證據索引、工作狀態與成果版本的 Schema；這與提案宣稱的「長期修改最少」直接矛盾。
+    
+      
+    
+
+### 3. 質詢三：`session_before_compact` 無法憑空識別「跨頁依賴」
+
+提案指出通用摘要不知道「哪個表頭仍被下一頁引用、哪段未保存的 Markdown 值得保留」，因此建議把保護規則寫在 Pi 的 `PDF Context Extension` 裡。
+
+  
+
+- **這是一個假設性跳躍：** 寫在 Node.js 裡的確定性 Extension 程式碼，**不可能自動看懂 PDF 第 14 頁的表格是否跨到第 15 頁**，除非這個「跨頁未決狀態」已經被結構化記錄下來。
+    
+      
+    
+- 如果不先在工具契約中強制作業狀態結構化，所謂的 `PDF Context Extension` 最終只會淪為兩種糟糕的實作之一：要麼用脆弱的 Regex 去猜對話紀錄，要麼在 Compaction 時把所有東西都塞回摘要，失去 Compaction 的意義。
+    
+      
+    
+
+### 4. 質詢四：Deep Agents 排第二是高估；且提案漏掉了 Nexus 傳輸容錯邊界
+
+- **Deep Agents 應排在 LangGraph 之後（甚至直接淘汰）：** 提案已經準確抓出 Deep Agents 0.7.29 的三大致命傷（僅依大小／時間卸載、不保護跨頁舊表頭、卸載失敗仍可能繼續摘要）。這些邏輯正好位居 Deep Agents 的核心預設 Middleware。在軟體工程上，**「去魔改、攔截並覆寫一個高度封裝框架的核心預設 Policy」永遠比「用底層 LangGraph 自己組裝 200 行乾淨的 State 節點」更難維護，且升級更容易壞**。若不選 Pi SDK，直接用 LangGraph 自建薄層 Harness 反而比改寫 Deep Agents 更乾淨。
+    
+      
+    
+- **嚴重低估 Nexus 的傳輸不穩定性與恢復需求：** 提案在 Nexus 適配部分只談了 `baseUrl`、`openai-completions` / `openai-responses` 與 reasoning 欄位，卻完全沒提**網路與串流容錯**。過往 Nexus 實測曾頻繁遭遇 180 秒 Header `ReadTimeout`、HTTP 500/502/503、HTTP/2 `PROTOCOL_ERROR`、`Retry-After: 59` 以及 **SSE Streaming 傳到一半中斷（如傳了 36 個 frames 後斷線）** 或非標準 `service_tier` 欄位報錯。現有 Python HTTPX2 控制器為此實作了完整的「單輪重試預算持久化、禁止跨次拼接殘缺 JSON、本地已提交工具對帳（Reconciliation）」。換成 Pi SDK 後，Pi 內建的 HTTP / Stream 迴圈是否會在串流中斷時把半截 Tool Call 當成錯誤丟棄、或重複執行已落盤的寫入？這是提案未列出的重大風險。
+    
+      
+    
+
+## 二、 既然不需向下相容：徹底重構（Clean-Slate）的架構建議
+
+既然你們願意推倒重來且不背負歷史相容包袱，選擇 **Pi SDK (TypeScript/Node.js)** 其實提供了一個**大幅簡化整體技術棧**的絕佳機會，但責任分配應該重新設計：
+
+  
+
+### 1. 重新劃分 Node.js 與 Python 邊界：消除「Python 呼叫 Node」的套娃結構
+
+在現有系統中，最終外殼是 Electron（Node.js），但因為 Agent Controller 寫在 Python，導致出現了 **「Electron (Node) $\rightarrow$ Python Controller $\rightarrow$ 啟動 Node 子進程跑 Tesseract.js OCR」** 以及 **「Python 啟動獨立 Playwright Chromium 截圖預覽」** 的多層套娃架構。 若以 Pi SDK 徹底重構，建議改為**以 Node.js 為單一控制與狀態核心**：
+
+  
+
+Code snippet
+
+```
+flowchart TD
+    UI["Electron UI / 預覽視窗"] --> Runtime["Node.js 主控層：Pi SDK + 狀態與版本帳本"]
+    Runtime --> Nexus["Nexus Adapter（含串流組裝與有限重試）"]
+    Runtime --> Policy["PDF Context Extension（讀取本地結構化帳本）"]
+    Runtime --> NodeTools["原生 Node 工具：Tesseract.js OCR ／ Electron 離屏預覽截圖"]
+    Runtime --> PyWorker["純無狀態 Python 算子（PyMuPDF + Pillow）"]
+    Runtime --> Store["單一寫入者 Store：工作狀態、成果版本、證據索引"]
+    PyWorker -. "僅輸出原始圖檔／座標 JSON" .-> Store
+```
+
+- **Node.js（Pi SDK 宿主）全權擁有 `Store` 與有狀態工具：**
+    
+      
+    1. `save` / `revise` / `reopen` / `export`（Markdown/JSON 驗證、`nh3` 同級安全 HTML 生成、ZIP 打包）全部收歸 TypeScript/Node 執行，讓 `PDF Context Extension` 與版本狀態同處一個記憶體空間，徹底消除跨語言狀態同步問題。
+        
+          
+        
+    2. **Tesseract.js 6.0.1 OCR** 本來就是 Node 套件，直接由 Node 宿主呼叫 Worker，不再繞經 Python。
+        
+          
+        
+    3. **Saved-Reading Preview（預覽截圖）** 直接使用 Electron 內建的隱藏 `BrowserWindow` / `webContents.capturePage()` 渲染本地安全 HTML，**直接砍掉獨立安裝 Playwright Python 與第二套 Chromium Headless Shell 的龐大打包負擔**。
+        
+          
+        
+- **Python 退化為「純無狀態 PDF 算子（Stateless PDF Engine）」：** Python（PyMuPDF + Pillow）只負責接收「提取文字／字型／座標、擷取原生圖片、渲染指定 DPI 區域截圖」的無狀態指令，把檔案寫入工作區後回傳 Metadata 給 Node。這讓 Python 端不再持有任何 Job State 或版本鎖，PyInstaller 打包體積與出錯率都會大幅下降。
+    
+      
+    
+
+### 2. 用「嚴格讀入控制＋分段 Compaction」取代「頻繁 `context_edit`」
+
+在設計 Pi 的 `PDF Context Extension` 時，建議將策略改為：
+
+  
+
+1. **源頭控管（Tiered Intake by Default）：** 修改 PDF 檢視與 OCR 工具的預設回傳結構，**禁止預設在單次 Tool Result 中傾倒近 20 萬字的 `text` + `layout` + `words` 重疊結構**。預設只回傳頁面摘要、區塊邊界、異常警告與精確讀取指標（Pointers）；模型需要細部座標、特定範圍或原生像素時，再零阻力讀取（保留自由完整存取權，但不預設塞爆第一輪 Context）。
+    
+      
+    
+2. **維持長段 Append-Only，僅在水位線或章節邊界觸發投影：** 平時不透過 `context_edit` 逐輪塗改歷史訊息，以確保 Nexus 上的 Prompt Cache 命中率最大化。只有當 Token 水位接近模型有效視窗上限，或模型明確宣告完成一個獨立大章節並已成功 `save` 時，才一次性利用 `session_before_compact` 搭配 `context_edit` 將已封存頁面的大型圖片與原始 OCR 投影為輕量引用。
+    
+      
+    
+
+### 3. 建立結構化的「工作狀態帳本（Working Ledger）」，讓 Compaction 100% 可靠
+
+為了讓 `session_before_compact` 不靠猜測就能保護關鍵資訊，應在 `save` / `revise`（或獨立的狀態更新工具）中強制維護一份結構化的 `WorkingLedger` JSON，並在每次 Compaction 時**由程式碼確定性地置頂注入（Deterministic Injection）**，不交給 LLM 摘要決定去留：
+
+  
+
+- **有效任務約束（Effective Constraints）：** 使用者原始要求、目標頁碼範圍、特殊格式規則。
+    
+      
+    
+- **已落盤版本與頁面映射摘要（Saved Version & Page Map Summary）：** 目前最新 `version_id`、已完成頁碼、尚未處理（`unprocessed`）頁碼。
+    
+      
+    
+- **未發布的候選成果（Pending / Rejected Candidates）：** 若最近一次 `save`/`revise` 因局部驗證失敗而被拒，必須在帳本中保留該次已生成的內容區塊指標，確保 Compaction 後模型能直接重用而非重新生成。
+    
+      
+    
+- **顯式跨頁依賴（Open Cross-Page Dependencies）：** 在 `save` / `revise` Schema 中新增一個選填欄位 `open_dependencies`（例如：`{"type": "continued_table", "from_pdf_page": 14, "header_columns": [...], "evidence_ref": "..."}`），讓模型在存檔時順手標記未閉合的跨頁表格或段落，Extension 只要檢查 `open_dependencies` 雙向綁定的 `evidence_ref` 就絕對不會誤刪舊表頭。
+    
+      
+    
+
+### 4. 順手還清舊系統的工具人體工學技術債
+
+既然不考慮向下相容，重構時應一併修正舊系統在實測中暴露的摩擦點：
+
+  
+
+- **廢除「每次局部修改都必須重傳整本書的 `content_updates` 頁碼映射」：** 舊版 `revise` 強制要求非空連續 `remove_ids` 加上完整頁面映射表，導致在長文件中極易出錯且浪費 Output Tokens。新工具契約應支援純 `append_blocks`、`patch_blocks` 與**局部頁面映射更新（Partial Page-Map Patch）**，由宿主程式在底層自動合併並驗證整份映射的完整性。
+    
+      
+    
+
+## 三、 比較表與驗證清單修正建議
+
+若要將這份提案作為團隊的技術設計基線，建議對照以下修正更新你們的評估表與 PoC 驗證清單：
+
+  
+
+|**評估維度**|**原提案判斷**|**修正後建議與對策**|
+|---|---|---|
+|**框架排名**|1. Pi SDK<br><br>  <br>  <br><br>2. Deep Agents<br><br>  <br>  <br><br>3. LangGraph|**1. Pi SDK（搭配 Node 主控重構）**<br><br>  <br>  <br><br>**2. LangGraph（若維持純 Python 主控）**<br><br>  <br>  <br><br>**3. Deep Agents（預設卸載策略與需求衝突，魔改成本高於自建）**|
+|**Context 釋放策略**|Agent 隨時決定釋放，透過 `context_edit` 替換舊訊息|平時保持 Append-Only 保護 Prompt Cache；僅在章節存檔邊界或高水位時批次執行 `context_edit`／Compaction|
+|**跨進程 Store 邊界**|Node `Policy` 與 Python `Tools` 共用 `Store`|**Node 獨佔 Session、版本與 `Store` 寫入權；Python 降級為純無狀態 PDF／影像提取算子**|
+|**跨頁依賴與草稿保護**|放在 `session_before_compact` 規則與摘要組裝中處理|**在存檔契約中加入結構化 `open_dependencies` 與 `pending_candidate_ref`，由 Extension 確定性注入，不依賴 LLM 摘要記憶**|
+
+**正式採用 Pi SDK 前，建議將原本的「三個關鍵邊界」擴充為五個必測驗收點（PoC Checklist）：**
+
+  
+
+1. **Nexus 雙協定與非標欄位容錯：** 實測 Pi SDK 在 `[http://127.0.0.1:3939/v1/chat/completions](http://127.0.0.1:3939/v1/chat/completions)`（及 Responses 路由）下對圖片輸入、Tool Calls、以及 `service_tier`／自訂 reasoning 欄位的相容性。
+    
+      
+    
+2. **串流中斷與超時恢復（關鍵補漏）：** 透過既有的 로컬 Fault Relay 注入 90 秒延遲與「SSE 串流傳送半截 Tool JSON 斷線」，驗證 Pi SDK 是否會執行殘缺 JSON、能否安全重試且不重複執行已提交的寫入工具。
+    
+      
+    
+3. **Cache 感知型 Context Projection：** 在 Nexus 上連續發送多輪請求，實測執行 `context_edit` 前後回報的 `cached_tokens` 變化，確認批次釋放策略不會造成未快取 Token 暴增。
+    
+      
+    
+4. **釋放後精確取回（Exact Re-retrieval）：** 驗證將圖片與 OCR 替換為引用標籤後，模型能否在後續輪次精確取回相同 SHA-256 的原生 PNG 像素與指定 JSON Pointer 欄位。
+    
+      
+    
+5. **Compaction 跨頁依賴與未發布草稿延續：** 模擬「第 14 頁表格跨至第 15 頁＋一次因驗證失敗被拒的 `revise` 草稿」後強制觸發 `session_before_compact`，確認壓縮後的新 Context 仍完整保留表頭定義、有效任務要求與待重用的草稿內容。
+    
+      
+    
+
+你們目前打算將 `save`／`revise`／`export` 與工作區狀態管理一併遷入 Node.js（讓 Python 徹底退化為無狀態 PyMuPDF 算子），還是傾向保留 Python 端的作品管理邏輯並透過 MCP/IPC 對接 Pi SDK？
+

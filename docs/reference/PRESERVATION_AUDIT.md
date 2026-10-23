@@ -9,15 +9,15 @@ Updated 2026-10-23, Asia/Hong_Kong. This records documentation scope, technical-
 | Initial supplied-export integrity | All 5,222 listed files matched recorded byte sizes and SHA-256 during the initial 2026-10-22 review |
 | Visible conversation | All 207 user/assistant messages accounted for: 47 user, 48 final assistant records, 112 commentary records |
 | Local discussion copies | Those 207 messages plus the inherited handoff: 208 exact event JSON records and readable text views |
-| Attachments | All 30 exact attachments bundled: 28 pasted-text files and two forum HTML files stored as inert text |
+| Attachments | All 30 original attachments retain exact bytes. ATT-31 adds an exact excerpt from a separately supplied document. |
 | Forum figures | All 14 ATT-01 research illustrations and all 10 ATT-02 substantive image pages retain original decoded WebP bytes. Offline readers are local. |
 | Continuing requirements | Relevant SUP-01/02 verbatim excerpt ranges include source and excerpt hashes. The rebuild does not import old active documents/defaults/permissions. |
-| Historical engineering details | SUP-03–12 retain selected input, tool, protocol, export and lifecycle facts. Maintained explanations distinguish history, later corrections and current requirements. |
+| Historical engineering details | SUP-03–27 retain selected input, tool, protocol, export and lifecycle facts. Maintained explanations distinguish history, later corrections and current requirements. |
 | Later requests | LIVE-01 through LIVE-09 preserved locally, including self-containment, technical detail and direct-conversation review |
-| Point ledger | 333 entries. These include 102 foundations, 116 context/state and 65 delivery/recovery points. Another 29 map owners/scope, and 21 preserve additional details. |
-| Source dispositions | 259 sources. Of these, 256 map to retained points. One saved final message is empty, and two messages concern export administration. No classification remains unresolved. |
-| Development-detail map | All 333 point IDs mapped: 256 explained, 59 historical references, 18 scope notes |
-| Bundled-file integrity | 487 files registered with local hashes and a separate versioned bundle manifest. Verification scope appears below. |
+| Point ledger | 356 entries. These include 102 foundations, 116 context/state and 65 delivery/recovery points. Another 29 map owners/scope, and 44 preserve additional details. |
+| Source dispositions | 275 sources. Of these, 272 map to retained points. One saved final message is empty, and two messages concern export administration. No classification remains unresolved. |
+| Development-detail map | All 356 point IDs mapped: 256 explained, 82 historical references, 18 scope notes |
+| Bundled-file integrity | 503 files registered with local hashes and a separate versioned bundle manifest. Verification scope appears below. |
 
 The [point ledger](POINT_COVERAGE.json), [detail map](DEVELOPMENT_COVERAGE.json), [source dispositions](SOURCE_COVERAGE.json) and [source index](SOURCE_INDEX.md) serve different purposes. Counts are not independent feature counts: some owner mappings overlap the detailed records, and a point can contain several connected nuances. A source ID alone is not an adequate technical explanation.
 
@@ -82,8 +82,8 @@ A clean copy was made from the Git index, containing only intended versioned fil
 The copy passed:
 
 - Documentation and image links, anchors, source IDs, all retained point/detail mappings and source dispositions.
-- Hash/size verification of all 487 bundled files, including exact event/attachment identity checks and the 24 figures.
-- Local lookup for inherited/empty/final messages, text/forum attachments, all twelve supporting excerpts and a later human request.
+- Hash/size verification of all 503 bundled files, including exact event/attachment identity checks and the 24 figures.
+- Local lookup for inherited/empty/final messages, text/forum attachments, all 27 supporting excerpts and a later human request.
 - Exact event-JSON reading, offline forum-reader routing and local later-request reading.
 - A negative check: a modified copied source was refused on hash mismatch, then the test copy was restored.
 - Syntax parsing of the two standard-library utilities.
@@ -160,6 +160,56 @@ The repository-only copy passed 24 checks with outside source reads denied. It v
 The five new support files contain 18 verified excerpt ranges or sentence spans. The old repository's HEAD, status and 103 tracked or nonignored file hashes remained unchanged. The user's untracked `docs_bundle.txt` remained unchanged and outside the commit.
 
 No new provider request, conversion, dependency installation, benchmark or app implementation followed from this review. Q1–Q3 remain open. The work adds technical explanations and corrects overstrong wording within the existing architecture.
+
+<a id="subsystem-detail-review"></a>
+## Subsystem details and separately recovered source
+
+The next review started at `ed13c4e`. The user identified two packaging concerns and twenty detail groups across five subsystems. Three reviewers inspected separate areas, wrote explanations and cross-reviewed another area. Root checked source identity, integrated provenance and compared changed wording with original records. Q1–Q3 and the architecture owners remain unchanged.
+
+### Repository state and source identity
+
+The user reported an older uploaded ZIP alongside a newer text bundle. At review start, local HEAD and remote `master` both identified `ed13c4e444075934b390a6584dc6f7ee644605c9`. That remote already included the 333-point review and SUP-08–12. No local `docs_bundle.txt` was present at that time. These observations establish repository state, not the identity of the user's earlier uploaded archive.
+
+The separate `conversation 2.md` was available in the user-identified document collection. Lines 109–309 contain the missing first external response, including 8,631 characters. The review retained that exact excerpt as ATT-31 with the full-document and excerpt hashes. ATT-04 instead matches EVT-0349 after surrounding whitespace removal. This demonstrates duplicate exported content, without proving the clipboard's cause or reconstructing unseen chat events.
+
+ATT-31 is not retroactively assigned to EVT-0350. It remains a separately recovered proposal. The [foundation reference](01-foundations-and-frameworks.md#supplemental-first-response) explains its Node/Python ownership diagram, working-ledger sketch and five PoC cases. It also preserves later qualifications. The actual sketch uses `continued_table`, `from_pdf_page`, `header_columns` and `evidence_ref`. The field names quoted in the new audit differed from that passage.
+
+### Restored mechanics and corrected claims
+
+| Area | Preserved detail and important correction |
+| --- | --- |
+| Evidence selection | Separate roots for first-call structured values, raw MCP wrappers and preserved arguments. `arguments:true` addresses `/arguments`, not raw content blocks. |
+| Native image restoration | `coverage.images[].raw_pointer` selects an individual image block for native input. Whole-record base64 text and descriptions provide no pixels. |
+| Shape and ranges | `describe:true`, exact types/sizes, index paging and exclusive range ends. String offsets count Unicode code points, not UTF-8 bytes. |
+| Released diagnostics | Recursive named-field copying and RFC 6901 escaping preserve selected diagnostics. Fields omitted before projection cannot reappear through this helper. |
+| Coordinates | Unrotated top-left page points require crop, scale and rotation information. `bbox_pixels` and `bbox_pdf` belong to OCR word records. |
+| Embedded images | Displayed xrefs, zero/unextractable references, mask checks and registered renders have distinct meanings. Mask rejection was app policy, not a universal library limitation. |
+| OCR | Historical PSM choices, missing OSD data and one Node process per selected page. The below-80 warning counts individual low-confidence words. |
+| Preview | Viewport/scroll settings and natural/display image sizes support reading checks. The 15-second setting does not bound every operation or cleanup. |
+| CommonMark and language | CJK delimiter boundaries motivate optional safe `strong` elements. Document `language` affects HTML `lang`, without translating content or selecting OCR languages. |
+| Historical schema | Content, page, block and saved-envelope fields retain their ownership. `metrics` is inside `content`. `unmapped_disposition` is a save argument. |
+| Complete status | Nonempty uncertainties or unprocessed pages fail the historical structural check. Limitations and unknown printed labels do not independently trigger that check. |
+| Recent draft arguments | Sliding Verbatim Window can avoid an immediate reread for a small edit. Fixed K and unconditional retention/cache guarantees remain rejected prescriptions. |
+| Windows publication | Temporary-file flush/fsync precedes replacement. Separate read/write allowlists include different errors, with seven sleeps across at most eight attempts. |
+| Scripts | Exact environment names, interpreter flags and timeout boundaries. Inline stdout and stderr each contain at most 16,000 bytes, with complete files retained separately. |
+| Supervision and decoding | Job Object creation/handle limits and Pillow verification versus pixel loading remain distinct. Neither certifies complete, faithful requested work. |
+| Provider configuration | Exact reserved keys and parsed URL guards prevent particular local overrides. They do not establish route compatibility. |
+| Usage | Absent-key fallback differs from explicit null. Detail objects do not merge. Failed-attempt numeric filtering differs from the normalizer's raw usage object. |
+| Backoff | Double-capped positive jitter, queue-only delay and Retry-After precedence retain original durable budgets. Waiting does not create more allowed attempts. |
+| Error labels | HTTP-derived `stream_incomplete` and local `incomplete_stream` have different origins. Similar labels do not prove one cause or retry eligibility. |
+| Fault relay | R1 rejects locally before upstream connection. R2 cuts after a qualifying complete frame and 64 accumulated Unicode alphanumeric characters. These are closed experiment mechanics. |
+
+Current official checks qualified the historical Playwright launch note. The old code passed no launch timeout, while its guidance described 30 seconds. The checked current launch reference states 180000 milliseconds. The guide preserves both identities without inferring which historical dependency produced that default. It also distinguishes CommonMark syntax rules and PyMuPDF capabilities from old app policies.
+
+SUP-13–27 preserve selected code and tool-contract ranges with full-source and excerpt hashes. They match the original repository's recorded Git commit. Available export workspace copies match those files byte-for-byte. Some files were absent from that export workspace subset. Their records identify the original Git snapshot as the source instead. No executable old module or closed-job permission becomes an active owner.
+
+The source and point ledgers now contain 275 sources and 356 points. The 23 added points include three supplemental-proposal groups and twenty subsystem groups. These are navigation records, not independent features or proof that every possible detail is preserved.
+
+The repository-only copy passed 40 checks with external source reads denied. The documentation check covered 25 Markdown files, 503 bundled files and all 356 point/detail mappings. It included local lookup of ATT-31 and every supporting excerpt. Source verification preserved all 486 prior source payloads byte-for-byte, apart from the separate navigation index. The 56 new supporting ranges match their recorded source and excerpt hashes.
+
+Fourteen new supporting files match both the export workspace and the original Git snapshot. SUP-20 uses the original Git snapshot because the export workspace lacks `ocr/worker.cjs`. ATT-31's source-document and exact-range hashes also match. The old repository's HEAD, existing status and all 103 tracked or nonignored files remain unchanged. No provider call, conversion or runtime implementation occurred.
+
+The wording review used ASD-STE100 clarity rules and source-aware cross-reading. It retained API-specific vocabulary and status descriptions where the actor was irrelevant. Counts and mechanical scans supplement semantic review rather than proving complete preservation. Fresh delivery archives and text bundles identify their source commit, so separately generated snapshots can be compared explicitly.
 
 ## Original-project boundary and remaining limits
 

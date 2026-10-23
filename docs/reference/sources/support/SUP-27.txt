@@ -1,0 +1,90 @@
+SUP-27 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/reading.py
+Full-source SHA-256: 4f160b3dc23ae60e4f51cb7a50d73475c71e37650eb8c59f94056671f12f3b7d
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 26-60 ---
+async def inspect_preview(
+    workspace: Workspace,
+    document: str,
+    version: str | None = None,
+    width: int = 1200,
+    height: int = 900,
+    scroll_y: int = 0,
+    full_page: bool = False,
+) -> dict:
+    for name, value, minimum in [
+        ("width", width, 1),
+        ("height", height, 1),
+        ("scroll_y", scroll_y, 0),
+    ]:
+        if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+            raise ValueError(f"{name} must be an integer >= {minimum}")
+    if full_page and scroll_y:
+        raise ValueError("Use scroll_y for a viewport, or full_page for the entire reading")
+    saved = workspace.reopen(document, version)
+    folder = workspace.task(document) / "versions" / saved["version"]
+    manifest = read_json(folder / "manifest.json")
+    # Freeze verified bytes, not mutable task assets. No temporary HTML rewrite.
+    files = {name: (folder / name).read_bytes() for name in manifest["files"]}
+    if any(digest(data) != manifest["files"][name] for name, data in files.items()):
+        raise ValueError("Saved artifact changed before preview inspection")
+    run = workspace.task(document) / "evidence" / f"preview-{uuid.uuid4().hex}"
+    run.mkdir()
+    status = {
+        "document": document,
+        "version": saved["version"],
+        "preview_sha256": manifest["files"]["preview.html"],
+        "status": "running",
+        "viewport": {"width": width, "height": height},
+        "requested_scroll_y": scroll_y,
+        "full_page": full_page,
+
+
+--- Original lines 114-156 ---
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch()
+            try:
+                context = browser.new_context(
+                    viewport={"width": width, "height": height},
+                    device_scale_factor=1,
+                    java_script_enabled=False,
+                    service_workers="block",
+                    accept_downloads=False,
+                )
+                context.route("**/*", route_resource)
+                page = context.new_page()
+                page.set_default_timeout(15000)
+                page.goto(origin + "preview.html", wait_until="load")
+                # Automation evaluation works with page scripts disabled. Font/image completion
+                # and actual dimensions describe this rendering, not semantic acceptance.
+                page.evaluate("document.fonts.ready")
+                page.evaluate("y => window.scrollTo(0, y)", scroll_y)
+                presentation = page.evaluate("""() => ({
+                    scroll_y: window.scrollY,
+                    document_width: document.documentElement.scrollWidth,
+                    document_height: document.documentElement.scrollHeight,
+                    images: Array.from(document.images, im => ({
+                        file: im.getAttribute('src'), loaded: im.complete && im.naturalWidth > 0,
+                        natural_width: im.naturalWidth, natural_height: im.naturalHeight,
+                        displayed_width: im.width, displayed_height: im.height
+                    }))
+                })""")
+                page.screenshot(path=str(output), full_page=full_page, type="png", scale="css")
+                return {
+                    **presentation,
+                    "browser": browser.version,
+                    "blocked_resources": blocked,
+                    "warnings": [
+                        "Preview pixels are reading evidence, not delivered source artwork "
+                        "or semantic certification",
+                        *(
+                            ["One or more preview images failed to load"]
+                            if any(not im["loaded"] for im in presentation["images"])
+                            else []
+                        ),
+                    ],
+

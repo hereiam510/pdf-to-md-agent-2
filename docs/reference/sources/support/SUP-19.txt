@@ -1,0 +1,121 @@
+SUP-19 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/ocr.py
+Full-source SHA-256: 4466ae290173dba1032920dc34e1487ed1ebb2db5c274e55f29a3bd2741aa3eb
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 29-61 ---
+    async def recognize(
+        self,
+        document: str,
+        pages: list[int],
+        languages: list[str] | None = None,
+        dpi: int = 300,
+        region: list[float] | None = None,
+        psm: int = 3,
+        timeout: float = 120,
+    ) -> dict[str, Any]:
+        """Recognize fresh page/region images with local language data, positions and warnings.
+
+        languages defaults to chi_tra + eng. Coordinates match inspect/render_page.
+        Select PSM 3 (auto), 6 (block), 7 (line), 11 (sparse), etc.; OSD requires extra data.
+        No source/delivered graphics are changed. Inspect OCR and visible source before composing.
+        """
+        languages = ["chi_tra", "eng"] if languages is None else languages
+        if (
+            not languages
+            or len(set(languages)) != len(languages)
+            or any(not re.fullmatch(r"[a-z0-9_]+", language) for language in languages)
+        ):
+            raise ValueError("Select distinct OCR language codes, such as ['chi_tra', 'eng']")
+        if not pages or len(set(pages)) != len(pages):
+            raise ValueError("Select one or more distinct physical pages")
+        if (
+            not isinstance(psm, int)
+            or isinstance(psm, bool)
+            or psm not in {3, 4, 5, 6, 7, 8, 9, 10, 11, 13}
+        ):
+            raise ValueError("Use a recognition PSM in 3..11 or 13; OSD is not installed")
+        if not 0 < timeout <= 300:
+            raise ValueError("timeout must be in (0, 300] seconds per page")
+
+
+--- Original lines 82-100 ---
+        try:
+            for number in pages:
+                evidence = self.workspace.render(document, number, dpi, region)
+                run = batch / f"page-{number}"
+                run.mkdir()
+                recognition = run / "recognition.json"
+                request = {
+                    "image": evidence["path"],
+                    "output": str(recognition),
+                    "languages": languages,
+                    "dpi": dpi,
+                    "psm": psm,
+                }
+                write_json(run / "request.json", request)
+                command = [node, str(self.directory / "worker.cjs"), str(run / "request.json")]
+                execution = await run_process(run, command, timeout)
+                page = {
+                    "pdf_page": number,
+                    "evidence": evidence,
+
+
+--- Original lines 110-163 ---
+                data = read_json(recognition)
+                page.update(data)
+                if not data["text"].strip():
+                    page["warnings"].append("No text recognized; inspect source or change settings")
+                words = []
+                # TSV positions are render pixels. Supply a second unrotated PDF-point rectangle.
+                with self.workspace.source(document) as pdf:
+                    source_page = self.workspace.page(pdf, number)
+                    rotated_clip = pymupdf.Rect(evidence["region"]) * source_page.rotation_matrix
+                    origin = (rotated_clip * (dpi / 72)).irect.tl
+                    fields = (
+                        "level page_num block_num par_num line_num word_num "
+                        "left top width height conf text"
+                    ).split()
+                    for row in csv.DictReader(
+                        io.StringIO(data["tsv"]),
+                        fieldnames=fields,
+                        delimiter="\t",
+                        quoting=csv.QUOTE_NONE,
+                    ):
+                        if row["level"] != "5" or not row["text"].strip():
+                            continue
+                        x, y, width, height = [
+                            int(row[k]) for k in ("left", "top", "width", "height")
+                        ]
+                        box = pymupdf.Rect(
+                            x + origin.x, y + origin.y, x + width + origin.x, y + height + origin.y
+                        ) * (72 / dpi)
+                        box *= source_page.derotation_matrix
+                        words.append(
+                            {
+                                "text": row["text"],
+                                "confidence": float(row["conf"]),
+                                "bbox_pixels": [x, y, x + width, y + height],
+                                "bbox_pdf": list(box),
+                                "block": int(row["block_num"]),
+                                "line": int(row["line_num"]),
+                            }
+                        )
+                page["words"] = words
+                low = sum(w["confidence"] < 80 for w in words)
+                if low:
+                    page["warnings"].append(f"{low}/{len(words)} words have confidence below 80")
+                if execution["stderr"].strip():
+                    page["warnings"].append(execution["stderr"])
+                if re.search(
+                    r"Failed loading language|Error opening data file|initialization failed",
+                    execution["stderr"],
+                    re.I,
+                ):
+                    page["status"] = "failed"
+                    page["warnings"].append("Requested language loading is not established")
+                    result["pages"].append(page)
+                    result["status"] = "failed"
+

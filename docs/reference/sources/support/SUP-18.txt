@@ -1,0 +1,27 @@
+SUP-18 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/preview.py
+Full-source SHA-256: 88c3952447e0c75982fa4c0805a4e1129afb7fce85c2a4443734e5c74586ead9
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 22-23 ---
+def rendered(markdown: str) -> str:
+    return MarkdownIt("commonmark", {"html": True}).enable("table").render(markdown)
+
+
+--- Original lines 47-51 ---
+def preview(title: str, markdown: str, version: str, language: str = "und") -> str:
+    tags = set(nh3.ALLOWED_TAGS) | {"table", "thead", "tbody", "tr", "th", "td", "sup", "sub"}
+    attributes = {key: set(value) for key, value in nh3.ALLOWED_ATTRIBUTES.items()}
+    for tag in ("td", "th"):
+        attributes[tag] = {"colspan", "rowspan", "scope"}
+
+
+--- Original lines 62-66 ---
+    body = nh3.clean(
+        rendered(markdown), tags=tags, attributes=attributes, attribute_filter=filter_url
+    )
+    return f"""<!doctype html>
+<html lang="{html.escape(language, quote=True)}"><head><meta charset="utf-8">
+

@@ -14,7 +14,7 @@ The user's technical-detail concern led to a review of the synthesis at `e243431
 
 [TECHNICAL_TERMS](TECHNICAL_TERMS.md) makes original names discoverable. [TECHNICAL_DETAIL_REVIEW](reference/TECHNICAL_DETAIL_REVIEW.md) explains specific deficiencies and repairs. Matching counts does not prove completeness.
 
-All 207 visible discussion messages, the inherited product handoff, all 30 attachments, 24 substantive forum figures and selected continuing source excerpts are [bundled locally](reference/sources/INDEX.md). Exact events and attachments retain their bytes. Forum HTML is inert text with offline reading views. The original export remains untouched, but is no longer needed for development or cited-source lookup. Historical paths inside quotations are provenance, not required checkout locations.
+The [local source bundle](reference/sources/INDEX.md) includes all 207 visible discussion messages, the inherited handoff and all 30 original exported attachments. It also includes ATT-31, 24 substantive forum figures and selected supporting excerpts. Exact events and attachments retain their bytes. Forum HTML is inert text with offline reading views. The original export remains untouched, but is no longer needed for development or cited-source lookup. Historical paths inside quotations are provenance, not required checkout locations.
 
 ## Implementation status
 
@@ -37,6 +37,8 @@ The later attachment review found concrete historical details missing from maint
 Selected SUP-03–07 excerpts now support these explanations inside the repository. Historical filenames, versions and mechanisms retain their original status. They create no new benchmark obligation, runtime implementation or dependency pin. [The gap-review record](reference/PRESERVATION_AUDIT.md#verified-historical-detail-gaps) states the evidence, corrections and review limits.
 
 A further seven-point review restored outbound request settings, safe error handling, stream metadata cases, Windows replacement outcomes and preview-worker lifetime. It also expanded retry-budget examples and the correction to blind summarization. SUP-08–12 preserve the relevant historical evidence locally. The [review disposition](reference/PRESERVATION_AUDIT.md#seven-detail-review) distinguishes genuine omissions from overstrong rules and current official API changes. Q1–Q3 and the reconstruction baseline remain unchanged.
+
+The subsequent subsystem review restored exact evidence-reader, PDF, OCR, document-schema, Windows, script and provider mechanics. It also recovered ATT-31 from a separate `conversation 2.md`, with its original proposal status. SUP-13–27 retain selected historical source code as inert text. Maintained explanations distinguish actual field locations, byte/code-point units and failure conditions. The [subsystem audit](reference/PRESERVATION_AUDIT.md#subsystem-detail-review) records corrections, provenance and synchronization scope. The ledger now contains 356 points, without adding implementation prerequisites.
 
 A working Python 3.9+ interpreter is the only dependency of the documentation utilities. The current portable check uses a standalone bundled Python 3.12.14 interpreter outside both repositories. The initial review used an existing Python 3.13.16 interpreter read-only, with bytecode writing disabled. No dependency installation or global settings change is required.
 

@@ -1996,5 +1996,143 @@
     "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#review-and-version-dependencies",
     "treatment": "explained",
     "note": "Restore illustrative produced_revision and preview_on_commit names. Separate commit_status and preview_status do not make commit and preview one atomic effect."
+  },
+  {
+    "point_id": "H-022",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#supplemental-first-response",
+    "treatment": "historical-reference",
+    "note": "Preserve the separate first response and its Node controller, OCR worker, Electron preview and stateless Python proposal. Later architecture choices superseded it."
+  },
+  {
+    "point_id": "H-023",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#supplemental-first-response",
+    "treatment": "historical-reference",
+    "note": "Preserve exact illustrative open_dependencies fields and candidate references. Deterministic injection cannot guarantee correct interpretation or complete compaction."
+  },
+  {
+    "point_id": "H-024",
+    "destination": "docs/reference/01-foundations-and-frameworks.md#supplemental-first-response",
+    "treatment": "historical-reference",
+    "note": "Preserve protocol, interruption, cache, exact retrieval and compaction scenarios as historical proposals. They are not completed checks or current trial permissions."
+  },
+  {
+    "point_id": "H-025",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#historical-evidence-access",
+    "treatment": "historical-reference",
+    "note": "Distinguish structured first-call selection, raw MCP wrappers and preserved argument roots. Empty selection and argument access retain their original scope."
+  },
+  {
+    "point_id": "H-026",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#historical-evidence-access",
+    "treatment": "historical-reference",
+    "note": "Individual image-block pointers restore native image input. Whole-record base64 text and shape descriptions do not restore vision."
+  },
+  {
+    "point_id": "H-027",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#historical-evidence-access",
+    "treatment": "historical-reference",
+    "note": "Preserve describe metadata, code-point string offsets, array ranges and index paging. Coverage of one selected value does not establish whole-record completeness."
+  },
+  {
+    "point_id": "H-028",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#historical-release-diagnostics",
+    "treatment": "historical-reference",
+    "note": "Preserve recursive named diagnostic fields and escaped JSON Pointer paths from the selected reply. The helper cannot recover fields omitted earlier."
+  },
+  {
+    "point_id": "H-029",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#historical-pdf-coordinates",
+    "treatment": "historical-reference",
+    "note": "Explain unrotated top-left page points, crop origin and rotation. bbox_pixels and bbox_pdf belong to OCR word records, not render_page receipts."
+  },
+  {
+    "point_id": "H-030",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#historical-image-xrefs-and-masks",
+    "treatment": "historical-reference",
+    "note": "Explain displayed image xrefs, extraction checks and registered region renders. Mask rejection was an app policy, not proof that composition is impossible."
+  },
+  {
+    "point_id": "H-031",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-ocr-settings-and-worker",
+    "treatment": "historical-reference",
+    "note": "Preserve segmentation modes, missing OSD data, per-word confidence warnings and the page-specific Node process. These do not mandate OCR or certify fidelity."
+  },
+  {
+    "point_id": "H-032",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#historical-preview-parameters",
+    "treatment": "historical-reference",
+    "note": "Preserve viewport defaults, scroll and image measurements, timeout scope and historical launch guidance. Current library defaults remain distinct from recorded old notes."
+  },
+  {
+    "point_id": "H-033",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#commonmark-emphasis-and-language",
+    "treatment": "historical-reference",
+    "note": "Explain flanking-rule ambiguity and the safe strong-element alternative without mandatory rewriting or a universal preview stage."
+  },
+  {
+    "point_id": "H-034",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#commonmark-emphasis-and-language",
+    "treatment": "historical-reference",
+    "note": "The Content language field controls preview HTML lang. It does not translate source text or select OCR recognition languages."
+  },
+  {
+    "point_id": "H-035",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#historical-content-schema",
+    "treatment": "historical-reference",
+    "note": "Preserve Content, Page, Block and snapshot fields, complete-state rejection and unmapped dispositions. Structural validity remains distinct from source-led acceptance."
+  },
+  {
+    "point_id": "H-036",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#prompt-cache-and-cost",
+    "treatment": "historical-reference",
+    "note": "Recent draft arguments can support immediate small edits without rereading. The proposal does not justify hard K, permanent retention or guaranteed cache savings."
+  },
+  {
+    "point_id": "H-037",
+    "destination": "docs/design/DOCUMENT_ENGINE.md#historical-json-write-and-read",
+    "treatment": "historical-reference",
+    "note": "Preserve temporary files, flush/fsync, separate Windows retry allowlists and backoff. Successful replacement does not alone guarantee crash durability."
+  },
+  {
+    "point_id": "H-038",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#script-credential-boundary",
+    "treatment": "historical-reference",
+    "note": "Preserve environment names, isolated UTF-8 Python flags and timeout scope. Each inline stream is capped at 16000 bytes while full files remain."
+  },
+  {
+    "point_id": "H-039",
+    "destination": "docs/design/CONTEXT_AND_EVIDENCE.md#historical-decoding-and-process-names",
+    "treatment": "historical-reference",
+    "note": "Explain Job Object handle and assignment limits and Pillow verification versus pixel loading. Neither process supervision nor decoding proves complete faithful work."
+  },
+  {
+    "point_id": "H-040",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-provider-configuration-guards",
+    "treatment": "historical-reference",
+    "note": "Preserve endpoint parsing, exact loopback exceptions and reserved request keys. Local validation does not establish upstream compatibility."
+  },
+  {
+    "point_id": "H-041",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-usage-normalization",
+    "treatment": "historical-reference",
+    "note": "Distinguish absent-key fallback, explicit null, nonmerged detail objects and failed-attempt numeric filtering. Reported usage does not establish actual billing."
+  },
+  {
+    "point_id": "H-042",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#historical-retry-delay",
+    "treatment": "historical-reference",
+    "note": "Preserve default bounds, nonnegative jitter, Retry-After precedence and durable wait timestamps. Neither header delay nor resume increases original task allowances."
+  },
+  {
+    "point_id": "H-043",
+    "destination": "docs/design/INTEGRATION_AND_MODEL_BOUNDARY.md#historical-machine-error-labels",
+    "treatment": "historical-reference",
+    "note": "Explain context, queue, proxy, protocol and incomplete-stream labels separately. A diagnostic name does not prove root cause or retry eligibility."
+  },
+  {
+    "point_id": "H-044",
+    "destination": "docs/design/EXECUTION_AND_DELIVERY.md#historical-fault-relay",
+    "treatment": "historical-reference",
+    "note": "Preserve the local rejection gate and complete-frame alphanumeric cut trigger. These were closed experiment mechanisms, not product dependencies or new trials."
   }
 ]

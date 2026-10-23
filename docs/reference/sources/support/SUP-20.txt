@@ -1,0 +1,62 @@
+SUP-20 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: ocr/worker.cjs
+Full-source SHA-256: 4495b211cb29b5af14e8a39ef276b7f007bb8861d1450b44c5315b771fdb12eb
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 1-53 ---
+// Local, one-request OCR worker. No model, network downloads or source-file modification.
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const zlib = require('node:zlib');
+const { createWorker } = require('tesseract.js');
+const version = require('tesseract.js/package.json').version;
+
+async function main() {
+  const request = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+  const languageInfo = [];
+  const languageDirectory = path.join(process.cwd(), 'languages');
+  fs.mkdirSync(languageDirectory, { recursive: true });
+  // Validate every requested language before initializing any recognition. No silent fallback.
+  for (const language of request.languages) {
+    if (!/^[a-z0-9_]+$/.test(language)) throw new Error(`Invalid language code: ${language}`);
+    let entry;
+    try { entry = require.resolve(`@tesseract.js-data/${language}/package.json`); }
+    catch { throw new Error(`Missing OCR language '${language}'; install its data package`); }
+    const filename = path.join(path.dirname(entry), '4.0.0_best_int', `${language}.traineddata.gz`);
+    const compressed = fs.readFileSync(filename);
+    const bytes = zlib.gunzipSync(compressed);
+    fs.writeFileSync(path.join(languageDirectory, `${language}.traineddata.gz`), compressed);
+    languageInfo.push({ code: language, package: require(entry).version,
+      sha256: crypto.createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length });
+  }
+  let worker;
+  const progress = [];
+  try {
+    const options = { langPath: languageDirectory, cacheMethod: 'none', gzip: true,
+      logger: event => { progress.push({ status: event.status, progress: event.progress }); },
+      errorHandler: error => { throw error; } };
+    // Cold initialization per language avoids treating a partial multi-language init as proof.
+    // Separate workers also avoid stale engine state across language reinitialization.
+    for (const info of languageInfo) {
+      worker = await createWorker(info.code, 1, options);
+      info.initialization = 'succeeded';
+      await worker.terminate();
+      worker = null;
+    }
+    worker = await createWorker(request.languages.join('+'), 1, options);
+    await worker.setParameters({ tessedit_pageseg_mode: String(request.psm),
+      user_defined_dpi: String(request.dpi), preserve_interword_spaces: '1' });
+    const { data } = await worker.recognize(request.image, {}, { text: true, tsv: true, blocks: true });
+    fs.writeFileSync(request.output, JSON.stringify({ backend: 'tesseract.js', version,
+      engine_version: data.version, languages: languageInfo, progress,
+      text: data.text, confidence: data.confidence, tsv: data.tsv, blocks: data.blocks,
+      psm: data.psm, oem: data.oem }), 'utf8');
+  } finally {
+    if (worker) await worker.terminate();
+  }
+}
+
+

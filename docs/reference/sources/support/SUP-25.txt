@@ -1,0 +1,253 @@
+SUP-25 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/tools/experiment_fault_relay.py
+Full-source SHA-256: 59f12d365ce3d3d1c0ada6cf3cd274aa7a4afaeced048b373db8bb5e88c62ebc
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 1-5 ---
+"""Finite R1/R2 experiment relay, never a production transport or credential logger.
+
+The CLI binds only loopback and has one fixed Nexus upstream/model. Responses are
+forwarded incrementally; SSE inspection is metadata only. The controller retains
+native evidence and owns all retry, cancellation, completion and tool execution.
+
+
+--- Original lines 17-21 ---
+UPSTREAM = ("127.0.0.1", 3939)
+ENDPOINT = "/v1/chat/completions"
+MODEL = "cliproxy/gpt-6.1-sol"
+GATE_SECONDS = 90.0
+MEANINGFUL_CHARACTERS = 64
+
+
+--- Original lines 137-215 ---
+class NativeObserver:
+    """Observe complete LF/CRLF Chat SSE frames without emitting model content.
+
+    Only the current frame is inspected; forwarded bytes are never reconstructed.
+    No partial argument is executed here.
+    """
+
+    def __init__(self):
+        self.line = bytearray()
+        self.fields = []
+        self.frames = 0
+        self.meaningful_frames = 0
+        self.substantive_characters = 0
+        self.terminal = False
+        self.first_meaningful = None
+        self.last_meaningful = None
+        self.terminal_at = None
+
+    def feed(self, data, *, interrupt=False):
+        start = 0
+        while start < len(data):
+            end = data.find(b"\n", start)
+            stop = len(data) if end < 0 else end + 1
+            part = data[start:stop]
+            self.line.extend(part)
+            if end < 0:
+                return None
+            line = bytes(self.line).rstrip(b"\r\n")
+            self.line.clear()
+            if not line:
+                cut = self._frame(interrupt)
+                if cut:
+                    return stop
+            elif line.startswith(b"data:"):
+                self.fields.append(line[5:].removeprefix(b" "))
+            start = stop
+        return None
+
+    def _frame(self, interrupt):
+        fields, self.fields = self.fields, []
+        if not fields:
+            return False
+        data = b"\n".join(fields)
+        self.frames += 1
+        characters, terminal = 0, data == b"[DONE]"
+        try:
+            event = json.loads(data)
+            if (
+                isinstance(event, dict)
+                and event.get("object") == "chat.completion.chunk"
+                and isinstance(event.get("id"), str)
+                and isinstance(event.get("choices"), list)
+            ):
+                for choice in event["choices"]:
+                    terminal |= choice.get("finish_reason") is not None
+                    delta = choice.get("delta", {})
+                    text = delta.get("content")
+                    if isinstance(text, str):
+                        characters += sum(c.isalnum() for c in text)
+                    for call in delta.get("tool_calls", []):
+                        arguments = call.get("function", {}).get("arguments")
+                        if isinstance(arguments, str):
+                            characters += sum(c.isalnum() for c in arguments)
+        except (ValueError, TypeError, AttributeError):
+            characters = 0
+        now = time.monotonic()
+        if terminal:
+            self.terminal, self.terminal_at = True, now
+        if characters:
+            self.substantive_characters += characters
+            self.meaningful_frames += 1
+            self.first_meaningful = self.first_meaningful or now
+            self.last_meaningful = now
+        return (
+            interrupt
+            and characters > 0
+            and self.substantive_characters >= MEANINGFUL_CHARACTERS
+            and not self.terminal
+        )
+
+
+--- Original lines 267-273 ---
+    async def start(self):
+        if self.stop_file.exists() or self.events.exists():
+            raise ValueError("Use a fresh event file and absent stop file")
+        self.events.parent.mkdir(parents=True, exist_ok=True)
+        self.server = await asyncio.start_server(self.handle, "127.0.0.1", self.port)
+        self.port = self.server.sockets[0].getsockname()[1]
+        self.event("ready", port=self.port, gate_seconds=self.gate_seconds)
+
+
+--- Original lines 285-320 ---
+    async def close(self):
+        self.server.close()
+        if self.gate_timer:
+            if not self.gate_timer.done():
+                self.event("gate_stopped", scheduled_end_monotonic=self.gate_end)
+            self.gate_timer.cancel()
+            await asyncio.gather(self.gate_timer, return_exceptions=True)
+        for task in list(self.tasks):
+            task.cancel()
+        await asyncio.gather(*self.tasks, return_exceptions=True)
+        for writer in list(self.handles):
+            await self.close_writer(writer)
+        await self.server.wait_closed()
+        if not self.injected:
+            self.event(
+                "fault_unexercised",
+                reason=(
+                    "no_acknowledged_partial_window"
+                    if self.armed is None
+                    else "no_qualifying_native_window_before_stop"
+                ),
+            )
+        self.event(
+            "stopped",
+            armed=self.armed is not None,
+            injected=self.injected,
+            open_handles=len(self.handles),
+        )
+
+    async def serve(self):
+        await self.start()
+        try:
+            while not self.stop_file.exists():
+                await asyncio.sleep(0.2)
+        finally:
+            await self.close()
+
+
+--- Original lines 331-333 ---
+    async def gate_expiry(self, end):
+        await asyncio.sleep(max(0, end - time.monotonic()))
+        self.event("gate_expired", scheduled_end_monotonic=end)
+
+
+--- Original lines 367-399 ---
+            target = False
+            if self.armed is None or (self.mode == "R2" and not self.injected):
+                acknowledgment = partial_acknowledgment(self.workspace, self.pages, payload)
+                if acknowledgment:
+                    target = True
+                    if self.armed is None:
+                        self.armed = request
+                        self.event("armed", request=request, **acknowledgment)
+                    else:
+                        self.event("partial_gate_reconfirmed", request=request, **acknowledgment)
+                    if self.mode == "R1" and self.gate_end is None:
+                        self.gate_end = time.monotonic() + self.gate_seconds
+                        self.gate_timer = asyncio.create_task(self.gate_expiry(self.gate_end))
+                        self.event(
+                            "gate_started", request=request, scheduled_end_monotonic=self.gate_end
+                        )
+            if self.gate_end is not None and time.monotonic() < self.gate_end:
+                self.injected = True
+                await self.local_reply(downstream, "503 Service Unavailable")
+                self.event(
+                    "local_rejection",
+                    request=request,
+                    status=503,
+                    forwarded=False,
+                    failure_stage="local_gate",
+                )
+                return
+            if self.gate_end is not None:
+                self.event("gate_reopened", request=request, scheduled_end_monotonic=self.gate_end)
+                self.gate_end = None
+            stage = "upstream_connect"
+            upstream_reader, upstream = await asyncio.open_connection(*self.upstream)
+            self.handles.add(upstream)
+
+
+--- Original lines 449-465 ---
+            async def forward(data):
+                nonlocal interrupted, count
+                cut = (
+                    observer.feed(
+                        data, interrupt=target and not self.injected and self.mode == "R2"
+                    )
+                    if observer
+                    else None
+                )
+                if cut is not None:
+                    self.injected = True
+                outgoing = data if cut is None else data[:cut]
+                downstream.write(outgoing)
+                await downstream.drain()
+                count += len(outgoing)
+                response_hash.update(outgoing)
+                interrupted = cut is not None
+
+
+--- Original lines 513-535 ---
+            if interrupted:
+                self.injected = True
+                self.event(
+                    "stream_interrupted",
+                    request=request,
+                    forwarded=True,
+                    failure_stage="after_meaningful_before_terminal",
+                    **observer.metadata(),
+                )
+            elif target and self.mode == "R2":
+                self.event(
+                    "fault_unexercised",
+                    request=request,
+                    reason="no_meaningful_nonterminal_native_window",
+                )
+            self.event(
+                "response_end",
+                request=request,
+                body_bytes=count,
+                body_sha256=response_hash.hexdigest(),
+                interrupted=interrupted,
+                **(observer.metadata() if observer else {}),
+            )
+
+
+--- Original lines 563-571 ---
+        finally:
+            if upstream:
+                await self.close_writer(upstream)
+            await self.close_writer(downstream)
+            self.event(
+                "handles_closed",
+                request=request,
+                upstream_closed=upstream is not None,
+                downstream_closed=True,
+

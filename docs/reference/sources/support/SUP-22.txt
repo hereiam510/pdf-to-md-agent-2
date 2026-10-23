@@ -1,0 +1,61 @@
+SUP-22 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/processes.py
+Full-source SHA-256: 40d4ad1e9f39e7fac70816c8a1be6cb2658bb8ce76cc1e06179c1832185bd07a
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 13-64 ---
+async def run_process(run: Path, command: list[str], timeout: float, env: dict | None = None):
+    if not 0 < timeout <= 300:
+        raise ValueError("timeout must be in (0, 300] seconds")
+    started = time.monotonic()
+    status = {"run": str(run), "status": "running", "exit_code": None, "error": None}
+    write_json(run / "result.json", status)
+    process = None
+    with (run / "stdout.txt").open("wb") as stdout, (run / "stderr.txt").open("wb") as stderr:
+        try:
+            # Ensure cancellation cannot abandon an unassigned, already-created child.
+            with anyio.CancelScope(shield=True):
+                process = await anyio.open_process(
+                    command,
+                    cwd=run,
+                    env=env,
+                    stdout=stdout,
+                    stderr=stderr,
+                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+                )
+            status["pid"] = process.pid
+            write_json(run / "result.json", status)
+            with anyio.fail_after(timeout):
+                status["exit_code"] = await process.wait()
+            status["status"] = "succeeded" if process.returncode == 0 else "failed"
+        except TimeoutError:
+            status["status"] = "timed_out"
+            status["error"] = f"Command exceeded {timeout} seconds"
+        except anyio.get_cancelled_exc_class():
+            status["status"] = "cancelled"
+            raise
+        except BaseException as error:
+            status["status"] = "failed"
+            status["error"] = str(error)
+            raise
+        finally:
+            # Publish terminal state within shielded cleanup, retaining cancellation propagation.
+            with anyio.CancelScope(shield=True):
+                try:
+                    if process is not None:
+                        if process.returncode is None:
+                            process.kill()
+                        with anyio.fail_after(5):
+                            await process.wait()
+                            await process.aclose()
+                        status["exit_code"] = process.returncode
+                finally:
+                    status["elapsed_seconds"] = round(time.monotonic() - started, 3)
+                    write_json(run / "result.json", status)
+    for name in ("stdout", "stderr"):
+        with (run / f"{name}.txt").open("rb") as stream:
+            status[name] = stream.read(16000).decode("utf-8", errors="replace")
+    return status
+

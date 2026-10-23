@@ -1,0 +1,68 @@
+SUP-14 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/evidence_history.py
+Full-source SHA-256: 034f442212b09699e597be02bdc93c7076d12e7953b7e2fcbc3400abb363c718
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 18-31 ---
+def warnings(value, path=""):
+    """Keep diagnostic fields by structure, without judging source meaning."""
+    found = {}
+    if isinstance(value, dict):
+        for key, item in value.items():
+            child = path + "/" + key.replace("~", "~0").replace("/", "~1")
+            if key in {"warnings", "uncertainties", "limitations"}:
+                found[child] = item
+            else:
+                found.update(warnings(item, child))
+    elif isinstance(value, list):
+        for i, item in enumerate(value):
+            found.update(warnings(item, f"{path}/{i}"))
+    return found
+
+
+--- Original lines 86-127 ---
+    def project(self, history, turn):
+        active = list(history)
+        applied, fallback = [], None
+        try:
+            for name in sorted(self.released):
+                entry = self.records[name]
+                index = entry["result_index"]
+                message = history[index]
+                if self.protocol == "chat_completions":
+                    if (
+                        message.get("role") != "tool"
+                        or message.get("tool_call_id") != entry["call_id"]
+                    ):
+                        raise ValueError("Unsupported Chat result mapping")
+                    text = message["content"]
+                else:
+                    if (
+                        message.get("type") != "function_call_output"
+                        or message.get("call_id") != entry["call_id"]
+                    ):
+                        raise ValueError("Unsupported Responses result mapping")
+                    output = message["output"]
+                    text = output if isinstance(output, str) else output[0]["text"]
+                    if not isinstance(output, str) and (
+                        output[0].get("type") != "input_text"
+                        or any(item.get("type") != "input_image" for item in output[1:])
+                    ):
+                        raise ValueError("Unsupported Responses evidence content")
+                body = json.loads(text)
+                receipt = {
+                    "absent_from_active_context": "The agent released this reply's semantic "
+                    "result and native images. Original evidence remains stored; retrieve before "
+                    "using a missing detail. This receipt is not the original evidence.",
+                    "coverage": entry["coverage"],
+                    "content": body["content"],
+                    "diagnostics": warnings(body["result"]),
+                    "is_error": body["is_error"],
+                    "restore": {
+                        "tool": "manage_evidence",
+                        "arguments": {"action": "restore", "evidence": [name]},
+                    },
+                }
+

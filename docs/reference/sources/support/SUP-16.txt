@@ -1,0 +1,35 @@
+SUP-16 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/models.py
+Full-source SHA-256: 3ef4d7d5195dde53703afa7dc367a7ae830daa7532052fa1af320eee1d71472c
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 8-33 ---
+class Model(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class Page(Model):
+    pdf_page: int = Field(ge=1)
+    printed_page: str = "unknown"
+    disposition: Literal["in_scope", "outside_scope", "unprocessed"] = "unprocessed"
+
+
+class Block(Model):
+    id: str = Field(pattern=r"^[a-zA-Z0-9_-]+$")
+    pages: list[int] = Field(min_length=1)
+    markdown: str = Field(min_length=1)
+
+
+class Content(Model):
+    title: str = Field(min_length=1)
+    language: str = Field(default="und", pattern=r"^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$")
+    scope: str = Field(min_length=1)
+    status: Literal["draft", "complete"] = "draft"
+    pages: list[Page]
+    blocks: list[Block] = Field(min_length=1)
+    uncertainties: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+    metrics: dict[str, str | int | float | None] = Field(default_factory=dict)
+

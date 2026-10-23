@@ -1,0 +1,151 @@
+SUP-26 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/docs/TOOLS.md
+Full-source SHA-256: 8224e8abbd44437ee2737549c8a58f174b0e1dc01081f92ca6a4c0f006a02981
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 293-293 ---
+**Isolated validation helper, not a product API or execution authorization:** `tools/experiment_fault_relay.py` is implemented solely for the closed [R1/R2/P plan](C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent/workspaces/bounded-validation/plan.md). Its CLI binds explicit loopback ports with fixed Nexus 3939 upstream/path/model, validates controller publication/receipt/request identity and requested unprocessed positions, and logs safe UTC/monotonic hashes/stages/forwarding metadata. Independent source review confirms useful partial content and real remaining work. R1 rejects before upstream connection for 90 seconds and records timer expiry separately from later forwarding. R2 cuts once after at least 64 accumulated alphanumeric native content/argument characters in complete nonterminal frames, closes both handles and never executes/splices partial calls.
+
+--- Original lines 324-363 ---
+The MCP stdio/CLI relay exposes native results. The app-facing adapter saves each full raw result as `eNNNNN.json`. Normal model input contains one complete `result`, nonduplicate content
+and actual image inputs. Only text JSON that parses equal to the structured result is removed.
+Diagnostics that differ survive. Images are never replaced with a path or a text-only base64 blob.
+Chat receives linked user image messages after all pending tool results; Responses receives native
+image-bearing `function_call_output`. No extra model call is required to see returned images.
+
+On the **first call**, omit `_select` (or use `[""]`) for the entire structured result, or supply
+exact RFC 6901 paths, for example `"_select":["/pages/0/text","/pages/0/words"]` on `inspect`.
+This is field selection, not summarization. All original text, layout/blocks, fonts, TSV, confidence, warnings and source records are available. Regions/pages and OCR settings remain normal tool
+arguments. Nonduplicate diagnostics and returned images survive selection. `coverage` states source
+scope, available result keys, selected paths, whether the semantic result is complete, which values
+were not returned, image hashes/bytes and how to read the full raw record. There is no silent truncation.
+
+For OCR wording, examples are `/pages/0/text`, `/pages/1/text` and other requested page indices.
+Selecting `/pages` includes overlapping nested word/block/TSV representations and can exceed model
+context limits. Full first replies and all raw fields/ranges/native pixels remain freely available;
+these examples are guidance, not a cap or mandatory selection step.
+
+`read_evidence` requires no approval or explanation:
+
+```json
+{"evidence":"e00001"}
+{"evidence":"e00001","pointer":"/structuredContent/pages/0/text"}
+{"evidence":"e00001","pointer":"/structuredContent/pages/0/words","offset":0,"limit":1000}
+{"offset":0,"limit":20}
+{"evidence":"e00001","arguments":true,"pointer":"/arguments/content/blocks"}
+```
+
+The first returns the full raw record, including any original text duplicate; the second selects a
+field; the third losslessly slices an array (strings can also be sliced). Results state total,
+offset/end and next_offset; omitted limit returns the remainder. No arbitrary chunk maximum or
+summary-first gate exists. Omitting `evidence` lists prior raw-record metadata, with exact IDs,
+tool/source scopes, selections and original image pointers. The same optional ranges apply to this
+index; it does not automatically load source bodies or the complete saved document.
+The index also identifies preserved call arguments. With `arguments: true`, the same full/field/range
+reader addresses `{tool, arguments}` in the prepared call, including rejected writes; the original raw MCP record is independently available. Correct authored wording can be reused while metadata is corrected, without candidate approval or automatic publication.
+A pointer to a raw image block (for example `/content/1`, according to that
+record) returns usable image pixels; original encoded fields are also readable. `view_image` can
+directly open source/evidence or `versions/<version>/assets/...` images. A missing selected field
+returns an error and the full evidence ID, rather than silently dropping content.
+
+
+--- Original lines 392-408 ---
+Only successful previously seen `inspect`, `render_page`, `extract_image`, `ocr`, `view_image` and
+`read_evidence` replies are eligible. Unknown/not-yet-seen IDs and saved/mutation replies cannot be
+released. `retain` cancels a release like `restore`; keeping evidence is otherwise the default.
+`manage_evidence` does not accept `_select`; its presence is rejected before release state changes.
+There is no explanation, summary, approval or arbitrary range cap. The choice applies at the next
+model request after every pending result and Chat image message has been assembled. Call/result IDs,
+message order and opaque reasoning items stay intact. Only selected semantic bodies/native images
+become explicit absence/retrieval receipts. Nonduplicate content and structural warning/uncertainty/
+limitation fields remain; task/constraints, saved content/version and assistant reasoning remain.
+The model must retain needed unresolved/cross-page context. Availability is not current attention,
+and a receipt cannot make the model aware of every omitted detail it might later need.
+
+All originals remain in existing raw evidence and request/reply records, and in the complete native history. Restore reinstates the original reply (including its original `_select`) and native images.
+Reread exact raw fields freely with `read_evidence`. Each image's coverage includes `raw_pointer`:
+reading that **individual image block** promotes original bytes to native high-detail image input.
+Reading the whole raw record only returns nested encoded image fields as text; it does not restore
+vision. Release affects reply occurrences, not semantic copies elsewhere; choose other copies too
+
+
+--- Original lines 484-486 ---
+| `inspect` | `document`, `pages: [1,2]`, optional `region`: text, fonts, positions, words, displayed image xrefs, warnings |
+| `render_page` | `document`, `page`, optional `dpi` (default 150), `region`, `asset` (default false): actual PNG pixels and provenance; `asset: true` registers delivered artwork |
+| `extract_image` | `document`, `page`, displayed `xref`: native encoded data returned by PyMuPDF, original dimensions and provenance; masked graphics require faithful composition via rendering |
+
+
+--- Original lines 489-489 ---
+| `view_preview` | `document`, optional saved `version`, `width` (1200), `height` (900), `scroll_y` (0) or `full_page` (false): actual saved HTML reading pixels with extent, image-load status and snapshot identity |
+
+
+--- Original lines 496-502 ---
+Physical PDF page positions are one-based. Regions are `[x0,y0,x1,y1]` in unrotated PDF points,
+top-left origin. Rendering accounts for page rotation. There is no mandatory range size, DPI cap,
+page loop or OCR pass. Text sorting/reading order and completion are agent decisions.
+Source snapshots are hash-checked; no operation edits the supplied PDF. Embedded extraction is not
+a promise that every figure is one standalone image. Native JPEG encoded data is preserved where available;
+PyMuPDF may losslessly reconstruct other encodings. Page/region artwork is identified as a render,
+not a byte-identical native image.
+
+
+--- Original lines 519-525 ---
+image input includes version/HTML hash, viewport, actual scroll position, full document dimensions,
+image natural/display sizes, loading status and warnings. Use a viewport/scroll for detail or opt
+into the entire reading; no forced small chunks or automatic review sequence exists.
+
+Screenshots and result JSON live in the document's `evidence/preview-*/` and are excluded from export.
+They are reading evidence, never replacement source artwork or semantic certification. The app-owned
+model can use them, reopen content and revise a saved result to resolve a presentation discrepancy.
+
+
+--- Original lines 584-601 ---
+Map every physical input page exactly once. `none` means visibly absent; `unknown` means unconfirmed
+or unreadable. Read other labels from actual page pixels. `outside_scope` deliberately excludes
+content; `unprocessed` is unfinished requested scope. A partial-page selection is described in `scope`.
+Blocks carry explicit page lists, so a complete cross-page paragraph/table need not be fragmented.
+The tools generate English HTML page comments and include scope/status/limitations in Markdown.
+Unprocessed and outside-scope pages also retain correspondence comments. Never put generated page
+markers inside block Markdown. `complete` is the agent's inspected-scope claim, not a tool certificate;
+it rejects unresolved `uncertainties` or `unprocessed` pages.
+
+`save` normally requires the complete map. Its explicit optional top-level
+`unmapped_disposition: "outside_scope" | "unprocessed"` fills only absent physical positions with
+that disposition and printed label `unknown`, then applies the same full-map/block/status validation.
+Choose `unprocessed` for unfinished requested scope; never use outside_scope to conceal unfinished
+work. Supplied labels/entries/blocks are preserved; invalid/duplicate/out-of-range entries still fail.
+No labels, scope boundaries or source wording are inferred. The saved version always contains all
+source positions. This convenience does not change `revise`'s nonempty contiguous replacement/full-map
+contract or add append/insertion. Reuse valid prepared blocks rather than regenerate them to repair
+metadata.
+
+
+--- Original lines 605-611 ---
+`read_evidence` supports optional `describe: true`: return the selected value's exact JSON type,
+field pointers and string/UTF-8/array sizes instead of its values. Omit describe for complete original
+values; offset/limit still select exact string/array ranges. Raw and prepared-access descriptors give
+file paths/disk bytes and distinct roots. With `arguments: true`, a prepared save's blocks are at
+`/arguments/content/blocks`; normal raw structured fields start `/structuredContent`, while `_select`
+starts at the structured result itself. Individual `/content/<index>` image blocks provide native
+pixels; describing or reading encoded data inside a whole JSON object does not provide vision.
+
+
+--- Original lines 613-627 ---
+`language` is an optional language tag (default `und`); for example, JRE uses `zh-Hant` in its reading
+preview. It controls the HTML language attribute, never the source text or OCR language selection.
+Use Markdown and safe HTML for source meaning, including table spans, blank cells, sup/subscripts and
+emphasis. The schema does not impose a semantic reconstruction tree. Figure-label transcription is
+separate from the faithful image. Refer to registered assets using `assets/<hash>.<ext>` in Markdown
+images or HTML `src`/`href`. No external image files are fetched. The offline preview blocks remote
+resources and active HTML, preserving table spans; sanitization never rewrites saved Markdown.
+
+Meaningful emphasis must survive the actual saved reading. CommonMark's punctuation-sensitive
+[flanking rules](https://spec.commonmark.org/0.31.2/#emphasis-and-strong-emphasis) can leave adjacent
+`**` delimiters literal around CJK punctuation. Supported safe HTML `<strong>...</strong>` is
+available when those delimiter boundaries are ambiguous; preserve the source wording and inspect
+the rendered emphasis proportionately. This is formatting guidance for future work, not automatic
+source rewriting, parser replacement or a compulsory per-page preview stage. Frozen converter
+prompts and existing deliverables are unchanged.
+

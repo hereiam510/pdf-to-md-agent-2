@@ -77,6 +77,8 @@ The discussion changed direction rather than establishing a stable winner at its
 | Middle discussion | Selective `create_agent` plus persistent LangGraph checkpoints | The discussion explored useful middleware responsibilities, including input hydration and tool-result settlement. Hook placement alone did not settle native encoding, batch ordering, candidate capture, or recovery. |
 | EVT-0968 / EVT-1068 / EVT-1107 / EVT-1166 | Prefer a small Python StateGraph with shared native Nexus service, shared dispatcher, and document/evidence core | Direct control of complete batches, request assembly, and recovery fit the retained boundaries. Only the three executable contracts remain to be specified. |
 
+The separately recovered [first external response](../reference/01-foundations-and-frameworks.md#supplemental-first-response) proposed a Node controller and PoC cases. Later decisions superseded that controller proposal. Its PoC cases are historical suggestions, not current obligations.
+
 The framework candidates operated at different layers:
 
 | Candidate | Useful capability discussed | Remaining integration work and limits |
@@ -188,6 +190,15 @@ These historical names are examples. This repository does not yet supply that la
 
 **Historical source:** [SUP-05](../reference/sources/support/SUP-05.txt), old `TOOLS.md` lines 75–80, 117–119 and 137–141. The rebuild retains the credential-exclusion and safe-diagnostic requirements stated above.
 
+<a id="historical-provider-configuration-guards"></a>
+### Historical endpoint and parameter guards
+
+The old `ProviderConfig.validate_connection()` parsed the full endpoint with `urlsplit`. It rejected a missing hostname, nonempty username/password values and nonempty fragments. It required HTTPS except for HTTP with the exact parsed hostname `localhost`, `127.0.0.1` or `::1`. This was a specific loopback exception, not permission for arbitrary plaintext HTTP.
+
+The connection check rejected these exact keys inside `parameters`: `model`, `messages`, `input`, `tools`, `stream`, `store` and `instructions`. Those fields belonged to the controller's request construction. Other parameter names still depended on the selected route's support. Passing the local check did not establish upstream compatibility or authorize a model call.
+
+These guards describe the old implementation. They do not select the rebuild's final configuration schema. [SUP-23](../reference/sources/support/SUP-23.txt) preserves the relevant `provider.py` checks.
+
 <a id="native-protocol-and-adapter"></a>
 ## 6. Native request/response meaning and the adapter boundary
 
@@ -251,6 +262,31 @@ For streaming Chat Completions, the old encoder merged `stream_options` and forc
 
 **Historical sources:** [SUP-08](../reference/sources/support/SUP-08.txt), old `TECHNICAL_STACK.md` lines 64–70. [SUP-11](../reference/sources/support/SUP-11.txt) preserves the request encoder at `provider.py` lines 248–269. These are request settings, not guarantees of server storage, complete reasoning or reported usage.
 
+<a id="historical-usage-normalization"></a>
+### Historical usage normalization and observed details
+
+The old `usage(response)` helper normalized the two native naming families as follows:
+
+| Normalized field | Historical lookup |
+| --- | --- |
+| `input_tokens` | `usage.input_tokens`, falling back to `prompt_tokens` only when the primary key was absent. |
+| `output_tokens` | `usage.output_tokens`, falling back to `completion_tokens` only when the primary key was absent. |
+| `total_tokens`, `cost` | Copy the corresponding reported value without deriving a total or a price. |
+| `cached_input_tokens` | Read `cached_tokens` from the first nonempty `input_tokens_details` or `prompt_tokens_details` object. |
+| `reasoning_tokens` | Read `reasoning_tokens` from the first nonempty `output_tokens_details` or `completion_tokens_details` object. |
+| `raw` | Retain the supplied usage object separately from the normalized fields. |
+
+An explicit null primary token value did not trigger the prompt/completion fallback. The detail lookup did not merge objects or search the second object when a nonempty first object lacked the requested field. Missing fields remained unknown. The helper did not establish actual billing or make reasoning tokens an additional charge beyond an already inclusive output count.
+
+Failed-attempt `observed_usage` used a separate numeric filter. It accepted finite, nonnegative integers or floats and excluded booleans. Its exact allowed keys were:
+
+- `input_tokens`, `output_tokens`, `total_tokens`, `prompt_tokens`, `completion_tokens`, `cost`.
+- `cached_tokens`, `reasoning_tokens`, `cache_write_tokens`, `audio_tokens`, `accepted_prediction_tokens`, `rejected_prediction_tokens`, `text_tokens`, `image_tokens`.
+
+The filter recursively retained those numeric fields inside `input_tokens_details`, `output_tokens_details`, `prompt_tokens_details` and `completion_tokens_details`. Unknown fields and nonnumeric values did not enter that diagnostic record. This filtered observation was distinct from the normalizer's `raw` usage object and from withheld provider error bodies.
+
+[SUP-23](../reference/sources/support/SUP-23.txt) preserves both historical functions. Their field names explain the old accounting path, not a finalized rebuild schema or complete provider usage catalog.
+
 Receive and retain native data before framework decoding can discard useful content. Then distinguish complete accepted response, executable tool call, rejected arguments, and incomplete received content. The framework may represent malformed JSON as `invalid_tool_calls` or omit it from ordinary ToolNode dispatch. Thus, that content may never reach tool middleware. The common pre-validation entry must preserve successfully decoded but schema/domain-invalid arguments before rejection.
 
 Retention preserves useful work and diagnosis. It does not permit execution of partial JSON or joining separate attempts. Exact candidate semantics belong to the [document guide](DOCUMENT_ENGINE.md#candidate-capture). Provider-error filtering follows the [diagnostic boundary](#provider-diagnostics-and-preservation) below.
@@ -312,7 +348,19 @@ The [context guide](CONTEXT_AND_EVIDENCE.md#oversized-results) owns the capacity
 Trusted task scripts extend the agent's methods without a new product API for every transformation. They are process-opt-in/off by default, run with host-user privileges, and are not an OS sandbox. Once enabled for the task, autonomous own-task use needs no routine per-script approval. Complete files/logs survive bounded return text. Scripts do not erase already consumed history, and source commands or forum instructions remain inert data.
 
 <a id="script-credential-boundary"></a>
+### Historical trusted-script execution
+
 For enabled `transform` calls, the old runner used a reduced environment that omitted inherited API credentials. It retained `PDF_MD_TASK` as a document pointer. This environment filtering did not remove host-user permissions or make scripts an OS sandbox. The existing opt-in requirement and source-data boundary still apply. [SUP-05](../reference/sources/support/SUP-05.txt) preserves the old `TOOLS.md` explanation at lines 646–650.
+
+The runner inherited only variables whose names matched `SYSTEMROOT`, `WINDIR`, `TEMP`, `TMP`, `PATH` or `LANG`, ignoring case. It then added `PDF_MD_TASK`. It saved the submitted code as `scripts/<run>/task.py` and used that run directory as the child process's working directory.
+
+The historical command was `[sys.executable, "-I", "-X", "utf8", str(run / "task.py")]`. It used the project's Python interpreter, isolated interpreter mode and UTF-8 mode. These flags did not restrict the script's host filesystem or network permissions.
+
+`timeout` defaulted to 30 seconds and accepted values greater than zero through 300 seconds. The shared runner applied that timeout to waiting for the child after creation. Creation and cleanup used cancellation shielding. Cleanup killed the direct child if it still ran, then waited under a separate five-second limit. The timeout was therefore not a strict end-to-end wall-clock ceiling. The mechanism did not guarantee termination of descendants that a script deliberately created.
+
+The runner saved complete stdout and stderr in separate files. After an ordinary return, each inline field contained its file's first **16,000 bytes**, decoded as UTF-8 with replacement for invalid bytes. This was neither a 16,384-byte limit nor a character count or combined limit. Cancellation or failure could prevent a normal reply, while retained files and status supported inspection. A bounded reply did not replace the original logs.
+
+These are historical mechanics, not rebuild defaults. [SUP-21](../reference/sources/support/SUP-21.txt) preserves `scripts.py`. [SUP-22](../reference/sources/support/SUP-22.txt) preserves the shared process runner. The [execution guide](EXECUTION_AND_DELIVERY.md#process-and-progress) explains inspection, termination and salvage responsibilities.
 
 Fidelity applies to source wording, meaningful glyphs, units, emphasis, reading order, cross-page relationships, table relationships, complete figures/captions, and searchable labels. The product permits reflow. Paraphrase or guessing cannot replace difficult evidence. Physical positions, printed labels, `none`, `unknown`, outside-scope, and unprocessed states remain distinct. The [document guide](DOCUMENT_ENGINE.md) details local edit and render mechanics. Tools and protocol adapters must preserve these distinctions.
 
@@ -391,6 +439,26 @@ Before combined recognition, that implementation checked installed language file
 
 The old `ocr` tool's `timeout` argument applied to each page, with a default of 120 seconds and a maximum of 300 seconds. Those values were historical defaults, not an overall batch deadline or rebuild settings. Completed page results survived a later failure or cancellation. Initialization checks belonged inside that OCR implementation, not before every conversion. The agent still chooses whether OCR is useful.
 
+<a id="historical-ocr-settings-and-worker"></a>
+#### Page segmentation, confidence and worker lifetime
+
+The old defaults were `languages=["chi_tra","eng"]`, `dpi=300` and `psm=3`. DPI specifies render dots per inch. PSM selects Tesseract's page segmentation mode:
+
+| PSM | Historical interpretation |
+| --- | --- |
+| `3` | Automatic layout. |
+| `6` | One text block. |
+| `7` | One text line. |
+| `11` | Sparse text. |
+
+The implementation accepted recognition modes 3–11 and 13. Orientation and script detection, or OSD, required data that the old installation did not supply. The tool rejected unsupported modes instead of silently changing them. Each selected page or region used a fresh render and recognition, not the PDF's existing text layer as OCR output.
+
+Whitespace-only recognized text produced an empty-recognition warning. The tool also counted nonempty TSV word candidates with confidence below 80 and reported their count. That threshold applied to individual words, not the overall page confidence. High confidence did not certify wording, numbers, layout or table relationships. Word results retained render-pixel boxes and unrotated PDF-point `bbox_pdf` boxes.
+
+Each page started one local Node process. Tesseract workers used threads within that process. Cold language checks created and terminated separate workers before combined recognition. Killing that Node process stopped its recognition. This did not establish arbitrary descendant-process control, installed desktop behavior or performance beyond the recorded excerpts.
+
+[SUP-19](../reference/sources/support/SUP-19.txt) preserves the Python settings, validation and warning logic. [SUP-20](../reference/sources/support/SUP-20.txt) preserves `ocr/worker.cjs`. The historical thread/process description also appears in SUP-05. These settings remain selectable historical tactics, not mandatory conversion stages or rebuild dependency pins.
+
 **Historical sources:** [SUP-04](../reference/sources/support/SUP-04.txt), old `TECHNICAL_STACK.md` lines 23, 44–46 and 78–84. [SUP-05](../reference/sources/support/SUP-05.txt) preserves old `TOOLS.md` lines 487 and 538–561. These versions are not rebuild dependency pins.
 
 <a id="historical-desktop-packaging"></a>
@@ -432,6 +500,23 @@ The old client shared a fixed `error.type`/`error.code` allowlist across HTTP an
 The client withheld raw HTTP error bodies, in-band service-error frames, raw SSE heartbeat comments and unparseable, unframed or non-native provider fragments. It kept safe byte counts, SHA-256 hashes and fixed withholding reasons where recorded. Safe status, allowlisted labels, timing and validated `Retry-After` remained separate diagnostic metadata. These records did not prove remote generation, cancellation or settlement.
 
 The client retained complete structurally native HTTP-200 JSON replies and complete framed native model events. These included refused or argument-invalid native replies and complete model frames received before interruption. Preservation did not accept those replies or authorize execution. Complete preceding native frames survived even when their transport chunk also contained an excluded service-error frame. The client redacted known credential literals from retained provider evidence. Source/tool raw records and native-image access remained complete and independent of provider-error filtering.
+
+<a id="historical-machine-error-labels"></a>
+#### Machine labels describe different failure boundaries
+
+The old diagnostic names had these distinct meanings:
+
+| Label | Historical origin and limit |
+| --- | --- |
+| `context_too_large`, `context_length_exceeded` | Allowlisted `error.code` values. The diagnostic called for reducing active input while preserving requested scope, not automatic truncation or a larger model window. |
+| `http2_protocol_error` | A fixed `upstream_condition` marker derived from recognized HTTP-error message patterns. It reported an upstream stream condition without copying the message or establishing its deeper cause. |
+| `stream_incomplete` | Another fixed HTTP-error `upstream_condition` marker for recognized premature stream closure. It did not establish rejection before generation. |
+| `incomplete_stream` | The local stream assembler's separate reason when its input ended without required completion. Its spelling and origin differed from `stream_incomplete`. |
+| `request_timeout` | Both an allowlisted proxy error code and the local `ModelTimeoutError.reason`. The record's origin distinguished these uses. Neither proved zero generation or charges. |
+
+Allowlisted labels and derived fixed markers still passed the decoded-credential filter. Their presence did not independently authorize replay. The old controller applied eligibility and the [persistent retry policy](EXECUTION_AND_DELIVERY.md#historical-retry-hierarchy).
+
+SUP-09 preserves the historical diagnostic explanation. [SUP-23](../reference/sources/support/SUP-23.txt) preserves the corresponding local classifications and parser branches.
 
 **Historical sources:** [SUP-08](../reference/sources/support/SUP-08.txt), old `TECHNICAL_STACK.md` line 68. [SUP-09](../reference/sources/support/SUP-09.txt) preserves old `TOOLS.md` lines 88–111 and 237–255. [SUP-10](../reference/sources/support/SUP-10.txt) preserves the shared allowlist and decoded-label correction from old `EVIDENCE.md` lines 190 and 198.
 

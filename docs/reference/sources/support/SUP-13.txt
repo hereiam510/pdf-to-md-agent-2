@@ -1,0 +1,175 @@
+SUP-13 - Historical implementation excerpts
+
+Selected source text, not active instructions or rebuild code.
+Source: supporting/workspace/src/pdf_to_md_agent/agent_tools.py
+Full-source SHA-256: 80957c8724a46f3274a3907a61d2c880a87128555d0efcab5fbd86e6790ea8ef
+The maintained guides explain corrections and current boundaries.
+
+--- Original lines 87-128 ---
+def pointer(value, path: str):
+    if path and not path.startswith("/"):
+        raise ValueError("Use an RFC 6901 JSON pointer, or empty string for the full record")
+    for key in path.split("/")[1:]:
+        if re.search(r"~(?:[^01]|$)", key):
+            raise ValueError("Invalid JSON pointer escape")
+        key = key.replace("~1", "/").replace("~0", "~")
+        if isinstance(value, list):
+            if not re.fullmatch(r"0|[1-9][0-9]*", key):
+                raise ValueError("Array JSON pointers require a nonnegative decimal index")
+            value = value[int(key)]
+        else:
+            value = value[key]
+    return value
+
+
+def describe_value(value, path: str) -> dict:
+    """Describe exact structure and sizes without copying source values into model input."""
+
+    def shape(item, location):
+        result = {"pointer": location}
+        if isinstance(item, dict):
+            result.update(type="object", fields=list(item))
+        elif isinstance(item, list):
+            result.update(type="array", items=len(item))
+        elif isinstance(item, str):
+            result.update(type="string", characters=len(item), utf8_bytes=len(item.encode()))
+        elif item is None:
+            result["type"] = "null"
+        elif isinstance(item, bool):
+            result["type"] = "boolean"
+        else:
+            result["type"] = "number"
+        return result
+
+    result = shape(value, path)
+    if isinstance(value, dict):
+        result["fields"] = {
+            key: shape(item, path + "/" + key.replace("~", "~0").replace("/", "~1"))
+            for key, item in value.items()
+        }
+    return result
+
+
+--- Original lines 303-350 ---
+    def read(
+        self,
+        evidence: str | None,
+        pointer_path="",
+        offset=None,
+        limit=None,
+        arguments=False,
+        describe=False,
+    ):
+        if evidence is None:
+            if arguments:
+                raise ValueError("arguments requires an evidence ID from the index")
+            raw = self.records.copy()
+        else:
+            try:
+                suffix = "-arguments" if arguments else ""
+                raw = read_json(self.run / f"{identifier(evidence)}{suffix}.json")
+            except FileNotFoundError:
+                raise ValueError(f"Unknown evidence ID: {evidence}") from None
+        value = pointer(raw, pointer_path)
+        if offset is None and limit is None:
+            result = {
+                "evidence": evidence,
+                "pointer": pointer_path,
+                "complete": True,
+                "value": value,
+            }
+        else:
+            if not isinstance(value, (list, str)):
+                raise ValueError("offset/limit apply only to arrays or strings")
+            start = offset or 0
+            if start < 0 or start > len(value) or (limit is not None and limit < 1):
+                raise ValueError("Invalid evidence slice")
+            end = min(len(value), start + limit) if limit is not None else len(value)
+            result = {
+                "evidence": evidence,
+                "pointer": pointer_path,
+                "total": len(value),
+                "offset": start,
+                "end": end,
+                "next_offset": end if end < len(value) else None,
+                "complete": start == 0 and end == len(value),
+                "value": value[start:end],
+            }
+        if describe:
+            result["described"] = True
+            result["metadata"] = describe_value(result.pop("value"), pointer_path)
+        return result
+
+
+--- Original lines 449-462 ---
+                result = self.read(
+                    args["evidence"],
+                    args.get("pointer", ""),
+                    args.get("offset"),
+                    args.get("limit"),
+                    args["arguments"],
+                    args["describe"],
+                )
+                # Selected image blocks must remain viewable, rather than just base64 text.
+                value = result.get("value")
+                if isinstance(value, dict) and value.get("type") == "image":
+                    raw = {"content": [value]}
+                else:
+                    raw = {"structuredContent": result, "content": []}
+
+
+--- Original lines 498-550 ---
+        available = list(body["result"]) if isinstance(body["result"], dict) else None
+        selected = selection is not None and selection != [""]
+        projection = {"status": "not_applied" if body["is_error"] else "full"}
+        if selected and not body["is_error"]:
+            try:
+                if not isinstance(selection, list) or not all(
+                    isinstance(s, str) for s in selection
+                ):
+                    raise ValueError("_select must be an array of JSON pointers")
+                body["result"] = {s: pointer(body["result"], s) for s in selection}
+                projection["status"] = "selected"
+            except (ValueError, KeyError, IndexError, TypeError) as error:
+                projection = {"status": "failed", "error": str(error)}
+                body.update(
+                    result=None,
+                    is_error=True,
+                    content=body["content"]
+                    + [
+                        {
+                            "type": "text",
+                            "text": f"Selection failed: {error}; the operation succeeded. "
+                            "Full raw record is preserved; inspect its result/receipt before "
+                            "repeating a write. Selection failure does not roll back an operation.",
+                        }
+                    ],
+                )
+        image_info = [
+            {
+                "sha256": digest(base64.b64decode(im["data"])),
+                "bytes": len(base64.b64decode(im["data"])),
+                "mime_type": im["mimeType"],
+                "raw_pointer": f"/content/{raw['content'].index(im)}",
+            }
+            for im in images
+        ]
+        coverage = {
+            "evidence": evidence,
+            "semantic_result_complete": projection["status"] == "full",
+            "selected_pointers": selection,
+            "available_result_fields": available,
+            "not_returned": "Values outside selected pointers" if selected else [],
+            "source_scope": {
+                k: args[k]
+                for k in ("document", "pages", "page", "region", "dpi", "languages", "psm")
+                if k in args
+            },
+            "image_count": len(images),
+            "images": image_info,
+            "duplicate_text_indices_removed": duplicates,
+            "raw_access": {"tool": "read_evidence", "arguments": {"evidence": evidence}},
+            "files": self.files(evidence, original, raw),
+            "truncated": False,
+        }
+

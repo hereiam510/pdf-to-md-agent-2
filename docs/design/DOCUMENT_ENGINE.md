@@ -54,12 +54,49 @@ The document core makes the same preserved evidence available to the built-in ru
 
 Text, words, layout, and font/position fields may overlap while carrying different evidence. Deduplicate avoidable serialization without declaring one fixed field set sufficient for every task. Full access remains available, and the agent chooses which representation is relevant. An OCR confidence score or a small text difference cannot establish that an image is dispensable.
 
+<a id="historical-pdf-coordinates"></a>
+### Historical PDF coordinates and OCR boxes
+
+The old public tools numbered physical pages from one. A `region` was `[x0,y0,x1,y1]` in unrotated page points, with a top-left origin. One point represents 1/72 inch. This was the tool's MuPDF-style coordinate convention. Native PDF coordinates use a different origin, so the label “PDF points” alone is insufficient.
+
+The region helper computed unrotated bounds as `page.rect * page.derotation_matrix`. It rejected nonfinite, empty or out-of-bounds rectangles. Rendering passed `region * page.rotation_matrix` as the clip to `get_pixmap`. The render receipt recorded the original region, DPI, pixel dimensions and source hash. It did not return OCR word boxes.
+
+The OCR reader returned two rectangles for each recognized word:
+
+| Field | Historical meaning |
+|---|---|
+| `bbox_pixels` | `[x,y,x+width,y+height]` within the cropped rendered image, using OCR TSV pixel positions. |
+| `bbox_pdf` | The corresponding rectangle in the tool's unrotated page-point coordinate system. |
+
+For that conversion, the reader transformed the crop into rotated page coordinates. It scaled by `dpi / 72` and used `.irect.tl` as the integer rectangle's top-left pixel origin. It added that origin to each OCR rectangle, scaled by `72 / dpi`, and applied `page.derotation_matrix`. Keeping crop origin, scale and rotation together prevents a crop-relative pixel box from pointing elsewhere on the PDF.
+
+These are historical transforms, not a final rebuild coordinate schema. The evidence reference must retain the source, region and settings that make its coordinates interpretable.
+
+**Source basis:** SUP-15, SUP-19 and EVT-0878. See PyMuPDF's [page-coordinate rules](https://pymupdf.readthedocs.io/en/latest/page.html) and [coordinate-system explanation](https://pymupdf.readthedocs.io/en/latest/app3.html#coordinates), checked 2026-10-23.
+
 <a id="image-mode-and-encoding"></a>
 ### Image mode and encoding
 
 The historical Pillow warning concerns retained pixels, color, transparency and bit depth. A blanket `convert("RGB")` can discard alpha or change a grayscale or one-bit representation. Do not silently apply this conversion to every crop. Choose a supported representation that preserves the relevant source properties. Report any format limitation instead of silently lowering fidelity.
 
 New JPEG encoding can introduce lossy changes, even when the crop dimensions stay unchanged. Copying an existing native JPEG stream differs from decoding and recompressing it. A PNG extension alone does not prove native resolution or unchanged pixels. The [reference-input notes](../reference/REFERENCE_INPUTS.md) explain the historical crop and image-edit defects that motivate these checks. Pillow was a proposed component in that record, not a verified rebuild implementation. See SUP-04 for the retained warning.
+
+<a id="historical-image-xrefs-and-masks"></a>
+### Historical image references and masks
+
+The old `inspect` returned displayed-image metadata from `get_image_info(xrefs=True)`. Its image list covered the page, even when a region clipped text, layout and words. An `xref` identifies a PDF object. Inline or unresolved images can have `xref=0`, so an image listing does not guarantee direct extraction.
+
+`extract_image(document, page, xref)` first checked that the requested page displayed that reference. It then stored the encoded bytes returned by `Document.extract_image`, with encoding, dimensions and source provenance. Native JPEG bytes remained available where supported. Other encodings could require PyMuPDF's lossless reconstruction. This was not a promise that every visible figure occupied one image object.
+
+The old extractor rejected an image when any of these mask checks matched:
+
+- The extraction result contained a nonzero `smask` reference.
+- A displayed occurrence reported `has-mask`.
+- The PDF object's `ImageMask` entry was `true`, indicating a stencil mask.
+
+A bare image stream can omit the transparency or composition needed for the page's appearance. The old fallback was a faithful page-region render. For delivery, `render_page(..., asset=True)` registered that render as artwork with `kind: "page_render"`. Its provenance distinguished rendered pixels from native extraction. This was the old application's policy. PyMuPDF also documents image-plus-mask composition, so region rendering is not the only technically possible implementation.
+
+**Source basis:** SUP-15 and SUP-26. See PyMuPDF's [displayed-image metadata](https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_image_info) and [mask composition](https://pymupdf.readthedocs.io/en/latest/recipes-images.html#how-to-handle-image-masks), checked 2026-10-23.
 
 An optional computation index can reuse independently computed page/region results. The historical key proposal included source hash, tool/engine version, language-data hash, normalized parameters, and page/region. Overlapping requests could retrieve existing units. An explicit `force_recompute` could obtain a fresh result.
 
@@ -241,6 +278,38 @@ Adding HTML whitespace can create text nodes and affect copying or parsing. A fo
 
 **Source basis:** EVT-0855, EVT-0878, EVT-0914, EVT-0942, EVT-1040, EVT-1068, EVT-1166. ATT-21–ATT-30.
 
+<a id="historical-content-schema"></a>
+### Historical Content and schema-version-1 records
+
+The old `Content` model and save validator explain earlier validation failures. They are historical contracts, not the new Q1 schema.
+
+| Record | Historical fields and constraints |
+|---|---|
+| `Content` | `title`, `language`, `scope`, `status`, `pages`, `blocks`, `uncertainties`, `limitations`, `metrics`. `title` and `scope` had minimum string length one. |
+| Defaults | `language: "und"`, `status: "draft"`, empty `uncertainties` / `limitations` lists and an empty `metrics` dictionary. `status` accepted only `draft` or `complete`. |
+| `Page` | `pdf_page` was an integer of at least one. `printed_page` defaulted to `unknown`. `disposition` accepted `in_scope`, `outside_scope` or `unprocessed`, defaulting to `unprocessed`. |
+| `Block` | `id` matched `^[a-zA-Z0-9_-]+$`. Its `pages` list and `markdown` string each had minimum length one. `Content.blocks` also required at least one entry. |
+| Model boundary | The common Pydantic base used `extra="forbid"`. The model rejected unknown fields. |
+| Saved envelope | `schema_version: 1`, `document`, `version`, `parent_version`, `saved_at`, `source`, `content`, `assets`, `markdown`, `markdown_sha256`. `publication_operation` appeared only when supplied. |
+
+`metrics` belonged inside `content`, not beside the snapshot's `markdown_sha256`. Its values could be strings, integers, floats or null. `markdown_sha256` hashed the assembled UTF-8 Markdown. `publication_operation` associated a saved version with its producing operation. These fields served different accounting, integrity and replay roles.
+
+The save validator applied these additional checks:
+
+1. The map contained every physical page exactly once. Duplicate and out-of-range entries failed.
+2. Printed labels contained non-whitespace text and excluded angle brackets, carriage returns, line feeds and `|`.
+3. Block IDs were unique. Each block's page list contained distinct references to `in_scope` pages.
+4. Authored blocks omitted generated PDF page comments. Every `in_scope` page appeared in at least one block.
+5. A `complete` submission failed if `uncertainties` was nonempty or any mapped page remained `unprocessed`.
+
+That last check did not reject nonempty `limitations` or an `unknown` printed label by themselves. It also did not prove that every table, footnote or requested passage was correct. The broader scope and fidelity requirements still applied.
+
+The optional top-level save argument `unmapped_disposition` accepted only `outside_scope` or `unprocessed`. It filled missing physical positions with that disposition and printed label `unknown`. It preserved supplied entries and body blocks, then applied the full validator. It did not infer labels or silently classify unfinished work as outside scope.
+
+Q1 can change this record layout and update interface. The retained lessons are coherent source correspondence, exact body reuse, honest draft metadata and separate content-acceptance claims.
+
+**Source basis:** SUP-06, SUP-15, SUP-16 and SUP-26. The later [page-map responsibilities](#page-maps-and-provenance) qualify the historical single-disposition model.
+
 <a id="page-maps-and-provenance"></a>
 ## 6. Page maps, provenance, scope, and claims
 
@@ -304,6 +373,37 @@ Do not delete unreferenced attempt/version files simply because they are not reg
 
 The historical JSON readers used `CreateFileW` with READ/WRITE/DELETE sharing. Existing-file publication used `ReplaceFileW`. In that Windows environment, `os.replace` / `MoveFileEx` failed against an open reader. Selected native sharing/access failures received eight attempts, with under one second of total retry delay. These included observed error 1175. Persistent failures still surfaced.
 
+<a id="historical-json-write-and-read"></a>
+#### Historical JSON write sequence and retry limits
+
+The old `write_json` helper used this sequence:
+
+1. Create a sibling temporary file named `.{name}-{uuid}.tmp`.
+2. Serialize UTF-8 JSON with `ensure_ascii=False`, two-space indentation and a final LF. Use LF newline handling.
+3. Flush the Python stream. Then call `os.fsync(stream.fileno())`.
+4. Close the stream. Then call the replacement helper.
+5. Delete any remaining temporary file in `finally`.
+
+The helper did not fsync the parent directory. File fsync alone did not establish durable directory replacement or a transaction across several files. Its temporary-file cleanup was not a policy for deleting useful unregistered document versions.
+
+| Windows operation | Historical eligible native errors | Bound |
+|---|---|---|
+| Replacement | `{5, 32, 33, 1175}` | Eight total attempts. Other errors or the final failure propagated. |
+| Opening a shared read handle | `{2, 5, 32, 33}` | Eight total attempts. Error 2 could occur during the brief name transition. |
+
+The [Win32 error reference](https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-) names the shared codes:
+
+- `2`: `ERROR_FILE_NOT_FOUND`.
+- `5`: `ERROR_ACCESS_DENIED`.
+- `32`: `ERROR_SHARING_VIOLATION`.
+- `33`: `ERROR_LOCK_VIOLATION`.
+
+After an eligible failure, both loops used `min(0.01 * 2**attempt, 0.16)` seconds, with zero-based `attempt`. Seven possible sleeps totaled at most 0.63 seconds. This excluded operation duration and scheduling delays. A persistent missing file, lock or permission failure still surfaced after the bounded attempts.
+
+The Windows reader requested `GENERIC_READ` with `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`. It retained that handle while parsing JSON. The non-Windows path used an ordinary binary read. These native error allowlists were implementation details, not general retry categories for every operating system.
+
+**Source basis:** SUP-17. The following error-state distinctions qualify the historical replacement allowlist.
+
 Microsoft documents distinct failure states for these errors:
 
 | Error | Documented state | Historical retry policy |
@@ -345,6 +445,38 @@ Preview sanitization must not rewrite saved Markdown or delete its page-marker c
 Bind preview document assets to the selected immutable version. Load those assets from registered local bytes. Block external resource requests and source-provided active content. A link in the document is not permission to fetch its target automatically. Report unavailable resources instead of substituting mutable workspace files or remote content.
 
 The old Playwright view froze the saved HTML and image bytes before rendering. It fulfilled a virtual origin through local routing, without a listening HTTP server. It blocked all other requests and disabled page scripts, service workers and downloads. This mechanism made the preview reproducible and prevented source content from contacting external services. See SUP-05 for the historical mechanism and SUP-04 for the saved-comment rule. A future Electron renderer needs its own verification of this boundary.
+
+<a id="commonmark-emphasis-and-language"></a>
+### CommonMark emphasis and preview language
+
+The old renderer used `MarkdownIt("commonmark", {"html": True})` with the table extension enabled. CommonMark 0.31.2 decides whether `**` opens or closes emphasis from adjacent whitespace and Unicode punctuation. CJK punctuation is subject to those rules. Its presence does not make every adjacent delimiter invalid.
+
+For example, applying those rules to `文字**「重點」**文字` leaves the intended delimiters literal. The opening pair follows a letter and precedes punctuation. The closing pair follows punctuation and precedes a letter. These boundaries cannot open and close strong emphasis as intended.
+
+The historical guidance allowed `文字<strong>「重點」</strong>文字` when delimiter boundaries were ambiguous. This preserves the characters and makes the intended span explicit. Check meaningful emphasis in the actual saved reading when the formatting question warrants it. This guidance does not require automatic text rewriting, parser replacement or a preview of every page.
+
+The optional `content.language` defaulted to `und`. The old model accepted the tag pattern `^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$`, without checking a language registry. For example, `zh-Hant` became the escaped HTML `lang` value. It did not translate source text or select OCR languages. The renderer's language metadata and the OCR request's language configuration were separate inputs.
+
+**Source basis:** SUP-16, SUP-18 and SUP-26. The delimiter example follows [CommonMark 0.31.2's flanking rules](https://spec.commonmark.org/0.31.2/#emphasis-and-strong-emphasis), checked 2026-10-23.
+
+<a id="historical-preview-parameters"></a>
+### Historical preview parameters and observations
+
+The old `view_preview` selected a saved version and used these defaults:
+
+| Parameter | Historical default and validation |
+|---|---|
+| `width` / `height` | 1200 / 900. Positive integers, excluding booleans. |
+| `scroll_y` | 0. A nonnegative integer, excluding booleans. |
+| `full_page` | `false`. A full-page request with nonzero `scroll_y` failed. |
+
+The result recorded `version`, `preview_sha256`, `viewport` and `requested_scroll_y`. It separately reported actual `scroll_y`, `document_width` and `document_height`. Each `images` entry represented a DOM image and included `file`, `loaded`, `natural_width`, `natural_height`, `displayed_width` and `displayed_height`. Natural dimensions described the image data. Displayed dimensions came from the image element's width and height.
+
+Those records described this HTML view, not coverage of every source-PDF figure. A failed image load produced a warning.
+
+The code set `page.set_default_timeout(15000)`. This covered methods that accept a timeout setting, not every browser operation. The historical notes described a 30-second launch default, but the code passed no explicit launch timeout. The current official launch reference gives 180000 milliseconds. Therefore, the old 30-second note is not a verified current default or a rebuild setting. Evaluation waits and cleanup do not acquire a global deadline from the page setting.
+
+**Source basis:** SUP-05, SUP-09 and SUP-27. See Playwright's [page timeout scope](https://playwright.dev/python/docs/api/class-page#page-set-default-timeout) and [launch timeout](https://playwright.dev/python/docs/api/class-browsertype#browser-type-launch-option-timeout), checked 2026-10-23.
 
 <a id="historical-preview-worker-lifetime"></a>
 ### Historical preview worker lifetime
