@@ -4,7 +4,7 @@ Updated 2026-10-23, Asia/Hong_Kong. This describes the new repository only. It i
 
 ## Delivered scope
 
-An independent local Git repository holds newly written rebuild requirements, responsibilities, contracts, decisions and detailed technical explanations. The original project remains a separate read-only source. This project's state does not adopt the old status, defaults, test results or closed-work permissions.
+An independent Git repository holds newly written rebuild requirements, responsibilities, contracts, decisions and detailed technical explanations. Its public remote is [hereiam510/pdf-to-md-agent-2](https://github.com/hereiam510/pdf-to-md-agent-2). The original project remains a separate read-only source. This project's state does not adopt the old status, defaults, test results or closed-work permissions.
 
 [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md) is the development entry point. Its four module guides explain integration/native model boundaries, context/evidence management, the document engine, and execution/delivery. They include data/state ownership, interface semantics, sequences, concrete examples, failure handling, rationale, historical corrections and open choices. Reading the original conversation is unnecessary to understand the development design.
 
@@ -22,7 +22,7 @@ No app runtime, desktop UI, installer, dependency lock, migrated legacy code or 
 
 The preferred route remains a small Python LangGraph StateGraph, shared Nexus request service/tool dispatcher, and document/evidence core using SQLite metadata and immutable files. The three specific contracts in [OPEN_QUESTIONS](OPEN_QUESTIONS.md) remain open. Illustrative structures in the detailed guides do not silently choose final APIs, field names, thresholds or dependency versions. Historical framework rankings are not competing current plans.
 
-No remote or release was created. This work preserves knowledge and makes it usable for development. It does not begin app implementation or reopen general network design.
+The user authorized public publication of all tracked documentation, bundled conversation and attachment sources, and the existing Git history, excluding credentials. The publication check passed the repository's documentation, source-integrity and coverage checks. A scan of the four existing commits found no common credential-pattern matches. No application release was created. This work preserves knowledge and makes it usable for development. It does not begin app implementation or reopen general network design.
 
 ## Review and verification
 

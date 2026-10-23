@@ -41,4 +41,4 @@ With a working Python 3.9+ interpreter, run the following from this repository (
 
 The first command checks documentation/image links, local source hashes and point/detail coverage. The second reads a bundled source without accessing an external export. They do not test an agent implementation or certify semantic completeness. [Current state](docs/CURRENT_STATE.md) records the actual review and its limits.
 
-The repository supplies no remote repository, published release, runtime dependency lock or provider configuration. Git ignores private inputs and source-review working files.
+The public repository is [hereiam510/pdf-to-md-agent-2](https://github.com/hereiam510/pdf-to-md-agent-2). It includes the maintained documentation, bundled discussion sources and Git history. It has no published application release, runtime dependency lock or provider configuration. Git ignores local environment files, private inputs and source-review working files.
