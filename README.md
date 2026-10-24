@@ -66,7 +66,9 @@ Document editing binds a draft to its loaded version and starting head. Historic
 
 After Stop, adding instructions and pressing **Continue** preserves completed tool effects and marks obsolete, unstarted calls as unexecuted before the agent decides again. Continue without an amendment resumes the accepted batch. After an HTTP error or a rejected/truncated reply, Continue can prepare a new request using the latest task state, while retaining the failed record and consumed budgets. Unknown remote outcomes retain their original request and configured replay limit; unknown local effects still need reconciliation. Reopening alone does not send a request.
 
-The current source includes all three editing/continuation batches. Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes, local evidence, limitations and suggested next work.
+The current source includes all three editing/continuation batches and the context-capacity increment. Oversized tool bodies receive explicit deferred receipts with exact read references; complete originals and full/raw/field/range access remain available. Pinned objects survive independently when their original history is compacted. Aggregate history pressure still uses rolling handoffs, and genuinely oversized required pins stop explicitly. See [the context contract](docs/CONTRACTS.md#q2-context-transitions).
+
+Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes, local evidence, limitations and suggested next work.
 
 ## Document checks
 

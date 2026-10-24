@@ -173,7 +173,10 @@ def test_correction_can_formalize_question_or_partial_stop_without_more_conversi
 
 
 def seed_compaction(runtime, store, job):
-    result, _ = history(store, job["id"], "large-history", "Retained evidence. " * 10000)
+    # The giant body can now be deferred before normal inference. Two individually
+    # fitting results still create aggregate pressure and exercise real compaction.
+    result, _ = history(store, job["id"], "large-history", "Retained evidence. " * 10000,
+                        extra_texts=["Earlier extraction. " * 1500, "Later extraction. " * 1700])
     state = {"job": job["id"], "seq": 1, "revision": 1, "history": ["large-history"],
              "handoff": None, "notes": "Preserve all source values.", "released": [], "pinned": [], "repairs": {}, "terminal": False}
     runtime.graph.update_state({"configurable": {"thread_id": job["id"]}}, state, as_node="tools")

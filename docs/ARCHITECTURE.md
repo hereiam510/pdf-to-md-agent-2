@@ -75,7 +75,7 @@ No backward compatibility or old-run migration is required. Useful old code can 
 | `src/desktop/main.ts`, `preload.ts` | Sandboxed renderer, explicit IPC actions, native file dialogs, encrypted connection settings, authenticated loopback engine, isolated preview worker |
 | `src/renderer/` | Source/scope selection, source-page display, agent activity, saved preview/Markdown/evidence, local block edits, version selection and ZIP export |
 | `src/pdfmd/server.py`, `runtime.py` | Task lifecycle, one executor per job, `StateGraph` and SQLite checkpointer |
-| `nexus.py`, `context.py` | Complete native replies, frozen attempts, shared limits, transient context projection and rolling handoffs |
+| `nexus.py`, `context.py` | Complete native replies, frozen attempts, shared limits, capacity admission with exact deferred receipts, independently hydrated pins and rolling handoffs |
 | `storage.py`, `schema.py`, `documents.py` | Immutable objects, metadata transactions, typed document edits, candidates, version integrity and export |
 | `evidence.py`, `tools.py`, `tools/ocr-worker.cjs` | PDF text/layout/raw/pixel access, shared dispatch, local Tesseract OCR, saved-output screenshots and opt-in host scripts |
 
@@ -87,6 +87,7 @@ Saved-output previews record the actual scroll position and CSS viewport/documen
 
 Official guidance consulted for this implementation:
 
+- [LangGraph persistence](https://docs.langchain.com/oss/python/langgraph/persistence) and [PyMuPDF TextPage](https://pymupdf.readthedocs.io/en/latest/textpage.html#TextPage.extractDICT): the capacity increment retains the existing checkpoint/reference boundary and preserves dictionary image bytes in saved originals. Request projection is transient; native vision input is separate from Base64 inside a text result. No dependency changes were made.
 - [React state structure](https://react.dev/learn/choosing-the-state-structure) and [effect lifecycle](https://react.dev/reference/react/useEffect): the 2026-10-24 document session groups related edit state, derives readiness from task/version identity and ignores obsolete asynchronous reads. [Pydantic model validators](https://docs.pydantic.dev/latest/concepts/validators/) govern edit-mode and content-source validation. Installed dependency pins remain unchanged.
 - [LangGraph checkpointers](https://docs.langchain.com/oss/python/langgraph/checkpointers): checkpoint lifecycle, synchronous durability and supported `update_state(as_node=...)` continuation. The 2026-10-24 change records its continuation intent before updating the checkpoint, so a cross-store gap can be reconciled. Installed SQLite saver signatures were also inspected.
 - [HTTPX exceptions](https://www.python-httpx.org/exceptions/): HTTP status failures and transport failures are distinct observations. Explicit failed-response Continue is kept separate from unknown-outcome replay; neither establishes remote cancellation or a known bill.

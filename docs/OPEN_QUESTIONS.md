@@ -49,6 +49,8 @@ Latest drafts/unfinished candidates may be partially released. Do not freeze a u
 **Implemented selection:**
 
 - A complete-input UTF-8 byte heuristic with explicit output and image allowances; unknown image cost blocks sending.
+- Capacity admission defers an individually unfit body through an explicit exact-reference receipt. Individually fitting bodies remain selected under aggregate pressure, which proceeds to compaction. Full originals and unrestricted full/raw/field/range reads remain available.
+- Pinned objects hydrate independently of their original history prefix; native images are pinned by image reference. Genuine oversized required pins stop explicitly without silent release.
 - Oldest fitting complete history batches, exact request coverage and a revision precondition.
 - Six-field self-sufficient handoff, applied only when the entire assembled input decreases; uncovered history survives.
 - Original retention on any rejection, and finite `capacity_blocked`/budget stop paths.
