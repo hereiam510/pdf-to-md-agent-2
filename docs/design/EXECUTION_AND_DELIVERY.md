@@ -18,6 +18,7 @@ The 2026-10-24 increment resolves two practical failures: resuming an accepted b
 | Request was prepared but never attempted, and amendments changed | Retain it and record a new-input transition. Sending known-obsolete unsent input adds no recovery value. |
 | HTTP error or complete transport with rejected/truncated native reply; user presses Continue | Retain failure evidence, record the Continue decision and assemble a new request from current state. Never execute a partial call from the old reply. |
 | Attempt is unknown/in flight | Keep the same request and original replay gate. New instructions do not prove the earlier generation never happened. |
+| Handoff application receipt committed, but graph completion did not | Recover the original validated transition after matching its prefix/revision and immutable archive. Preserve historical capacity diagnostics; then prepare current input with new amendments/head. An archived candidate alone is not an application receipt. |
 
 `Nexus.reconcile` and `Dispatcher.reconcile` read durable acceptance/result facts before any replacement decision. `instruction_basis` hashes only the ordered human amendments. A normal document save by the agent cannot accidentally invalidate the remaining calls in its own batch. On amendment, all genuinely unstarted old calls receive paired unexecuted results, not just writes. This avoids maintaining a speculative tool-category filter and returns method selection to the model. The app does not reject future equivalent actions that the model chooses under the new instructions.
 

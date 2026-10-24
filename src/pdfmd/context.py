@@ -396,6 +396,15 @@ class Context:
                   "originals": [self.store.get("request", item, job=job["id"])["accepted_ref"] for item in covered]}
         ref = self.store.blob(job["id"], "handoff", record, key=f"handoff:{request}")
         candidate = {**state, "handoff": ref["ref"], "history": state["history"][len(covered):], "revision": state["revision"] + 1}
+        receipt = self.store.maybe("event_receipt", f"{job['id']}:context_compacted:{request}")
+        if receipt is not None:
+            # Acceptance committed before the graph checkpoint. Recover that
+            # historical transition, not new capacity diagnostics from today's
+            # amendments/head. The next prepare still checks current full input.
+            # The prefix/revision and immutable archive above must still match.
+            self.store.event_once(job["id"], "context_compacted", request,
+                                  {**receipt, "covered": covered, "handoff_ref": ref["ref"]})
+            return candidate
         # Uncovered history, pins, and active requirements are untouched.
         before = self.normal(job, state)[1]["input_estimate"]
         capacity = self.normal(job, candidate)[1]
