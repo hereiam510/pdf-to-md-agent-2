@@ -103,12 +103,57 @@ test('desktop imports, converts through a local fixture, previews, edits, export
     await window.getByRole('button', { name: 'Save new version' }).click()
     await expect(window.getByRole('status')).toContainText('Saved your edits')
     expect(requests).toBe(6)
+    // A historical version is explicitly rebuilt, rather than mislabeled as an ordinary edit.
+    await window.getByLabel('Saved version').selectOption(job.delivery)
+    await window.getByRole('button', { name: 'Rebuild from this version' }).click()
+    await expect(window.locator('.block-editor textarea')).toHaveCount(3)
+    await window.getByRole('button', { name: 'Save new version' }).click()
+    await expect(window.getByRole('status')).toContainText('Saved your edits')
+    const rebuiltJob = await window.evaluate(async (id) => globalThis.window.workbench.invoke('job', { job: id }), job.id)
+    const rebuilt = await window.evaluate(async ({ job, version }) => globalThis.window.workbench.invoke('version', { job, version }),
+      { job: job.id, version: rebuiltJob.head })
+    expect(rebuilt.edit_mode).toBe('rebuild')
+    expect(rebuilt.parent).toBe(job.delivery)
+    expect(rebuilt.content.blocks).toEqual(saved.content.blocks)
+    expect(rebuilt.assets).toEqual(saved.assets)
+    expect(rebuilt.content.claim).toBe('partial')
     await app.close()
     app = await launch()
     window = await app.firstWindow()
     await expect(window.getByText('Local engine ready')).toBeVisible({ timeout: 60000 })
     await window.locator('.document-item').first().click()
-    await expect(window.frameLocator('iframe').getByRole('heading', { name: 'Manual local correction' })).toBeVisible()
+    await expect(window.frameLocator('iframe').getByText('End of the synthetic section.', { exact: false })).toBeVisible()
+    const finalDestination = join(directory, 'rebuilt-delivery.zip')
+    await app.evaluate(({ dialog }, destination) => {
+      dialog.showSaveDialog = async () => ({ canceled: false, filePath: destination })
+    }, finalDestination)
+    await window.getByRole('button', { name: 'Export ZIP' }).click()
+    await expect(window.getByRole('status')).toContainText('Exported partial draft')
+    await window.screenshot({ path: join(directory, 'reopened-rebuild.png') })
+    // Inspect actual source, saved version and ZIP bytes independently of the UI receipt.
+    const verification = JSON.parse(execFileSync(resolve('.venv/Scripts/python.exe'), ['-c', `
+import json, sys, zipfile
+from pathlib import Path
+import pymupdf
+from pdfmd.documents import Documents
+from pdfmd.storage import Store
+workspace, source, archive, job, version = sys.argv[1:]
+store = Store(workspace)
+documents = Documents(store)
+saved = documents.version(job, version)
+with pymupdf.open(source) as pdf, zipfile.ZipFile(archive) as z:
+    markdown = z.read('document.md').decode('utf-8')
+    assert all(line in markdown for page in pdf for line in page.get_text().splitlines())
+    assert json.loads(z.read('document.json')) == saved
+    for name in z.namelist():
+        assert z.read(name) == (documents.root / version / name).read_bytes()
+    for path, asset in saved['assets'].items():
+        assert z.read(path) == store.bytes(asset['ref'], job)
+    assert store.bytes(saved['source_ref'], job) == Path(source).read_bytes()
+print(json.dumps({'version': version, 'source_pages': 2, 'blocks': len(saved['content']['blocks']), 'assets': len(saved['assets']), 'verified': True}))
+`, join(directory, 'workspace'), source, finalDestination, job.id, rebuiltJob.head], { windowsHide: true, encoding: 'utf-8' }))
+    expect(verification).toMatchObject({ source_pages: 2, blocks: 3, assets: 1, verified: true })
+    await fs.writeFile(join(directory, 'delivery-verification.json'), JSON.stringify(verification, null, 2))
     expect(requests).toBe(6)
   } finally {
     await app.close()

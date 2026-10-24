@@ -6,6 +6,33 @@ The active contract is [CONTRACTS](../CONTRACTS.md), and its unresolved choices 
 
 The central observed problem involved a retained candidate containing correct `本文件`. Full page-map validation rejected the submission. Later regeneration produced `本文作`. Better storage cannot prove transcription correct. However, it can avoid forcing the model to rewrite already-correct prose to repair metadata. The same reasoning applies to a large table with one missing bold span: precise editing should preserve everything outside the selected change.
 
+## Implemented editing and reuse behavior
+
+The 2026-10-24 Q1 increment resolves two observed loss paths: an ordinary request could combine an older content base with the current expected head, and the desktop could combine a newly selected version ID with a draft copied from previously loaded content. These require different protections. A backend equality check cannot detect a frontend that labels old text with two matching new IDs.
+
+The backend uses `mode="edit"` by default, requiring `base_version == expected_head`. `mode="rebuild"` explicitly permits a different saved or empty base while retaining the current-head commit check. The agent chooses either mode without a human approval gate; large replacements remain available. A conflict preserves the received candidate rather than choosing a new base automatically. Immutable prior versions remain readable and exportable.
+
+The desktop groups the base version, expected head, mode and draft blocks in an edit session. Loaded content is separately identified by task and version, with loading/error/ready states. Switching selections hides an obsolete preview immediately; effect cleanup ignores late replies. A failed load cannot enable editing/export. Opening an editor freezes its version even if background polling later reports a newer head. A failed save retains the draft. Export uses the loaded immutable version and explicitly excludes unsaved edits. Historical editing is labeled as rebuilding; no automatic old-version-to-current-head substitution occurs.
+
+For a local repair, suppose candidate `candidate:old-request:0` contains a correct second-page paragraph in `/operations/0/blocks`, followed by an unwanted delete. After a newer version `V2` is saved, the agent can submit:
+
+```json
+{
+  "base_version": "V2",
+  "expected_head": "V2",
+  "operations": [{
+    "kind": "insert",
+    "after_id": "existing-section",
+    "reuse_candidate": {"ref": "candidate:old-request:0", "pointer": "/operations/0/blocks"}
+  }],
+  "page_updates": {"2": {"printed": "none", "disposition": "included"}}
+}
+```
+
+Only the referenced block content is copied. The old delete and rejected page metadata are not replayed. A `replace` operation accepts the same content reference with an explicit target `id`; either operation also accepts a pointer to a single Block. Ownership, candidate kind, pointer syntax and Block shape are checked before the normal merged-document validation and conditional commit. Literal `blocks` and `reuse_candidate` are mutually exclusive at that operation. Top-level reuse remains a whole-list replacement, so it should not be used for inserting a paragraph. Source strings are preserved without Unicode normalization or HTML reflow.
+
+The document tests cover rejected metadata, retained candidates, later commits, local insert/replace, deliberate reconstruction, source images, reopen and byte-checked export. Controlled IPC tests cover delayed/failed/out-of-order reads and head advancement while editing; the full desktop fixture also rebuilds an older version and exports after restarting. These checks establish software/artifact behavior, not natural model adoption or universal source fidelity. [CONTRACTS Q1](../CONTRACTS.md#q1-document-schema-and-commit) is the exact current contract; the historical alternatives below retain their stated status.
+
 <a id="identities-and-canonical-data"></a>
 ## 1. Identities and canonical data
 

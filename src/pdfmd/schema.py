@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+import re
 from urllib.parse import urlsplit
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -68,20 +69,29 @@ class Document(Strict):
 
 
 class CandidateRef(Strict):
-    ref: str
-    pointer: str = "/replace_blocks"
+    ref: str = Field(description="Immutable candidate reference belonging to this task, including rejected edits.")
+    pointer: str = Field(default="/replace_blocks", description="RFC 6901 pointer to block content, e.g. /operations/0/blocks. Never replays the candidate's operations.")
 
 
-class Insert(Strict):
+class BlockInput(Strict):
+    blocks: list[Block] | None = Field(default=None, description="Exact replacement/inserted blocks. Supply either blocks or reuse_candidate, not both.")
+    reuse_candidate: CandidateRef | None = Field(default=None, description="Copy a Block or list of Blocks from this task's retained candidate without regenerating it.")
+
+    @model_validator(mode="after")
+    def one_block_source(self):
+        if (self.blocks is None) == (self.reuse_candidate is None):
+            raise ValueError("Supply exactly one of blocks or reuse_candidate for insert/replace.")
+        return self
+
+
+class Insert(BlockInput):
     kind: Literal["insert"]
     after_id: str | None
-    blocks: list[Block]
 
 
-class Replace(Strict):
+class Replace(BlockInput):
     kind: Literal["replace"]
     id: str
-    blocks: list[Block]
 
 
 class Delete(Strict):
@@ -101,6 +111,7 @@ class Patch(Strict):
 class Edit(Strict):
     base_version: str | None
     expected_head: str | None
+    mode: Literal["edit", "rebuild"] = Field(default="edit", description="edit requires base_version == expected_head. Use rebuild deliberately to start from an older saved version or an empty base; expected_head must still match the current head. No user approval is required.")
     title: str | None = None
     replace_blocks: list[Block] | None = None
     reuse_candidate: CandidateRef | None = None
@@ -111,6 +122,8 @@ class Edit(Strict):
 
     @model_validator(mode="after")
     def one_source(self):
+        if self.mode == "edit" and self.base_version != self.expected_head:
+            raise ValueError("Ordinary edits require base_version == expected_head. Read the current head and reuse retained candidate blocks for a local repair, or explicitly choose mode='rebuild' to reconstruct from another base.")
         if self.replace_blocks is not None and self.reuse_candidate is not None:
             raise ValueError("Use either replacement blocks or a candidate reference.")
         return self
@@ -122,6 +135,13 @@ def pointer(value: Any, path: str) -> Any:
     if not path.startswith("/"):
         raise ValueError("Use an RFC 6901 JSON Pointer beginning with '/'.")
     for part in path[1:].split("/"):
+        if re.search(r"~(?![01])", part):
+            raise ValueError("Invalid JSON Pointer escape; use ~0 for '~' and ~1 for '/'.")
         key = part.replace("~1", "/").replace("~0", "~")
-        value = value[int(key)] if isinstance(value, list) else value[key]
+        if isinstance(value, list):
+            if not re.fullmatch(r"0|[1-9][0-9]*", key):
+                raise ValueError("JSON Pointer array indices must be nonnegative integers without leading zeros.")
+            value = value[int(key)]
+        else:
+            value = value[key]
     return value

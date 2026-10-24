@@ -70,7 +70,8 @@ class Engine:
                 runtime = None
                 try:
                     runtime = Runtime(self.store, Nexus(self.store, lambda _: self.keys[job], self.transport), scripts=scripts)
-                    runtime.run(job, lock)
+                    # This API is the user's Start/Continue action, distinct from crash re-entry.
+                    runtime.run(job, lock, continue_failed=True)
                 except Exception:
                     logging.exception("Task stopped with a local engine error")
                 finally:

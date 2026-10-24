@@ -20,9 +20,12 @@ Preserve substantive diagram labels as searchable text alongside the unchanged s
 Use physical PDF positions for pages. Observe printed labels from the source. 'unknown' differs from 'none'.
 edit_document generates page comments. Keep coherent blocks intact across physical page boundaries.
 Save useful work early. Reuse exact candidates when validation rejects metadata. Do not regenerate correct prose.
-For edits, name base_version and expected_head. Null names the empty document or initial head.
+For edits, name base_version and expected_head. Default mode=edit requires them to match.
+Choose mode=rebuild explicitly to reconstruct from another saved or empty base; no routine user approval is needed.
+Both modes check the current head at commit. Null names the empty document or initial head.
 replace_blocks replaces the whole block list. reuse_candidate copies the exact list at its JSON Pointer.
-operations run sequentially. insert uses after_id (null means beginning) and blocks. replace uses id and blocks.
+operations run sequentially. insert uses after_id (null means beginning); replace uses id.
+Each insert/replace accepts either blocks or reuse_candidate selecting one Block or a block list, without replaying other candidate operations.
 delete uses id. patch uses id, zero-based half-open Unicode start/end, expected text, and replacement text.
 page_updates merges supplied fields by physical-page key. Omitted fields remain unchanged.
 Read complete saved originals or precise fields/ranges with read_evidence. Index views are not complete evidence.
@@ -93,6 +96,13 @@ class Context:
         record = self.store.json(item["feedback_ref"], job)
         return {key: record[key] for key in ("request", "code", "message", "candidate_ref")}
 
+    def continuation_feedback(self, job: str, state: dict) -> dict | None:
+        ref = state.get("continuation_feedback")
+        if not ref:
+            return None
+        record = self.store.json(ref, job)
+        return {key: record[key] for key in ("request", "status", "reason", "message", "diagnostic", "response_ref", "attempts")}
+
     def group(self, job: dict, request_id: str, state: dict, *, defer: bool = False, images: bool = True) -> list[dict]:
         request = self.store.get("request", request_id, job=job["id"])
         reply = self.store.json(request["accepted_ref"], job["id"])
@@ -159,12 +169,18 @@ class Context:
         feedback = self.repair_feedback(job["id"], state, "normal")
         if feedback:
             messages.append({"role": "user", "content": "Application continuation feedback:\n" + json.dumps(feedback, ensure_ascii=False)})
+        continuation = self.continuation_feedback(job["id"], state)
+        if continuation:
+            messages.append({"role": "user", "content": "Request continuation record:\n" + json.dumps(continuation, ensure_ascii=False)})
         payload = make_payload(route, SYSTEM, messages, definitions(self.dispatcher.scripts))
         return payload, estimate(payload, route)
 
     def compact_request(self, job: dict, state: dict) -> tuple[dict, dict]:
         route = Route.model_validate(job["route"])
         prefix = {"current_anchor": json.loads(self.anchor(job, state)), "previous_handoff": self.handoff(job["id"], state)}
+        continuation = self.continuation_feedback(job["id"], state)
+        if continuation:
+            prefix["request_continuation"] = continuation
         feedback = self.repair_feedback(job["id"], state, "compaction")
         rejected_text = None
         if feedback:

@@ -26,6 +26,8 @@ The model selects source access, OCR, scripts and reconstruction scope. The app 
 
 The implemented graph has `prepare`, `model`, `tools`, and `compact` nodes. `prepare` assembles a fitting normal request or a fitting compaction request; both use the same persistent Nexus service. `tools` settles the accepted batch sequentially before another request. A text-only reply returns to `prepare` with durable continuation feedback. A model-authored handoff validation failure returns with separate correction feedback while the old context remains active. Both correction paths are bounded and use the normal request budget. Explicit reports, cancellation, exhausted limits and unrecoverable failures end the invocation. Exact state and recovery semantics are in [the implemented contracts](CONTRACTS.md#implemented-first-version-contracts).
 
+Continuation has an explicit entry boundary. The server conveys the user's Continue action; the runtime reconciles durable records before deciding whether to resume the existing request or record a distinct request transition. Nexus owns accepted-reply/attempt facts, the dispatcher owns completed or unexecuted tool receipts, and graph state owns the next step and feedback references. New amendments supersede only unstarted accepted calls; completed effects and unknown outcomes are not relabeled. This fits the existing single-writer graph without adding a second scheduler or changing the agent's choice of conversion methods.
+
 ## Content and context are separate
 
 Keep complete immutable originals outside the model context. Distinguish:
@@ -85,7 +87,9 @@ Saved-output previews record the actual scroll position and CSS viewport/documen
 
 Official guidance consulted for this implementation:
 
-- [LangGraph persistence](https://docs.langchain.com/oss/python/langgraph/persistence): checkpoint lifecycle and synchronous durability; installed SQLite saver signatures were also inspected.
+- [React state structure](https://react.dev/learn/choosing-the-state-structure) and [effect lifecycle](https://react.dev/reference/react/useEffect): the 2026-10-24 document session groups related edit state, derives readiness from task/version identity and ignores obsolete asynchronous reads. [Pydantic model validators](https://docs.pydantic.dev/latest/concepts/validators/) govern edit-mode and content-source validation. Installed dependency pins remain unchanged.
+- [LangGraph checkpointers](https://docs.langchain.com/oss/python/langgraph/checkpointers): checkpoint lifecycle, synchronous durability and supported `update_state(as_node=...)` continuation. The 2026-10-24 change records its continuation intent before updating the checkpoint, so a cross-store gap can be reconciled. Installed SQLite saver signatures were also inspected.
+- [HTTPX exceptions](https://www.python-httpx.org/exceptions/): HTTP status failures and transport failures are distinct observations. Explicit failed-response Continue is kept separate from unknown-outcome replay; neither establishes remote cancellation or a known bill.
 - [Electron security](https://www.electronjs.org/docs/latest/tutorial/security) and [safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage): process isolation, narrow IPC and the asynchronous encryption API.
 - [electron-vite](https://electron-vite.org/guide/) and [pnpm settings](https://pnpm.io/settings): supported desktop build structure and explicit dependency build-script policy.
 - [Native function calls](https://developers.openai.com/api/docs/guides/function-calling) and [Responses](https://developers.openai.com/api/reference/resources/responses/methods/create): protocol field/call identity guidance. Actual Nexus route support remains separately verified.

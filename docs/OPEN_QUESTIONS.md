@@ -19,7 +19,7 @@ The detailed engineering background is local in [DEVELOPMENT_GUIDE](DEVELOPMENT_
 
 Immutable version files own body content. SQLite owns registration/pointers/receipts. Retain malformed originals without requiring automatic salvage.
 
-**Implemented selection:** task-owned immutable candidate references with JSON Pointers; explicit base/expected-head edits; sequential insert/replace/delete/exact code-point patches; supplied-field-only page merges; immutable version files with atomic registration/head/receipt. Rejected-candidate reuse, insertion, metadata patches and historical receipt replay are covered by offline tests.
+**Implemented selection:** task-owned immutable candidate references with JSON Pointers; ordinary edits requiring matching base/expected head and explicit autonomous reconstruction from a different base; sequential insert/replace (including local candidate content)/delete/exact code-point patches; supplied-field-only page merges; immutable version files with atomic registration/head/receipt; desktop edit sessions bound to loaded versions. Rejected-candidate reuse, insertion, metadata patches, stale-head rejection, deliberate rebuild and historical receipt replay are covered by offline tests. [Q1](CONTRACTS.md#q1-document-schema-and-commit) owns the exact updated contract.
 
 **Design closure:** the contract can express these actions unambiguously:
 
@@ -81,7 +81,7 @@ A universal optimum threshold and guaranteed compaction count are unnecessary.
 - Export saved versions independently.
 - Label partial work.
 
-**Implemented selection:** one executor lock, external immutable originals, SQLite request/attempt/effect records, and compact LangGraph checkpoints. Re-entry reconciles accepted-reply and tool-result objects, reuses committed document receipts, and settles the pending batch before another model request. Limits persist across resume. Unknown OCR/script effects stop. Explicit-version export is independent. Offline fault tests cover the selected commit/checkpoint gaps; they are not a guarantee for every hard crash or remote outcome.
+**Implemented selection:** one executor lock, external immutable originals, SQLite request/attempt/effect records, and compact LangGraph checkpoints. Re-entry reconciles accepted-reply and tool-result objects, reuses committed document receipts, and settles the pending batch before another model request. New user amendments preserve completed effects and settle unstarted old calls as unexecuted. Explicit Continue after an HTTP/rejected response records a distinct request transition; unknown remote outcomes retain their frozen ID and replay gate. Limits persist across resume. Unknown OCR/script effects stop. Explicit-version export is independent. [Q3](CONTRACTS.md#q3-execution-recovery-and-delivery) owns exact entry/receipt behavior. Offline fault tests cover the selected gaps; they are not a guarantee for every hard crash or remote outcome.
 
 **Design closure:** each boundary in CONTRACTS has a defined re-entry outcome and state owner. No unconditional arbitrary-old-job migration or universal hard-crash guarantee is required.
 

@@ -11,7 +11,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 
 from .context import Context, HandoffRejected
-from .nexus import Nexus, StopRun
+from .nexus import Nexus, StopRun, instruction_basis
 from .storage import Store, encode
 from .tools import Dispatcher, UnknownEffect
 
@@ -29,6 +29,7 @@ class State(TypedDict, total=False):
     next: str
     terminal: bool
     repairs: dict[str, dict]
+    continuation_feedback: str | None
 
 
 class Runtime:
@@ -126,14 +127,18 @@ class Runtime:
         notes, report = state["notes"], None
         for index, call in enumerate(reply["calls"]):
             operation = f"{key}:{index}"
-            previous = self.store.maybe("operation", operation)
-            if self.store.get("job", job)["cancel_requested"] and not (previous and previous["status"] == "done"):
-                raise StopRun("cancelled", "Stopped before the next tool. The accepted pending batch is preserved.")
+            result = self.dispatcher.reconcile(job, operation, call["name"], call["arguments"])
             current = self.store.get("job", job)
-            elapsed = current["active_seconds"] + max(0, time.time() - current.get("active_since", time.time()))
-            if elapsed >= current["limits"]["max_active_seconds"] and not (previous and previous["status"] == "done"):
-                raise StopRun("budget_exhausted", "Stopped before a new tool because the persistent active-time budget is exhausted.")
-            result = self.dispatcher.execute(job, operation, call["name"], call["arguments"])
+            if result is None:
+                if current["cancel_requested"]:
+                    raise StopRun("cancelled", "Stopped before the next tool. The accepted pending batch is preserved.")
+                if request["instruction_basis"] != instruction_basis(current):
+                    result = self.dispatcher.skip(job, operation, call["name"], call["arguments"])
+                else:
+                    elapsed = current["active_seconds"] + max(0, time.time() - current.get("active_since", time.time()))
+                    if elapsed >= current["limits"]["max_active_seconds"]:
+                        raise StopRun("budget_exhausted", "Stopped before a new tool because the persistent active-time budget is exhausted.")
+                    result = self.dispatcher.execute(job, operation, call["name"], call["arguments"])
             if not result["ok"]:
                 continue
             data = result["data"]
@@ -149,10 +154,14 @@ class Runtime:
                     notes = intent["notes"]
             if "report_intent" in data:
                 report = data["report_intent"]
+        # Restore historical context effects, but an old report cannot terminate a new instruction.
+        if request["instruction_basis"] != instruction_basis(self.store.get("job", job)):
+            report = None
         # One deterministic policy settlement per complete accepted batch.
         changes = {"released": sorted(released), "pinned": sorted(pinned), "notes": notes,
                    "history": [*state["history"], key], "seq": state["seq"] + 1,
                     "revision": state["revision"] + 1, "pending": None, "terminal": bool(report),
+                    "continuation_feedback": None,
                     "repairs": {kind: value for kind, value in state.get("repairs", {}).items() if kind != "normal"}}
         if report:
             self.store.update_job(job, status="waiting" if report["state"] == "waiting" else "completed" if report["state"] == "complete" else "paused",
@@ -173,7 +182,39 @@ class Runtime:
         return {**result, "pending": None,
                 "repairs": {kind: value for kind, value in state.get("repairs", {}).items() if kind != "compaction"}}
 
-    def run(self, job: str, lock: FileLock | None = None) -> None:
+    def resume_pending(self, state: State, *, continue_failed: bool) -> dict | None:
+        """Persist a chosen new-request transition before changing the graph checkpoint."""
+        job = self.store.get("job", state["job"])
+        key = state.get("pending") or f"{job['id']}:{state['seq']}:{state['revision']}"
+        if self.store.maybe("request", key) is None:
+            return None
+        ref = f"continuation:{key}"
+        receipt = self.store.maybe("blob", ref)
+        if receipt is None:
+            request = self.nexus.reconcile(job["id"], key)
+            # A locally accepted reply always wins. Unknown/in-flight outcomes retain their ID and replay gate.
+            if request["accepted_ref"] or job["cancel_requested"]:
+                return None
+            unsent_amended = (request["status"] == "prepared" and not request["attempts"]
+                              and request["instruction_basis"] != instruction_basis(job))
+            failed = request["status"] in {"http_error", "rejected"} and continue_failed
+            if not (unsent_amended or failed):
+                return None
+            message = ("The unsent prepared request was superseded by new user instructions. No attempt was made."
+                       if unsent_amended else
+                       "The user chose Continue after a failed or rejected request. No tools from that response were executed. "
+                       "The original request and response records remain available. HTTP failure does not establish remote cancellation or known cost. "
+                       "Follow the latest user instructions and choose how to continue or repair the submission.")
+            self.store.blob(job["id"], "request_continuation", {"request": key, "status": request["status"],
+                            "reason": "new_instructions" if unsent_amended else request.get("failure", {}).get("reason", request["status"]),
+                            "message": message, "diagnostic": request.get("failure", {}).get("message"), "response_ref": request.get("response_ref"),
+                            "attempts": list(request["attempts"]), "revision": state["revision"] + 1}, key=ref)
+        feedback = self.store.json(ref, job["id"])
+        self.store.event_once(job["id"], "request_continued", key, {"request": key, "feedback_ref": ref, "reason": feedback["reason"]})
+        return {"revision": feedback["revision"], "pending": None, "next": "prepare", "terminal": False,
+                "continuation_feedback": ref}
+
+    def run(self, job: str, lock: FileLock | None = None, *, continue_failed: bool = False) -> None:
         if lock is None:
             lock = FileLock(str(self.store.root / f"task-{job}.lock"))
             try:
@@ -188,6 +229,10 @@ class Runtime:
             self.store.update_job(job, status="running", stop_reason=None, active_since=time.time(), active_seconds=carried)
             snapshot = self.graph.get_state(config)
             if snapshot.next:
+                continuation = self.resume_pending(dict(snapshot.values), continue_failed=continue_failed)
+                if continuation:
+                    # Supported state update: complete this transition as the model node and route to prepare.
+                    self.graph.update_state(config, continuation, as_node="model")
                 self.graph.invoke(None, config, durability="sync")
             else:
                 initial = dict(snapshot.values) if snapshot.values else {"job": job, "seq": 0, "revision": 0, "history": [],

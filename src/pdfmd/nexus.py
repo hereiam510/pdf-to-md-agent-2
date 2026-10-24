@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 from copy import deepcopy
 import json
+from hashlib import sha256
 import time
 from typing import Callable
 
@@ -17,6 +18,11 @@ class StopRun(RuntimeError):
     def __init__(self, reason: str, message: str):
         super().__init__(message)
         self.reason = reason
+
+
+def instruction_basis(job: dict) -> str:
+    """Only human amendments invalidate an unstarted accepted plan; tool writes do not."""
+    return sha256(encode(job["amendments"])).hexdigest()
 
 
 def unique_object(pairs):
@@ -110,15 +116,18 @@ class Nexus:
         if old:
             # Re-entry never rebuilds or alters a frozen request.
             return old
-        route = self.store.get("job", job)["route"]
+        current = self.store.get("job", job)
+        route = current["route"]
         blob = self.store.blob(job, "request_input", payload, {"kind": kind, "request": key})
         record = {"id": key, "job": job, "kind": kind, "payload_ref": blob["ref"],
-                  "route": route, "meta": meta, "status": "prepared", "attempts": [], "accepted_ref": None}
+                  "route": route, "meta": meta, "instruction_basis": instruction_basis(current),
+                  "status": "prepared", "attempts": [], "accepted_ref": None}
         self.store.put("request", key, job, record)
         self.store.event(job, "request_prepared", {"request": key, "kind": kind, **meta.get("capacity", {})})
         return record
 
-    def send(self, job: str, key: str) -> dict:
+    def reconcile(self, job: str, key: str) -> dict:
+        """Recover locally accepted bytes without sending anything."""
         request = self.store.get("request", key, job=job)
         staged = self.store.maybe("blob", f"accepted:{key}")
         if not request["accepted_ref"] and staged:
@@ -129,6 +138,10 @@ class Nexus:
             attempt.update(status="accepted", usage=self.store.json(staged["ref"], job)["usage"],
                            finished=staged["meta"]["received_at"])
             self.store.put("attempt", attempt["id"], job, attempt)
+        return request
+
+    def send(self, job: str, key: str) -> dict:
+        request = self.reconcile(job, key)
         if request["accepted_ref"]:
             return self.store.json(request["accepted_ref"], job)
         state = self.store.get("job", job)
@@ -167,6 +180,7 @@ class Nexus:
                 failure = StopRun("provider_error", f"Nexus returned HTTP {status}. The error body is withheld to protect credentials. No context-overflow diagnosis is assumed.")
             else:
                 raw = self.store.blob(job, "native_response", bytes(received), {"request": key, "attempt": attempt_id, "complete_transport": True})
+                request["response_ref"] = raw["ref"]
                 try:
                     accepted = parse_reply(route.protocol, bytes(received))
                 except (ValueError, KeyError, TypeError) as exc:
@@ -188,6 +202,8 @@ class Nexus:
             if received and request["status"] == "unknown":
                 self.store.blob(job, "partial_native_response", bytes(received),
                                 {"request": key, "attempt": attempt_id, "complete_transport": False})
+            if failure:
+                request["failure"] = {"reason": failure.reason, "message": str(failure)}
             self.store.put("request", key, job, request)
             attempt = {"id": attempt_id, "request": key, "status": request["status"], "started": started,
                        "finished": time.time(), "http_status": status, "usage": None, "remote_cancelled": None}

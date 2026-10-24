@@ -6,6 +6,29 @@ This guide explains durable execution responsibilities, failure reasoning and co
 
 The preferred design uses a small Python LangGraph StateGraph, one shared Nexus request service, and a shared tool dispatcher. It also uses compact graph state, SQLite metadata, and immutable external content. These responsibilities may share one process. The graph provides control and checkpoint primitives. It does not atomically commit remote generation, filesystem results, SQLite changes, and its own checkpoint. The first-version recommendation uses one active writer per task rather than a general multi-writer branch system.
 
+## Implemented continuation boundaries
+
+The 2026-10-24 increment resolves two practical failures: resuming an accepted batch could run an obsolete edit before the model saw the user's new instructions, and Continue after an HTTP/rejected reply could reopen the same permanently rejected request. [Q3](../CONTRACTS.md#q3-execution-recovery-and-delivery) owns the exact contract. The implementation keeps the existing graph and separates these cases at entry and tool boundaries:
+
+| Observed durable state | Action and rationale |
+| --- | --- |
+| Tool has a receipt, including a document committed before graph completion | Recover the same result and any context intent. Preserve useful effects without duplicate commits or rollback. |
+| Accepted tool has not started, and amendments changed | Preserve its candidate; settle an explicit unexecuted result under the original call identity. Then let the model decide using the new instructions. |
+| Tool started but has no recoverable receipt | Keep the unknown local outcome and files. Do not claim it was skipped or assume no effect. General reconciliation remains separate work. |
+| Request was prepared but never attempted, and amendments changed | Retain it and record a new-input transition. Sending known-obsolete unsent input adds no recovery value. |
+| HTTP error or complete transport with rejected/truncated native reply; user presses Continue | Retain failure evidence, record the Continue decision and assemble a new request from current state. Never execute a partial call from the old reply. |
+| Attempt is unknown/in flight | Keep the same request and original replay gate. New instructions do not prove the earlier generation never happened. |
+
+`Nexus.reconcile` and `Dispatcher.reconcile` read durable acceptance/result facts before any replacement decision. `instruction_basis` hashes only the ordered human amendments. A normal document save by the agent cannot accidentally invalidate the remaining calls in its own batch. On amendment, all genuinely unstarted old calls receive paired unexecuted results, not just writes. This avoids maintaining a speculative tool-category filter and returns method selection to the model. The app does not reject future equivalent actions that the model chooses under the new instructions.
+
+Skipping itself has a durable intermediate `skipping` marker. A crash after that marker, after its result object, or before graph completion resumes the same skip; it cannot later execute the superseded call. Settled context intents still apply at the pending batch boundary. A historical completion report is preserved but cannot close the new instruction.
+
+Explicit failed-request continuation first saves `continuation:<request>`, including the next revision and diagnostic/reference. Only then does the runtime use LangGraph's supported state update and return through `prepare`. The stable record covers the gap between the catalog and graph stores without pretending they share a transaction. Feedback reaches both normal and compaction requests. Original attempts/time, correction counts, retained history, saved versions and unknown fees remain intact. New input can still encounter capacity or budget limits.
+
+`Engine.start` conveys the user's Start/Continue action. Merely opening the desktop reads state. Plain runtime re-entry can recover a previously persisted Continue decision but cannot create that decision for an HTTP/rejected reply. This separates deliberate continuation from transparent recovery without requiring routine approvals for normal agent tools.
+
+Tests in `tests/test_continuation.py` inject the relevant persistence gaps, exercise both native protocols and byte-check preserved delivery. `tests/desktop/continuation-workflow.spec.ts` drives the real Electron/Python path with loopback scripted replies. Its test-only `boundary-hook/sitecustomize.py` delays return from a genuinely settled context tool so the UI can press Stop at a deterministic boundary. The hook is absent from normal app startup. An earlier test interrupted a running script instead: that correctly produced `local_outcome_unknown`, and is not evidence of safe script cancellation/replay. No real model judgment, source-quality benchmark or arbitrary crash guarantee follows from these tests.
+
 <a id="ownership-and-entry-points"></a>
 ## 1. Ownership and entry points
 

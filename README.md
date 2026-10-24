@@ -62,6 +62,12 @@ The implementation follows these responsibility boundaries. Framework choice is 
 
 The response-correction increment continues automatically after a text-only reply or an invalid context handoff. Connection settings expose **Automatic response corrections** (default 2, zero disables), applied to new tasks. Corrections retain the original reply and share the task's request/time budget. Continuing an exhausted correction episode does not reset it; new user instructions or an edited document start a new episode. Explicit completion or questions use the agent's `report` tool. See [the execution contract](docs/CONTRACTS.md#q3-execution-recovery-and-delivery) for boundaries.
 
+Document editing binds a draft to its loaded version and starting head. Historical versions offer **Rebuild from this version**; content added in later versions is excluded from that reconstruction. Failed loads cannot enable editing/export, and a save conflict retains the draft. The agent's `edit_document` uses ordinary edits by default, offers explicit autonomous reconstruction, and can insert/replace exact blocks from retained candidates. Export uses the selected loaded version, excluding unsaved edits. See [the document contract](docs/CONTRACTS.md#q1-document-schema-and-commit).
+
+After Stop, adding instructions and pressing **Continue** preserves completed tool effects and marks obsolete, unstarted calls as unexecuted before the agent decides again. Continue without an amendment resumes the accepted batch. After an HTTP error or a rejected/truncated reply, Continue can prepare a new request using the latest task state, while retaining the failed record and consumed budgets. Unknown remote outcomes retain their original request and configured replay limit; unknown local effects still need reconciliation. Reopening alone does not send a request.
+
+The current source includes all three editing/continuation batches. Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes, local evidence, limitations and suggested next work.
+
 ## Document checks
 
 With a working Python 3.9+ interpreter, run the following from this repository (or use that interpreter's full path):
@@ -79,6 +85,6 @@ pnpm build
 pnpm test:desktop
 ```
 
-The desktop test uses a local model fixture and makes no provider calls. Set `PDFMD_PACKAGED_EXE` to the built executable to test the packaged app. Live Nexus calls require an explicit task and credential; they are not part of automated tests.
+Desktop tests use local model or IPC fixtures and make no provider calls. The continuation workflow uses a test-only scheduling hook to pause at a settled tool boundary before UI Stop. The ordinary workbench test accepts `PDFMD_PACKAGED_EXE` to test a built executable; the renderer-session and scheduling-hook tests target development code. Live Nexus calls require an explicit task and credential; they are not part of automated tests.
 
 The public repository is [hereiam510/pdf-to-md-agent-2](https://github.com/hereiam510/pdf-to-md-agent-2). Local build artifacts and private configuration are excluded from Git. No GitHub application release has been published.

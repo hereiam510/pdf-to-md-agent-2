@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import type { Block, Job, Limits, Route, Saved, Settings } from './types'
+import type { Job, Limits, Route, Settings } from './types'
+import { useDocumentSession } from './useDocumentSession'
 import './style.css'
 
 const api = window.workbench.invoke
@@ -63,9 +64,6 @@ function App() {
   const [job, setJob] = useState<Job | null>(null)
   const [page, setPage] = useState(1)
   const [pageUrl, setPageUrl] = useState('')
-  const [version, setVersion] = useState('')
-  const [saved, setSaved] = useState<Saved | null>(null)
-  const [followHead, setFollowHead] = useState(true)
   const [tab, setTab] = useState('preview')
   const [amendment, setAmendment] = useState('')
   const [scripts, setScripts] = useState(false)
@@ -74,7 +72,7 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [importName, setImportName] = useState('')
   const [scope, setScope] = useState('Convert the complete document, preserving substantive text, tables, footnotes, and source images.')
-  const [editing, setEditing] = useState<Block[] | null>(null)
+  const { version, saved, editing, loadError, selectVersion, beginEdit, changeBlock, finishEdit, discardEdit, retryLoad } = useDocumentSession(job?.id === active ? job : null)
   const [evidence, setEvidence] = useState<any>(null)
   const [activityOpen, setActivityOpen] = useState(false)
   const refresh = useRef<() => Promise<void>>(async () => {})
@@ -107,7 +105,7 @@ function App() {
     return () => { alive = false; clearInterval(timer) }
   }, [active])
   useEffect(() => {
-    setPage(1); setPageUrl(''); setVersion(''); setSaved(null); setFollowHead(true); setEditing(null); setEvidence(null); setJob(null)
+    setPage(1); setPageUrl(''); setEvidence(null); setJob(null)
     setError(''); setNotice(''); setAmendment('')
   }, [active])
   useEffect(() => {
@@ -116,13 +114,6 @@ function App() {
     void api('page', { job: active, page }).then(value => { if (alive) setPageUrl(value.url) }).catch(e => { if (alive) setError(String(e)) })
     return () => { alive = false }
   }, [active, page])
-  useEffect(() => { if (job?.head && followHead) setVersion(job.head) }, [job?.head, followHead])
-  useEffect(() => {
-    if (!version || !active) return
-    let alive = true
-    void api<Saved>('version', { job: active, version }).then(value => { if (alive) setSaved(value) }).catch(e => { if (alive) setError(String(e)) })
-    return () => { alive = false }
-  }, [active, version])
 
   const act = async (fn: () => Promise<unknown>) => {
     setBusy(true); setError(''); setNotice('')
@@ -136,9 +127,9 @@ function App() {
   return <div className="app">
     <aside className="sidebar">
       <div className="brand"><span className="brand-icon"><Icon name="book" size={22} /></span><div>PDF <strong>Workbench</strong><small>MARKDOWN EDITION</small></div></div>
-      <button className="new-document" onClick={choose} disabled={!ready || busy}><Icon name="plus" />New document</button>
+      <button className="new-document" onClick={choose} disabled={!ready || busy || Boolean(editing)}><Icon name="plus" />New document</button>
       <div className="section-label">YOUR DOCUMENTS <span>{jobs.length}</span></div>
-      <nav className="document-list" aria-label="Documents">{jobs.map(item => <button className={`document-item ${active === item.id ? 'selected' : ''}`} onClick={() => select(item.id)} key={item.id}>
+      <nav className="document-list" aria-label="Documents">{jobs.map(item => <button className={`document-item ${active === item.id ? 'selected' : ''}`} disabled={busy || Boolean(editing)} onClick={() => select(item.id)} key={item.id}>
         <Icon name="file" /><span><strong>{item.name}</strong><small><i className={`dot ${item.status}`} />{statusNames[item.status] || item.status}</small></span>
       </button>)}{jobs.length === 0 && <p className="sidebar-hint">Your documents and saved versions will appear here.</p>}</nav>
       <div className="sidebar-bottom"><button className="connection-button" onClick={() => setSettingsOpen(true)}><Icon name="settings" /><span>Nexus connection<small>{settings.route?.model || 'Choose your model'}</small></span><Icon name="arrow" size={14} /></button>
@@ -158,7 +149,8 @@ function App() {
         </section>
       </> : <>
         <header className="topbar"><div className="document-heading"><span className="breadcrumb">DOCUMENT WORKSPACE</span><h1>{job?.name || 'Opening document…'}</h1></div><div className="header-actions"><span className={`status ${job?.status || ''}`}><i className={`dot ${job?.status || ''}`} />{statusNames[job?.status || ''] || 'Loading'}</span><button className="primary" disabled={!saved || busy} onClick={() => act(async () => {
-          const result = await api('export', { job: active, version, name: job?.name }); if (result) setNotice(`Exported ${result.claim === 'complete' ? 'completed version' : 'partial draft'} to ${result.path}`)
+          if (!saved) return
+          const result = await api('export', { job: saved.job, version: saved.version, name: job?.name }); if (result) setNotice(`Exported ${result.claim === 'complete' ? 'completed version' : 'partial draft'} to ${result.path}`)
         })}><Icon name="download" size={17} />Export ZIP</button></div></header>
         <div className="scope-bar"><span>SCOPE</span><p>{job?.scope}</p></div>
         <div className="reading-area">
@@ -166,16 +158,18 @@ function App() {
             <div className="pdf-canvas">{pageUrl ? <img src={pageUrl} alt={`Source PDF physical page ${page}`} /> : <span className="loading">Rendering source page…</span>}</div><div className="panel-footnote">Physical page {page} · Source retained unchanged</div>
           </section>
           <section className="panel output-panel"><div className="panel-toolbar"><div className="tabs">{['preview', 'markdown', 'evidence'].map(name => <button key={name} className={tab === name ? 'active' : ''} onClick={() => setTab(name)}>{name[0].toUpperCase() + name.slice(1)}</button>)}</div>
-            {job?.versions?.length ? <select aria-label="Saved version" value={version} onChange={e => { setVersion(e.target.value); setFollowHead(false); setEditing(null) }}>{job.versions.map((v, i) => <option key={v.id} value={v.id}>{i === 0 ? 'Latest' : `Version ${job.versions!.length - i}`} · {v.claim} · {v.id.slice(0, 6)}</option>)}</select> : <span className="muted small">No saved version</span>}</div>
+            {job?.versions?.length ? <select aria-label="Saved version" value={version} disabled={busy || Boolean(editing)} onChange={e => selectVersion(e.target.value)}>{job.versions.map((v, i) => <option key={v.id} value={v.id}>{i === 0 ? 'Latest' : `Version ${job.versions!.length - i}`} · {v.claim} · {v.id.slice(0, 6)}</option>)}</select> : <span className="muted small">No saved version</span>}</div>
             {tab === 'evidence' ? <div className="evidence-view"><div className="evidence-list">{job?.evidence?.map(item => <button key={item.ref} onClick={() => act(async () => setEvidence(await api('evidence', { job: active, ref: item.ref })))}><span className="tag">{item.kind.replace('_', ' ')}</span><code>{item.ref.slice(0, 18)}</code><small>{(item.bytes / 1024).toFixed(1)} KB</small></button>)}{!job?.evidence?.length && <p className="muted">Source reads and retained candidates will appear here.</p>}</div>{evidence && <div className="evidence-detail">{evidence.url ? <img src={evidence.url} alt="Saved evidence" /> : <pre>{JSON.stringify(evidence, null, 2)}</pre>}</div>}</div>
-              : editing ? <div className="block-editor">{editing.map((block, index) => <label key={block.id}><span>{block.id} · PDF {block.pages.join(', ')}</span><textarea rows={Math.max(4, Math.min(16, block.markdown.split('\n').length + 1))} value={block.markdown} onChange={e => setEditing(blocks => blocks!.map((b, i) => i === index ? { ...b, markdown: e.target.value } : b))} /></label>)}</div>
+              : editing ? <div className="block-editor"><p className="hint">{editing.mode === 'rebuild' ? 'Rebuilding from' : 'Editing'} saved version {editing.baseVersion.slice(0, 6)}. {editing.mode === 'rebuild' && 'Later saved changes will not be included. '}Export ZIP uses this saved version until you save your edits.</p>{job?.head !== editing.expectedHead && <p className="error">A newer version was saved while you were editing. Your draft is retained; saving will report a conflict.</p>}{editing.blocks.map((block, index) => <label key={block.id}><span>{block.id} · PDF {block.pages.join(', ')}</span><textarea disabled={busy} rows={Math.max(4, Math.min(16, block.markdown.split('\n').length + 1))} value={block.markdown} onChange={e => changeBlock(index, e.target.value)} /></label>)}</div>
                 : saved ? tab === 'preview' ? <iframe title="Saved document preview" sandbox="" srcDoc={saved.preview} /> : <pre className="markdown-view">{saved.markdown}</pre>
-                  : <div className="output-empty"><Icon name="book" size={38} /><h3>Your Markdown takes shape here</h3><p>Start the conversion when your scope and Nexus connection are ready. Saved drafts stay available as the agent works.</p></div>}
-            <div className="panel-footnote output-footer"><span>{saved ? `${saved.content.claim === 'complete' ? 'Agent marked complete' : 'Partial draft'} · ${saved.content.blocks.length} blocks` : 'Immutable versions · portable images'}</span>{saved && tab !== 'evidence' && <div>{editing ? <><button className="text-button" onClick={() => setEditing(null)}>Discard edits</button><button className="text-button accent" disabled={busy || running} onClick={() => act(async () => {
-              const result = await api('edit', { job: active, edit: { base_version: version, expected_head: job?.head, replace_blocks: editing, claim: 'partial' } })
+                  : version ? <div className="output-empty">{loadError ? <><p className="error" role="alert">Could not load the selected version: {loadError}</p><button onClick={retryLoad}>Retry loading version</button></> : <p>Loading selected version…</p>}</div>
+                    : <div className="output-empty"><Icon name="book" size={38} /><h3>Your Markdown takes shape here</h3><p>Start the conversion when your scope and Nexus connection are ready. Saved drafts stay available as the agent works.</p></div>}
+            <div className="panel-footnote output-footer"><span>{editing ? `Unsaved draft · ${editing.blocks.length} blocks` : saved ? `${saved.content.claim === 'complete' ? 'Agent marked complete' : 'Partial draft'} · ${saved.content.blocks.length} blocks` : 'Immutable versions · portable images'}</span>{tab !== 'evidence' && <div>{editing ? <><button className="text-button" disabled={busy} onClick={discardEdit}>Discard edits</button><button className="text-button accent" disabled={busy || running} onClick={() => act(async () => {
+              const result = await api('edit', { job: editing.job, edit: { mode: editing.mode, base_version: editing.baseVersion, expected_head: editing.expectedHead, replace_blocks: editing.blocks, claim: 'partial' } })
               if (!result.ok) throw new Error(result.data.error)
-              setEditing(null); setFollowHead(true); setVersion(result.data.version_id); setNotice('Saved your edits as a new partial version.')
-            })}>Save new version</button></> : <button className="text-button" disabled={running} onClick={() => setEditing(saved.content.blocks.map(b => ({ ...b })))}>Edit content</button>}</div>}</div>
+              setJob(current => current?.id === editing.job ? { ...current, head: result.data.version_id } : current)
+              finishEdit(); setNotice('Saved your edits as a new partial version.')
+            })}>Save new version</button></> : version && (saved && saved.version !== job?.head ? <button className="text-button" disabled={busy || running} title="Create a new version from this older version. Content added in later versions will not be included." onClick={() => beginEdit('rebuild')}>Rebuild from this version</button> : <button className="text-button" disabled={!saved || busy || running} onClick={() => beginEdit('edit')}>Edit content</button>)}</div>}</div>
           </section>
         </div>
         <section className="agent-panel"><div className="agent-header"><div><span className={`agent-indicator ${running ? 'working' : ''}`} /><strong>Conversion agent</strong><span className="muted small">{job?.route?.model || settings.route?.model || 'Connect Nexus to begin'}</span></div><button className="text-button" onClick={() => setActivityOpen(!activityOpen)}>{activityOpen ? 'Hide activity' : 'View activity'} <span className="event-count">{job?.events?.length || 0}</span></button></div>

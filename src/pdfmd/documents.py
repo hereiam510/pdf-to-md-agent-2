@@ -13,7 +13,7 @@ from markdown_it import MarkdownIt
 from mdit_py_plugins.footnote import footnote_plugin
 import nh3
 
-from .schema import Document, Edit, pointer
+from .schema import Block, CandidateRef, Document, Edit, pointer
 from .storage import Conflict, Store, encode, uid
 
 
@@ -83,14 +83,13 @@ class Documents:
         if edit.replace_blocks is not None:
             body["blocks"] = [block.model_dump() for block in edit.replace_blocks]
         if edit.reuse_candidate is not None:
-            origin = self.store.get("blob", edit.reuse_candidate.ref, job=job_id)
-            if origin["kind"] != "candidate":
-                raise ValueError("Reuse requires a candidate reference from this task.")
-            body["blocks"] = deepcopy(pointer(self.store.json(origin["ref"], job_id), edit.reuse_candidate.pointer))
+            body["blocks"] = self.candidate_blocks(job_id, edit.reuse_candidate, allow_single=False)
         for operation_change in edit.operations:
             change = operation_change.model_dump()
             blocks = body["blocks"]
             kind = change.get("kind")
+            if kind in {"insert", "replace"} and operation_change.reuse_candidate is not None:
+                change["blocks"] = self.candidate_blocks(job_id, operation_change.reuse_candidate)
             if kind == "insert":
                 after = change.get("after_id")
                 index = 0 if after is None else self.block_index(blocks, after) + 1
@@ -134,7 +133,7 @@ class Documents:
         prepared = self.root / f".prepared-{version_id}"
         prepared.mkdir()
         envelope = {"schema_version": 1, "job": job_id, "version": version_id,
-                    "parent": edit.base_version, "source_ref": job["source_ref"],
+                    "parent": edit.base_version, "edit_mode": edit.mode, "expected_head": edit.expected_head, "source_ref": job["source_ref"],
                     "content": content.model_dump(), "assets": assets, "candidate_ref": candidate_ref}
         files = {"document.json": encode(envelope), "document.md": markdown.encode("utf-8"),
                  "preview.html": render(markdown, content.title).encode("utf-8")}
@@ -151,7 +150,7 @@ class Documents:
         os.rename(prepared, self.root / version_id)
         hashes["manifest.json"] = sha256(files["manifest.json"]).hexdigest()
         result = {"version_id": version_id, "parent": edit.base_version, "claim": content.claim,
-                  "candidate_ref": candidate_ref, "blocks": len(content.blocks), "known_gaps": content.known_gaps}
+                  "edit_mode": edit.mode, "candidate_ref": candidate_ref, "blocks": len(content.blocks), "known_gaps": content.known_gaps}
         with self.store.transaction() as db:
             prior = self.store.get_tx(db, "operation", operation)
             if prior and prior["status"] == "done":
@@ -171,6 +170,17 @@ class Documents:
                                "candidate_ref": candidate_ref, "tool": "edit_document"})
         self.store.event(job_id, "version_saved", result)
         return result
+
+    def candidate_blocks(self, job: str, reference: CandidateRef, *, allow_single: bool = True) -> list[dict]:
+        origin = self.store.get("blob", reference.ref, job=job)
+        if origin["kind"] != "candidate":
+            raise ValueError("Reuse requires a candidate reference from this task.")
+        selected = pointer(self.store.json(origin["ref"], job), reference.pointer)
+        if allow_single and isinstance(selected, dict):
+            selected = [selected]
+        if not isinstance(selected, list):
+            raise ValueError("Candidate pointer must select a list of Blocks (or one Block for insert/replace).")
+        return [Block.model_validate(block).model_dump() for block in selected]
 
     @staticmethod
     def block_index(blocks: list[dict], key: str) -> int:

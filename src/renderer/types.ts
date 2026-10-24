@@ -15,7 +15,8 @@ export type Job = {
   evidence?: { ref: string; kind: string; bytes: number; meta: Record<string, unknown> }[]
 }
 export type Block = { id: string; markdown: string; pages: number[]; source_note: string }
-export type Saved = { version: string; markdown: string; preview: string; content: { title: string; scope: string; blocks: Block[]; claim: string; known_gaps: string[] } }
+export type Saved = { job: string; version: string; markdown: string; preview: string; content: { title: string; scope: string; blocks: Block[]; claim: string; known_gaps: string[] } }
+export type EditSession = { job: string; baseVersion: string; expectedHead: string | null; mode: 'edit' | 'rebuild'; blocks: Block[] }
 
 declare global {
   interface Window { workbench: { invoke<T = any>(action: string, args?: Record<string, unknown>): Promise<T> } }

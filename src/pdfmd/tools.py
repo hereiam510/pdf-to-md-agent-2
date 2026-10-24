@@ -38,7 +38,7 @@ def definitions(scripts: bool = False) -> list[dict]:
          object_schema({"version_id": STRING, "json_pointer": STRING, "start": INT, "end": INT})),
         ("preview_document", "Inspect actual saved-output pixels. Select an immutable version and viewport. The result identifies the visible region.",
          object_schema({"version_id": STRING, "top": INT, "width": INT, "height": INT}, ["version_id"])),
-        ("edit_document", "Save a new version. Preserve omitted fields. Capture candidates before validation. Apply operations sequentially against the named base. Page metadata uses printed, disposition, and note. Block pages must be included. Complete claims require every physical page classified and a note for each outside_scope or omitted_non_content page. Save partial work at any time.", Edit.model_json_schema()),
+        ("edit_document", "Save a new version. Default mode=edit requires base_version == expected_head; mode=rebuild explicitly permits another saved or empty base without user approval. Both check the current head at commit. Preserve omitted fields and capture candidates before validation. Apply operations sequentially against the named base. Insert/replace accept either blocks or reuse_candidate (a task-owned candidate pointer to one Block or a block list); only selected content is copied. Top-level reuse_candidate replaces the entire block list. Page metadata uses printed, disposition, and note. Block pages must be included. Complete claims require every physical page classified and a note for each outside_scope or omitted_non_content page. Save partial work at any time.", Edit.model_json_schema()),
         ("context_update", "Choose saved results or arguments to release or pin. Update continuation notes without changing original records.",
          object_schema({"release": STRINGS, "pin": STRINGS, "notes": STRING})),
         ("report", "Record a completion claim or ask the user a question. Select an explicit saved version for delivery when available.",
@@ -58,10 +58,15 @@ class Dispatcher:
         self.documents = Documents(store)
         self.evidence = Evidence(store)
 
-    def execute(self, job: str, operation: str, name: str, raw_arguments: str) -> dict:
+    def capture(self, job: str, operation: str, name: str, raw_arguments: str) -> tuple[str, dict]:
         digest = sha256(encode([name, raw_arguments])).hexdigest()
         candidate = self.store.blob(job, "candidate", raw_arguments.encode("utf-8"),
                                     {"operation": operation, "tool": name}, key=f"candidate:{operation}")
+        return digest, candidate
+
+    def reconcile(self, job: str, operation: str, name: str, raw_arguments: str) -> dict | None:
+        """Recover a durable result without starting or repeating the tool."""
+        digest = sha256(encode([name, raw_arguments])).hexdigest()
         previous = self.store.maybe("operation", operation)
         if previous:
             if previous["args_hash"] != digest:
@@ -75,6 +80,33 @@ class Dispatcher:
                 recovered = {**previous, "status": "done", "result_ref": staged["ref"], "ok": staged["meta"]["ok"]}
                 self.store.put("operation", operation, job, recovered)
                 return self.envelope(job, operation, recovered)
+        return None
+
+    def skip(self, job: str, operation: str, name: str, raw_arguments: str) -> dict:
+        digest, candidate = self.capture(job, operation, name, raw_arguments)
+        recovered = self.reconcile(job, operation, name, raw_arguments)
+        if recovered is not None:
+            return recovered
+        previous = self.store.maybe("operation", operation)
+        if previous and previous["status"] != "skipping":
+            raise UnknownEffect("A previous local tool started without a settled receipt. Its files are preserved. "
+                                "New instructions prevent replay; it cannot be marked as unexecuted.")
+        self.store.put("operation", operation, job,
+                       {"id": operation, "args_hash": digest, "status": "skipping", "tool": name, "candidate_ref": candidate["ref"]})
+        result = {"skipped": True, "execution": "not_started", "reason": "superseded_by_user_amendment",
+                  "candidate_ref": candidate["ref"], "message": "This tool was not executed because the user added new instructions. "
+                  "Read user_amendments before choosing your next action. The original candidate remains available."}
+        return self.settle(job, operation, name, digest, candidate["ref"], result, False)
+
+    def execute(self, job: str, operation: str, name: str, raw_arguments: str) -> dict:
+        digest, candidate = self.capture(job, operation, name, raw_arguments)
+        recovered = self.reconcile(job, operation, name, raw_arguments)
+        if recovered is not None:
+            return recovered
+        previous = self.store.maybe("operation", operation)
+        if previous:
+            if previous["status"] == "skipping":
+                return self.skip(job, operation, name, raw_arguments)
             if name in {"run_script", "ocr_page"}:
                 raise UnknownEffect("The previous local process has no settled receipt. Its files are preserved; automatic replay is disabled.")
         self.store.put("operation", operation, job,
@@ -93,9 +125,12 @@ class Dispatcher:
         except (ValueError, KeyError, IndexError, TypeError, OSError, RuntimeError) as exc:
             result = {"error": str(exc), "candidate_ref": candidate["ref"], "tool": name}
             success = False
+        return self.settle(job, operation, name, digest, candidate["ref"], result, success)
+
+    def settle(self, job: str, operation: str, name: str, digest: str, candidate_ref: str, result: dict, success: bool) -> dict:
         result_blob = self.store.blob(job, "tool_result", result, {"operation": operation, "args_hash": digest, "ok": success}, key=f"result:{operation}")
         record = {"id": operation, "args_hash": digest, "status": "done", "tool": name,
-                  "candidate_ref": candidate["ref"], "result_ref": result_blob["ref"], "ok": success}
+                  "candidate_ref": candidate_ref, "result_ref": result_blob["ref"], "ok": success}
         self.store.put("operation", operation, job, record)
         self.store.event(job, "tool_settled", {"operation": operation, "tool": name, "ok": success, "result_ref": result_blob["ref"]})
         return self.envelope(job, operation, record)
