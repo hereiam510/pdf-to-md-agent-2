@@ -19,6 +19,8 @@ Open **Nexus connection**, enter the full Chat Completions or Responses endpoint
 
 For an existing task, use **Task limits** while it is stopped to adjust total requests, active time, context capacity, output reserve or image allowance, then Continue. The task keeps consumed usage and pending requests. Connection settings remain defaults for unconfigured tasks. Recorded active time and any unmeasured interrupted intervals are displayed separately; see [the settings/time contract](docs/CONTRACTS.md#existing-task-settings-and-active-time-accounting).
 
+Source tools use a common unrotated page-coordinate frame for extraction, rendering and OCR regions. Image delivery separates display assets from retained original image/mask streams; saved versions and ZIPs include provenance and the originals associated with their selected images. See [the PDF contract](docs/CONTRACTS.md#pdf-coordinates-and-image-delivery) and CURRENT_STATE for the tested rotation, CMYK, SMask and JPX cases and remaining limits. These source changes require the development launcher until a new Windows distribution is built.
+
 To build and run the Windows folder app:
 
 ```powershell
@@ -72,7 +74,7 @@ The current source includes all three editing/continuation batches, the context-
 
 The phase-1 closeout recovers an already applied handoff after an interrupted checkpoint even when new instructions arrive. It preserves the original application receipt and consumed usage, then checks the latest input before continuing. An archived but unapplied candidate still needs validation. See [the closeout evidence](docs/CURRENT_STATE.md#phase-1-closeout-handoff-application-replay).
 
-Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes and review evidence. The accepted follow-up order is [context compaction progress, existing-job settings/time accounting, then PDF coordinates/image delivery](docs/REVIEW_HANDOFF.md#accepted-three-phase-follow-up). Phase 1 and its replay closeout remain verified within their tested scope. Phase 2 settings/time accounting is implemented and locally verified, with a new independent-review package; Phase 3 is not implemented. [Current state](docs/CURRENT_STATE.md#review-follow-up-progress) records checks and limitations separately from plan acceptance and release.
+Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes and review evidence. The three accepted follow-up phases are implemented. Phase 1 and its replay closeout and Phase 2 settings/time accounting retain their scoped verification; Phase 3 PDF coordinates/image delivery is locally verified and prepared for independent review. [Current state](docs/CURRENT_STATE.md#review-follow-up-progress) records checks and limitations separately from plan acceptance and release.
 
 ## Document checks
 

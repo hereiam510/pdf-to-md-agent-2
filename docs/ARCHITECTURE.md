@@ -32,6 +32,8 @@ Task settings and time accounting remain application-service facts outside graph
 
 ## Content and context are separate
 
+PDF geometry and image derivation belong to the evidence core. The public region frame matches extraction's unrotated page points; the renderer alone converts to display coordinates and records the actual raster transform. Image extraction retains encoded image/mask streams separately from a display asset, including original/derivative identity and color/encoding provenance. The document core follows only the selected assets' original-stream references into an immutable version and export. This keeps originals portable without exposing JPX/encoded streams as preview images or adding a model-side conversion recipe. [The PDF contract](CONTRACTS.md#pdf-coordinates-and-image-delivery) owns exact fields and limits.
+
 Keep complete immutable originals outside the model context. Distinguish:
 
 1. Source PDF and derived evidence with source identity and provenance.

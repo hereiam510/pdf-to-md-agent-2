@@ -68,14 +68,14 @@ for (const protocol of ['chat_completions', 'responses']) {
       await expect.poll(() => payloads.length).toBe(1)
       // The previous capacity-block label can remain visible until the next UI poll.
       await expect.poll(async () => window.evaluate(async () => {
-        const jobs = await window.workbench.invoke('jobs')
-        const value = await window.workbench.invoke('job', { job: jobs[0].id })
+        const jobs = await globalThis.window.workbench.invoke('jobs')
+        const value = await globalThis.window.workbench.invoke('job', { job: jobs[0].id })
         return value.running ? 'running' : value.stop_reason
       }), { timeout: 15000 }).toBe('budget_exhausted')
       await expect(window.locator('.status')).toHaveText('Needs attention', { timeout: 15000 })
       const before = await window.evaluate(async () => {
-        const jobs = await window.workbench.invoke('jobs')
-        return window.workbench.invoke('job', { job: jobs[0].id })
+        const jobs = await globalThis.window.workbench.invoke('jobs')
+        return globalThis.window.workbench.invoke('job', { job: jobs[0].id })
       })
       expect(before.stop_reason).toBe('budget_exhausted')
       // Inject only persisted clock state while the task is stopped.
@@ -94,7 +94,7 @@ for (const protocol of ['chat_completions', 'responses']) {
       await window.getByRole('button', { name: 'Continue', exact: true }).click()
       await expect(window.locator('.status')).toHaveText('Completed', { timeout: 30000 })
       expect(payloads).toHaveLength(4)
-      const current = await window.evaluate(job => window.workbench.invoke('job', { job }), before.id)
+      const current = await window.evaluate(job => globalThis.window.workbench.invoke('job', { job }), before.id)
       expect(current.attempts).toBe(4)
       expect(current.limits.max_requests).toBe(10)
       expect(current.active_seconds).toBeGreaterThanOrEqual(17)

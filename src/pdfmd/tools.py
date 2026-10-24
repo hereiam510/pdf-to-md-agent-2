@@ -28,9 +28,9 @@ def definitions(scripts: bool = False) -> list[dict]:
     entries = [
         ("inspect_pdf", "Read source pages. Full results are saved. Choose text, layout, words, or metadata without a required reading order.",
          object_schema({"pages": {"type": "array", "items": INT}, "mode": {"enum": ["text", "blocks", "words", "dict", "rawdict", "metadata"]}, "view": {"enum": ["full", "index"]}})),
-        ("render_page", "Read actual page pixels. Select DPI and an optional region in rotated page points. The saved PNG is reusable.",
+        ("render_page", "Read actual page pixels. Select DPI and an optional region in unrotated page points, as returned by inspect_pdf. Output preserves page rotation and includes page_to_pixel/pixel_to_page affine mappings. The saved PNG is reusable.",
          object_schema({"page": INT, "dpi": INT, "region": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4}}, ["page"])),
-        ("extract_image", "Extract a source image by page and xref. Preserve native bytes and apply a source soft mask when needed.",
+        ("extract_image", "Extract a source image by page and xref at native dimensions. Return a display asset plus exact original image/mask stream references. Preserve compatible original bytes; other images use a PNG with explicit decoding, color conversion and mask provenance. Original full/raw/range access remains available.",
          object_schema({"page": INT, "xref": INT}, ["page", "xref"])),
         ("read_evidence", "Read saved originals, candidates, or native image pixels. JSON Pointer selects any field. Ranges are zero-based and half-open. Full/raw access remains available; a body exceeding input capacity is saved with an explicit deferral receipt.",
          object_schema({"ref": STRING, "view": {"enum": ["full", "index", "raw"]}, "json_pointer": STRING, "start": INT, "end": INT}, ["ref"])),
@@ -43,7 +43,7 @@ def definitions(scripts: bool = False) -> list[dict]:
          object_schema({"release": STRINGS, "pin": STRINGS, "notes": STRING})),
         ("report", "Record a completion claim or ask the user a question. Select an explicit saved version for delivery when available.",
          object_schema({"state": {"enum": ["complete", "partial", "waiting"]}, "message": STRING, "version_id": STRING}, ["state", "message"])),
-        ("ocr_page", "Run local OCR on a chosen page or region. Keep the complete result and logs. OCR confidence does not certify fidelity.",
+        ("ocr_page", "Run local OCR on a chosen page or region in unrotated page points, as returned by inspect_pdf. OCR boxes use saved image pixels; the image provides pixel_to_page. Keep the complete result and logs. OCR confidence does not certify fidelity.",
          object_schema({"page": INT, "languages": STRING, "dpi": INT, "region": {"type": "array", "items": {"type": "number"}}, "view": {"enum": ["full", "index"]}}, ["page", "languages"])),
     ]
     if scripts:

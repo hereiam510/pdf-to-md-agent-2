@@ -129,15 +129,24 @@ class Documents:
                 raise ValueError(f"Image is not a registered source asset: {path}")
             blob = asset_index[path]
             assets[path] = {"ref": blob["ref"], "sha256": blob["sha256"], "provenance": blob["meta"]}
+        originals = {}
+        for asset in assets.values():
+            for original in asset["provenance"].get("originals", []):
+                blob = self.store.get("blob", original["ref"], job=job_id)
+                expected = f"originals/{blob['meta'].get('xref')}-{blob['sha256']}."
+                if blob["kind"] != "image_stream" or original["path"] not in {expected + ext for ext in ("bin", "jpeg", "jpx")}:
+                    raise ValueError("Invalid retained image-stream reference.")
+                originals[original["path"]] = {"ref": blob["ref"], "sha256": blob["sha256"], "provenance": blob["meta"]}
         version_id = uid()
         prepared = self.root / f".prepared-{version_id}"
         prepared.mkdir()
         envelope = {"schema_version": 1, "job": job_id, "version": version_id,
                     "parent": edit.base_version, "edit_mode": edit.mode, "expected_head": edit.expected_head, "source_ref": job["source_ref"],
-                    "content": content.model_dump(), "assets": assets, "candidate_ref": candidate_ref}
+                    "content": content.model_dump(), "assets": assets, "originals": originals, "candidate_ref": candidate_ref}
         files = {"document.json": encode(envelope), "document.md": markdown.encode("utf-8"),
                  "preview.html": render(markdown, content.title).encode("utf-8")}
         files.update({path: self.store.bytes(info["ref"], job_id) for path, info in assets.items()})
+        files.update({path: self.store.bytes(info["ref"], job_id) for path, info in originals.items()})
         hashes = {name: sha256(data).hexdigest() for name, data in files.items()}
         files["manifest.json"] = encode({"version": version_id, "claim": content.claim, "files": hashes})
         for name, data in files.items():

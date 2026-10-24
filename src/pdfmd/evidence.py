@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 from hashlib import sha256
 import json
+import math
 from pathlib import Path
 import threading
 import time
@@ -16,6 +17,7 @@ from .storage import Store, uid
 
 # MuPDF is not thread-safe. Never share a live Document across callers.
 PDF_LOCK = threading.RLock()
+PAGE_FRAME = "PyMuPDF unrotated page points, top-left origin"
 
 
 def jsonable(value: Any) -> Any:
@@ -68,8 +70,9 @@ class Evidence:
                 raise ValueError("Pages must be distinct one-based physical positions in this source.")
             for number in pages:
                 page = document[number - 1]
-                item = {"page": number, "rect": list(page.rect), "rotation": page.rotation,
-                        "coordinate_frame": "PyMuPDF unrotated page points, top-left origin",
+                item = {"page": number, "rect": list(page.rect * page.derotation_matrix), "rotation": page.rotation,
+                        "coordinate_frame": PAGE_FRAME, "rotated_rect": list(page.rect),
+                        "rotation_matrix": list(page.rotation_matrix), "derotation_matrix": list(page.derotation_matrix),
                         "images": jsonable(page.get_images(full=True))}
                 if mode != "metadata":
                     item["content"] = jsonable(page.get_text(mode, sort=False))
@@ -84,14 +87,20 @@ class Evidence:
     def read(self, job: str, ref: str, view: str = "full", json_pointer: str = "",
              start: int | None = None, end: int | None = None) -> dict:
         record = self.store.get("blob", ref, job=job)
-        if record["kind"] == "image":
-            return {"ref": ref, "image_ref": ref, "meta": record["meta"], "bytes": record["bytes"],
-                    "coverage": "complete saved image at native dimensions"}
-        if view == "raw":
+        if record["kind"] == "image_stream" and json_pointer:
+            raise ValueError("An encoded image stream is binary. Use its index for metadata or full/raw byte ranges.")
+        if view == "raw" or (view == "full" and record["kind"] == "image_stream"):
             raw = self.store.bytes(ref, job)
             first, last = self.bounds(len(raw), start, end)
             return {"ref": ref, "encoding": "base64", "unit": "byte", "range": [first, last],
-                    "total": len(raw), "data": base64.b64encode(raw[first:last]).decode(), "complete": first == 0 and last == len(raw)}
+                    "total": len(raw), "data": base64.b64encode(raw[first:last]).decode(), "complete": first == 0 and last == len(raw),
+                    "meta": record["meta"]}
+        if record["kind"] == "image":
+            return {"ref": ref, "image_ref": ref, "meta": record["meta"], "bytes": record["bytes"],
+                    "coverage": "complete saved image at native dimensions"}
+        if view == "index" and record["kind"] == "image_stream":
+            return {"ref": ref, "kind": record["kind"], "bytes": record["bytes"], "meta": record["meta"],
+                    "complete": False, "read": "read_evidence(ref, view='raw', start=null, end=null)"}
         try:
             data = self.store.json(ref, job)
         except (ValueError, UnicodeDecodeError):
@@ -137,12 +146,21 @@ class Evidence:
             if not 1 <= page <= len(document):
                 raise ValueError("Page is outside this source.")
             source = document[page - 1]
-            clip = pymupdf.Rect(region) if region is not None else source.rect
-            if clip.is_empty or not source.rect.contains(clip):
-                raise ValueError("The region must be a nonempty rectangle within the rotated page rectangle.")
-            image = source.get_pixmap(dpi=dpi, clip=clip, alpha=False)
+            bounds = source.rect * source.derotation_matrix
+            if region is not None and (len(region) != 4 or not all(math.isfinite(v) for v in region)):
+                raise ValueError("The region needs four finite unrotated page coordinates.")
+            clip = pymupdf.Rect(region) if region is not None else bounds
+            if clip.is_empty or not bounds.contains(clip):
+                raise ValueError("The region must be a nonempty rectangle within the unrotated page rectangle.")
+            rotated = clip * source.rotation_matrix
+            image = source.get_pixmap(dpi=dpi, clip=rotated, alpha=False)
+            # MuPDF rounds the raster bounds to integer pixels. Use the actual
+            # pixmap origin, not the fractional clip origin multiplied by DPI.
+            mapping = source.rotation_matrix * pymupdf.Matrix(dpi / 72, dpi / 72) * pymupdf.Matrix(1, 0, 0, 1, -image.x, -image.y)
             meta = {"page": page, "dpi": dpi, "region": list(clip), "rotation": source.rotation,
-                    "coordinate_frame": "rotated page points, top-left origin", "transform": [dpi / 72, dpi / 72, clip.x0, clip.y0],
+                    "coordinate_frame": PAGE_FRAME, "rotated_region": list(rotated),
+                    "pixel_origin": [image.x, image.y], "page_to_pixel": list(mapping), "pixel_to_page": list(~mapping),
+                    "pixel_frame": "saved image pixels, top-left origin; page rotation preserved",
                     "width": image.width, "height": image.height, "source_ref": self.store.get("job", job)["source_ref"],
                     "derivation": "lossless PNG render; no content edits"}
             return self.image(job, image.tobytes("png"), "png", meta)
@@ -155,15 +173,56 @@ class Evidence:
             item = next((item for item in members if item[0] == xref), None)
             if item is None:
                 raise ValueError("The image reference does not belong to the specified page.")
-            original = document.extract_image(xref)
-            meta = {"page": page, "xref": xref, "width": original["width"], "height": original["height"],
-                    "source_ref": self.store.get("job", job)["source_ref"], "derivation": "native embedded image extraction"}
-            result = self.image(job, original["image"], original["ext"], meta)
-            if item[1]:
-                pix = pymupdf.Pixmap(document, xref)
-                mask = pymupdf.Pixmap(document, item[1])
-                composed = pymupdf.Pixmap(pix, mask)
-                result = {**self.image(job, composed.tobytes("png"), "png", {**meta, "mask_xref": item[1],
-                                                                                   "derivation": "embedded image with source soft mask"}),
-                          "original_ref": result["ref"]}
-            return result
+            source_ref = self.store.get("job", job)["source_ref"]
+            source_hash = self.store.get("blob", source_ref, job=job)["sha256"]
+            originals = []
+            for number in [xref, *([item[1]] if item[1] else [])]:
+                raw = document.xref_stream_raw(number)
+                filter_name = document.xref_get_key(number, "Filter")[1]
+                extension = {"/DCTDecode": "jpeg", "/JPXDecode": "jpx"}.get(filter_name, "bin")
+                record = self.store.blob(job, "image_stream", raw, {
+                    "source_ref": source_ref, "source_sha256": source_hash, "xref": number,
+                    "role": "image" if number == xref else "soft_mask", "filter": filter_name,
+                    "object_dictionary": document.xref_object(number),
+                    "derivation": "unmodified encoded PDF stream; object dependencies remain in the source PDF",
+                    "extraction": f"PyMuPDF {pymupdf.VersionBind} Document.xref_stream_raw"})
+                originals.append({"ref": record["ref"], "path": f"originals/{number}-{record['sha256']}.{extension}"})
+            # extract_image may reencode CMYK JPEG as RGB JPEG. Do not publish
+            # that lossy intermediate. Decode the PDF image directly instead.
+            extracted = document.extract_image(xref)
+            pix = pymupdf.Pixmap(document, xref)
+            colorspace = pix.colorspace.name if pix.colorspace else None
+            conversion = bool(pix.colorspace and pix.colorspace.n not in {1, 3})
+            embedded = self.store.bytes(originals[0]["ref"], job)
+            unchanged = (not item[1] and not conversion and extracted["ext"] in {"jpeg", "png"}
+                         and extracted["image"] == embedded and document.xref_get_key(xref, "Decode")[0] == "null")
+            steps = []
+            if unchanged:
+                data, extension = embedded, extracted["ext"]
+            else:
+                steps.append("decode PDF image at native dimensions")
+                if conversion:
+                    pix = pymupdf.Pixmap(pymupdf.csRGB, pix)
+                    steps.append("convert source colorspace to RGB with MuPDF")
+                if item[1]:
+                    mask = pymupdf.Pixmap(document, item[1])
+                    pix = pymupdf.Pixmap(pix, mask)
+                    steps.append("compose source soft mask")
+                data, extension = pix.tobytes("png"), "png"
+                steps.append("encode decoded samples as PNG without resampling")
+            bit_type, bit_value = document.xref_get_key(xref, "BitsPerComponent")
+            source_bits = int(bit_value) if bit_type == "int" else None
+            warnings = (["Display decoding uses 8-bit samples; higher-depth encoded originals remain available. "
+                         "This display asset does not preserve the source sample precision."]
+                        if not unchanged and source_bits and source_bits > 8 else [])
+            meta = {"page": page, "xref": xref, "mask_xref": item[1], "width": pix.width, "height": pix.height,
+                    "source_ref": source_ref, "source_sha256": source_hash,
+                    "original_ref": originals[0]["ref"], "originals": originals,
+                    "original_bytes_equal": data == embedded,
+                    "representation": "embedded_stream" if unchanged else "derived_display",
+                    "source_colorspace": colorspace, "color_conversion": conversion,
+                    "source_bits_per_component": source_bits,
+                    "display_bits_per_component": source_bits if unchanged else 8, "steps": steps, "warnings": warnings,
+                    "derivation": "unchanged embedded image bytes" if unchanged else "; ".join(steps),
+                    "decoder": f"PyMuPDF {pymupdf.VersionBind} / MuPDF {pymupdf.VersionFitz}"}
+            return self.image(job, data, extension, meta)
