@@ -44,6 +44,7 @@ Read [the working agreement](AGENTS.md). Read [current state](docs/CURRENT_STATE
 | [Architecture](docs/ARCHITECTURE.md) | Settled responsibilities and the preferred implementation baseline |
 | [Contracts](docs/CONTRACTS.md) | Document, context and recovery boundaries and the implemented first-version schemas |
 | [Decisions](docs/DECISIONS.md) | Effective choices, rationale and consequential alternatives |
+| [Design options](docs/DESIGN_OPTIONS.md) | Candidate approaches, tradeoffs and conditions for later evaluation; not an implementation queue |
 | [Open questions](docs/OPEN_QUESTIONS.md) | Closure of the three first-version contracts and limits of that closure |
 
 Continue with the [development handoff](docs/DEVELOPMENT_GUIDE.md) and its four technical guides. These explain state/data responsibilities, mechanisms, concrete examples, failure handling and tradeoffs. They explain the development knowledge directly. Reading the original conversation is unnecessary.
@@ -77,6 +78,8 @@ The phase-1 closeout recovers an already applied handoff after an interrupted ch
 The Phase 3 closeout distinguishes stencil coverage from page appearance. The agent can inspect the component or select a page occurrence for a correctly painted display asset with original-stream provenance. Context pins now choose index, image, full/selected text or raw bytes explicitly. Admission happens before application; rejection preserves previous pins, releases and notes and lets the agent revise its choice. Full originals and precise reads remain available. See [the closeout evidence](docs/CURRENT_STATE.md#phase-3-closeout-stencil-appearance-and-pin-admission).
 
 Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes and review evidence. The three accepted follow-up phases and the Phase 3 closeout are implemented. [Current state](docs/CURRENT_STATE.md#review-follow-up-progress) records checks and limitations separately from plan acceptance and release.
+
+History-pressure context updates are now retained as inactive proposals. The app compacts under the active policy and retries complete-input preflight before applying the composed update. The original receipt stays unchanged and a separate outcome reports application, rejection or supersession by new instructions. Saved proposals survive reopen without resetting budgets or changing frozen requests. See [the context contract](docs/CONTRACTS.md#q2-context-transitions) and [current evidence](docs/CURRENT_STATE.md#history-pressure-context-update-coordination).
 
 ## Document checks
 

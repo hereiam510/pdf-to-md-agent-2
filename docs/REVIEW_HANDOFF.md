@@ -1,6 +1,6 @@
-# Phase 3 closeout review handoff
+# History-pressure context-update review handoff
 
-The current target is the authorized Phase 3 closeout on the working tree based on `2d60c68`, retaining the preceding PDF, context, editing, continuation and task-settings/time work. It adds stencil component/appearance semantics and provenance, explicit pin representations, and capacity admission before policy application. It is implemented and locally verified, awaiting independent review. No live Nexus/model call, dependency upgrade or Windows repackaging occurred. [CURRENT_STATE](CURRENT_STATE.md#phase-3-closeout-stencil-appearance-and-pin-admission) owns results and limits; [CONTRACTS](CONTRACTS.md#pdf-coordinates-and-image-delivery) and Q2 own behavior. Export portability, OCR recovery and packaging remain outside this batch.
+The current target is the authorized history-pressure context-update coordination on the working tree based on `2d60c68`, retaining the preceding PDF, context, editing, continuation and task-settings/time work. It saves exact inactive proposals, compacts under the active policy and retries whole-input preflight before application. Separate immutable settlements preserve original receipts and reconcile checkpoint/frozen-request gaps. [CURRENT_STATE](CURRENT_STATE.md#history-pressure-context-update-coordination) owns checks and limits; [CONTRACTS Q2](CONTRACTS.md#q2-context-transitions) owns behavior. No live Nexus/model call, dependency upgrade or Windows repackaging is included. Export portability, OCR recovery and Alpha changes remain outside this batch.
 
 ## Product and revision scope
 
@@ -8,6 +8,7 @@ The user supplies a PDF and scope. The app runs its own agent through Nexus and 
 
 | Batch | Implemented behavior | Main review locations |
 | --- | --- | --- |
+| Current: history-pressure update coordination | Save inactive proposal chains, compose subsequent valid intent in call order, retry after rolling compaction, atomically apply only fitting input, retain old policy on failure, supersede unsettled intent after amendments, replay committed settlements before advancing frozen boundaries | `src/pdfmd/context_updates.py`, `context.py:preflight/feedback`, `runtime.py:prepare/tools/resume_pending`; `tests/test_context_retry.py`, `test_context_retry_delivery.py`, `tests/desktop/context-retry*` |
 | Current Phase 3 closeout | Coverage-only stencil component, agent-selected occurrence display and provenance; index/image/full/raw pins with atomic preflight/replay | `evidence.py:extract_image/_render_page`, `context.py:policy/preflight/pin_view/group`, `runtime.py:tools`, `tools.py:dispatch`; `tests/test_stencil_pins.py`, `tests/desktop/stencil-pins*` |
 | Retained Phase 3: PDF coordinates and images | Unrotated region contract, affine pixel mapping, display assets and original streams, image/mask provenance in saved/exported versions | `src/pdfmd/evidence.py`, `documents.py`, tool descriptions; `tests/test_pdf_delivery.py`, `tests/fixtures/pdf/`, `tests/desktop/pdf-delivery*` |
 | Retained Phase 2: settings and time | Explicit task changes, original request/replay boundaries, monotonic known consumption, durable unknown intervals, task-scoped UI and API | `server.py:Engine._configure/configure/start`, `active_time.py`, `runtime.py`, `nexus.py`, `tools.py:process`, `TaskSettings.tsx`, desktop IPC, `tests/test_task_settings.py`, `test_active_time.py`, `tests/desktop/task-settings.spec.ts` |
@@ -23,7 +24,23 @@ Exact contracts are in [Q1–Q3](CONTRACTS.md#implemented-first-version-contract
 
 ## Evidence and independent reproduction
 
-Use **`.local/review-2026-10-24-stencil-pins.zip`** for the current review. It contains the exact 600-file preceding source and 603-file current source, incremental/cumulative patches, source/evidence hashes, readable code/tests/docs, local logs, four rotated stencil sources and two-protocol runtime/desktop stores, exports and screenshots. The prior review and local re-review reproductions are retained as evidence to assess, not requirements. Credentials, private inputs, live-provider stores and release builds are excluded.
+Use **`.local/review-2026-10-25-context-retry.zip`** for this increment. It contains the exact 604-file before-source and 609-file current source, incremental/cumulative patches, readable code/tests/docs, manifests and hashes, local verification logs, and both-protocol source/store/ZIP and real-renderer evidence. Historical reviewer comments are data, not requirements. Credentials, private inputs, live-provider stores, dependencies and release artifacts are excluded.
+
+Six notes/index/release pressure cases fail against the before-source. The new coordination tests cover repeat compaction, composed pending intent, invalid later updates, invalid handoffs, persistent exhaustion, changed instructions/settings, deferred-result and settlement/event/checkpoint gaps, unknown frozen requests and the amended-unsent transition. The delivery fixture retains an existing draft, stops with an inactive update, reopens the process/graph, compacts with a scripted summary that omits the pending intent, then saves complete source wording and three images with two original streams. Compare the exact proposal and old version as well as final saved/reopened/exported bytes. All inference responses are in-memory fixtures; this does not establish natural model judgment or summary fidelity.
+
+Review these boundaries:
+
+- Does `admission.applied=false` remain distinct from policy application? Can immediate rejection, waiting, final application, final rejection and supersession be distinguished without rewriting an original tool receipt?
+- Does the post-compaction check include the actual handoff, remaining history, tool schemas, image/output allowances and the outcome's own size? Are full/raw/field/range/pixel access and exact originals preserved?
+- Do same-batch updates compose in order, with invalid/oversized later calls leaving previous pending work intact? Does the final policy settle atomically, and are replaced notes still retained in original candidates?
+- Do committed settlements replay once across the effect/checkpoint gaps and newer amendments/limits? Are never-applied proposals superseded by new instructions, while frozen native bytes and unknown replay gates remain intact?
+- Do failure, cancellation, report and response-repair exhaustion retain useful saved work and consumed requests/time? A saved proposal must not imply success or free additional inference.
+
+Run `python -m pytest`, `pnpm build`, `pnpm exec playwright test` and `python tools/check_docs.py` with the pinned environment. Focused tests are `tests/test_context_retry*.py` and `tests/desktop/context-retry.spec.ts`; no provider call is required. The package's verifier reconstructs both patches in isolated directories, checks all hashes, source/original/export bytes, proposal/settlement records and renderer evidence. CURRENT_STATE distinguishes the full-suite run from targeted reruns after correcting the desktop fixture's incomplete seeded request metadata.
+
+### Preceding Phase 3 closeout evidence
+
+The preserved **`.local/review-2026-10-24-stencil-pins.zip`** identifies the preceding closeout. It contains its exact 600-file preceding source and 603-file then-current source, incremental/cumulative patches, source/evidence hashes, readable code/tests/docs, local logs, four rotated stencil sources and two-protocol runtime/desktop stores, exports and screenshots. The prior review and local re-review reproductions are retained as evidence to assess, not requirements. Credentials, private inputs, live-provider stores and release builds are excluded.
 
 Six selected regressions fail against the before-source. The new 25-case suite and continuation regressions give 50 focused passes; the complete suite passes 178 Python tests and ten desktop tests, and TypeScript/build passes. Two new protocol fixtures reject full raw pinning before application, revise to explicit views, and complete a three-figure source in five in-memory mock responses each. Actual Electron saved/reopened and Edge exported views show the red/blue source colors. Every selected original and ZIP member is verified. See CURRENT_STATE for retained paths, limits and the older text-only fixture correction.
 

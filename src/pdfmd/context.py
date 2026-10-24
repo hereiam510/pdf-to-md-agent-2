@@ -5,7 +5,7 @@ from copy import deepcopy
 import json
 from typing import Callable
 
-from .nexus import StopRun, make_payload, unique_object
+from .nexus import StopRun, instruction_basis, make_payload, unique_object
 from .schema import Route
 from .storage import Store, encode
 from .tools import Dispatcher, definitions
@@ -33,6 +33,7 @@ Read complete saved originals or precise fields/ranges with read_evidence. Index
 context_update can release or pin saved references and maintain continuity notes.
 Choose each pin view explicitly: index, image, full (optionally a field/range), or raw Base64 bytes.
 Pins remain separate after history compaction. Rejected updates preserve previous pins, releases and notes; use the feedback to revise your selection.
+An update awaiting compaction is saved but not active. The app retries it after compaction and reports its final outcome separately.
 A released object remains retrievable. Save useful work before releasing its input representation.
 If capacity defers a large object, retrieve the needed exact fields or ranges. Do not claim you read deferred content.
 Deferral is an input-size decision, not a relevance judgment. Full/raw/field/range reads remain available without a required reading order.
@@ -76,10 +77,12 @@ def estimate(payload: dict, route: Route) -> dict:
 
 
 class Context:
-    def __init__(self, store: Store, dispatcher: Dispatcher, *, envelopes: dict | None = None):
+    def __init__(self, store: Store, dispatcher: Dispatcher, *, envelopes: dict | None = None,
+                 update_feedback: dict | None = None):
         self.store, self.dispatcher = store, dispatcher
         # Read-only projections used during preflight; never persisted as history.
         self.envelopes = envelopes or {}
+        self.update_feedback = update_feedback
 
     def envelope(self, job: str, operation: str) -> dict:
         if operation in self.envelopes:
@@ -140,9 +143,10 @@ class Context:
                 "notes": intent.get("notes", state.get("notes", ""))}
 
     def preflight(self, job: dict, state: dict, intent: dict, operation: str, candidate: str) -> dict:
-        policy = self.policy(job["id"], state, intent)
+        waiting = self.waiting(job["id"], state)
+        policy = self.policy(job["id"], waiting["policy"] if waiting else state, intent)
         proposed = {**state, **policy, "history": [*state["history"], state["pending"]],
-                    "continuation_feedback": None,
+                    "continuation_feedback": None, "context_feedback": None,
                     "repairs": {k: v for k, v in state.get("repairs", {}).items() if k != "normal"}}
         # Include accepted native arguments, settled outcomes, and explicit placeholders
         # for later tools. Their future results cannot be predicted by this admission.
@@ -175,7 +179,26 @@ class Context:
             result["admission"]["capacity"] = summary
         else:
             raise ValueError("Capacity estimate did not stabilize; previous context policy is unchanged.")
-        if not capacity["fits"]:
+        if not capacity["fits"] or waiting:
+            # A deferred chain is only a proposal. Validate its exact views and
+            # required footprint, then compact using the still-active policy.
+            core = preview.normal(job, {**proposed, "history": [], "handoff": None,
+                                        "context_feedback": None})[1]
+            if core["fits"]:
+                try:
+                    preview.compact_request(job, {**state, "history": proposed["history"]})
+                except StopRun:
+                    pass
+                else:
+                    return {"context_proposal": {"policy": policy, "previous": state.get("context_waiting"),
+                                "candidate_ref": candidate, "instruction_basis": instruction_basis(job),
+                                "origin_handoff": state.get("handoff")},
+                            "admission": {"applied": False, "status": "awaiting_compaction", "capacity": summary,
+                                          "unsettled_operations": unsettled},
+                            "policy_unchanged": True,
+                            "message": "Saved for preflight after compaction, not applied. Later valid updates compose in call order. "
+                                       "The pending chain applies atomically only when its complete input fits; otherwise the active policy stays unchanged. "
+                                       "New user instructions supersede unapplied proposals. Full/raw/range access remains available."}
             return {"context_rejected": True, "reason": "context_capacity", "policy_unchanged": True,
                     "capacity": summary, "unsettled_operations": unsettled,
                     "error": "The proposed input exceeds capacity. The entire update was rejected before application. "
@@ -183,6 +206,16 @@ class Context:
                              "image_ref with view=image. You may explicitly release other pins or compact releasable history. "
                              "Original full/raw access remains available. Existing overcapacity is not repaired by rejection."}
         return result
+
+    def waiting(self, job: str, state: dict) -> dict | None:
+        ref = state.get("context_waiting")
+        return self.store.json(ref, job)["context_proposal"] if ref else None
+
+    def feedback(self, job: str, state: dict) -> dict | None:
+        if self.update_feedback is not None:
+            return self.update_feedback
+        ref = state.get("context_feedback")
+        return self.store.json(ref, job)["feedback"] if ref else None
 
     def anchor(self, job: dict, state: dict) -> str:
         return json.dumps({"task": job["scope"], "user_amendments": job["amendments"],
@@ -405,6 +438,9 @@ class Context:
         continuation = self.continuation_feedback(job["id"], state)
         if continuation:
             tail.append({"role": "user", "content": "Request continuation record:\n" + json.dumps(continuation, ensure_ascii=False)})
+        outcome = self.feedback(job["id"], state)
+        if outcome:
+            tail.append({"role": "user", "content": "Deferred context update outcome:\n" + json.dumps(outcome, ensure_ascii=False)})
         def pack(groups):
             return make_payload(route, SYSTEM, [*messages, *[m for group in groups for m in group], *tail], definitions(self.dispatcher.scripts))
         history = state.get("history", [])
@@ -434,6 +470,11 @@ class Context:
             raise StopRun("capacity_blocked", "Required task instructions and pinned objects exceed the configured normal input capacity. "
                           "Originals and pins are preserved; adjust capacity or explicitly revise the pinned selection.")
         prefix["pinned_objects"] = self.pins(job, state, images=False)
+        if state.get("context_waiting"):
+            prefix["pending_context_update"] = {"proposal_ref": state["context_waiting"], "applied": False,
+                "instruction": "This proposal is not active. The app retains it exactly and will preflight it after compaction. Preserve effective requirements."}
+        if outcome := self.feedback(job["id"], state):
+            prefix["context_update_outcome"] = outcome
         continuation = self.continuation_feedback(job["id"], state)
         if continuation:
             prefix["request_continuation"] = continuation

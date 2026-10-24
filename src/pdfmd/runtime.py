@@ -11,6 +11,7 @@ from langgraph.graph import END, START, StateGraph
 
 from .active_time import ActiveTime
 from .context import Context, HandoffRejected
+from .context_updates import ContextUpdates
 from .nexus import Nexus, StopRun, instruction_basis
 from .storage import Store, encode
 from .tools import Dispatcher, UnknownEffect
@@ -31,6 +32,8 @@ class State(TypedDict, total=False):
     terminal: bool
     repairs: dict[str, dict]
     continuation_feedback: str | None
+    context_waiting: str | None
+    context_feedback: str | None
 
 
 class Runtime:
@@ -41,6 +44,7 @@ class Runtime:
         self.dispatcher = Dispatcher(store, scripts=scripts)
         self.dispatcher.active_time = self.active_time
         self.context = Context(store, self.dispatcher)
+        self.context_updates = ContextUpdates(self.context)
         self.connection = sqlite3.connect(store.root / "graph.sqlite", check_same_thread=False)
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.connection.execute("PRAGMA synchronous=FULL")
@@ -72,8 +76,23 @@ class Runtime:
                               "Add instructions or edit the saved document before starting a new correction episode.")
         state = {**state, "repairs": repairs}
         key = f"{job['id']}:{state['seq']}:{state['revision']}"
+        changes = self.context_updates.recover(job, state, key)
+        state = {**state, **changes}
         # A frozen request wins over current pointers and newly reconstructed input.
         request = self.store.maybe("request", key)
+        if request is None:
+            if state.get("context_waiting"):
+                resolved = self.context_updates.resolve(job, state, key)
+                if resolved is None:
+                    try:
+                        payload, meta = self.context.compact_request(job, state)
+                    except StopRun as exc:
+                        resolved = self.context_updates.reject(job, state, key, str(exc))
+                    else:
+                        request = self.nexus.freeze(job["id"], key, payload, "compaction", {**meta, "repairs": repairs})
+                if resolved:
+                    changes.update(resolved)
+                    state = {**state, **resolved}
         if request is None:
             payload, capacity = self.context.normal(job, state)
             if capacity["fits"]:
@@ -81,7 +100,7 @@ class Runtime:
             else:
                 payload, meta = self.context.compact_request(job, state)
                 request = self.nexus.freeze(job["id"], key, payload, "compaction", {**meta, "repairs": repairs})
-        return {"pending": key, "next": "compact" if request["kind"] == "compaction" else "model", "terminal": False,
+        return {**changes, "pending": key, "next": "compact" if request["kind"] == "compaction" else "model", "terminal": False,
                 "repairs": repairs}
 
     @staticmethod
@@ -130,6 +149,7 @@ class Runtime:
         reply = self.store.json(request["accepted_ref"], job)
         policy = {field: state.get(field, default) for field, default in
                   [("released", []), ("pinned", []), ("pin_views", {}), ("notes", "")]}
+        waiting = state.get("context_waiting")
         report = None
         for index, call in enumerate(reply["calls"]):
             self.active_time.checkpoint()
@@ -146,7 +166,7 @@ class Runtime:
                     if elapsed >= current["limits"]["max_active_seconds"]:
                         raise StopRun("budget_exhausted", "Stopped before a new tool because the persistent active-time budget is exhausted.")
                     self.dispatcher.context_preflight = lambda intent, op, candidate: self.context.preflight(
-                        current, {**state, **policy}, intent, op, candidate)
+                        current, {**state, **policy, "context_waiting": waiting}, intent, op, candidate)
                     try:
                         result = self.dispatcher.execute(job, operation, call["name"], call["arguments"])
                     finally:
@@ -155,6 +175,8 @@ class Runtime:
             if not result["ok"]:
                 continue
             data = result["data"]
+            if "context_proposal" in data:
+                waiting = result["result_ref"]
             if "context_intent" in data:
                 # A durable admission decision wins across checkpoint gaps. Do
                 # not re-evaluate its cost under new instructions or route limits.
@@ -165,7 +187,7 @@ class Runtime:
         if request["instruction_basis"] != instruction_basis(self.store.get("job", job)):
             report = None
         # One deterministic policy settlement per complete accepted batch.
-        changes = {**policy,
+        changes = {**policy, "context_waiting": waiting, "context_feedback": None,
                    "history": [*state["history"], key], "seq": state["seq"] + 1,
                     "revision": state["revision"] + 1, "pending": None, "terminal": bool(report),
                     "continuation_feedback": None,
@@ -218,7 +240,8 @@ class Runtime:
                             "attempts": list(request["attempts"]), "revision": state["revision"] + 1}, key=ref)
         feedback = self.store.json(ref, job["id"])
         self.store.event_once(job["id"], "request_continued", key, {"request": key, "feedback_ref": ref, "reason": feedback["reason"]})
-        return {"revision": feedback["revision"], "pending": None, "next": "prepare", "terminal": False,
+        recovered = self.context_updates.recover(job, state, key)
+        return {**recovered, "revision": feedback["revision"], "pending": None, "next": "prepare", "terminal": False,
                 "continuation_feedback": ref}
 
     def run(self, job: str, lock: FileLock | None = None, *, continue_failed: bool = False) -> None:

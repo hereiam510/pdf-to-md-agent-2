@@ -20,6 +20,8 @@ There is no required module count or table count. Boundaries may share a file or
 
 ## Agent loop and autonomy
 
+Deferred context coordination is part of that same loop. `Context` validates and projects proposed selections; `ContextUpdates` records final settlement at an unfrozen request boundary; Runtime remains the sole graph-state writer. Checkpoints keep the active compact policy plus pending/outcome references. Immutable proposal chains retain exact intended changes outside checkpoints. Compaction runs under the active policy, and only a fitting post-compaction preflight can activate the proposal. Settlement receipts reconcile the catalog/checkpoint gap without a second scheduler or cross-store atomicity claim. [Q2](CONTRACTS.md#q2-context-transitions) owns ordering and replay semantics.
+
 A graph can express a dynamic model/tool loop. Graph-based execution does not require a fixed business workflow, and autonomy does not remove the need to manage state, budgets, side effects and recovery. The graph represents execution responsibilities. The model still selects methods, tools and continuation based on results.
 
 The model selects source access, OCR, scripts and reconstruction scope. The app checks capacity, maintains identities and accepts complete native replies. The dispatcher executes only validated calls. Before the assembler builds the next model input, the dispatcher records each accepted batch member's success, rejection or failure. A complete accepted reply does not imply that every proposed operation passes domain validation. Context work occurs at a defined safe boundary with the same durable request and budget handling as other model calls.
