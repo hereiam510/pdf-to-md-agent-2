@@ -1,6 +1,6 @@
-# Phase 3 PDF-coordinate and image-delivery review handoff
+# Phase 3 closeout review handoff
 
-The current review target is the authorized Phase 3 increment on the working tree based on `2d60c68`, retaining the preceding context, editing, continuation and task-settings/time work. It implements a consistent region frame, actual pixel transforms, CMYK/SMask/JPX display handling, original-stream preservation and explicit provenance in saved/exported documents. It is implemented and locally verified, awaiting independent review. No live Nexus/model call, dependency upgrade or Windows repackaging occurred. [CURRENT_STATE](CURRENT_STATE.md#phase-3-pdf-coordinates-and-image-delivery) owns results and limits; [CONTRACTS](CONTRACTS.md#pdf-coordinates-and-image-delivery) owns effective behavior. This document owns review scope and the accepted phase sequence.
+The current target is the authorized Phase 3 closeout on the working tree based on `2d60c68`, retaining the preceding PDF, context, editing, continuation and task-settings/time work. It adds stencil component/appearance semantics and provenance, explicit pin representations, and capacity admission before policy application. It is implemented and locally verified, awaiting independent review. No live Nexus/model call, dependency upgrade or Windows repackaging occurred. [CURRENT_STATE](CURRENT_STATE.md#phase-3-closeout-stencil-appearance-and-pin-admission) owns results and limits; [CONTRACTS](CONTRACTS.md#pdf-coordinates-and-image-delivery) and Q2 own behavior. Export portability, OCR recovery and packaging remain outside this batch.
 
 ## Product and revision scope
 
@@ -8,7 +8,8 @@ The user supplies a PDF and scope. The app runs its own agent through Nexus and 
 
 | Batch | Implemented behavior | Main review locations |
 | --- | --- | --- |
-| Current Phase 3: PDF coordinates and images | Unrotated region contract, affine pixel mapping, display assets and original streams, image/mask provenance in saved/exported versions | `src/pdfmd/evidence.py`, `documents.py`, tool descriptions; `tests/test_pdf_delivery.py`, `tests/fixtures/pdf/`, `tests/desktop/pdf-delivery*` |
+| Current Phase 3 closeout | Coverage-only stencil component, agent-selected occurrence display and provenance; index/image/full/raw pins with atomic preflight/replay | `evidence.py:extract_image/_render_page`, `context.py:policy/preflight/pin_view/group`, `runtime.py:tools`, `tools.py:dispatch`; `tests/test_stencil_pins.py`, `tests/desktop/stencil-pins*` |
+| Retained Phase 3: PDF coordinates and images | Unrotated region contract, affine pixel mapping, display assets and original streams, image/mask provenance in saved/exported versions | `src/pdfmd/evidence.py`, `documents.py`, tool descriptions; `tests/test_pdf_delivery.py`, `tests/fixtures/pdf/`, `tests/desktop/pdf-delivery*` |
 | Retained Phase 2: settings and time | Explicit task changes, original request/replay boundaries, monotonic known consumption, durable unknown intervals, task-scoped UI and API | `server.py:Engine._configure/configure/start`, `active_time.py`, `runtime.py`, `nexus.py`, `tools.py:process`, `TaskSettings.tsx`, desktop IPC, `tests/test_task_settings.py`, `test_active_time.py`, `tests/desktop/task-settings.spec.ts` |
 | Retained phase-1 closeout: handoff replay | Recover a committed application under its original receipt despite new amendments; retain archive/revision/coverage checks and current-input capacity checks | `src/pdfmd/context.py:apply_handoff`; `tests/test_handoff_replay.py`; Q2/Q3 and the context/execution guides |
 | Retained phase 1: compaction progress | Per-object admission in the actual compaction envelope; reference-only prefixes can include later material; last-history overflow uses bounded correction with prior context retained; useful partial reductions remain valid | `src/pdfmd/context.py:admit_group/compact_request/apply_handoff`; `tests/test_context_progress.py`; Q2 and the context guide |
@@ -22,7 +23,22 @@ Exact contracts are in [Q1–Q3](CONTRACTS.md#implemented-first-version-contract
 
 ## Evidence and independent reproduction
 
-Use **`.local/review-2026-10-24-pdf-delivery.zip`** for this review. It contains exact source ZIPs before/after the increment, `phase-3-increment.patch`, cumulative changes from HEAD, source/evidence hashes, readable code/test/document copies, local logs, seven image delivery stores and the eleven-page desktop source/store/export with actual-renderer screenshots. Root review scratch, credentials, private sources and live-provider workspaces are excluded. Package identity includes uncommitted and new files; HEAD alone is insufficient.
+Use **`.local/review-2026-10-24-stencil-pins.zip`** for the current review. It contains the exact 600-file preceding source and 603-file current source, incremental/cumulative patches, source/evidence hashes, readable code/tests/docs, local logs, four rotated stencil sources and two-protocol runtime/desktop stores, exports and screenshots. The prior review and local re-review reproductions are retained as evidence to assess, not requirements. Credentials, private inputs, live-provider stores and release builds are excluded.
+
+Six selected regressions fail against the before-source. The new 25-case suite and continuation regressions give 50 focused passes; the complete suite passes 178 Python tests and ten desktop tests, and TypeScript/build passes. Two new protocol fixtures reject full raw pinning before application, revise to explicit views, and complete a three-figure source in five in-memory mock responses each. Actual Electron saved/reopened and Edge exported views show the red/blue source colors. Every selected original and ZIP member is verified. See CURRENT_STATE for retained paths, limits and the older text-only fixture correction.
+
+Review priorities for this closeout:
+
+- Does mask coverage stay inspectable without being mislabeled as page appearance? Does selecting one of two differently painted occurrences preserve source color, rotation, overlap disclosure and exact original provenance through delivery?
+- Does preflight include the pending native batch, known results, receipt, schemas, images and output reserve before any successful policy update? Rejection must preserve the entire prior policy, including releases and notes. Later unsettled results are explicitly unknown; admission must not promise they will fit.
+- Do index/partial selections avoid a full-body/pixels claim? Are complete originals and full/raw/field/range/native-pixel access retained without silently downgrading an explicit full request?
+- Do accepted and rejected receipts preserve their decision across pointer/checkpoint gaps and changed settings, while next-request capacity still uses current state? Is an earlier same-batch accepted policy preserved when a later update fails?
+
+Reproduce with the pinned local setup, `python -m pytest`, `pnpm build` and `pnpm exec playwright test`; new focused tests are `tests/test_stencil_pins.py` and `tests/desktop/stencil-pins.spec.ts`. No provider call is required. The package supplies `verify_package.py` for hashes and exact incremental/cumulative patch reconstruction. Scripted responses do not establish natural model behavior or universal source fidelity. The following evidence describes previous increments and remains historical.
+
+### Preceding Phase 3 evidence
+
+The preserved **`.local/review-2026-10-24-pdf-delivery.zip`** contains exact source ZIPs before/after that increment, `phase-3-increment.patch`, cumulative changes from HEAD, source/evidence hashes, readable code/test/document copies, local logs, seven image delivery stores and the eleven-page desktop source/store/export with actual-renderer screenshots. Root review scratch, credentials, private sources and live-provider workspaces are excluded. Package identity includes uncommitted and new files; HEAD alone is insufficient.
 
 The scoped suite first produced 17 failures and two unrotated controls; all 25 expanded cases now pass. The full Python suite passes 153 tests, the desktop suite passes eight, and TypeScript/production build passes. The build initially exposed a preceding test's TypeScript name-shadowing error; five references were changed to `globalThis.window` without changing product behavior. Keep that failure and its correction distinct from the PDF defects. No dependency or framework change was made.
 

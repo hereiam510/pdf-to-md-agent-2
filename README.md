@@ -74,7 +74,9 @@ The current source includes all three editing/continuation batches, the context-
 
 The phase-1 closeout recovers an already applied handoff after an interrupted checkpoint even when new instructions arrive. It preserves the original application receipt and consumed usage, then checks the latest input before continuing. An archived but unapplied candidate still needs validation. See [the closeout evidence](docs/CURRENT_STATE.md#phase-1-closeout-handoff-application-replay).
 
-Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes and review evidence. The three accepted follow-up phases are implemented. Phase 1 and its replay closeout and Phase 2 settings/time accounting retain their scoped verification; Phase 3 PDF coordinates/image delivery is locally verified and prepared for independent review. [Current state](docs/CURRENT_STATE.md#review-follow-up-progress) records checks and limitations separately from plan acceptance and release.
+The Phase 3 closeout distinguishes stencil coverage from page appearance. The agent can inspect the component or select a page occurrence for a correctly painted display asset with original-stream provenance. Context pins now choose index, image, full/selected text or raw bytes explicitly. Admission happens before application; rejection preserves previous pins, releases and notes and lets the agent revise its choice. Full originals and precise reads remain available. See [the closeout evidence](docs/CURRENT_STATE.md#phase-3-closeout-stencil-appearance-and-pin-admission).
+
+Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes and review evidence. The three accepted follow-up phases and the Phase 3 closeout are implemented. [Current state](docs/CURRENT_STATE.md#review-follow-up-progress) records checks and limitations separately from plan acceptance and release.
 
 ## Document checks
 

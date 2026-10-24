@@ -25,6 +25,7 @@ class State(TypedDict, total=False):
     notes: str
     released: list[str]
     pinned: list[str]
+    pin_views: dict[str, list[dict]]
     pending: str | None
     next: str
     terminal: bool
@@ -127,8 +128,9 @@ class Runtime:
         job, key = state["job"], state["pending"]
         request = self.store.get("request", key, job=job)
         reply = self.store.json(request["accepted_ref"], job)
-        released, pinned = set(state["released"]), set(state["pinned"])
-        notes, report = state["notes"], None
+        policy = {field: state.get(field, default) for field, default in
+                  [("released", []), ("pinned", []), ("pin_views", {}), ("notes", "")]}
+        report = None
         for index, call in enumerate(reply["calls"]):
             self.active_time.checkpoint()
             operation = f"{key}:{index}"
@@ -143,28 +145,27 @@ class Runtime:
                     elapsed = self.active_time.elapsed(current)
                     if elapsed >= current["limits"]["max_active_seconds"]:
                         raise StopRun("budget_exhausted", "Stopped before a new tool because the persistent active-time budget is exhausted.")
-                    result = self.dispatcher.execute(job, operation, call["name"], call["arguments"])
+                    self.dispatcher.context_preflight = lambda intent, op, candidate: self.context.preflight(
+                        current, {**state, **policy}, intent, op, candidate)
+                    try:
+                        result = self.dispatcher.execute(job, operation, call["name"], call["arguments"])
+                    finally:
+                        self.dispatcher.context_preflight = None
             self.active_time.checkpoint()
             if not result["ok"]:
                 continue
             data = result["data"]
             if "context_intent" in data:
-                intent = data["context_intent"]
-                for ref in intent.get("release", []):
-                    released.add(ref)
-                    pinned.discard(ref)
-                for ref in intent.get("pin", []):
-                    pinned.add(ref)
-                    released.discard(ref)
-                if "notes" in intent:
-                    notes = intent["notes"]
+                # A durable admission decision wins across checkpoint gaps. Do
+                # not re-evaluate its cost under new instructions or route limits.
+                policy = data.get("context_policy") or self.context.policy(job, policy, data["context_intent"])
             if "report_intent" in data:
                 report = data["report_intent"]
         # Restore historical context effects, but an old report cannot terminate a new instruction.
         if request["instruction_basis"] != instruction_basis(self.store.get("job", job)):
             report = None
         # One deterministic policy settlement per complete accepted batch.
-        changes = {"released": sorted(released), "pinned": sorted(pinned), "notes": notes,
+        changes = {**policy,
                    "history": [*state["history"], key], "seq": state["seq"] + 1,
                     "revision": state["revision"] + 1, "pending": None, "terminal": bool(report),
                     "continuation_feedback": None,

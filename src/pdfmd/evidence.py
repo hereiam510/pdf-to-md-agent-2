@@ -133,13 +133,18 @@ class Evidence:
             raise ValueError("Range endpoints must be zero-based, half-open, and within the saved value.")
         return first, last
 
-    def image(self, job: str, raw: bytes, extension: str, meta: dict) -> dict:
+    def image(self, job: str, raw: bytes, extension: str, meta: dict, *, component: bool = False) -> dict:
         digest = sha256(raw).hexdigest()
         record = self.store.blob(job, "image", raw,
-                                 {**meta, "extension": extension, "asset_path": f"assets/{digest}.{extension}"})
+                                 {**meta, "extension": extension,
+                                  **({} if component else {"asset_path": f"assets/{digest}.{extension}"})})
         return {"ref": record["ref"], "image_ref": record["ref"], **record["meta"]}
 
     def render_page(self, job: str, page: int, dpi: int = 144, region: list[float] | None = None) -> dict:
+        return self._render_page(job, page, dpi, region)
+
+    def _render_page(self, job: str, page: int, dpi: int, region: list[float] | None,
+                     provenance: dict | None = None) -> dict:
         if not 36 <= dpi <= 1200:
             raise ValueError("Render DPI must be between 36 and 1200.")
         with PDF_LOCK, pymupdf.open(stream=self.source(job), filetype="pdf") as document:
@@ -163,9 +168,9 @@ class Evidence:
                     "pixel_frame": "saved image pixels, top-left origin; page rotation preserved",
                     "width": image.width, "height": image.height, "source_ref": self.store.get("job", job)["source_ref"],
                     "derivation": "lossless PNG render; no content edits"}
-            return self.image(job, image.tobytes("png"), "png", meta)
+            return self.image(job, image.tobytes("png"), "png", {**meta, **(provenance or {})})
 
-    def extract_image(self, job: str, page: int, xref: int) -> dict:
+    def extract_image(self, job: str, page: int, xref: int, occurrence: int | None = None, dpi: int = 144) -> dict:
         with PDF_LOCK, pymupdf.open(stream=self.source(job), filetype="pdf") as document:
             if not 1 <= page <= len(document):
                 raise ValueError("Page is outside this source.")
@@ -187,10 +192,42 @@ class Evidence:
                     "derivation": "unmodified encoded PDF stream; object dependencies remain in the source PDF",
                     "extraction": f"PyMuPDF {pymupdf.VersionBind} Document.xref_stream_raw"})
                 originals.append({"ref": record["ref"], "path": f"originals/{number}-{record['sha256']}.{extension}"})
+            stencil = document.xref_get_key(xref, "ImageMask")[1] == "true"
+            occurrences = []
+            if stencil or occurrence is not None:
+                occurrences = [{"occurrence": i, "region": list(rect), "image_to_page": list(matrix),
+                                "render": {"page": page, "xref": xref, "occurrence": i, "dpi": dpi}}
+                               for i, (rect, matrix) in enumerate(document[page - 1].get_image_rects(xref, transform=True))]
+            if occurrence is not None:
+                if isinstance(occurrence, bool) or not isinstance(occurrence, int) or not 0 <= occurrence < len(occurrences):
+                    raise ValueError("Choose a zero-based occurrence listed for this image on this page.")
+                selected = occurrences[occurrence]
+                bounds = document[page - 1].rect * document[page - 1].derotation_matrix
+                region = pymupdf.Rect(selected["region"]) & bounds
+                return self._render_page(job, page, dpi, list(region), {
+                    "representation": "rendered_occurrence", "source_image_kind": "stencil_mask" if stencil else "image",
+                    "xref": xref, "occurrence": occurrence, "occurrence_region": selected["region"],
+                    "image_to_page": selected["image_to_page"], "clipped_to_page": list(region) != selected["region"],
+                    "original_ref": originals[0]["ref"], "originals": originals,
+                    "original_bytes_equal": False, "source_sha256": source_hash,
+                    "derivation": "PNG rendering of the selected page occurrence, including page graphics state and background",
+                    "warnings": ["This page crop includes any overlapping content; it is not an isolated embedded image."],
+                    "decoder": f"PyMuPDF {pymupdf.VersionBind} / MuPDF {pymupdf.VersionFitz}"})
             # extract_image may reencode CMYK JPEG as RGB JPEG. Do not publish
             # that lossy intermediate. Decode the PDF image directly instead.
             extracted = document.extract_image(xref)
             pix = pymupdf.Pixmap(document, xref)
+            if stencil or pix.colorspace is None:
+                return self.image(job, pix.tobytes("png"), "png", {
+                    "representation": "stencil_mask", "display_semantics": "coverage_only",
+                    "page": page, "xref": xref, "width": pix.width, "height": pix.height,
+                    "source_ref": source_ref, "source_sha256": source_hash,
+                    "original_ref": originals[0]["ref"], "originals": originals, "original_bytes_equal": False,
+                    "coordinate_frame": PAGE_FRAME, "occurrences": occurrences,
+                    "derivation": "decoded stencil coverage; page paint color, background and compositing are not included",
+                    "warnings": ["This is a mask component, not the source page appearance. No deliverable asset_path is registered. "
+                                 "Choose an occurrence with extract_image, render a page/region, or use another source-led method."],
+                    "decoder": f"PyMuPDF {pymupdf.VersionBind} / MuPDF {pymupdf.VersionFitz}"}, component=True)
             colorspace = pix.colorspace.name if pix.colorspace else None
             conversion = bool(pix.colorspace and pix.colorspace.n not in {1, 3})
             embedded = self.store.bytes(originals[0]["ref"], job)

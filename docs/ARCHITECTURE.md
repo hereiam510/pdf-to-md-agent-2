@@ -48,6 +48,10 @@ Model-facing projections can release or replace large content with accurate refe
 
 Evidence hydration belongs in transient request assembly. Returning large hydrated messages as persistent graph-state updates can refill every checkpoint. The retained simplification keeps small context policy (selections, pin/release choices, notes/references, compaction boundary and settled-batch identity) in graph state, with one settlement writer. An additional external policy-version/activation subsystem is not selected for the single executor (EVT-0872/0878). Transient assembled content stays outside that persistent policy. If a framework hook is used, its actual return/persistence semantics must be verified for the selected version.
 
+Pin admission uses that same boundary. The runtime provides its current ordered policy to the dispatcher for `context_update`; `Context` resolves explicit index/image/full/raw selections and preflights the proposed input before a successful tool receipt exists. Rejection retains the prior policy. A successful receipt contains only the resulting references/selections and notes, allowing checkpoint-gap replay without recalculating historical admission. Temporary envelopes account for the pending call and identify later unsettled tools; the next actual request still has its normal capacity gate. No second mutable policy store or provider request is needed.
+
+Stencil components remain inspectable evidence without a deliverable asset registration. An agent-selected page occurrence uses the existing renderer, carrying graphics-state appearance and original-stream provenance into the ordinary immutable document/export path. This preserves method choice and avoids falsely presenting decoded mask coverage as the source figure's colors.
+
 ## Authority and recovery
 
 Immutable version files are the recommended body authority. SQLite registers their identities and commits metadata/pointers/receipts. Avoid a second independently mutable body in `blocks_json`. A staged file plus SQLite commit needs an explicit visibility/reconciliation contract. A database transaction does not also commit the external files or graph checkpoint.

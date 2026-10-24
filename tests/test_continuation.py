@@ -27,7 +27,8 @@ def delivery(tmp_path, route):
     pdf.save(source)
     pdf.close()
     store = Store(tmp_path / 'workspace')
-    job = Evidence(store).create_job(str(source), 'Convert both complete pages.', route)
+    job = Evidence(store).create_job(str(source), 'Convert both complete pages.',
+                                     {**route, 'vision': True, 'image_tokens': 1024})
     dispatcher = Dispatcher(store)
     image = dispatcher.evidence.render_page(job['id'], 2)
     args = {'base_version': None, 'expected_head': None, 'replace_blocks': [
@@ -79,7 +80,7 @@ def test_cancelled_batch_respects_new_instructions_and_preserves_delivery(delive
         payload = json.loads(request.content)
         seen.append(payload)
         if len(seen) == 1:
-            value = native(protocol, tool('context_update', {'pin': [image['ref']], 'notes': 'Keep original pixels.'}, 'policy'),
+            value = native(protocol, tool('context_update', {'pin': [{'ref': image['ref'], 'view': 'image'}], 'notes': 'Keep original pixels.'}, 'policy'),
                            tool('edit_document', destructive, 'delete'))
             if protocol == 'responses':
                 value['output'].insert(0, {'type': 'reasoning', 'encrypted_content': 'retained-reasoning', 'summary': []})
@@ -132,7 +133,7 @@ def test_completed_effects_reconcile_but_old_report_does_not_end_new_instruction
     store, job, version, image, source = delivery
     seen = []
     first = {'document': tool('edit_document', {'base_version': version, 'expected_head': version, 'title': 'Preserved title'}),
-             'result_pointer': tool('context_update', {'pin': [image['ref']], 'notes': 'Restored policy.'}),
+             'result_pointer': tool('context_update', {'pin': [{'ref': image['ref'], 'view': 'image'}], 'notes': 'Restored policy.'}),
              'report': tool('report', {'state': 'complete', 'version_id': version, 'message': 'Old completion.'})}[gap]
     def reply(request):
         seen.append(json.loads(request.content))

@@ -30,8 +30,8 @@ def definitions(scripts: bool = False) -> list[dict]:
          object_schema({"pages": {"type": "array", "items": INT}, "mode": {"enum": ["text", "blocks", "words", "dict", "rawdict", "metadata"]}, "view": {"enum": ["full", "index"]}})),
         ("render_page", "Read actual page pixels. Select DPI and an optional region in unrotated page points, as returned by inspect_pdf. Output preserves page rotation and includes page_to_pixel/pixel_to_page affine mappings. The saved PNG is reusable.",
          object_schema({"page": INT, "dpi": INT, "region": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4}}, ["page"])),
-        ("extract_image", "Extract a source image by page and xref at native dimensions. Return a display asset plus exact original image/mask stream references. Preserve compatible original bytes; other images use a PNG with explicit decoding, color conversion and mask provenance. Original full/raw/range access remains available.",
-         object_schema({"page": INT, "xref": INT}, ["page", "xref"])),
+        ("extract_image", "Extract a source image by page and xref at native dimensions, retaining original streams. A stencil returns a coverage-only mask without asset_path and lists page occurrences. Select occurrence (zero-based) and dpi to render its actual page appearance, including color, background and overlapping content. Or choose render_page or another source-led method. Original full/raw/range access remains available.",
+         object_schema({"page": INT, "xref": INT, "occurrence": INT, "dpi": INT}, ["page", "xref"])),
         ("read_evidence", "Read saved originals, candidates, or native image pixels. JSON Pointer selects any field. Ranges are zero-based and half-open. Full/raw access remains available; a body exceeding input capacity is saved with an explicit deferral receipt.",
          object_schema({"ref": STRING, "view": {"enum": ["full", "index", "raw"]}, "json_pointer": STRING, "start": INT, "end": INT}, ["ref"])),
         ("read_document", "Read an explicit saved version. Omit version_id to resolve the current head for this operation. No hidden truncation applies.",
@@ -39,8 +39,10 @@ def definitions(scripts: bool = False) -> list[dict]:
         ("preview_document", "Inspect actual saved-output pixels. Select an immutable version and viewport. The result identifies the visible region.",
          object_schema({"version_id": STRING, "top": INT, "width": INT, "height": INT}, ["version_id"])),
         ("edit_document", "Save a new version. Default mode=edit requires base_version == expected_head; mode=rebuild explicitly permits another saved or empty base without user approval. Both check the current head at commit. Preserve omitted fields and capture candidates before validation. Apply operations sequentially against the named base. Insert/replace accept either blocks or reuse_candidate (a task-owned candidate pointer to one Block or a block list); only selected content is copied. Top-level reuse_candidate replaces the entire block list. Page metadata uses printed, disposition, and note. Block pages must be included. Complete claims require every physical page classified and a note for each outside_scope or omitted_non_content page. Save partial work at any time.", Edit.model_json_schema()),
-        ("context_update", "Release or pin exact saved objects and update continuity notes without changing originals. Pins survive history compaction independently. Pin image_ref for pixels; pin result_ref for its saved data. An oversized pin set can block input; release explicitly to change it.",
-         object_schema({"release": STRINGS, "pin": STRINGS, "notes": STRING})),
+        ("context_update", "Choose persistent representations without changing originals: index for reference/metadata, image for native pixels, full for complete text/JSON or exact json_pointer/start/end selection, raw for Base64 bytes (optional byte range). Raw image streams cost Base64 text, not image allowance. Multiple selections of one ref replace its previous selections; other pins remain. Preflight checks the assembled input before applying the entire update, including release and notes. Rejection preserves previous policy and explains alternatives. Later tool results or instructions can still add pressure. Full content is never silently replaced by an index.",
+         object_schema({"release": STRINGS, "pin": {"type": "array", "items": object_schema({
+             "ref": STRING, "view": {"enum": ["index", "image", "full", "raw"]},
+             "json_pointer": STRING, "start": INT, "end": INT}, ["ref", "view"])}, "notes": STRING})),
         ("report", "Record a completion claim or ask the user a question. Select an explicit saved version for delivery when available.",
          object_schema({"state": {"enum": ["complete", "partial", "waiting"]}, "message": STRING, "version_id": STRING}, ["state", "message"])),
         ("ocr_page", "Run local OCR on a chosen page or region in unrotated page points, as returned by inspect_pdf. OCR boxes use saved image pixels; the image provides pixel_to_page. Keep the complete result and logs. OCR confidence does not certify fidelity.",
@@ -56,6 +58,7 @@ class Dispatcher:
     def __init__(self, store: Store, *, scripts: bool = False):
         self.store, self.scripts = store, scripts
         self.active_time = None
+        self.context_preflight = None
         self.documents = Documents(store)
         self.evidence = Evidence(store)
 
@@ -120,7 +123,7 @@ class Dispatcher:
             saved = self.store.maybe("operation", operation)
             if name == "edit_document" and saved and saved["status"] == "done":
                 return self.envelope(job, operation, saved)
-            success = True
+            success = not result.get("context_rejected", False)
         except UnknownEffect:
             raise
         except (ValueError, KeyError, IndexError, TypeError, OSError, RuntimeError) as exc:
@@ -168,12 +171,9 @@ class Dispatcher:
         if name == "preview_document":
             return self.preview(job, operation, **args)
         if name == "context_update":
-            if set(args) - {"release", "pin", "notes"}:
-                raise ValueError("Unknown context field.")
-            for key in ("release", "pin"):
-                for ref in args.get(key, []):
-                    self.store.get("blob", ref, job=job)
-            return {"context_intent": args}
+            if self.context_preflight is None:
+                raise ValueError("Context updates require an active runtime policy and capacity preflight.")
+            return self.context_preflight(args, operation, candidate)
         if name == "report":
             if args.get("state") not in {"complete", "partial", "waiting"} or not isinstance(args.get("message"), str):
                 raise ValueError("Report needs a state and a message.")

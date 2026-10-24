@@ -31,6 +31,8 @@ This is the effective rebuild decision record. Detailed proposals, evidence limi
 
 ## Consequential alternatives and corrections
 
+The authorized Phase 3 closeout separates stencil coverage from page appearance and adds explicit pin representations with admission before policy application. The user explicitly required atomic rejection preserving working context. Runtime-backed preflight and existing immutable tool receipts satisfy this without a new pin manager, TTL policy, external policy ledger or framework migration. A page occurrence is selected by the agent because one stencil xref can be painted differently more than once. Rendering the selected occurrence preserves graphics-state appearance; it honestly includes background/overlap rather than claiming an isolated native image. [CONTRACTS](CONTRACTS.md#q2-context-transitions) owns admission details and [CURRENT_STATE](CURRENT_STATE.md#phase-3-closeout-stencil-appearance-and-pin-admission) owns verification. No export-filesystem, OCR-recovery or packaging work is included.
+
 The repository is a self-contained technical handoff (LIVE-06/07). [DEVELOPMENT_GUIDE](DEVELOPMENT_GUIDE.md) and its module guides explain the development details directly, including mechanisms, examples and limits. The local source bundle supports audit. Neither a source ID nor a transcript replaces a technical explanation. No separate old checkout/export is required, and old instructions remain inert.
 
 - A filesystem-only custom context manager was an early proposal. It is superseded by the preferred SQLite/StateGraph direction, not a permanent no-database rule.
