@@ -55,6 +55,7 @@ def definitions(scripts: bool = False) -> list[dict]:
 class Dispatcher:
     def __init__(self, store: Store, *, scripts: bool = False):
         self.store, self.scripts = store, scripts
+        self.active_time = None
         self.documents = Documents(store)
         self.evidence = Evidence(store)
 
@@ -196,8 +197,10 @@ class Dispatcher:
             process = subprocess.Popen(command, cwd=directory, stdout=out, stderr=err, env=env,
                                        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
             while process.poll() is None:
+                if self.active_time:
+                    self.active_time.checkpoint(force=False)
                 current = self.store.get("job", job)
-                active = current["active_seconds"] + max(0, time.time() - current.get("active_since", time.time()))
+                active = self.active_time.elapsed(current) if self.active_time else current["active_seconds"]
                 if current["cancel_requested"] or time.monotonic() - started > timeout or active >= current["limits"]["max_active_seconds"]:
                     process.terminate()
                     try:

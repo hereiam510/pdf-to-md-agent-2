@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 from hashlib import sha256
 import sqlite3
-import time
 from typing import TypedDict
 
 from filelock import FileLock, Timeout
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 
+from .active_time import ActiveTime
 from .context import Context, HandoffRejected
 from .nexus import Nexus, StopRun, instruction_basis
 from .storage import Store, encode
@@ -35,7 +35,10 @@ class State(TypedDict, total=False):
 class Runtime:
     def __init__(self, store: Store, nexus: Nexus, *, scripts: bool = False):
         self.store, self.nexus = store, nexus
+        self.active_time = ActiveTime(store)
+        self.nexus.active_time = self.active_time
         self.dispatcher = Dispatcher(store, scripts=scripts)
+        self.dispatcher.active_time = self.active_time
         self.context = Context(store, self.dispatcher)
         self.connection = sqlite3.connect(store.root / "graph.sqlite", check_same_thread=False)
         self.connection.execute("PRAGMA journal_mode=WAL")
@@ -53,6 +56,7 @@ class Runtime:
         self.graph = builder.compile(checkpointer=SqliteSaver(self.connection))
 
     def prepare(self, state: State):
+        self.active_time.checkpoint()
         job = self.store.get("job", state["job"])
         if job["cancel_requested"]:
             raise StopRun("cancelled", "Stopped at a settled tool-batch boundary.")
@@ -126,6 +130,7 @@ class Runtime:
         released, pinned = set(state["released"]), set(state["pinned"])
         notes, report = state["notes"], None
         for index, call in enumerate(reply["calls"]):
+            self.active_time.checkpoint()
             operation = f"{key}:{index}"
             result = self.dispatcher.reconcile(job, operation, call["name"], call["arguments"])
             current = self.store.get("job", job)
@@ -135,10 +140,11 @@ class Runtime:
                 if request["instruction_basis"] != instruction_basis(current):
                     result = self.dispatcher.skip(job, operation, call["name"], call["arguments"])
                 else:
-                    elapsed = current["active_seconds"] + max(0, time.time() - current.get("active_since", time.time()))
+                    elapsed = self.active_time.elapsed(current)
                     if elapsed >= current["limits"]["max_active_seconds"]:
                         raise StopRun("budget_exhausted", "Stopped before a new tool because the persistent active-time budget is exhausted.")
                     result = self.dispatcher.execute(job, operation, call["name"], call["arguments"])
+            self.active_time.checkpoint()
             if not result["ok"]:
                 continue
             data = result["data"]
@@ -223,10 +229,7 @@ class Runtime:
                 raise StopRun("already_running", "This task already has an active executor.") from exc
         config = {"configurable": {"thread_id": job}, "recursion_limit": 1_000_000}
         try:
-            current = self.store.get("job", job)
-            prior_started = current.get("active_since")
-            carried = current["active_seconds"] + (max(0, time.time() - prior_started) if prior_started else 0)
-            self.store.update_job(job, status="running", stop_reason=None, active_since=time.time(), active_seconds=carried)
+            self.active_time.start(job)
             snapshot = self.graph.get_state(config)
             if snapshot.next:
                 continuation = self.resume_pending(dict(snapshot.values), continue_failed=continue_failed)
@@ -249,13 +252,10 @@ class Runtime:
             self.store.update_job(job, status="blocked", stop_reason="internal_error", last_message=f"Local engine error: {type(exc).__name__}. Saved work is retained.")
             raise
         finally:
-            with self.store.transaction() as db:
-                current = self.store.get_tx(db, "job", job)
-                started = current.pop("active_since", None)
-                if started:
-                    current["active_seconds"] += max(0, time.time() - started)
-                self.store.put_tx(db, "job", job, job, current)
-            lock.release()
+            try:
+                self.active_time.checkpoint(close=True)
+            finally:
+                lock.release()
 
     def close(self):
         self.connection.close()

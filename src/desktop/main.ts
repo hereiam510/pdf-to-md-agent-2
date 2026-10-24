@@ -168,9 +168,12 @@ app.whenReady().then(async () => {
       case 'evidence': return call(`/jobs/${id(args.job)}/evidence/${id(args.ref)}`)
       case 'start': {
         const configuration = await settings()
-        return call(`/jobs/${id(args.job)}/start`, 'POST', { key: apiKey, route: configuration.route, limits: configuration.limits,
+        const current = await call(`/jobs/${id(args.job)}`)
+        return call(`/jobs/${id(args.job)}/start`, 'POST', { key: apiKey,
+          route: current.route ? undefined : configuration.route, limits: current.route ? undefined : configuration.limits,
           amendment: args.amendment || '', scripts: args.scripts === true })
       }
+      case 'taskSettings': return call(`/jobs/${id(args.job)}/settings`, 'POST', { route: args.route, limits: args.limits })
       case 'cancel': return call(`/jobs/${id(args.job)}/cancel`, 'POST', {})
       case 'edit': return call(`/jobs/${id(args.job)}/edit`, 'POST', args.edit)
       case 'export': {

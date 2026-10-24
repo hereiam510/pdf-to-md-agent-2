@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Job, Limits, Route, Settings } from './types'
 import { useDocumentSession } from './useDocumentSession'
+import { TaskSettings } from './TaskSettings'
 import './style.css'
 
 const api = window.workbench.invoke
@@ -51,7 +52,7 @@ function Connection({ initial, close, onSave }: { initial: Settings; close: () =
       <label>Additional native parameters (JSON)<textarea rows={3} value={parameters} onChange={e => setParameters(e.target.value)} /></label>
     </details>
     {error && <p className="error" role="alert">{error}</p>}
-    <div className="modal-footer"><span className="hint">Applies to new tasks before their first request.</span><button className="primary" type="submit">Save connection</button></div>
+    <div className="modal-footer"><span className="hint">Defaults for unconfigured tasks. Use Task limits to adjust an existing task.</span><button className="primary" type="submit">Save connection</button></div>
   </form></div>
 }
 
@@ -59,6 +60,7 @@ function App() {
   const [ready, setReady] = useState(false)
   const [settings, setSettings] = useState<Settings>({})
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsJob, setSettingsJob] = useState<Job | null>(null)
   const [jobs, setJobs] = useState<Job[]>([])
   const [active, setActive] = useState<string | null>(null)
   const [job, setJob] = useState<Job | null>(null)
@@ -123,6 +125,7 @@ function App() {
   const select = (id: string) => { if (id !== active) setActive(id) }
   const running = Boolean(job?.running)
   const latestCapacity = job?.requests?.at(-1)?.capacity
+  const unmeasuredIntervals = (job?.active_time_gaps?.length || 0) + (job?.active_since != null && !running ? 1 : 0)
 
   return <div className="app">
     <aside className="sidebar">
@@ -182,6 +185,8 @@ function App() {
             }}>{job?.attempts ? 'Continue' : 'Start conversion'}<Icon name="arrow" size={16} /></button>}
           </div>
           <div className="agent-meta"><span>{job?.attempts || 0} / {job?.limits.max_requests || defaultLimits.max_requests} model requests{latestCapacity ? ` · Estimated input ${latestCapacity.input_estimate.toLocaleString()} / ${(latestCapacity.capacity - latestCapacity.output_reserve).toLocaleString()}` : ''}</span><label className="check"><input type="checkbox" checked={scripts} onChange={e => setScripts(e.target.checked)} disabled={running} />Enable trusted task scripts</label></div>
+          {job?.route && <div className="agent-meta"><span data-testid="effective-task-limits">Recorded active time {job.active_seconds.toFixed(1)} / {job.limits.max_active_seconds} s · New-request context {job.route.context_tokens.toLocaleString()} · Output reserve {job.route.output_tokens.toLocaleString()}</span><button className="text-button" disabled={running || busy} onClick={() => setSettingsJob(job)}>Task limits</button></div>}
+          {unmeasuredIntervals > 0 && <p className="hint script-note" role="status">{unmeasuredIntervals} interrupted interval(s) have unknown active time. They remain recorded separately. The time budget uses known active time; this is not a complete usage total.</p>}
           {scripts && <p className="hint script-note">Scripts run with your user permissions. This is enabled for this session and is not an OS sandbox.</p>}
         </section>
       </>}
@@ -189,6 +194,10 @@ function App() {
       {notice && <div className="toast success" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss notice"><Icon name="close" size={16} /></button></div>}
     </main>
     {settingsOpen && <Connection initial={settings} close={() => setSettingsOpen(false)} onSave={setSettings} />}
+    {settingsJob && <TaskSettings key={settingsJob.id} job={settingsJob} close={() => setSettingsJob(null)} onSave={updated => {
+      setJob(current => current?.id === updated.id ? { ...current, ...updated } : current)
+      setNotice('Task limits saved. Recorded usage and pending requests are preserved.')
+    }} />}
     {importName && <div className="overlay"><form className="modal" onSubmit={e => { e.preventDefault(); void act(async () => {
       const value = await api<Job>('importPdf', { scope }); setImportName(''); setActive(value.id)
     }) }}><div className="modal-heading"><div><span className="eyebrow">NEW DOCUMENT</span><h2>What should we convert?</h2></div><button type="button" className="icon-button" aria-label="Close import" onClick={() => setImportName('')}><Icon name="close" /></button></div><div className="selected-file"><Icon name="file" /><strong>{importName}</strong></div><label>Requested scope<textarea required rows={5} value={scope} onChange={e => setScope(e.target.value)} /></label><p className="hint">For a section, describe its heading or physical pages and any boundaries within a page.</p><div className="modal-footer"><span className="hint">The original PDF stays unchanged.</span><button type="submit" className="primary" disabled={busy}>Open document<Icon name="arrow" size={16} /></button></div></form></div>}

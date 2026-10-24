@@ -8,6 +8,8 @@ export type Settings = { route?: Route; limits?: Limits; hasKey?: boolean; encry
 export type Job = {
   id: string; name: string; scope: string; status: string; page_count: number; head: string | null; delivery: string | null;
   last_message: string; attempts: number; active_seconds: number; limits: Limits; route: Route | null; running?: boolean;
+  active_since?: number; active_time_budget_policy?: 'known_active_only';
+  active_time_gaps?: { id: string; from_wall: number; observed_wall: number; wall_span_seconds: number; active_seconds: null }[];
   cancel_requested: boolean; stop_reason: string | null; content_claim: string;
   versions?: { id: string; title: string; claim: string }[];
   requests?: { id: string; kind: string; status: string; capacity?: { input_estimate: number; capacity: number; output_reserve: number } }[];

@@ -110,6 +110,7 @@ def make_payload(route: Route, instructions: str, messages: list[dict], tools: l
 class Nexus:
     def __init__(self, store: Store, credentials: Callable[[str], str], transport=None):
         self.store, self.credentials, self.transport = store, credentials, transport
+        self.active_time = None
 
     def freeze(self, job: str, key: str, payload: dict, kind: str, meta: dict) -> dict:
         old = self.store.maybe("request", key)
@@ -121,6 +122,7 @@ class Nexus:
         blob = self.store.blob(job, "request_input", payload, {"kind": kind, "request": key})
         record = {"id": key, "job": job, "kind": kind, "payload_ref": blob["ref"],
                   "route": route, "meta": meta, "instruction_basis": instruction_basis(current),
+                  "replay_policy": {field: current["limits"][field] for field in ("replay_unknown", "max_attempts_per_request")},
                   "status": "prepared", "attempts": [], "accepted_ref": None}
         self.store.put("request", key, job, record)
         self.store.event(job, "request_prepared", {"request": key, "kind": kind, **meta.get("capacity", {})})
@@ -141,21 +143,25 @@ class Nexus:
         return request
 
     def send(self, job: str, key: str) -> dict:
+        if self.active_time:
+            self.active_time.checkpoint()
         request = self.reconcile(job, key)
         if request["accepted_ref"]:
             return self.store.json(request["accepted_ref"], job)
         state = self.store.get("job", job)
         limits = state["limits"]
+        # Pre-snapshot records retain their task's immutable recovery policy.
+        policy = request.get("replay_policy", limits)
         if request["status"] in {"rejected", "http_error"}:
             raise StopRun("response_rejected", "The saved response was rejected. Its original is retained. No partial tool calls were executed.")
-        if request["attempts"] and (not limits["replay_unknown"] or len(request["attempts"]) >= limits["max_attempts_per_request"]):
+        if request["attempts"] and (not policy["replay_unknown"] or len(request["attempts"]) >= policy["max_attempts_per_request"]):
             raise StopRun("unknown_outcome", "The prior request has no accepted reply. Configured replay is disabled or exhausted. Remote completion and cost are unknown.")
         token = self.credentials(job)
         route = Route.model_validate(request["route"])
         attempt_id = uid()
         with self.store.transaction() as db:
             current = self.store.get_tx(db, "job", job)
-            elapsed = current["active_seconds"] + max(0, time.time() - current.get("active_since", time.time()))
+            elapsed = self.active_time.elapsed(current) if self.active_time else current["active_seconds"]
             if current["cancel_requested"]:
                 raise StopRun("cancelled", "Stopped before a new model request.")
             if current["attempts"] >= limits["max_requests"] or elapsed >= limits["max_active_seconds"]:
@@ -230,8 +236,10 @@ class Nexus:
         started = time.monotonic()
         try:
             while not task.done():
+                if self.active_time:
+                    self.active_time.checkpoint(force=False)
                 current = self.store.get("job", job)
-                elapsed = current["active_seconds"] + max(0, time.time() - current.get("active_since", time.time()))
+                elapsed = self.active_time.elapsed(current) if self.active_time else current["active_seconds"]
                 if current["cancel_requested"]:
                     raise StopRun("cancelled", "Local request cancelled. Upstream cancellation and final cost are unknown.")
                 if elapsed >= current["limits"]["max_active_seconds"]:

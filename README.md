@@ -17,6 +17,8 @@ The setup script uses the committed Python and JavaScript lockfiles. `-Uv` and `
 
 Open **Nexus connection**, enter the full Chat Completions or Responses endpoint, model alias and credential, and configure the route's capacity and output allowance. Image inputs require a conservative per-image allowance. These are user configuration values, not discovered model specifications. Credentials can be remembered with Windows encryption; they are never stored in task journals. Choose a PDF, describe the whole document or complete section, and start conversion. Trusted host scripts are off by default.
 
+For an existing task, use **Task limits** while it is stopped to adjust total requests, active time, context capacity, output reserve or image allowance, then Continue. The task keeps consumed usage and pending requests. Connection settings remain defaults for unconfigured tasks. Recorded active time and any unmeasured interrupted intervals are displayed separately; see [the settings/time contract](docs/CONTRACTS.md#existing-task-settings-and-active-time-accounting).
+
 To build and run the Windows folder app:
 
 ```powershell
@@ -70,7 +72,7 @@ The current source includes all three editing/continuation batches, the context-
 
 The phase-1 closeout recovers an already applied handoff after an interrupted checkpoint even when new instructions arrive. It preserves the original application receipt and consumed usage, then checks the latest input before continuing. An archived but unapplied candidate still needs validation. See [the closeout evidence](docs/CURRENT_STATE.md#phase-1-closeout-handoff-application-replay).
 
-Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes and review evidence. The accepted follow-up order is [context compaction progress, existing-job settings/time accounting, then PDF coordinates/image delivery](docs/REVIEW_HANDOFF.md#accepted-three-phase-follow-up). Phase 1 and its replay closeout have local verification and independent-review packages; phases 2 and 3 are not implemented. [Current state](docs/CURRENT_STATE.md#review-follow-up-progress) records checks and limitations separately from plan acceptance and release.
+Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes and review evidence. The accepted follow-up order is [context compaction progress, existing-job settings/time accounting, then PDF coordinates/image delivery](docs/REVIEW_HANDOFF.md#accepted-three-phase-follow-up). Phase 1 and its replay closeout remain verified within their tested scope. Phase 2 settings/time accounting is implemented and locally verified, with a new independent-review package; Phase 3 is not implemented. [Current state](docs/CURRENT_STATE.md#review-follow-up-progress) records checks and limitations separately from plan acceptance and release.
 
 ## Document checks
 

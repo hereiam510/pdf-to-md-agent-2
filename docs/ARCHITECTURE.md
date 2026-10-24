@@ -28,6 +28,8 @@ The implemented graph has `prepare`, `model`, `tools`, and `compact` nodes. `pre
 
 Continuation has an explicit entry boundary. The server conveys the user's Continue action; the runtime reconciles durable records before deciding whether to resume the existing request or record a distinct request transition. Nexus owns accepted-reply/attempt facts, the dispatcher owns completed or unexecuted tool receipts, and graph state owns the next step and feedback references. New amendments supersede only unstarted accepted calls; completed effects and unknown outcomes are not relabeled. This fits the existing single-writer graph without adding a second scheduler or changing the agent's choice of conversion methods.
 
+Task settings and time accounting remain application-service facts outside graph rollback. The server validates allowed changes under the task lock and records before/after settings with the job update. Nexus separates current total allowances from frozen request input/replay policy. `ActiveTime` owns monotonic in-run measurements, short transactional progress checkpoints and explicitly unknown crash tails; Runtime, Nexus and the child-process poller share that one meter per invocation. The desktop edits task limits separately from connection defaults and displays effective values and uncertainty. [CONTRACTS Q3](CONTRACTS.md#existing-task-settings-and-active-time-accounting) defines the policy and limits. No new scheduler, framework or conversion recipe is involved.
+
 ## Content and context are separate
 
 Keep complete immutable originals outside the model context. Distinguish:

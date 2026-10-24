@@ -38,6 +38,52 @@ class Engine:
         self.futures = {}
         self.guard = threading.Lock()
 
+    def _configure(self, job: str, route: dict | None, limits: dict | None,
+                   *, starting: bool = False, amendment: str = "") -> dict:
+        """Caller holds the task lock; validate and record settings atomically."""
+        with self.store.transaction() as db:
+            current = self.store.get_tx(db, "job", job)
+            if current is None:
+                raise ValueError("Task does not exist.")
+            frozen = current["attempts"] > 0 or db.execute(
+                "SELECT 1 FROM records WHERE job=? AND kind='request' LIMIT 1", (job,)).fetchone() is not None
+            updated_route = (Route.model_validate({**(current["route"] or {}), **route}).model_dump()
+                             if route is not None else current["route"])
+            updated_limits = (Limits.model_validate({**current["limits"], **limits}).model_dump()
+                              if limits is not None else current["limits"])
+            if starting and updated_route is None:
+                raise ValueError("Configure a Nexus connection before starting this task.")
+            if frozen:
+                for name, before, after, allowed in (
+                    ("route", current["route"], updated_route, {"context_tokens", "output_tokens", "image_tokens"}),
+                    ("limits", current["limits"], updated_limits, {"max_requests", "max_active_seconds"}),
+                ):
+                    changed = {key for key in set(before) | set(after) if before.get(key) != after.get(key)}
+                    if changed - allowed:
+                        raise Conflict(f"This task already has a frozen request. Cannot change {name}: "
+                                       + ", ".join(sorted(changed - allowed))
+                                       + ". Only capacity and total request/time allowances can change.")
+            if updated_route != current["route"] or updated_limits != current["limits"]:
+                change = {"id": uid(), "before": {"route": current["route"], "limits": current["limits"]},
+                          "after": {"route": updated_route, "limits": updated_limits}}
+                self.store.put_tx(db, "task_settings", change["id"], job, change)
+                current.update(route=updated_route, limits=updated_limits)
+            if starting:
+                current["cancel_requested"] = False
+                if amendment.strip():
+                    current["amendments"] = [*current["amendments"], amendment]
+            self.store.put_tx(db, "job", job, job, current)
+        return current
+
+    def configure(self, job: str, route: dict | None = None, limits: dict | None = None):
+        with self.guard:
+            lock = FileLock(str(self.store.root / f"task-{job}.lock"))
+            try:
+                with lock.acquire(timeout=0):
+                    return self._configure(job, route, limits)
+            except Timeout as exc:
+                raise Conflict("Stop the task before changing its settings.") from exc
+
     def start(self, job: str, key: str, route: dict | None = None, limits: dict | None = None,
               amendment: str = "", scripts: bool = False):
         with self.guard:
@@ -50,18 +96,10 @@ class Engine:
             except Timeout as exc:
                 raise Conflict("This task has an active executor in another process.") from exc
             try:
-                current = self.store.get("job", job)
-                changes = {"cancel_requested": False}
-                if current["route"] is None:
-                    changes["route"] = Route.model_validate(route).model_dump()
-                if limits and current["attempts"] == 0 and not self.store.records("request", job):
-                    changes["limits"] = Limits.model_validate(limits).model_dump()
-                if amendment.strip():
-                    changes["amendments"] = [*current["amendments"], amendment]
                 if not key:
                     raise ValueError("Enter the Nexus credential in Connection settings.")
+                self._configure(job, route, limits, starting=True, amendment=amendment)
                 self.keys[job] = key
-                self.store.update_job(job, **changes)
             except BaseException:
                 lock.release()
                 raise
@@ -132,7 +170,11 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
         value = engine.store.get("job", job)
         value["versions"] = list(reversed(engine.store.records("version", job)))
         value["requests"] = [{"id": r["id"], "kind": r["kind"], "status": r["status"], "capacity": r["meta"].get("capacity"),
-                              "attempts": len(r["attempts"])} for r in engine.store.records("request", job)]
+                              "attempts": len(r["attempts"]), "route": r["route"],
+                              "replay_policy": r.get("replay_policy", {k: value["limits"][k] for k in ("replay_unknown", "max_attempts_per_request")})}
+                             for r in engine.store.records("request", job)]
+        value["active_time_gaps"] = engine.store.records("active_time_gap", job)
+        value["active_time_budget_policy"] = "known_active_only"
         value["exports"] = engine.store.records("export", job)
         value["events"] = engine.store.events(job, limit=1000)
         value["evidence"] = [{"ref": b["ref"], "kind": b["kind"], "bytes": b["bytes"], "meta": b["meta"]}
@@ -146,6 +188,10 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
     @app.post("/jobs/{job}/start")
     def start(job: str, body: dict):
         return engine.start(job, body.get("key", ""), body.get("route"), body.get("limits"), body.get("amendment", ""), body.get("scripts", False))
+
+    @app.post("/jobs/{job}/settings")
+    def task_settings(job: str, body: dict):
+        return engine.configure(job, body.get("route"), body.get("limits"))
 
     @app.post("/jobs/{job}/cancel")
     def cancel(job: str):
