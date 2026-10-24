@@ -4,6 +4,15 @@ This file records application changes and important validation limits. The entri
 
 ## Unreleased
 
+### 2026-10-25 — Proposal validity, admission and outcome delivery
+
+- Distinguish retryable capacity waits, immutable terminal outcomes and outcome delivery; checkpoint coordination before request preparation.
+- Preserve pending intent through temporary capacity blocks and resume after settings repair. New instructions supersede unsettled intent without reviving old decisions.
+- Keep bounded context-control receipts visible, with complete originals and diagnostics behind exact references; reserve the complete native outcome envelope.
+- Admit fitting proposals without compulsory compaction. Avoid admission by additional unselected evidence deferral; honor explicit releases and pin representations.
+- Allow clearly labeled pending-release compaction views and bounded final-handoff correction for feasible pending policy. Preserve original active policy until admission.
+- Extend dual-protocol state/fault tests and source-led delivery through capacity block, settings repair and reopen. CURRENT_STATE records actual verification and limits.
+
 ### 2026-10-25 — Deferred context updates under history pressure
 
 - Save exact context updates as inactive proposals when accumulated history prevents immediate admission. Compact under the active policy, then check the complete proposed input before application.
@@ -12,7 +21,7 @@ This file records application changes and important validation limits. The entri
 - Retain proposals through interrupted or failed compaction without resetting consumed requests or active time. Preserve complete originals and full/raw/field/range access.
 - Add both-protocol local tests and source-led save/reopen/export fixtures. Existing records report 206 passing Python tests, ten retained desktop cases passing, and two new desktop cases passing after correcting their seeded request metadata. These are separate runs; scripted replies do not establish real-model conversion quality.
 
-Known review follow-up, not fixed in this snapshot: rejection or supersession feedback can itself exceed the remaining context capacity after history has been compacted, preventing the agent from receiving the outcome. Review also identified incomplete agent-facing guidance for notes replacement and release/pin precedence. Mandatory compaction after capacity pressure has already cleared, and blanket supersession on new instructions, remain implemented policies under discussion rather than completed improvements.
+Historical review follow-up, addressed by the subsequent coordination entry above: rejection or supersession feedback can itself exceed the remaining context capacity after history has been compacted, preventing the agent from receiving the outcome. Review also identified incomplete agent-facing guidance for notes replacement and release/pin precedence. Mandatory compaction after capacity pressure has already cleared, and blanket supersession on new instructions, remain implemented policies under discussion rather than completed improvements.
 
 ### 2026-10-24 — Stencil appearance and explicit pin admission
 

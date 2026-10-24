@@ -39,8 +39,13 @@ def pressure(store, original, protocol, kind="notes"):
     return job, state, intent, refs[0]
 
 
+def prepare_step(runtime, state):
+    changes = runtime.coordinate(state)
+    return {**changes, **runtime.prepare({**state, **changes})}
+
+
 def compact(runtime, job, state):
-    prepared = {**state, **runtime.prepare(state)}
+    prepared = {**state, **prepare_step(runtime, state)}
     request = runtime.store.get("request", prepared["pending"])
     assert request["kind"] == "compaction"
     assert not request["attempts"]
@@ -64,7 +69,7 @@ def test_history_pressure_queues_then_preflights_after_compaction(setup, protoco
         assert not json.loads(receipt)["admission"]["applied"]
         assert all(after[k] == state[k] for k in POLICY)
         after = compact(runtime, job, after)
-        resolved = {**after, **runtime.prepare(after)}
+        resolved = {**after, **prepare_step(runtime, after)}
         assert not resolved["context_waiting"]
         outcome = store.json(resolved["context_feedback"], job["id"])
         assert outcome["feedback"]["applied"]
@@ -121,18 +126,18 @@ def test_settlement_blob_before_event_is_recovered_after_new_instructions(setup,
             return result
         patch.setattr(store, "blob", crash)
         with pytest.raises(RuntimeError, match="decision saved"):
-            runtime.prepare(after)
+            prepare_step(runtime, after)
     runtime.close()
     store.update_job(job["id"], amendments=["New requirement."])
     runtime = offline_runtime(Store(store.root))
     try:
-        resolved = {**after, **runtime.prepare(after)}
+        resolved = {**after, **prepare_step(runtime, after)}
         assert resolved["notes"] == intent["notes"]
         record = store.json(resolved["context_feedback"], job["id"])
         assert record["feedback"]["status"] == "applied"  # Historical acceptance wins.
         frozen = store.get("request", resolved["pending"])
         assert "New requirement." in json.dumps(store.json(frozen["payload_ref"], job["id"]))
-        runtime.prepare(after)
+        prepare_step(runtime, after)
         assert len([e for e in store.events(job["id"]) if e["type"] == "context_update_settled"]) == 1
     finally:
         runtime.close()
@@ -145,14 +150,15 @@ def test_unknown_frozen_compaction_is_not_rebuilt_or_settled(setup, protocol):
     runtime = offline_runtime(store)
     try:
         after = {**state, **runtime.tools(state)}
-        prepared = runtime.prepare(after)
+        prepared = prepare_step(runtime, after)
         request = store.get("request", prepared["pending"])
         request["status"] = "unknown"
         store.put("request", request["id"], job["id"], request)
         raw = store.bytes(request["payload_ref"], job["id"])
         store.update_job(job["id"], amendments=["New instruction."], route={**job["route"], "context_tokens": 500000})
         assert runtime.resume_pending(after, continue_failed=True) is None
-        assert runtime.prepare(after) == prepared
+        reentered = prepare_step(runtime, {**after, **prepared})
+        assert {**after, **prepared, **reentered} == {**after, **prepared}
         assert store.get("request", request["id"]) == request
         assert store.bytes(request["payload_ref"], job["id"]) == raw
         assert not any(b["kind"] == "context_settlement" for b in store.records("blob", job["id"]))
@@ -212,7 +218,7 @@ def test_ordered_chain_invalid_followup_and_amendment(setup, protocol, amend):
         store.update_job(job["id"], route=job["route"], amendments=["Use a different approach."] if amend else [])
         if not amend:
             after = compact(runtime, job, after)
-        resolved = {**after, **runtime.prepare(after)}
+        resolved = {**after, **prepare_step(runtime, after)}
         assert not resolved["context_waiting"]
         expected = state if amend else plan["policy"]
         assert all(resolved[k] == expected[k] for k in POLICY)
@@ -235,7 +241,7 @@ def test_waiting_update_survives_multiple_progressive_compactions(setup, protoco
         pending = after["context_waiting"]
         passes = 0
         while after["context_waiting"]:
-            prepared = {**after, **runtime.prepare(after)}
+            prepared = {**after, **prepare_step(runtime, after)}
             if not prepared["context_waiting"]:
                 after = prepared
                 break
@@ -274,13 +280,13 @@ def test_retry_rejects_when_policy_no_longer_fits_and_preserves_receipt(setup, p
                 meta, f"remaining:{after['revision']}")
         old_size = runtime.context.normal(job, after)[1]["input_estimate"]
         job = store.update_job(job["id"], route={**job["route"], "context_tokens": old_size + 4000})
-        resolved = {**after, **runtime.prepare(after)}
+        resolved = {**after, **prepare_step(runtime, after)}
         outcome = store.json(resolved["context_feedback"], job["id"])
         assert outcome["feedback"]["status"] == "rejected"
         assert all(resolved[k] == state[k] for k in POLICY)
         assert runtime.context.normal(job, resolved)[1]["fits"]
         store.update_job(job["id"], route={**job["route"], "context_tokens": 500000})
-        assert runtime.prepare(after) == {k: resolved[k] for k in runtime.prepare(after)}
+        assert prepare_step(runtime, after) == {k: resolved[k] for k in prepare_step(runtime, after)}
         assert store.json(resolved["context_feedback"], job["id"]) == outcome
     finally:
         runtime.close()
@@ -301,7 +307,7 @@ def test_settlement_and_freeze_before_checkpoint_recover_without_repricing(setup
             raise RuntimeError("after frozen input before checkpoint")
         patch.setattr(runtime.nexus, "freeze", crash)
         with pytest.raises(RuntimeError, match="frozen input"):
-            runtime.prepare(after)
+            prepare_step(runtime, after)
     key = f"{job['id']}:{after['seq']}:{after['revision']}"
     frozen = deepcopy(store.get("request", key))
     frozen_bytes = store.bytes(frozen["payload_ref"], job["id"])
@@ -314,7 +320,7 @@ def test_settlement_and_freeze_before_checkpoint_recover_without_repricing(setup
             changes = runtime.resume_pending(after, continue_failed=False)
             assert changes["revision"] == after["revision"] + 1
         else:
-            changes = runtime.prepare(after)
+            changes = prepare_step(runtime, after)
             assert changes["pending"] == key
         assert changes["notes"] == intent["notes"] and changes["context_waiting"] is None
         assert store.bytes(frozen["payload_ref"], job["id"]) == frozen_bytes

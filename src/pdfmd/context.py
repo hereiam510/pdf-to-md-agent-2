@@ -6,6 +6,7 @@ import json
 from typing import Callable
 
 from .nexus import StopRun, instruction_basis, make_payload, unique_object
+from .context_outcomes import control_result, outcome, reserved_outcome
 from .schema import Route
 from .storage import Store, encode
 from .tools import Dispatcher, definitions
@@ -31,9 +32,12 @@ delete uses id. patch uses id, zero-based half-open Unicode start/end, expected 
 page_updates merges supplied fields by physical-page key. Omitted fields remain unchanged.
 Read complete saved originals or precise fields/ranges with read_evidence. Index views are not complete evidence.
 context_update can release or pin saved references and maintain continuity notes.
+Omitted notes keep the current notes; a supplied string replaces them completely; an empty string clears them.
+Within one update, release runs before pin. A pin of the same reference wins.
 Choose each pin view explicitly: index, image, full (optionally a field/range), or raw Base64 bytes.
 Pins remain separate after history compaction. Rejected updates preserve previous pins, releases and notes; use the feedback to revise your selection.
-An update awaiting compaction is saved but not active. The app retries it after compaction and reports its final outcome separately.
+An awaiting update is saved but not active. The app rechecks it at unfrozen boundaries and reports its final outcome separately.
+Context tool receipts show status and exact references; full authored arguments, policies and diagnostics remain readable.
 A released object remains retrievable. Save useful work before releasing its input representation.
 If capacity defers a large object, retrieve the needed exact fields or ranges. Do not claim you read deferred content.
 Deferral is an input-size decision, not a relevance judgment. Full/raw/field/range reads remain available without a required reading order.
@@ -166,46 +170,49 @@ class Context:
                   "admission": {"applied": True, "unsettled_operations": unsettled}}
         envelopes[operation] = {"ok": True, "candidate_ref": candidate, "result_ref": f"result:{operation}", "data": result}
         preview = Context(self.store, self.dispatcher, envelopes=envelopes)
-        # Include the admission receipt's own size. Only scalar estimates go into
-        # the receipt, so this converges when their decimal widths stop changing.
-        for _ in range(8):
-            try:
-                capacity = preview.normal(job, proposed)[1]
-            except StopRun as exc:
-                return {"context_rejected": True, "reason": exc.reason, "error": str(exc), "policy_unchanged": True}
-            summary = {k: v for k, v in capacity.items() if k != "projection"}
-            if result["admission"].get("capacity") == summary:
-                break
-            result["admission"]["capacity"] = summary
-        else:
-            raise ValueError("Capacity estimate did not stabilize; previous context policy is unchanged.")
-        if not capacity["fits"] or waiting:
-            # A deferred chain is only a proposal. Validate its exact views and
-            # required footprint, then compact using the still-active policy.
-            core = preview.normal(job, {**proposed, "history": [], "handoff": None,
-                                        "context_feedback": None})[1]
+        baseline = {**state, "history": proposed["history"], "context_feedback": None,
+                    "continuation_feedback": None, "repairs": proposed["repairs"]}
+        try:
+            capacity = preview.admission(job, baseline, policy)
+            summary = {k: v for k, v in capacity.items() if k not in {"projection", "additional_deferrals"}}
+            if capacity["fits"] and not capacity["additional_deferrals"] and not waiting:
+                result["admission"]["capacity"] = summary
+                return result
+            # Preserve validated intent even if the active policy currently cannot
+            # compact. A temporary configuration block is not a terminal decision.
+            proposal = {"policy": policy, "previous": state.get("context_waiting"),
+                        "candidate_ref": candidate, "instruction_basis": instruction_basis(job),
+                        "origin_handoff": state.get("handoff")}
+            queued = {**baseline, "context_waiting": f"result:{operation}"}
+            result.clear()
+            result.update(context_proposal=proposal, admission={"applied": False, "status": "awaiting_admission"})
+            core = preview.normal(job, {**queued, **policy, "history": [], "handoff": None})[1]
             if core["fits"]:
-                try:
-                    preview.compact_request(job, {**state, "history": proposed["history"]})
-                except StopRun:
-                    pass
-                else:
-                    return {"context_proposal": {"policy": policy, "previous": state.get("context_waiting"),
-                                "candidate_ref": candidate, "instruction_basis": instruction_basis(job),
-                                "origin_handoff": state.get("handoff")},
-                            "admission": {"applied": False, "status": "awaiting_compaction", "capacity": summary,
-                                          "unsettled_operations": unsettled},
-                            "policy_unchanged": True,
-                            "message": "Saved for preflight after compaction, not applied. Later valid updates compose in call order. "
-                                       "The pending chain applies atomically only when its complete input fits; otherwise the active policy stays unchanged. "
-                                       "New user instructions supersede unapplied proposals. Full/raw/range access remains available."}
-            return {"context_rejected": True, "reason": "context_capacity", "policy_unchanged": True,
-                    "capacity": summary, "unsettled_operations": unsettled,
-                    "error": "The proposed input exceeds capacity. The entire update was rejected before application. "
-                             "Raw streams are injected as Base64 text. Choose index, a precise field/range, or a corresponding "
-                             "image_ref with view=image. You may explicitly release other pins or compact releasable history. "
-                             "Original full/raw access remains available. Existing overcapacity is not repaired by rejection."}
-        return result
+                result.update(policy_unchanged=True,
+                    message="Saved, not applied. Later valid updates compose in call order. The entire pending policy applies only "
+                            "after complete-input admission. Capacity blocks retain it for continuation; new instructions supersede it.")
+                result["admission"].update(capacity=summary, additional_deferrals=capacity["additional_deferrals"],
+                                           unsettled_operations=unsettled)
+                return result
+        except StopRun as exc:
+            return {"context_rejected": True, "reason": exc.reason, "error": str(exc), "policy_unchanged": True}
+        return {"context_rejected": True, "reason": "context_capacity", "policy_unchanged": True,
+                "capacity": summary, "unsettled_operations": unsettled,
+                "error": "The proposed required content exceeds capacity. The entire update was rejected before application. "
+                         "Raw streams use Base64 text. Choose index, a precise field/range, corresponding image_ref with view=image, "
+                         "or explicitly release other pins. Original full/raw access remains available."}
+
+    def admission(self, job: dict, state: dict, policy: dict) -> dict:
+        capacity = self.normal(job, {**state, **policy})[1]
+        try:
+            baseline = self.normal(job, state)[1]
+            old = {ref for item in baseline["projection"]["deferred"] for ref in item["refs"]}
+        except (StopRun, ValueError):
+            old = set()  # A candidate can repair an unusable active selection.
+        new = {ref for item in capacity["projection"]["deferred"] for ref in item["refs"]}
+        explicit = set(policy["released"]) | set(policy["pinned"])
+        capacity["additional_deferrals"] = sorted(new - old - explicit)
+        return capacity
 
     def waiting(self, job: str, state: dict) -> dict | None:
         ref = state.get("context_waiting")
@@ -215,7 +222,15 @@ class Context:
         if self.update_feedback is not None:
             return self.update_feedback
         ref = state.get("context_feedback")
-        return self.store.json(ref, job)["feedback"] if ref else None
+        if not ref:
+            return None
+        record = self.store.json(ref, job)
+        if "summary" in record:
+            return record["summary"]
+        # Existing immutable settlements remain historical effects. Project a
+        # bounded receipt without rewriting their original full diagnostics.
+        saved = record["feedback"]
+        return outcome(saved["status"], saved["proposal_ref"], saved["receipt_ref"], "recorded_outcome")
 
     def anchor(self, job: dict, state: dict) -> str:
         return json.dumps({"task": job["scope"], "user_amendments": job["amendments"],
@@ -349,6 +364,7 @@ class Context:
             operation = f"{request_id}:{index}"
             envelope = self.envelope(job["id"], operation)
             candidate_ref, result_ref = envelope["candidate_ref"], envelope["result_ref"]
+            control = call["name"] == "context_update"
             def reason(ref):
                 if ref in pinned:
                     specs = self.pin_specs(job["id"], state, ref)
@@ -360,9 +376,9 @@ class Context:
                     return "capacity deferred; relevance unresolved"
                 return None
 
-            if reason(candidate_ref):
+            if control or reason(candidate_ref):
                 arguments = json.dumps({"archived_arguments_ref": candidate_ref, "projection_only": True,
-                                        "reason": reason(candidate_ref)})
+                                        "reason": "context update arguments saved exactly" if control else reason(candidate_ref)})
                 if protocol == "chat_completions":
                     native[0]["tool_calls"][index]["function"]["arguments"] = arguments
                 else:
@@ -371,7 +387,9 @@ class Context:
                             item["arguments"] = arguments
             data = envelope["data"]
             image_ref = data.get("image_ref") if isinstance(data, dict) else None
-            if reason(result_ref):
+            if control:
+                envelope = control_result(envelope)
+            elif reason(result_ref):
                 envelope = self.omitted_result(job, envelope, reason(result_ref))
             if image_ref:
                 in_pins = image_ref in pinned and any(s["view"] == "image" for s in self.pin_specs(job["id"], state, image_ref))
@@ -398,6 +416,10 @@ class Context:
         if measure(group)["fits"]:
             return group, set()
         refs = self.batch_refs(job, request) - set(state.get("pinned", [])) - set(state.get("released", []))
+        reply = self.store.json(self.store.get("request", request, job=job["id"])["accepted_ref"], job["id"])
+        for index, call in enumerate(reply["calls"]):
+            if call["name"] == "context_update":
+                refs -= {f"candidate:{request}:{index}", f"result:{request}:{index}"}
         def projected(deferred):
             return self.group(job, request, state, images=images, deferred=deferred)
         deferred = set()
@@ -441,38 +463,61 @@ class Context:
         outcome = self.feedback(job["id"], state)
         if outcome:
             tail.append({"role": "user", "content": "Deferred context update outcome:\n" + json.dumps(outcome, ensure_ascii=False)})
-        def pack(groups):
-            return make_payload(route, SYSTEM, [*messages, *[m for group in groups for m in group], *tail], definitions(self.dispatcher.scripts))
+        def pack(groups, extra=()):
+            return make_payload(route, SYSTEM, [*messages, *[m for group in groups for m in group], *tail, *extra], definitions(self.dispatcher.scripts))
+        def measure(groups):
+            capacity = estimate(pack(groups), route)
+            reserve = 0
+            if state.get("context_waiting") and not outcome:
+                future = {"role": "user", "content": "Deferred context update outcome:\n" + json.dumps(reserved_outcome(state))}
+                reserve = estimate(pack(groups, [future]), route)["input_estimate"] - capacity["input_estimate"]
+            capacity["outcome_reserve"] = reserve
+            capacity["input_estimate"] += reserve
+            capacity["fits"] = capacity["input_estimate"] + route.output_tokens <= route.context_tokens
+            return capacity
         history = state.get("history", [])
         groups = [self.group(job, request, state) for request in history]
         payload = pack(groups)
-        capacity = estimate(payload, route)
+        capacity = measure(groups)
         original_estimate = capacity["input_estimate"]
         decisions = []
         if not capacity["fits"]:
             for index, request in enumerate(history):
                 groups[index], deferred = self.admit_group(job, request, state,
-                                                           lambda group: estimate(pack([group]), route))
+                                                           lambda group: measure([group]))
                 if deferred:
                     decisions.append({"request": request, "refs": sorted(deferred)})
             payload = pack(groups)
-            capacity = estimate(payload, route)
+            capacity = measure(groups)
         capacity["projection"] = {"deferred": decisions, "pinned": sorted(set(state.get("pinned", []))),
                                   "before_admission_estimate": original_estimate}
         return payload, capacity
 
+    def compaction_state(self, job: dict, state: dict) -> dict:
+        """Transiently honor explicit pending releases, without applying a policy."""
+        proposal = self.waiting(job["id"], state)
+        if not proposal or proposal["instruction_basis"] != instruction_basis(job):
+            return state
+        released = set(proposal["policy"]["released"]) - set(state.get("released", []))
+        return {**state, "released": sorted(set(state.get("released", [])) | released),
+                "pinned": [ref for ref in state.get("pinned", []) if ref not in released],
+                "pin_views": {ref: views for ref, views in state.get("pin_views", {}).items() if ref not in released}}
+
     def compact_request(self, job: dict, state: dict) -> tuple[dict, dict]:
         route = Route.model_validate(job["route"])
+        active = state
+        state = self.compaction_state(job, state)
         prefix = {"current_anchor": json.loads(self.anchor(job, state)), "previous_handoff": self.handoff(job["id"], state)}
-        pinned = self.pins(job, state)
-        required = make_payload(route, SYSTEM, [{"role": "user", "content": self.anchor(job, state)}, *pinned], definitions(self.dispatcher.scripts))
-        if not estimate(required, route)["fits"]:
+        required = self.normal(job, {**state, "history": [], "handoff": None})[1]
+        if not required["fits"]:
             raise StopRun("capacity_blocked", "Required task instructions and pinned objects exceed the configured normal input capacity. "
                           "Originals and pins are preserved; adjust capacity or explicitly revise the pinned selection.")
         prefix["pinned_objects"] = self.pins(job, state, images=False)
         if state.get("context_waiting"):
             prefix["pending_context_update"] = {"proposal_ref": state["context_waiting"], "applied": False,
-                "instruction": "This proposal is not active. The app retains it exactly and will preflight it after compaction. Preserve effective requirements."}
+                "release_projection": sorted(set(state["released"]) - set(active.get("released", []))),
+                "instruction": "This proposal is not active. Explicit proposed releases affect only this compaction view, not the stored active policy. "
+                               "The app retains the complete proposal and will preflight it after compaction. Preserve effective requirements."}
         if outcome := self.feedback(job["id"], state):
             prefix["context_update_outcome"] = outcome
         continuation = self.continuation_feedback(job["id"], state)
@@ -519,7 +564,7 @@ class Context:
             normal_group = self.group(job, request_id, state, deferred=normal_deferred.get(request_id))
             receipts = self.group(job, request_id, state, deferred=self.batch_refs(job, request_id))
             has_body_savings |= len(encode(normal_group)) > len(encode(receipts))
-        if not chunks:
+        if not chunks and not (not state.get("history") and state.get("handoff") and estimate(assemble([]), route)["fits"]):
             raise StopRun("capacity_blocked", "No fitting compaction segment is available. Originals and saved drafts are preserved. Review route capacity or pinned material.")
         chosen = assemble(chunks)
         if rejected_text is not None:
@@ -529,6 +574,7 @@ class Context:
             if estimate(with_candidate, route)["fits"]:
                 chosen = with_candidate
         return chosen, {"covered": covered, "revision": state["revision"], "deferred": deferred, "projection": projection,
+                        "proposal_ref": active.get("context_waiting"),
                         "capacity": estimate(chosen, route)}
 
     def apply_handoff(self, job: dict, state: dict, text: str, meta: dict, request: str) -> dict:
@@ -563,17 +609,29 @@ class Context:
                                   {**receipt, "covered": covered, "handoff_ref": ref["ref"]})
             return candidate
         # Uncovered history, pins, and active requirements are untouched.
-        before = self.normal(job, state)[1]["input_estimate"]
-        capacity = self.normal(job, candidate)[1]
+        before = self.normal(job, self.compaction_state(job, state))[1]["input_estimate"]
+        capacity = self.normal(job, self.compaction_state(job, candidate))[1]
         after = capacity["input_estimate"]
         if after >= before:
             raise HandoffRejected(f"The handoff did not reduce the complete assembled input (estimated {before} before, {after} after). "
                                   "Keep the continuation facts and exact references more concise. Previous context is preserved.")
-        if not candidate["history"] and not capacity["fits"]:
+        final_capacity = capacity
+        proposal = self.waiting(job["id"], state)
+        if proposal and proposal["instruction_basis"] == instruction_basis(job):
+            # The last summary must leave room for a feasible pending policy and
+            # its outcome. Never force an irreducibly oversized policy into use.
+            core = self.normal(job, {**candidate, **proposal["policy"], "history": [], "handoff": None})[1]
+            if core["fits"]:
+                final_capacity = self.admission(job, candidate, proposal["policy"])
+                final_capacity["fits"] &= not final_capacity["additional_deferrals"]
+        if not candidate["history"] and not final_capacity["fits"]:
+            capacity = final_capacity
+            after = capacity["input_estimate"]
             limit = capacity["capacity"] - capacity["output_reserve"]
             raise HandoffRejected(f"The handoff covers the last history batch but normal input still exceeds capacity "
                                   f"(estimated {after}, input allowance {limit}). Keep required continuation facts and exact references "
-                                  "more concise so normal work can resume. Previous context and this candidate are preserved.")
+                                 "more concise, including room for the saved pending policy and outcome when feasible. "
+                                 "Previous context and this candidate are preserved.")
         self.store.event_once(job["id"], "context_compacted", request,
                               {"covered": covered, "before": before, "after": after, "handoff_ref": ref["ref"]})
         return candidate

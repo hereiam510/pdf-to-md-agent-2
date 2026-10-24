@@ -34,6 +34,7 @@ class State(TypedDict, total=False):
     continuation_feedback: str | None
     context_waiting: str | None
     context_feedback: str | None
+    context_check: str | None
 
 
 class Runtime:
@@ -49,18 +50,21 @@ class Runtime:
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.connection.execute("PRAGMA synchronous=FULL")
         builder = StateGraph(State)
+        builder.add_node("coordinate", self.coordinate)
         builder.add_node("prepare", self.prepare)
         builder.add_node("model", self.model)
         builder.add_node("tools", self.tools)
         builder.add_node("compact", self.compact)
-        builder.add_edge(START, "prepare")
+        builder.add_edge(START, "coordinate")
+        builder.add_edge("coordinate", "prepare")
         builder.add_conditional_edges("prepare", lambda state: state["next"], {"model": "model", "compact": "compact"})
-        builder.add_conditional_edges("model", lambda state: state["next"], {"prepare": "prepare", "tools": "tools"})
-        builder.add_conditional_edges("tools", lambda state: END if state["terminal"] else "prepare", {END: END, "prepare": "prepare"})
-        builder.add_edge("compact", "prepare")
+        builder.add_conditional_edges("model", lambda state: state["next"], {"prepare": "coordinate", "tools": "tools"})
+        builder.add_conditional_edges("tools", lambda state: END if state["terminal"] else "prepare", {END: END, "prepare": "coordinate"})
+        builder.add_edge("compact", "coordinate")
         self.graph = builder.compile(checkpointer=SqliteSaver(self.connection))
 
-    def prepare(self, state: State):
+    def coordinate(self, state: State):
+        """Checkpoint decisions/wait conditions independently of the next input."""
         self.active_time.checkpoint()
         job = self.store.get("job", state["job"])
         if job["cancel_requested"]:
@@ -79,20 +83,24 @@ class Runtime:
         changes = self.context_updates.recover(job, state, key)
         state = {**state, **changes}
         # A frozen request wins over current pointers and newly reconstructed input.
+        if self.store.maybe("request", key) is None and state.get("context_waiting"):
+            changes.update(self.context_updates.resolve(job, state, key))
+        return {**changes, "repairs": repairs}
+
+    def prepare(self, state: State):
+        self.active_time.checkpoint()
+        job = self.store.get("job", state["job"])
+        if job["cancel_requested"]:
+            raise StopRun("cancelled", "Stopped at a settled tool-batch boundary.")
+        key = f"{job['id']}:{state['seq']}:{state['revision']}"
+        repairs = state.get("repairs", {})
         request = self.store.maybe("request", key)
-        if request is None:
-            if state.get("context_waiting"):
-                resolved = self.context_updates.resolve(job, state, key)
-                if resolved is None:
-                    try:
-                        payload, meta = self.context.compact_request(job, state)
-                    except StopRun as exc:
-                        resolved = self.context_updates.reject(job, state, key, str(exc))
-                    else:
-                        request = self.nexus.freeze(job["id"], key, payload, "compaction", {**meta, "repairs": repairs})
-                if resolved:
-                    changes.update(resolved)
-                    state = {**state, **resolved}
+        if request is None and state.get("context_waiting"):
+            check = self.store.json(state["context_check"], job["id"])
+            if check["reason"] != "compaction":
+                raise StopRun(check["reason"], check["message"])
+            payload, meta = self.context.compact_request(job, state)
+            request = self.nexus.freeze(job["id"], key, payload, "compaction", {**meta, "repairs": repairs})
         if request is None:
             payload, capacity = self.context.normal(job, state)
             if capacity["fits"]:
@@ -100,7 +108,7 @@ class Runtime:
             else:
                 payload, meta = self.context.compact_request(job, state)
                 request = self.nexus.freeze(job["id"], key, payload, "compaction", {**meta, "repairs": repairs})
-        return {**changes, "pending": key, "next": "compact" if request["kind"] == "compaction" else "model", "terminal": False,
+        return {"pending": key, "next": "compact" if request["kind"] == "compaction" else "model", "terminal": False,
                 "repairs": repairs}
 
     @staticmethod
@@ -187,7 +195,7 @@ class Runtime:
         if request["instruction_basis"] != instruction_basis(self.store.get("job", job)):
             report = None
         # One deterministic policy settlement per complete accepted batch.
-        changes = {**policy, "context_waiting": waiting, "context_feedback": None,
+        changes = {**policy, "context_waiting": waiting, "context_check": None, "context_feedback": None,
                    "history": [*state["history"], key], "seq": state["seq"] + 1,
                     "revision": state["revision"] + 1, "pending": None, "terminal": bool(report),
                     "continuation_feedback": None,
@@ -260,6 +268,12 @@ class Runtime:
                 if continuation:
                     # Supported state update: complete this transition as the model node and route to prepare.
                     self.graph.update_state(config, continuation, as_node="model")
+                elif snapshot.next == ("prepare",) and snapshot.values.get("context_waiting"):
+                    key = f"{job}:{snapshot.values['seq']}:{snapshot.values['revision']}"
+                    if self.store.maybe("request", key) is None:
+                        # A waiting observation is not a decision. Recheck current
+                        # settings/instructions on Continue; never rebuild a freeze.
+                        self.graph.update_state(config, {"next": "prepare"}, as_node="model")
                 self.graph.invoke(None, config, durability="sync")
             else:
                 initial = dict(snapshot.values) if snapshot.values else {"job": job, "seq": 0, "revision": 0, "history": [],

@@ -1,9 +1,12 @@
 """Settle deferred context proposals at unfrozen request boundaries."""
 from __future__ import annotations
 
+from hashlib import sha256
+
 from .context import Context
+from .context_outcomes import outcome
 from .nexus import StopRun, instruction_basis
-from .storage import Conflict
+from .storage import Conflict, encode
 
 
 POLICY = {"pinned": [], "released": [], "pin_views": {}, "notes": ""}
@@ -33,50 +36,63 @@ class ContextUpdates:
         return record["changes"]
 
     def finish(self, job: dict, state: dict, key: str, feedback: dict, policy: dict | None = None) -> dict:
-        changes = {"context_waiting": None, "context_feedback": self.ref(key), **(policy or {})}
+        changes = {"context_waiting": None, "context_check": None, "context_feedback": self.ref(key), **(policy or {})}
+        summary = outcome(feedback["status"], state["context_waiting"], self.ref(key), feedback["reason"])
         self.store.blob(job["id"], "context_settlement", {
-            "basis": self.basis(state), "feedback": feedback, "changes": changes}, key=self.ref(key))
+            "basis": self.basis(state), "feedback": feedback, "summary": summary, "changes": changes}, key=self.ref(key))
         return self.recover(job, state, key)
 
-    def reject(self, job: dict, state: dict, key: str, message: str, *, status="rejected", capacity=None) -> dict:
+    def reject(self, job: dict, state: dict, key: str, message: str, *, status="rejected", capacity=None, reason="proposed_capacity") -> dict:
         return self.finish(job, state, key, {"status": status, "applied": False,
+            "reason": reason,
             "proposal_ref": state["context_waiting"], "receipt_ref": self.ref(key),
             "message": message + " The active policy is unchanged. Exact proposals and originals remain readable; choose revised views or ranges if needed.",
             "capacity": capacity})
 
-    def resolve(self, job: dict, state: dict, key: str) -> dict | None:
-        """None requests another compaction under the active policy; no speculative application."""
+    def wait(self, job: dict, state: dict, reason: str, message: str, *, capacity=None) -> dict:
+        record = {"proposal_ref": state["context_waiting"], "status": "waiting", "reason": reason,
+                  "message": message, "capacity": capacity, "basis": self.basis(state),
+                  "route": job["route"], "instruction_basis": instruction_basis(job), "head": job["head"]}
+        ref = "context-check:" + sha256(encode(record)).hexdigest()
+        self.store.blob(job["id"], "context_check", record, key=ref)
+        return {"context_check": ref}
+
+    def resolve(self, job: dict, state: dict, key: str) -> dict:
+        """Return a durable decision or an explicit, retryable waiting observation."""
         if recovered := self.recover(job, state, key):
             return recovered
         proposal = self.context.waiting(job["id"], state)
         if proposal is None:
             return {}
         if proposal["instruction_basis"] != instruction_basis(job):
-            return self.reject(job, state, key, "New user instructions superseded the unapplied proposal chain.", status="superseded")
+            return self.reject(job, state, key, "New user instructions superseded the unapplied proposal chain.",
+                               status="superseded", reason="new_instructions")
         policy = proposal["policy"]
         feedback = {"status": "applied", "applied": True, "proposal_ref": state["context_waiting"],
-                    "receipt_ref": self.ref(key),
-                    "message": "Compaction completed and the entire pending policy passed preflight. This outcome settles the earlier awaiting-compaction receipts."}
-        preview = Context(self.store, self.context.dispatcher, update_feedback=feedback)
+                    "receipt_ref": self.ref(key), "reason": "admitted",
+                    "message": "The entire pending policy passed complete-input admission. This outcome settles the original saved-proposal receipts."}
+        preview = Context(self.store, self.context.dispatcher,
+                          update_feedback=outcome("applied", state["context_waiting"], self.ref(key), "admitted"))
         candidate = {**state, **policy, "context_waiting": None, "context_feedback": self.ref(key)}
         try:
-            # Charge the outcome itself, including its scalar capacity fields.
-            for _ in range(8):
-                capacity = preview.normal(job, candidate)[1]
-                summary = {k: v for k, v in capacity.items() if k != "projection"}
-                if feedback.get("capacity") == summary:
-                    break
-                feedback["capacity"] = summary
-            else:
-                return self.reject(job, state, key, "The deferred update estimate did not stabilize.")
-            compacted = state.get("handoff") != proposal["origin_handoff"]
-            if compacted and capacity["fits"]:
+            capacity = preview.admission(job, {**state, "context_waiting": None}, policy)
+            feedback["capacity"] = {k: v for k, v in capacity.items() if k not in {"projection", "additional_deferrals"}}
+            feedback["additional_deferrals"] = capacity["additional_deferrals"]
+            if capacity["fits"] and not capacity["additional_deferrals"]:
                 return self.finish(job, state, key, feedback, policy)
-            # Do not spend compaction requests on a policy whose required content
-            # no longer fits (for example, after a route limit change).
+            # Required active content can be temporarily unusable after settings
+            # change. Retain valid intent; a successful reducing update above can
+            # still repair it without first making the old input fit.
+            active_core = self.context.normal(job, {**self.context.compaction_state(job, state), "history": [], "handoff": None})[1]
+            if not active_core["fits"]:
+                return self.wait(job, state, "capacity_blocked", "Active required content exceeds capacity. Pending intent is retained; "
+                                 "retry after correcting route capacity or providing a replacement instruction.", capacity=active_core)
             core = preview.normal(job, {**candidate, "history": [], "handoff": None})[1]
-        except (StopRun, ValueError) as exc:
-            return self.reject(job, state, key, str(exc))
-        if not core["fits"] or not state["history"]:
-            return self.reject(job, state, key, "The proposed input still exceeds capacity after available history reduction.", capacity=summary)
-        return None
+            if not core["fits"]:
+                return self.reject(job, state, key, "The proposed required content exceeds current capacity.", capacity=core)
+            self.context.compact_request(job, state)
+        except StopRun as exc:
+            return self.wait(job, state, exc.reason, str(exc))
+        except ValueError as exc:
+            return self.reject(job, state, key, str(exc), reason="invalid_selection")
+        return self.wait(job, state, "compaction", "History or the current handoff needs reduction before another admission check.", capacity=capacity)

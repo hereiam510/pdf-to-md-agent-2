@@ -18,7 +18,7 @@ from test_context_admission import outputs, state_for
 from test_context_progress import read_batch
 from test_response_repairs import handoff, native
 from test_runtime import tool
-from test_stencil_pins import TEXT, fixture_job, verify_delivery
+from test_stencil_pins import TEXT, fixture_job, verify_delivery, offline_runtime
 
 
 def run_retry_delivery(directory, route, protocol):
@@ -99,7 +99,21 @@ def run_retry_delivery(directory, route, protocol):
     runtime.close()
 
     store = Store(store.root)
-    store.update_job(job["id"], cancel_requested=False)
+    store.update_job(job["id"], cancel_requested=False,
+                     route={**job["route"], "context_tokens": 4096, "output_tokens": 512})
+    blocked = offline_runtime(store)
+    blocked.run(job["id"])
+    blocked_state = dict(blocked.graph.get_state(config).values)
+    blocked.close()
+    assert blocked_state["context_waiting"] == waiting["context_waiting"]
+    check = store.json(blocked_state["context_check"], job["id"])
+    assert check["reason"] == "capacity_blocked"
+    assert store.get("job", job["id"])["attempts"] == before["attempts"]
+    assert Documents(store).version(job["id"], original_version)["content"]["blocks"] == [original_text]
+    # Repair settings and reopen again. The existing proposal, not a model repeat,
+    # must resume through admission and finish the same source-led artifact.
+    store = Store(store.root)
+    store.update_job(job["id"], route=job["route"])
     runtime = Runtime(store, Nexus(store, lambda _: "local-fixture-only", httpx.MockTransport(respond)))
     runtime.run(job["id"])
     final = dict(runtime.graph.get_state(config).values)
@@ -123,6 +137,7 @@ def run_retry_delivery(directory, route, protocol):
         "source": str(source), "protocol": protocol, "attempts": current["attempts"],
         "active_seconds_before_reopen": before["active_seconds"], "active_seconds_after": current["active_seconds"],
         "pending_proposal_ref": waiting["context_waiting"], "compactions": len(summaries),
+        "capacity_wait_ref": blocked_state["context_check"], "capacity_wait_reopened": True,
         "images": [{"label": label, "path": im["asset_path"], "width": im["width"], "height": im["height"], "provenance": im}
                    for label, im in zip(["red", "blue", "cmyk"], retained["images"])], "live_model_calls": 0}
     (directory / "fixture.json").write_text(json.dumps(fixture, indent=2), encoding="utf8")
