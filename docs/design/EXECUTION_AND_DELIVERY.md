@@ -54,7 +54,7 @@ Tests in `tests/test_continuation.py` inject the relevant persistence gaps, exer
 | Nexus request service | Prepared request, actual send attempts, consumed limits, accepted complete native reply | The graph can retain stable references and purpose/status. |
 | Accepted-batch executor / dispatcher | Accepted tool-call list, per-operation identity/input, progress, outcomes and necessary completion effects | Graph continuation can project that progress. One receipt cannot represent the whole batch. |
 | Document/evidence services | Registered versions, fixed evidence/assets, committed operation results and promised pointers | A checkpoint can reference them, without undoing later committed facts. |
-| Graph/context owner | Compact policy, processed context-intent batches, work continuation, supported graph-state effects | Hydrated images/OCR are transient request content, not repeated giant state updates. |
+| Graph/context owner | Compact policy projection, proposal/settlement references, processed batches and work continuation | Catalog commits establish context effects; graph checkpoints recover them. Hydrated images/OCR remain transient request content. |
 | Export responsibility | Task-scoped chosen version/scope, destination intent, actual publication/results | A model completion statement is one content claim, not proof of package consistency. Another task using the same document must not silently replace this selection. |
 | Process/task lifecycle | Cancellation, waiting/stop reason, supervised local attempt state and relevant limits | UI events notify the user. Durable records remain available after reconnect. |
 
@@ -339,7 +339,7 @@ Streaming and non-streaming use the same complete-response acceptance, operation
 <a id="context-work-and-frozen-input"></a>
 ## 7. Context work uses the same durable execution boundary
 
-Compact context policy belongs in graph state for the single built-in executor: selections, pin/release choices, notes or references, compaction boundary, and processed batches. Tools report intents. One settlement boundary applies them and records the batch. The later design removed the unnecessary separate policy-version/activation-table mechanism. Request budgets, committed document effects, and external-operation receipts remain service facts because graph rollback cannot undo them.
+The single built-in executor keeps a compact policy projection in graph state: selections, pin/release choices, notes or references, compaction boundary and processed batches. Context calls save intents; the coordinator admits the complete revision. Its catalog transaction commits disposition and any active-policy effect, which the graph then recovers. The historical graph-only simplification rejected a competing policy scheduler; the current commit/current-policy records provide checkpoint-gap authority without adding another decision writer. Request budgets, committed documents and external-operation receipts likewise remain service facts because graph rollback cannot undo them. [Q2/Q3](../CONTRACTS.md#q2-context-transitions) owns this current boundary.
 
 Transient hydration belongs to request assembly. Returning giant OCR/images as persistent state updates refills every checkpoint. The input service follows the settled selection and resolves the corresponding immutable evidence. It does not make a second independent relevance decision.
 

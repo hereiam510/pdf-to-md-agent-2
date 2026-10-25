@@ -12,6 +12,7 @@ from langgraph.graph import END, START, StateGraph
 from .active_time import ActiveTime
 from .context import Context, HandoffRejected
 from .context_updates import ContextUpdates
+from .context_revisions import ContextRevisions
 from .nexus import Nexus, StopRun, instruction_basis
 from .storage import Store, encode
 from .tools import Dispatcher, UnknownEffect
@@ -35,6 +36,8 @@ class State(TypedDict, total=False):
     context_waiting: str | None
     context_feedback: str | None
     context_check: str | None
+    context_latest: str | None
+    report: dict | None
 
 
 class Runtime:
@@ -46,6 +49,7 @@ class Runtime:
         self.dispatcher.active_time = self.active_time
         self.context = Context(store, self.dispatcher)
         self.context_updates = ContextUpdates(self.context)
+        self.context_revisions = ContextRevisions(self.context)
         self.connection = sqlite3.connect(store.root / "graph.sqlite", check_same_thread=False)
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.connection.execute("PRAGMA synchronous=FULL")
@@ -56,36 +60,44 @@ class Runtime:
         builder.add_node("tools", self.tools)
         builder.add_node("compact", self.compact)
         builder.add_edge(START, "coordinate")
-        builder.add_edge("coordinate", "prepare")
+        builder.add_conditional_edges("coordinate", lambda state: END if state.get("terminal") else "prepare", {END: END, "prepare": "prepare"})
         builder.add_conditional_edges("prepare", lambda state: state["next"], {"model": "model", "compact": "compact"})
         builder.add_conditional_edges("model", lambda state: state["next"], {"prepare": "coordinate", "tools": "tools"})
-        builder.add_conditional_edges("tools", lambda state: END if state["terminal"] else "prepare", {END: END, "prepare": "coordinate"})
+        builder.add_edge("tools", "coordinate")
         builder.add_edge("compact", "coordinate")
         self.graph = builder.compile(checkpointer=SqliteSaver(self.connection))
 
     def coordinate(self, state: State):
-        """Checkpoint decisions/wait conditions independently of the next input."""
+        """Commit outcomes before request preparation or a valid terminal report."""
         self.active_time.checkpoint()
         job = self.store.get("job", state["job"])
-        if job["cancel_requested"]:
-            raise StopRun("cancelled", "Stopped at a settled tool-batch boundary.")
-        # A new human instruction or document head starts a new correction episode.
-        # Merely restarting/pressing Continue does not reset it.
-        repairs = {kind: item for kind, item in state.get("repairs", {}).items()
-                   if item["basis"] == self.repair_basis(job)}
-        for kind, item in repairs.items():
-            if item["count"] > job["limits"].get("max_response_repairs", 2):
-                raise StopRun("response_repair_exhausted",
-                              f"Automatic {kind} correction limit reached. Saved work and replies are retained. "
-                              "Add instructions or edit the saved document before starting a new correction episode.")
-        state = {**state, "repairs": repairs}
         key = f"{job['id']}:{state['seq']}:{state['revision']}"
         changes = self.context_updates.recover(job, state, key)
         state = {**state, **changes}
-        # A frozen request wins over current pointers and newly reconstructed input.
-        if self.store.maybe("request", key) is None and state.get("context_waiting"):
+        if job["cancel_requested"]:
+            raise StopRun("cancelled", "Stopped at a settled tool-batch boundary.")
+        repairs = {kind: item for kind, item in state.get("repairs", {}).items()
+                   if item["basis"] == self.repair_basis(job)}
+        state = {**state, "repairs": repairs}
+        frozen = self.store.maybe("request", key)
+        if frozen is None and state.get("context_waiting"):
             changes.update(self.context_updates.resolve(job, state, key))
-        return {**changes, "repairs": repairs}
+            state = {**state, **changes}
+        report = state.get("report")
+        terminal = bool(report and report["instruction_basis"] == instruction_basis(job))
+        if terminal:
+            value = report["intent"]
+            self.store.update_job(job["id"], status="waiting" if value["state"] == "waiting" else "completed" if value["state"] == "complete" else "paused",
+                stop_reason="agent_report", content_claim="complete" if value["state"] == "complete" else "partial",
+                delivery=value.get("version_id"), last_message=value["message"])
+        elif frozen is None and not state.get("context_waiting"):
+            # Persist diagnostic obstruction without reverting a committed result.
+            try:
+                self.context_updates.continuation(job, state)
+                changes["context_check"] = None
+            except StopRun as exc:
+                changes.update(self.context_updates.wait(job, state, exc.reason, str(exc)))
+        return {**changes, "repairs": repairs, "terminal": terminal}
 
     def prepare(self, state: State):
         self.active_time.checkpoint()
@@ -95,19 +107,11 @@ class Runtime:
         key = f"{job['id']}:{state['seq']}:{state['revision']}"
         repairs = state.get("repairs", {})
         request = self.store.maybe("request", key)
-        if request is None and state.get("context_waiting"):
-            check = self.store.json(state["context_check"], job["id"])
-            if check["reason"] != "compaction":
-                raise StopRun(check["reason"], check["message"])
-            payload, meta = self.context.compact_request(job, state)
-            request = self.nexus.freeze(job["id"], key, payload, "compaction", {**meta, "repairs": repairs})
         if request is None:
-            payload, capacity = self.context.normal(job, state)
-            if capacity["fits"]:
-                request = self.nexus.freeze(job["id"], key, payload, "normal", {"capacity": capacity, "repairs": repairs})
-            else:
-                payload, meta = self.context.compact_request(job, state)
-                request = self.nexus.freeze(job["id"], key, payload, "compaction", {**meta, "repairs": repairs})
+            payload, meta, kind = self.context_updates.continuation(job, state)
+            if repairs.get(kind, {}).get("count", 0) > job["limits"].get("max_response_repairs", 2):
+                raise StopRun("response_repair_exhausted", f"Automatic {kind} correction limit reached. Saved work, candidates and replies remain available. Continue does not reset this correction episode.")
+            request = self.nexus.freeze(job["id"], key, payload, kind, {**meta, "repairs": repairs})
         return {"pending": key, "next": "compact" if request["kind"] == "compaction" else "model", "terminal": False,
                 "repairs": repairs}
 
@@ -155,9 +159,9 @@ class Runtime:
         job, key = state["job"], state["pending"]
         request = self.store.get("request", key, job=job)
         reply = self.store.json(request["accepted_ref"], job)
-        policy = {field: state.get(field, default) for field, default in
-                  [("released", []), ("pinned", []), ("pin_views", {}), ("notes", "")]}
-        waiting = state.get("context_waiting")
+        working = self.context_revisions.start(job, state)
+        operations, errors = [], []
+        historical = {}
         report = None
         for index, call in enumerate(reply["calls"]):
             self.active_time.checkpoint()
@@ -173,38 +177,37 @@ class Runtime:
                     elapsed = self.active_time.elapsed(current)
                     if elapsed >= current["limits"]["max_active_seconds"]:
                         raise StopRun("budget_exhausted", "Stopped before a new tool because the persistent active-time budget is exhausted.")
-                    self.dispatcher.context_preflight = lambda intent, op, candidate: self.context.preflight(
-                        current, {**state, **policy, "context_waiting": waiting}, intent, op, candidate)
+                    self.dispatcher.context_preflight = lambda intent, op, candidate: self.context_revisions.capture(
+                        current, state, working, intent, op, candidate)
                     try:
                         result = self.dispatcher.execute(job, operation, call["name"], call["arguments"])
                     finally:
                         self.dispatcher.context_preflight = None
             self.active_time.checkpoint()
-            if not result["ok"]:
-                continue
             data = result["data"]
-            if "context_proposal" in data:
-                waiting = result["result_ref"]
-            if "context_intent" in data:
-                # A durable admission decision wins across checkpoint gaps. Do
-                # not re-evaluate its cost under new instructions or route limits.
-                policy = data.get("context_policy") or self.context.policy(job, policy, data["context_intent"])
-            if "report_intent" in data:
-                report = data["report_intent"]
-        # Restore historical context effects, but an old report cannot terminate a new instruction.
-        if request["instruction_basis"] != instruction_basis(self.store.get("job", job)):
-            report = None
-        # One deterministic policy settlement per complete accepted batch.
-        changes = {**policy, "context_waiting": waiting, "context_check": None, "context_feedback": None,
-                   "history": [*state["history"], key], "seq": state["seq"] + 1,
-                    "revision": state["revision"] + 1, "pending": None, "terminal": bool(report),
-                    "continuation_feedback": None,
-                    "repairs": {kind: value for kind, value in state.get("repairs", {}).items() if kind != "normal"}}
-        if report:
-            self.store.update_job(job, status="waiting" if report["state"] == "waiting" else "completed" if report["state"] == "complete" else "paused",
-                                  stop_reason="agent_report", content_claim="complete" if report["state"] == "complete" else "partial",
-                                  delivery=report.get("version_id"), last_message=report["message"])
-        return changes
+            if call["name"] == "context_update":
+                if "context_intent" in data:
+                    # Previously committed per-tool effects are historical facts.
+                    historical = data.get("context_policy") or self.context.policy(job, {**state, **historical}, data["context_intent"])
+                    working["policy"].update(historical)
+                    continue
+                operations.append(operation)
+                if not result["ok"] or "context_saved" not in data:
+                    errors.append({"operation": operation, "result_ref": result["result_ref"], "candidate_ref": result["candidate_ref"],
+                                   "message": data.get("error", data.get("message", "Context operation did not validate."))})
+                else:
+                    saved = data["context_saved"]
+                    working.update(policy=saved["policy"], base_ref=saved["base_ref"], selection_required=False)
+            if result["ok"] and "report_intent" in data:
+                report = {"intent": data["report_intent"], "instruction_basis": request["instruction_basis"]}
+        waiting = state.get("context_waiting")
+        if operations:
+            waiting = self.context_revisions.complete(job, state, request, operations, working, errors)
+        return {**historical, "context_waiting": waiting, "context_latest": waiting or state.get("context_latest"),
+                "context_check": None, "history": [*state["history"], key], "seq": state["seq"] + 1,
+                "revision": state["revision"] + 1, "pending": None, "terminal": False, "report": report,
+                "continuation_feedback": None,
+                "repairs": {kind: value for kind, value in state.get("repairs", {}).items() if kind != "normal"}}
 
     def compact(self, state: State):
         request = self.store.get("request", state["pending"], job=state["job"])
@@ -268,17 +271,17 @@ class Runtime:
                 if continuation:
                     # Supported state update: complete this transition as the model node and route to prepare.
                     self.graph.update_state(config, continuation, as_node="model")
-                elif snapshot.next == ("prepare",) and snapshot.values.get("context_waiting"):
+                elif snapshot.next == ("prepare",):
                     key = f"{job}:{snapshot.values['seq']}:{snapshot.values['revision']}"
                     if self.store.maybe("request", key) is None:
-                        # A waiting observation is not a decision. Recheck current
-                        # settings/instructions on Continue; never rebuild a freeze.
+                        # Re-evaluate current instructions/settings and the correction
+                        # episode before any unfrozen preparation. Never rebuild F.
                         self.graph.update_state(config, {"next": "prepare"}, as_node="model")
                 self.graph.invoke(None, config, durability="sync")
             else:
                 initial = dict(snapshot.values) if snapshot.values else {"job": job, "seq": 0, "revision": 0, "history": [],
                                                                        "handoff": None, "notes": "", "released": [], "pinned": []}
-                initial.update(terminal=False, pending=None)
+                initial.update(terminal=False, pending=None, report=None)
                 self.graph.invoke(initial, config, durability="sync")
         except StopRun as exc:
             self.store.update_job(job, status="cancelled" if exc.reason == "cancelled" else "blocked",

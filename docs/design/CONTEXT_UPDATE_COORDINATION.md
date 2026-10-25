@@ -1,8 +1,8 @@
 # Context update coordination: consolidated target design
 
-Updated 2026-10-25, Asia/Hong_Kong (UTC+08:00), against unchanged implementation `a484b9b2abf147d63d8bdecd2143430409fe9a53`.
+Updated 2026-10-26, Asia/Hong_Kong (UTC+08:00). Application baseline `a484b9b` and design checkpoint `c1e6fcc` precede the complete coordination implementation. This document retains the adopted design and rationale; [CONTRACTS Q2/Q3](../CONTRACTS.md#q2-context-transitions) owns effective behavior and [CURRENT_STATE](../CURRENT_STATE.md#complete-context-update-coordination) owns actual checks and limits.
 
-**Status: the four human-selected policies and the integrated target design are adopted; implementation is not authorized or completed.** The first three choices were selected in [D15](../discussions/CONTEXT_COORDINATION.md#d15-human-selects-the-three-policies-and-authorizes-design-recording), policy B in [D18](../discussions/CONTEXT_COORDINATION.md#d18-human-selects-b-for-confirmed-necessary-content-excess), and the integrated design accepted for recording in [D20](../discussions/CONTEXT_COORDINATION.md#d20-human-adopts-the-integrated-design-and-authorizes-recording). This document owns the consolidated target and planned acceptance, not current runtime claims. [CONTRACTS Q2](../CONTRACTS.md#q2-context-transitions) and [Q3](../CONTRACTS.md#q3-execution-recovery-and-delivery) still describe current executable behavior. [CURRENT_STATE](../CURRENT_STATE.md#context-coordination-discussion-and-design-record) owns implementation and verification status.
+**Status: the four human-selected policies and integrated design are implemented under the subsequent explicit implementation instruction.** D15/D18/D20 retain the adoption sequence in the [discussion record](../discussions/CONTEXT_COORDINATION.md). Implementation does not turn scripted validation into proof of autonomous PDF quality; Stage B remains separately authorized.
 
 ## Purpose, scope and policy choices
 
@@ -85,7 +85,7 @@ Settings changes do not themselves reclassify a candidate. If capacity falls and
 
 Unknown settings cannot be invented by the agent. Where a usable A request exists, the app can return the choice during normal agent work: durably transfer Q out of automatic admission before presenting it for revision. The reason is unresolved feasibility/agent choice, not measured excess. Otherwise preserve an explicit configuration wait. Do not leave automatic Q admission racing with an agent revising the same intent.
 
-**Current-code distinction:** at `a484b9b`, `ContextUpdates.resolve()` checks the active-policy fallback before committing a capacity rejection; if that check stops, it saves a waiting observation. Later admission on that path is not revival of a committed rejection. B intentionally changes that policy responsibility and the related capacity-wait tests. Existing committed settlements still recover before new decisions. [CONTRACTS Q2](../CONTRACTS.md#q2-context-transitions) remains unchanged until implementation.
+**Current-code distinction:** at `a484b9b`, `ContextUpdates.resolve()` checks the active-policy fallback before committing a capacity rejection; if that check stops, it saves a waiting observation. Later admission on that path is not revival of a committed rejection. B intentionally changes that policy responsibility and the related capacity-wait tests. Existing committed settlements still recover before new decisions. [CONTRACTS Q2](../CONTRACTS.md#q2-context-transitions) now describes B and complete-batch commitment; the previous paragraph explains the intentional change from the baseline.
 
 ## Four decision responsibilities
 
@@ -116,7 +116,7 @@ The proposed base selector is `base="pending" | "active"`:
 
 - `pending` starts from an eligible pending candidate, otherwise from `A` when there is no candidate. Later operations compose on the current batch's working candidate. A stored ineligible/terminal candidate must not be silently reused or revived; report that an explicit new decision is required.
 - `active` explicitly abandons the pending lineage as an automatic candidate and resets the current batch's working candidate to `A`. Subsequent operations compose from that reset. The completed batch still produces one final candidate revision, not separate commits before and after reset. Preserve abandoned/earlier content and outcomes; if the final revision is invalid, do not restore an abandoned candidate's automatic eligibility.
-- Reusing an ineligible candidate requires an explicit new revision referencing the chosen content and current basis. The concrete field names are implementation details within this adopted semantic design; overloading an ordinary omitted base to mean reconfirmation is not acceptable.
+- Reusing an ineligible candidate requires an explicit new revision referencing the chosen content and current basis. The implemented fields are `base: {kind, ref}` and `reuse: [{ref, operations?, fields?}]`; overloading an ordinary omitted base to mean reconfirmation is not acceptable.
 
 If a later update invalidates the batch's context revision, preserve the previous pending candidate's bytes but suspend its automatic admission. A failed attempt to change intent is not permission to execute a stale fallback. A valid explicit reset is distinguishable from a malformed request that never established a reset instruction.
 
@@ -128,7 +128,7 @@ The agent may read and explicitly select retained content under its current inst
 
 The adopted reuse semantics are **selected context operations or fields applied to an explicit current base** (`active` or an eligible pending candidate), with exact source references. Reusing the notes field does not implicitly reuse old pins, releases, document edits or a report. An explicit selection of an operation sequence preserves its order and undergoes validation again. This lets the agent repair a pin and reuse saved notes within one fresh batch. It also permits the agent, rather than the app, to select an independent subset.
 
-Importing a complete old policy snapshot would instead replace notes and selections with that snapshot and could undo later context choices. It must never be an implicit interpretation of a generic `proposal_ref`; if offered later it needs its own explicit replacement semantics. The adopted design does not add that mode. Public field names and representation can be finalized in an authorized implementation, but operation reuse and snapshot replacement cannot be silently interchanged.
+Importing a complete old policy snapshot would instead replace notes and selections with that snapshot and could undo later context choices. It must never be an implicit interpretation of a generic `proposal_ref`; if offered later it needs its own explicit replacement semantics. The adopted design does not add that mode. The implemented tool validates explicit source selections and expected current base references; operation reuse and snapshot replacement cannot be silently interchanged.
 
 A reuse reference identifies the source candidate/operation, selected operations or fields, and the expected current base identity. Selected operations retain their original relative order; multiple selections follow the explicit new request order, followed by its new changes. A stale expected base returns a conflict instead of silently rebasing and overwriting later choices. Revalidate source identity/ownership, reference existence, representation, field/range and the final native input. A parseable field from structurally invalid saved content may be selected and repaired; malformed raw input remains readable but is not guessed into valid operations. The new revision records `reused_from`, its own operation identities and current instruction basis.
 
@@ -272,7 +272,9 @@ Recovering a committed pin does not require it to remain selected forever: the a
 
 ## Implementation route, if authorized
 
-These are ordered milestones inside one context-update capability, not authorization for code changes or independent new phases:
+The heading is retained as a stable discussion link. The following route was subsequently authorized and implemented; this section explains its responsibility boundaries.
+
+These were ordered milestones inside the authorized context-update capability:
 
 1. **Request and decision foundations.** Separate actual normal, compaction, diagnostic and post-handoff plans; implement supported necessary-cost proof, exact specific-outcome preview and common positive-savings principles. Keep their snapshot and purpose explicit. Use CC-R1/2/3 as regressions, not the whole scope.
 2. **Whole-batch disposition and commitment.** Context tools capture/validate/compose without intermediate capacity commitment. A single coordinator handles complete-candidate validity, B, admission, waiting and terminal-report routing. Persist decisions before graph projection; preserve other tool effects, raw receipts and frozen boundaries.
@@ -280,11 +282,11 @@ These are ordered milestones inside one context-update capability, not authoriza
 
 Keep the small StateGraph, Nexus service, immutable objects, SQLite catalog and document/evidence engine as a useful baseline: they already supply identities, execution boundaries and saved artifacts. Replace scattered application decisions and inconsistent request construction. A framework replacement, new table count or extensive transient shrink manager is not required by the evidence. Change internal boundaries if needed to implement these responsibilities correctly. Consult installed-version official guidance for an uncertain API without automatically upgrading.
 
-No remaining policy conflict is identified in this adopted design. Concrete API names and storage representation can be selected during a separately authorized implementation. This document retains target rationale and links to effective owners once implemented; it does not become a competing current-runtime contract.
+The concrete implementation uses `ContextRevisions`, `Context`, `ContextUpdates` and Runtime coordination. The catalog records `context_disposition`, `context_commit` and `context_policy` are metadata within the existing store, not separate databases. `required()` returns a supported lower bound with named exclusions and `proves_full_admission=false`; only actual native input admits a policy. These choices implement the adopted semantics. Effective contracts and evidence remain in their primary owners.
 
 ## Observable acceptance and limits
 
-All items below are **planned acceptance**, not new results from this documentation task. Use both Chat Completions and Responses with local scripted replies/mock transport before proposing live work. Preserve unchanged capacity in shrinking-update cases.
+The matrix below defines acceptance. [CURRENT_STATE](../CURRENT_STATE.md#complete-context-update-coordination) and the [review handoff](../REVIEW_HANDOFF.md) identify executed checks; a row here alone is not a passing result. Use both Chat Completions and Responses with local scripted replies/mock transport before proposing live work. Preserve unchanged capacity in shrinking-update cases.
 
 | Capability | Observable acceptance |
 | --- | --- |
@@ -305,10 +307,10 @@ All items below are **planned acceptance**, not new results from this documentat
 
 Separate mechanism results, artifact preservation, actual renderer inspection and live-model behavior. Record which checks are rerun and which previous evidence is merely reused. Scripted model choices do not establish autonomous strategy, summary fidelity, ordinary PDF reading order or content quality.
 
-Existing evidence has specific limits: the older capacity-wait test raises the final allowance to 500000, so it does not establish restoration of the exact original capacity. Raw-pin correction and delivery cases use scripted model decisions, not measured autonomous success. Existing passing tests describe the current implementation, not these adopted policies. Preserve those results as historical evidence rather than relabeling them as new acceptance.
+Existing evidence has specific limits: the older capacity-wait test raises the final allowance to 500000, so it does not establish restoration of the exact original capacity. Raw-pin correction and delivery cases use scripted model decisions, not measured autonomous success. The old passing tests describe that earlier implementation, not evidence for the subsequently adopted policies. Preserve those results as historical evidence rather than relabeling them as new acceptance.
 
-During implementation, synchronize CONTRACTS Q2/Q3, ARCHITECTURE ownership, callable-tool guidance and tests for immediate per-call effects, invalid-prefix fallback, interruption and capacity waiting. Add the B before/after-disposition cases explicitly rather than silently changing old expectations. Update CURRENT_STATE, PHASE_PLAN and the review handoff with actual new checks and remaining limits. This documentation recording changes none of those executable behaviors.
+The implementation synchronizes CONTRACTS Q2/Q3, ARCHITECTURE, callable-tool guidance, current status and affected tests. Immediate per-call effects, invalid-prefix fallback and fallback-dependent capacity waiting have intentionally changed. Tests separately exercise B before and after durable disposition, exact original-capacity restoration, current-base reuse and committed-effect recovery. The original validation remains historical; new results are recorded separately.
 
 The bounded exit is a complete supported context-update route with these representative neighboring operations, or a precise remaining direct blocker. Do not add unrelated hypothetical mechanisms to delay completion. A materially reproduced blocker cannot be dismissed just because the three original controls pass.
 
-After authorized implementation meets that exit, recommend [Stage B](../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources): a selected real source/range, Nexus route and finite call allowance, separately authorized. Observe autonomous completion, interventions and source-led saved/reopened/exported quality. Let context management occur naturally; non-use does not verify it and does not prove it unnecessary. This documentation task neither closes Stage A nor starts Stage B.
+After authorized implementation meets that exit, recommend [Stage B](../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources): a selected real source/range, Nexus route and finite call allowance, separately authorized. Observe autonomous completion, interventions and source-led saved/reopened/exported quality. Let context management occur naturally; non-use does not verify it and does not prove it unnecessary. Stage A implementation closeout is recorded in CURRENT_STATE; this design document does not authorize Stage B.

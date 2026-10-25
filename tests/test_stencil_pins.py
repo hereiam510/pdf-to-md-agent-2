@@ -3,13 +3,16 @@ import base64
 from copy import deepcopy
 import json
 from pathlib import Path
+import re
 import zipfile
+from html.parser import HTMLParser
 
 import httpx
 import pymupdf
 import pytest
 
 from pdfmd.context import Context
+from pdfmd.context_outcomes import policy_ref
 from pdfmd.documents import Documents
 from pdfmd.evidence import Evidence
 from pdfmd.nexus import Nexus, instruction_basis, parse_reply
@@ -60,15 +63,16 @@ def fixture_job(directory, route, protocol="chat_completions", rotation=0):
 def accepted(store, job, key, *calls):
     reply = parse_reply(job["route"]["protocol"], json.dumps(native(job["route"]["protocol"], *calls)).encode())
     ref = store.blob(job["id"], "accepted_response", reply)["ref"]
-    store.put("request", key, job["id"], {"accepted_ref": ref, "instruction_basis": instruction_basis(job)})
+    store.put("request", key, job["id"], {"id": key, "accepted_ref": ref, "instruction_basis": instruction_basis(job)})
 
 
 def update(runtime, job, state, intent, key="pin", extra=()):
     accepted(runtime.store, job, key, tool("context_update", intent, "pin"), *extra)
     original = {**state, "pending": key}
-    changes = runtime.tools(original)
+    completed = {**state, **runtime.tools(original)}
     env = runtime.dispatcher.envelope(job["id"], key + ":0", runtime.store.get("operation", key + ":0"))
-    return {**state, **changes}, env, original
+    # Raw receipt and completed-batch decision are separate durable boundaries.
+    return {**completed, **runtime.coordinate(completed)}, env, completed
 
 
 def offline_runtime(store):
@@ -112,7 +116,7 @@ def test_stencil_component_and_selected_occurrences_match_source(tmp_path, route
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
-def test_rejected_pin_preserves_policy_then_exact_views_fit_and_replay(tmp_path, route, protocol):
+def test_unadmitted_pin_preserves_policy_then_exact_views_fit_and_replay(tmp_path, route, protocol):
     store, job, source, mask, raw_xref = fixture_job(tmp_path, route, protocol)
     evidence = Evidence(store)
     image = evidence.extract_image(job["id"], 1, raw_xref)
@@ -122,37 +126,48 @@ def test_rejected_pin_preserves_policy_then_exact_views_fit_and_replay(tmp_path,
     runtime = offline_runtime(store)
     state = state_for(job, [])
     state, first, _ = update(runtime, job, state, {"pin": [{"ref": text, "view": "full"}], "notes": "Working notes."}, "first")
-    assert first["ok"] and first["data"]["admission"]["capacity"]["fits"]
+    assert first["ok"] and first["data"]["admission"] == {"applied": False, "status": "saved"}
+    first_decision = store.json(state["context_feedback"], job["id"])
+    assert first_decision["summary"]["status"] == "applied"
     actual = runtime.context.normal(job, state)[1]
-    assert first["data"]["admission"]["capacity"] == {k: v for k, v in actual.items() if k != "projection"}
+    assert first_decision["feedback"]["capacity"] == {k: v for k, v in actual.items() if k != "projection"}
     before = deepcopy(state)
-    state, denied, replay_state = update(runtime, job, state, {
+    state, saved, decision_state = update(runtime, job, state, {
         "release": [text], "pin": [{"ref": stream, "view": "raw"}], "notes": "Must not replace working notes."}, "denied")
-    assert not denied["ok"] and denied["data"]["reason"] == "context_capacity"
-    assert "Base64" in denied["data"]["error"]
+    assert saved["ok"] and not saved["data"]["admission"]["applied"]
+    saved_receipt = store.bytes(saved["result_ref"], job["id"])
+    denied = store.json(state["context_feedback"], job["id"])
+    assert denied["summary"]["status"] == "needs_agent_revision"
+    assert denied["summary"]["reason"] == "required_content_exceeds_capacity" and "Base64" in denied["feedback"]["message"]
     for field in ["pinned", "pin_views", "released", "notes"]:
         assert state[field] == before[field]
     assert runtime.context.normal(job, state)[1]["fits"]
-    # Durable rejection cannot turn into acceptance after capacity changes.
+    # Raising capacity after O committed cannot reclassify the saved raw proposal.
+    # It is a recovery control, not a capacity increase used to pass conversion.
     store.update_job(job["id"], route={**job["route"], "context_tokens": 500000})
-    assert runtime.tools(replay_state) == {k: state[k] for k in runtime.tools(replay_state)}
+    replay = {**decision_state, **runtime.coordinate(decision_state)}
+    assert replay["context_feedback"] == state["context_feedback"] and replay["context_waiting"] is None
+    assert all(replay[field] == before[field] for field in ["pinned", "pin_views", "released", "notes"])
     store.update_job(job["id"], route=job["route"])
     selected = [{"ref": stream, "view": "index"}, {"ref": stream, "view": "raw", "start": 2, "end": 7},
                 {"ref": image["image_ref"], "view": "image"},
                 {"ref": text, "view": "full", "json_pointer": "/text", "start": 5, "end": 11},
                 {"ref": text, "view": "full", "json_pointer": "/extra"}]
-    state, admitted, replay_state = update(runtime, job, state, {"pin": selected}, "selected")
-    assert admitted["ok"] and len(state["pin_views"][stream]) == 2
+    state, saved, decision_state = update(runtime, job, state,
+        {"base": {"kind": "active", "ref": policy_ref(state)}, "pin": selected}, "selected")
+    assert saved["ok"] and not saved["data"]["admission"]["applied"] and len(state["pin_views"][stream]) == 2
+    assert store.json(state["context_feedback"], job["id"])["summary"]["status"] == "applied"
     payload, capacity = runtime.context.normal(job, state)
     assert capacity["fits"] and capacity["images"] == 1
     assert "25 mg." in json.dumps(payload) and base64.b64encode(exact[2:7]).decode() in json.dumps(payload)
-    # Fresh reader replays the admitted policy even when current limits would reject it.
     runtime.close()
+    # A committed batch effect recovers even when today's limits would reject it.
     store.update_job(job["id"], route={**job["route"], "context_tokens": 4096, "output_tokens": 512})
     reopened = offline_runtime(Store(store.root))
-    replay = reopened.tools(replay_state)
+    replay = {**decision_state, **reopened.coordinate(decision_state)}
     assert replay["pin_views"] == state["pin_views"] and replay["pinned"] == state["pinned"]
     assert store.bytes(stream, job["id"]) == exact
+    assert store.bytes("result:denied:0", job["id"]) == saved_receipt
     assert store.get("job", job["id"])["attempts"] == 0
     reopened.close()
 
@@ -208,15 +223,20 @@ def run_delivery(directory, route, protocol):
             assert "asset_path" not in retained["component"]
             calls = [tool("context_update", {"pin": [{"ref": retained["cmyk"]["original_ref"], "view": "raw"}], "notes": "Reject this entire update"})]
         elif step == 3:
-            assert results[-1]["data"]["policy_unchanged"] and not results[-1]["ok"]
-            calls = [tool("context_update", {"pin": [
+            receipt = results[-1]
+            assert receipt["ok"] and receipt["data"]["admission"] == {"applied": False, "status": "saved"}
+            assert receipt["data"]["context_outcome"]["status"] == "needs_agent_revision"
+            assert receipt["data"]["context_outcome"]["reason"] == "required_content_exceeds_capacity"
+            retained["original_context_receipt"] = (receipt["result_ref"], store.bytes(receipt["result_ref"], job["id"]))
+            anchor = json.loads(next(m["content"] for m in payload.get("messages", payload.get("input")) if m.get("role") == "user"))
+            calls = [tool("context_update", {"base": {"kind": "active", "ref": anchor["context_policy_ref"]}, "pin": [
                 {"ref": retained["cmyk"]["original_ref"], "view": "index"},
                 {"ref": retained["cmyk"]["original_ref"], "view": "raw", "start": 0, "end": 4},
                 {"ref": retained["cmyk"]["image_ref"], "view": "image"}], "notes": "Preserve source colors and all content."}, "choose"),
                 tool("extract_image", {"page": 1, "xref": mask, "occurrence": 0, "dpi": 144}, "red"),
                 tool("extract_image", {"page": 1, "xref": mask, "occurrence": 1, "dpi": 144}, "blue")]
         elif step == 4:
-            assert results[-3]["ok"]
+            assert results[-3]["ok"] and results[-3]["data"]["context_outcome"]["status"] == "applied"
             retained["images"] = [results[-2]["data"], results[-1]["data"], retained["cmyk"]]
             blocks = [{"id": "text", "pages": [1], "markdown": retained["text"]}] + [
                 {"id": f"figure{i}", "pages": [1], "markdown": f"![{label}]({image['asset_path']})"}
@@ -234,6 +254,9 @@ def run_delivery(directory, route, protocol):
     current = store.get("job", job["id"])
     assert current["status"] == "completed" and current["attempts"] == 5
     assert snapshot["notes"] == "Preserve source colors and all content."
+    original_ref, original_receipt = retained["original_context_receipt"]
+    assert store.bytes(original_ref, job["id"]) == original_receipt
+    assert not store.json(original_ref, job["id"])["admission"]["applied"]
     assert all(request["meta"]["capacity"]["fits"] for request in store.records("request", job["id"]))
     fixture = {"job": job["id"], "version": current["head"], "source": str(source), "protocol": protocol,
                "images": [{"label": label, "path": im["asset_path"], "width": im["width"], "height": im["height"], "provenance": im}
@@ -251,24 +274,68 @@ def verify_delivery(directory):
     store = Store(directory / "workspace")
     docs = Documents(store)
     saved = docs.version(fixture["job"], fixture["version"])
+    expected_labels = ["red", "blue", "cmyk"]
+    assert [image["label"] for image in fixture["images"]] == expected_labels, "The fixture must contain all three source figures."
+    expected_paths = [image["path"] for image in fixture["images"]]
+    assert len(set(expected_paths)) == 3
+    assert set(saved["assets"]) == set(expected_paths), "Saved asset inventory must match the three source figures."
+    class PreviewImages(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.sources = []
+        def handle_starttag(self, tag, attrs):
+            if tag == "img":
+                self.sources.append(dict(attrs).get("src"))
     with pymupdf.open(fixture["source"]) as pdf, zipfile.ZipFile(directory / "delivery.zip") as archive:
-        assert TEXT in archive.read("document.md").decode()
+        markdown = archive.read("document.md").decode()
+        assert TEXT in markdown
+        assert re.findall(r"!\[[^\]]*\]\((assets/[^)]+)\)", markdown) == expected_paths
+        assert {name for name in archive.namelist() if name.startswith("assets/")} == set(expected_paths)
+        for preview in [archive.read("preview.html"), (docs.root / fixture["version"] / "preview.html").read_bytes()]:
+            parsed = PreviewImages()
+            parsed.feed(preview.decode("utf-8"))
+            assert parsed.sources == expected_paths, "Saved/exported HTML must actually render the three figures."
         assert json.loads(archive.read("document.json")) == saved
         assert store.bytes(saved["source_ref"], fixture["job"]) == Path(fixture["source"]).read_bytes()
         for name in archive.namelist():
             assert archive.read(name) == (docs.root / fixture["version"] / name).read_bytes()
         for path, info in saved["originals"].items():
             assert archive.read(path) == pdf.xref_stream_raw(info["provenance"]["xref"])
+        for image in fixture["images"]:
+            encoded = archive.read(image["path"])
+            pixels = pymupdf.Pixmap(encoded)
+            assert (pixels.width, pixels.height) == (image["width"], image["height"])
+            assert encoded == store.bytes(saved["assets"][image["path"]]["ref"], fixture["job"])
         for image in fixture["images"][:2]:
             meta = image["provenance"]
             expected = pdf[0].get_pixmap(dpi=144, clip=pymupdf.Rect(meta["region"]) * pdf[0].rotation_matrix)
             assert pymupdf.Pixmap(archive.read(image["path"])).samples == expected.samples
         archive.extractall(directory / "exported")
     result = {"all_source_text_present": True, "all_members_equal": True, "source_and_originals_preserved": True,
-              "stencil_occurrence_pixels_equal": True, "images": 3, "originals": len(saved["originals"]),
+              "stencil_occurrence_pixels_equal": True, "images": len(expected_paths), "originals": len(saved["originals"]),
               "mock_attempts": store.get("job", fixture["job"])["attempts"], "live_model_calls": 0}
     (directory / "verification.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     return result
+
+
+def test_delivery_verifier_rejects_text_only_false_positive(tmp_path, route):
+    """A completed label and an empty verification loop do not prove delivery."""
+    store, job, source, _, _ = fixture_job(tmp_path, route, "chat_completions")
+    result = Dispatcher(store).execute(job["id"], "text-only", "edit_document", json.dumps({
+        "base_version": None, "expected_head": None,
+        "replace_blocks": [{"id": "text", "pages": [1], "markdown": TEXT + "\n"}],
+        "page_updates": {"1": {"printed": "none", "disposition": "included"}}, "claim": "complete"}))
+    assert result["ok"]
+    version = store.get("job", job["id"])["head"]
+    assert Documents(store).export(job["id"], version, str(tmp_path / "delivery.zip"))["verified"]
+    fixture = {"job": job["id"], "version": version, "source": str(source), "images": []}
+    (tmp_path / "fixture.json").write_text(json.dumps(fixture), encoding="utf-8")
+    with pytest.raises(AssertionError, match="all three source figures"):
+        verify_delivery(tmp_path)
+    fixture["images"] = [{"label": label, "path": f"assets/{label}.png"} for label in ["red", "blue", "cmyk"]]
+    (tmp_path / "fixture.json").write_text(json.dumps(fixture), encoding="utf-8")
+    with pytest.raises(AssertionError, match="Saved asset inventory"):
+        verify_delivery(tmp_path)
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
@@ -287,7 +354,8 @@ def test_original_stream_pin_rejected_before_policy_changes(tmp_path, route, pro
     runtime = offline_runtime(store)
     state = state_for(job, [])
     changed, result, _ = update(runtime, job, state, {"pin": [ref], "notes": "Must be rejected."})
-    assert not result["ok"]
+    assert result["ok"] and not result["data"]["admission"]["applied"]
+    assert store.json(changed["context_feedback"], job["id"])["summary"]["status"] == "needs_agent_revision"
     assert changed["pinned"] == state["pinned"] and changed["notes"] == state["notes"]
     assert runtime.context.normal(job, changed)[1]["fits"]
     runtime.close()
@@ -300,7 +368,7 @@ def test_pin_receipt_pointer_gap_restores_decision_and_same_batch_policy(tmp_pat
     stream = Evidence(store).extract_image(job["id"], 1, xref)["original_ref"]
     small = store.blob(job["id"], "evidence", {"text": "Keep 25 mg."})["ref"]
     runtime = offline_runtime(store)
-    state = state_for(job, [])
+    state = {**state_for(job, []), "pin_views": {}}
     accepted(store, job, "batch", tool("context_update", {"pin": [{"ref": small, "view": "full"}], "notes": "Earlier accepted."}, "earlier"),
              tool("context_update", {"release": [small], "pin": [{"ref": stream, "view": "index" if admitted else "raw"}], "notes": "Later change."}, "later"))
     state["pending"] = "batch"
@@ -315,18 +383,30 @@ def test_pin_receipt_pointer_gap_restores_decision_and_same_batch_policy(tmp_pat
     monkeypatch.undo()
     raw_receipt = store.bytes("result:batch:1", job["id"])
     runtime.close()
-    # Both decisions retain their historical outcome on replay, even if current
-    # capacity has changed enough to reverse a new admission decision.
+    # No policy effect existed at the raw-result gap. Recover the complete
+    # batch and decide it as one revision under the original capacity.
+    reopened = offline_runtime(Store(store.root))
+    completed = {**state, **reopened.tools(state)}
+    assert completed["pinned"] == state["pinned"] and completed["notes"] == state["notes"]
+    result = {**completed, **reopened.coordinate(completed)}
+    settled = store.json(result["context_feedback"], job["id"])
+    assert settled["summary"]["status"] == ("applied" if admitted else "needs_agent_revision")
+    assert result["pinned"] == ([stream] if admitted else state["pinned"])
+    assert result["released"] == ([small] if admitted else state["released"])
+    assert result["notes"] == ("Later change." if admitted else state["notes"])
+    assert store.bytes("result:batch:1", job["id"]) == raw_receipt
+    reopened.close()
+    # After the settlement, changed settings cannot reverse its historical effect.
     store.update_job(job["id"], route={**job["route"], "context_tokens": 4096 if admitted else 500000,
                                     "output_tokens": 512 if admitted else 2048})
     reopened = offline_runtime(Store(store.root))
-    result = reopened.tools(state)
-    assert result["pinned"] == [stream if admitted else small]
-    assert result["released"] == ([small] if admitted else [])
-    assert result["notes"] == ("Later change." if admitted else "Earlier accepted.")
+    replay = {**completed, **reopened.coordinate(completed)}
+    assert replay["context_feedback"] == result["context_feedback"]
+    assert all(replay[field] == result[field] for field in ["pinned", "pin_views", "released", "notes"])
     assert store.bytes("result:batch:1", job["id"]) == raw_receipt
     assert store.get("job", job["id"])["attempts"] == 0
     reopened.close()
+
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
@@ -337,6 +417,12 @@ def test_image_pin_configuration_failure_keeps_prior_policy(tmp_path, route, pro
     state = state_for(job, [])
     for i, changes in enumerate([{"vision": False}, {"image_tokens": None}, {"image_tokens": 100000}]):
         current = store.update_job(job["id"], route={**job["route"], **changes})
-        result, env, _ = update(runtime, current, state, {"pin": [{"ref": image["ref"], "view": "image"}], "notes": "Unaccepted"}, f"config{i}")
-        assert not env["ok"] and result["notes"] == state["notes"] and result["pinned"] == []
+        result, env, _ = update(runtime, current, state, {"base": {"kind": "active", "ref": policy_ref(state)},
+            "pin": [{"ref": image["ref"], "view": "image"}], "notes": "Unaccepted"}, f"config{i}")
+        assert result["notes"] == state["notes"] and result["pinned"] == []
+        decided = store.json(result["context_feedback"], job["id"])["summary"]
+        assert decided["status"] == "needs_agent_revision"
+        assert decided["reason"] == ["invalid_revision", "unknown_capacity_agent_choice", "required_content_exceeds_capacity"][i]
+        assert env["ok"] is (i != 0)
+        state = result
     runtime.close()

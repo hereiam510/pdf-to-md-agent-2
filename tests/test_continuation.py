@@ -109,6 +109,11 @@ def test_cancelled_batch_respects_new_instructions_and_preserves_delivery(delive
         return result
     runtime.dispatcher.execute = cancel
     runtime.run(job['id'])
+    collecting = runtime.graph.get_state({'configurable': {'thread_id': job['id']}}).values
+    assert collecting['pinned'] == [] and collecting['notes'] == ''
+    completed_call = next(op for op in store.records('operation', job['id']) if op['tool'] == 'context_update')
+    raw_receipt = store.bytes(completed_call['result_ref'], job['id'])
+    assert not store.json(completed_call['result_ref'], job['id'])['admission']['applied']
     runtime.close()
     assert store.get('job', job['id'])['stop_reason'] == 'cancelled'
     continue_job(store, job, transport, 'Preserve both pages and image. Ask before editing.' if new_instruction else '')
@@ -118,22 +123,28 @@ def test_cancelled_batch_respects_new_instructions_and_preserves_delivery(delive
     runtime = Runtime(store, Nexus(store, lambda _: 'fixture-only', transport))
     state = runtime.graph.get_state({'configurable': {'thread_id': job['id']}}).values
     runtime.close()
-    assert image['ref'] in state['pinned'] and state['notes'] == 'Keep original pixels.'
+    assert store.bytes(completed_call['result_ref'], job['id']) == raw_receipt
+    disposition = store.json(state['context_feedback'], job['id'])['summary']
     if new_instruction:
+        assert state['pinned'] == [] and state['notes'] == ''
+        assert disposition['status'] == 'superseded' and disposition['reason'] == 'new_instructions'
         check_delivery(store, job, current['head'], image, source, tmp_path / 'preserved.zip')
         pending = store.records('request', job['id'])[0]
         assert store.json(f"candidate:{pending['id']}:1", job['id']) == destructive
     else:
+        assert image['ref'] in state['pinned'] and state['notes'] == 'Keep original pixels.'
+        assert disposition['status'] == 'applied'
         assert current['head'] != version
         assert [b['id'] for b in Documents(store).version(job['id'], current['head'])['content']['blocks']] == ['p1']
 
 
-@pytest.mark.parametrize('gap', ['document', 'result_pointer', 'report'])
+@pytest.mark.parametrize('gap', ['document', 'result_pointer', 'policy_settlement', 'report'])
 def test_completed_effects_reconcile_but_old_report_does_not_end_new_instruction(delivery, tmp_path, gap, monkeypatch):
     store, job, version, image, source = delivery
     seen = []
     first = {'document': tool('edit_document', {'base_version': version, 'expected_head': version, 'title': 'Preserved title'}),
              'result_pointer': tool('context_update', {'pin': [{'ref': image['ref'], 'view': 'image'}], 'notes': 'Restored policy.'}),
+             'policy_settlement': tool('context_update', {'pin': [{'ref': image['ref'], 'view': 'image'}], 'notes': 'Restored policy.'}),
              'report': tool('report', {'state': 'complete', 'version_id': version, 'message': 'Old completion.'})}[gap]
     def reply(request):
         seen.append(json.loads(request.content))
@@ -148,6 +159,12 @@ def test_completed_effects_reconcile_but_old_report_does_not_end_new_instruction
                 raise RuntimeError('receipt before pointer')
             return original(kind, key, owner, value)
         monkeypatch.setattr(store, 'put', fail)
+    elif gap == 'policy_settlement':
+        original = runtime.context_updates.finish
+        def fail(*args, **kwargs):
+            original(*args, **kwargs)
+            raise RuntimeError('policy settlement before graph checkpoint')
+        runtime.context_updates.finish = fail
     else:
         original = runtime.dispatcher.execute
         def fail(*args):
@@ -165,6 +182,16 @@ def test_completed_effects_reconcile_but_old_report_does_not_end_new_instruction
     current = store.get('job', job['id'])
     assert current['status'] == 'waiting' and current['last_message'] == 'New instructions received.'
     assert current['head'] == head and len(store.records('version', job['id'])) == versions
+    resumed = Runtime(store, Nexus(store, lambda _: 'fixture-only', transport))
+    state = resumed.graph.get_state({'configurable': {'thread_id': job['id']}}).values
+    resumed.close()
+    if gap in {'result_pointer', 'policy_settlement'}:
+        outcome = store.json(state['context_feedback'], job['id'])['summary']
+        if gap == 'policy_settlement':
+            assert image['ref'] in state['pinned'] and state['notes'] == 'Restored policy.'
+            assert outcome['status'] == 'applied'
+        else:
+            assert state['pinned'] == [] and state['notes'] == '' and outcome['status'] == 'superseded'
     check_delivery(store, job, head, image, source, tmp_path / 'delivery.zip')
 
 

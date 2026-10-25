@@ -39,10 +39,13 @@ def definitions(scripts: bool = False) -> list[dict]:
         ("preview_document", "Inspect actual saved-output pixels. Select an immutable version and viewport. The result identifies the visible region.",
          object_schema({"version_id": STRING, "top": INT, "width": INT, "height": INT}, ["version_id"])),
         ("edit_document", "Save a new version. Default mode=edit requires base_version == expected_head; mode=rebuild explicitly permits another saved or empty base without user approval. Both check the current head at commit. Preserve omitted fields and capture candidates before validation. Apply operations sequentially against the named base. Insert/replace accept either blocks or reuse_candidate (a task-owned candidate pointer to one Block or a block list); only selected content is copied. Top-level reuse_candidate replaces the entire block list. Page metadata uses printed, disposition, and note. Block pages must be included. Complete claims require every physical page classified and a note for each outside_scope or omitted_non_content page. Save partial work at any time.", Edit.model_json_schema()),
-        ("context_update", "Choose persistent representations without changing originals: index for metadata, image for pixels, full for complete text/JSON or exact json_pointer/start/end selection, raw for Base64 bytes (optional byte range). Raw streams cost text capacity. Multiple selections of one ref replace its previous selections; other pins remain. Omitted notes retain current notes, a supplied string replaces them, and an empty string clears them. Within one call release precedes pin; pin wins for the same ref. Whole-input admission precedes application. History pressure saves inactive intent with admission.applied=false. Valid later updates compose in order and settle atomically. Temporary capacity blocks retain intent. Explicit proposed releases may reduce the compaction view without changing active policy. New instructions supersede unapplied proposals. Rejection preserves active policy. Read full_result_ref for exact policy and diagnostics. Full content never silently becomes an index.",
+        ("context_update", "Save a context revision; no operation becomes active individually. All context calls in one accepted response compose in order and commit together after full admission. A structural error makes the whole revision need repair; no valid subset or older pending fallback is applied. History pressure retains eligibility for compaction; confirmed necessary-content excess requires a new revision even if capacity later increases. New user instructions supersede uncommitted intent. Choose index metadata, image pixels, full text/JSON with optional json_pointer/range, or raw Base64 bytes. Originals remain fully accessible. Multiple selections of a ref replace only its previous selections. Omitted notes retain, strings replace, empty string clears. Within a call release precedes pin. Default base composes the eligible pending/current batch; after an ineligible outcome choose base.kind=active explicitly. For reuse, base.ref must equal the current anchor context_policy_ref (active) or eligible candidate ref (pending). reuse selects fields from an original context candidate/result, or operations from a context proposal; selected source operations retain their original order, then this call's new changes apply. It never imports an old whole-policy snapshot or executes other tools. Read full_result_ref and the later context_outcome for exact content and final status.",
          object_schema({"release": STRINGS, "pin": {"type": "array", "items": object_schema({
              "ref": STRING, "view": {"enum": ["index", "image", "full", "raw"]},
-             "json_pointer": STRING, "start": INT, "end": INT}, ["ref", "view"])}, "notes": STRING})),
+             "json_pointer": STRING, "start": INT, "end": INT}, ["ref", "view"])}, "notes": STRING,
+             "base": object_schema({"kind": {"enum": ["active", "pending"]}, "ref": STRING}, ["kind"]),
+             "reuse": {"type": "array", "items": object_schema({"ref": STRING, "operations": STRINGS,
+                 "fields": {"type": "array", "items": {"enum": ["notes", "pin", "release"]}}}, ["ref"])}})),
         ("report", "Record a completion claim or ask the user a question. Select an explicit saved version for delivery when available.",
          object_schema({"state": {"enum": ["complete", "partial", "waiting"]}, "message": STRING, "version_id": STRING}, ["state", "message"])),
         ("ocr_page", "Run local OCR on a chosen page or region in unrotated page points, as returned by inspect_pdf. OCR boxes use saved image pixels; the image provides pixel_to_page. Keep the complete result and logs. OCR confidence does not certify fidelity.",
@@ -172,7 +175,7 @@ class Dispatcher:
             return self.preview(job, operation, **args)
         if name == "context_update":
             if self.context_preflight is None:
-                raise ValueError("Context updates require an active runtime policy and capacity preflight.")
+                raise ValueError("Context updates require an active runtime batch for validation and saving.")
             return self.context_preflight(args, operation, candidate)
         if name == "report":
             if args.get("state") not in {"complete", "partial", "waiting"} or not isinstance(args.get("message"), str):
@@ -264,7 +267,7 @@ class Dispatcher:
     def preview(self, job: str, operation: str, version_id: str, top: int = 0, width: int = 1024, height: int = 900) -> dict:
         self.documents.version(job, version_id)
         if not (0 <= top and 320 <= width <= 3000 and 200 <= height <= 3000):
-            raise ValueError("Use a nonnegative scroll offset, width 320–3000, and height 200–3000.")
+            raise ValueError("Use a nonnegative scroll offset, width 320â€“3000, and height 200â€“3000.")
         command = json.loads(os.environ.get("PDFMD_PREVIEW_LAUNCH", "null"))
         if not command:
             raise ValueError("Saved-output pixels require the desktop preview worker.")

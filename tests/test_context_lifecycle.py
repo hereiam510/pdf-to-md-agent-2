@@ -34,7 +34,7 @@ def pending(setup, protocol):
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
 @pytest.mark.parametrize("amend", [False, True])
-def test_capacity_block_checkpoints_wait_or_supersession_and_reopens(setup, protocol, amend):
+def test_capacity_block_checkpoints_revision_need_or_supersession_and_reopens(setup, protocol, amend):
     store, job, before, state, runtime = pending(setup, protocol)
     original = store.bytes(state["context_waiting"], job["id"])
     runtime.graph.update_state(config(job), state, as_node="tools")
@@ -46,33 +46,35 @@ def test_capacity_block_checkpoints_wait_or_supersession_and_reopens(setup, prot
         runtime.run(job["id"])
         saved = dict(runtime.graph.get_state(config(job)).values)
         runtime.close()
-        assert store.get("job", job["id"])["stop_reason"] == "capacity_blocked"
+        assert store.get("job", job["id"])["stop_reason"] == "feedback_capacity_blocked"
         assert all(saved[k] == before[k] for k in POLICY)
         if amend:
             assert saved["context_waiting"] is None
             assert store.json(saved["context_feedback"], job["id"])["summary"]["status"] == "superseded"
         else:
-            assert saved["context_waiting"] == state["context_waiting"]
-            check = store.json(saved["context_check"], job["id"])
-            assert check["reason"] == "capacity_blocked" and check["status"] == "waiting"
-            assert not any(b["kind"] == "context_settlement" for b in store.records("blob", job["id"]))
+            assert saved["context_waiting"] is None
+            assert store.json(saved["context_feedback"], job["id"])["summary"]["status"] == "needs_agent_revision"
         assert store.bytes(state["context_waiting"], job["id"]) == original
     calls = []
     def respond(request):
         calls.append(json.loads(request.content))
         assert request.url.path in {"/v1/chat/completions", "/v1/responses"}
+        if not calls[-1].get("tools"):
+            return httpx.Response(200, json=native(protocol, text=json.dumps(handoff(job,
+                current_state="Retain exact original data and the saved candidate for explicit revision.",
+                unfinished_work=[], references=[], cautions=[]))))
         return httpx.Response(200, json=native(protocol, tool("report", {"state": "waiting", "message": "Local check finished."}, "report")))
-    store.update_job(job["id"], route={**job["route"], "context_tokens": 500000})
+    store.update_job(job["id"], route=job["route"])
     runtime = Runtime(Store(store.root), Nexus(store, lambda _: "fixture", httpx.MockTransport(respond)))
     try:
         runtime.run(job["id"])
         final = dict(runtime.graph.get_state(config(job)).values)
         assert final["context_waiting"] is None
-        expected = before["notes"] if amend else "Page two inspected; preserve 25 mg."
-        assert final["notes"] == expected
-        assert len(calls) == 1  # No mandatory compaction after capacity was repaired.
-        assert f'"status": "{"superseded" if amend else "applied"}"' in json.dumps(calls[0]).replace('\\"', '"')
-        assert store.get("job", job["id"])["attempts"] == 1
+        assert final["notes"] == before["notes"]
+        normal = [payload for payload in calls if payload.get("tools")]
+        assert len(normal) == 1
+        assert f'"status": "{"superseded" if amend else "needs_agent_revision"}"' in json.dumps(normal[0]).replace('\\"', '"')
+        assert store.get("job", job["id"])["attempts"] == len(calls)
         assert store.get("job", job["id"])["active_seconds"] >= 17
         assert len([e for e in store.events(job["id"]) if e["type"] == "context_update_settled"]) == 1
     finally:
@@ -80,7 +82,7 @@ def test_capacity_block_checkpoints_wait_or_supersession_and_reopens(setup, prot
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
-@pytest.mark.parametrize("status", ["rejected", "superseded"])
+@pytest.mark.parametrize("status", ["needs_agent_revision", "superseded"])
 def test_committed_outcome_checkpoints_even_when_feedback_cannot_fit(setup, protocol, status):
     store, job, before, state, runtime = pending(setup, protocol)
     state = compact(runtime, job, state)
@@ -91,19 +93,18 @@ def test_committed_outcome_checkpoints_even_when_feedback_cannot_fit(setup, prot
     original = store.bytes(decision["context_feedback"], job["id"])
     # Inject the documented settlement-before-checkpoint gap, then reduce capacity.
     runtime.graph.update_state(config(job), state, as_node="tools")
-    old = runtime.context.normal(job, {**state, "context_waiting": None, "handoff": None})[1]
-    store.update_job(job["id"], route={**job["route"], "context_tokens": old["input_estimate"] + old["output_reserve"] + 10})
+    store.update_job(job["id"], route={**job["route"], "context_tokens": 4096, "output_tokens": 512})
     runtime.run(job["id"])
     projected = dict(runtime.graph.get_state(config(job)).values)
     assert projected["context_waiting"] is None and projected["context_feedback"] == decision["context_feedback"]
-    assert store.get("job", job["id"])["stop_reason"] == "capacity_blocked"
+    assert store.get("job", job["id"])["stop_reason"] == "feedback_capacity_blocked"
     assert all(projected[k] == before[k] for k in POLICY)
     runtime.close()
     runtime = offline_runtime(Store(store.root))
     try:
         runtime.run(job["id"])
         assert dict(runtime.graph.get_state(config(job)).values)["context_waiting"] is None
-        store.update_job(job["id"], route={**job["route"], "context_tokens": 500000})
+        store.update_job(job["id"], route=job["route"])
         step = prepare_step(runtime, projected)
         request = store.get("request", step["pending"])
         body = store.bytes(request["payload_ref"], job["id"])
@@ -127,13 +128,14 @@ def test_large_update_cannot_admit_itself_by_deferring_visible_evidence(setup, p
     runtime = offline_runtime(store)
     try:
         after = {**state, **runtime.tools(state)}
-        assert after["context_waiting"] == "result:pending:1"
+        assert after["context_waiting"] == "context-proposal:pending"
         assert all(after[k] == state[k] for k in POLICY)
         payload, _ = runtime.context.normal(job, after)
         control = outputs(payload)[-1]
         assert control["data"]["admission"]["applied"] is False
-        assert control["data"]["full_result_ref"] == after["context_waiting"]
+        assert control["data"]["full_result_ref"] == "result:pending:1"
         saved = store.bytes(after["context_waiting"], job["id"])
+        original_receipt = store.bytes("result:pending:1", job["id"])
         for _ in range(6):
             step = prepare_step(runtime, after)
             after.update(step)
@@ -145,7 +147,8 @@ def test_large_update_cannot_admit_itself_by_deferring_visible_evidence(setup, p
             after["pending"] = None
         assert after["context_waiting"] is None
         assert after["notes"] == intent["notes"] if kind == "notes" else after["pinned"] == [ref]
-        assert store.bytes("result:pending:1", job["id"]) == saved
+        assert store.bytes("context-proposal:pending", job["id"]) == saved
+        assert store.bytes("result:pending:1", job["id"]) == original_receipt
         assert store.json(ref, job["id"]) == {"text": "N" * 6000}
     finally:
         runtime.close()
@@ -211,6 +214,7 @@ def test_explicit_release_can_reduce_compaction_without_early_policy_application
         accepted(store, job, "pin-init", tool("context_update", {"pin": [{"ref": pin, "view": "full"}]}, "pin"))
         state["pending"] = "pin-init"
         state.update(runtime.tools(state))
+        state.update(runtime.coordinate(state))
         assert state["pinned"] == [pin] and not state["context_waiting"]
         payload, capacity = runtime.context.normal(job, state)
         assert capacity["fits"]
@@ -272,7 +276,7 @@ def test_outcome_reservation_covers_terminal_feedback_at_exact_allowance(setup, 
             "context_tokens": reserved["input_estimate"] + reserved["output_reserve"]})
         final = {**after, **prepare_step(runtime, after)}
         status = store.json(final["context_feedback"], job["id"])["summary"]["status"]
-        assert status == ("superseded" if amend else "rejected")
+        assert status == ("superseded" if amend else "needs_agent_revision")
         assert runtime.context.normal(job, final)[1]["fits"]
         assert store.get("request", final["pending"])["kind"] == "normal"
         assert all(final[k] == state[k] for k in POLICY)
@@ -318,20 +322,18 @@ def test_existing_full_settlement_replays_without_rewriting_original(setup, prot
     key = f"{job['id']}:{state['seq']}:{state['revision']}"
     ref = runtime.context_updates.ref(key)
     proposal = runtime.context.waiting(job["id"], state)
-    changes = {**proposal["policy"], "context_waiting": None, "context_feedback": ref}
-    store.blob(job["id"], "context_settlement", {"basis": runtime.context_updates.basis(state),
-        "feedback": {"status": "applied", "applied": True, "proposal_ref": state["context_waiting"],
-                     "receipt_ref": ref, "message": "D" * 20000}, "changes": changes}, key=ref)
+    runtime.context_updates.finish(job, state, key,
+        {"status": "applied", "applied": True, "proposal_ref": state["context_waiting"],
+         "receipt_ref": ref, "reason": "admitted", "message": "D" * 20000}, proposal["policy"])
     original = store.bytes(ref, job["id"])
     runtime.close()
-    store.update_job(job["id"], amendments=["New instruction after the historical decision."],
-                     route={**job["route"], "context_tokens": 500000})
+    store.update_job(job["id"], amendments=["New instruction after the historical decision."])
     runtime = offline_runtime(Store(store.root))
     try:
         final = {**state, **prepare_step(runtime, state)}
         assert not final["context_waiting"] and final["notes"] == proposal["policy"]["notes"]
         payload = store.bytes(store.get("request", final["pending"])["payload_ref"], job["id"])
-        assert b"recorded_outcome" in payload and ref.encode() in payload and b"DDDDDDDD" not in payload
+        assert b"applied" in payload and ref.encode() in payload and b"DDDDDDDD" not in payload
         assert b"New instruction after" in payload
         assert store.bytes(ref, job["id"]) == original
         assert store.get("job", job["id"])["attempts"] == 0

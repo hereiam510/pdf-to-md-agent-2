@@ -64,8 +64,8 @@ def test_history_pressure_queues_then_preflights_after_compaction(setup, protoco
     try:
         assert runtime.context.normal(job, state)[1]["fits"]
         after = {**state, **runtime.tools(state)}
-        assert after.get("context_waiting") == "result:pending:1"
-        receipt = store.bytes(after["context_waiting"], job["id"])
+        assert after.get("context_waiting") == "context-proposal:pending"
+        receipt = store.bytes("result:pending:1", job["id"])
         assert not json.loads(receipt)["admission"]["applied"]
         assert all(after[k] == state[k] for k in POLICY)
         after = compact(runtime, job, after)
@@ -104,7 +104,7 @@ def test_deferred_result_pointer_gap_keeps_exact_unapplied_plan(setup, monkeypat
     runtime = offline_runtime(Store(store.root))
     try:
         replay = {**state, **runtime.tools(state)}
-        assert replay["context_waiting"] == "result:pending:1"
+        assert replay["context_waiting"] == "context-proposal:pending"
         assert all(replay[k] == state[k] for k in POLICY)
         assert store.bytes("result:pending:1", job["id"]) == receipt
     finally:
@@ -112,19 +112,18 @@ def test_deferred_result_pointer_gap_keeps_exact_unapplied_plan(setup, monkeypat
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
-def test_settlement_blob_before_event_is_recovered_after_new_instructions(setup, monkeypatch, protocol):
+def test_committed_settlement_before_event_is_recovered_after_new_instructions(setup, monkeypatch, protocol):
     store, original = setup
     job, state, intent, ref = pressure(store, original, protocol)
     runtime = offline_runtime(store)
     after = compact(runtime, job, {**state, **runtime.tools(state)})
-    blob = store.blob
+    event = store.event_once
     with monkeypatch.context() as patch:
         def crash(owner, kind, *args, **kwargs):
-            result = blob(owner, kind, *args, **kwargs)
-            if kind == "context_settlement":
+            if kind == "context_update_settled":
                 raise RuntimeError("decision saved before event")
-            return result
-        patch.setattr(store, "blob", crash)
+            return event(owner, kind, *args, **kwargs)
+        patch.setattr(store, "event_once", crash)
         with pytest.raises(RuntimeError, match="decision saved"):
             prepare_step(runtime, after)
     runtime.close()
@@ -202,13 +201,13 @@ def test_ordered_chain_invalid_followup_and_amendment(setup, protocol, amend):
     accepted(store, job, "pending", tool("read_evidence", {"ref": ref}, "read"),
         tool("context_update", intent, "first"),
         tool("context_update", {"pin": [{"ref": ref, "view": "index"}], "notes": "Latest notes."}, "second"),
-        tool("context_update", {"pin": [{"ref": huge, "view": "raw"}], "notes": "Must not leak."}, "huge"))
+        tool("context_update", {"pin": [{"ref": huge, "view": "image"}], "notes": "Must not leak."}, "huge"))
     runtime = offline_runtime(store)
     try:
         after = {**state, **runtime.tools(state)}
-        assert after["context_waiting"] == "result:pending:2"
+        assert after["context_waiting"] == "context-proposal:pending"
         plan = runtime.context.waiting(job["id"], after)
-        assert plan["previous"] == "result:pending:1"
+        assert plan["operations"] == ["pending:1", "pending:2", "pending:3"] and not plan["valid"]
         assert plan["policy"]["notes"] == "Latest notes." and plan["policy"]["pinned"] == [ref]
         assert not store.get("operation", "pending:3")["ok"]
         assert all(after[k] == state[k] for k in POLICY)
@@ -216,13 +215,11 @@ def test_ordered_chain_invalid_followup_and_amendment(setup, protocol, amend):
         store.update_job(job["id"], route={**job["route"], "context_tokens": 500000})
         assert runtime.tools(state)["context_waiting"] == after["context_waiting"]
         store.update_job(job["id"], route=job["route"], amendments=["Use a different approach."] if amend else [])
-        if not amend:
-            after = compact(runtime, job, after)
-        resolved = {**after, **prepare_step(runtime, after)}
+        resolved = {**after, **runtime.coordinate(after)}
         assert not resolved["context_waiting"]
-        expected = state if amend else plan["policy"]
+        expected = state  # No partial context application after structural failure.
         assert all(resolved[k] == expected[k] for k in POLICY)
-        assert store.json(resolved["context_feedback"], job["id"])["feedback"]["status"] == ("superseded" if amend else "applied")
+        assert store.json(resolved["context_feedback"], job["id"])["feedback"]["status"] == ("superseded" if amend else "needs_agent_revision")
         assert store.bytes(huge, job["id"]) == b"X" * 65536
     finally:
         runtime.close()
@@ -256,7 +253,7 @@ def test_waiting_update_survives_multiple_progressive_compactions(setup, protoco
             assert passes <= 7  # Fixture-specific termination check, not a product quota.
         assert passes >= 2 and after["notes"] == intent["notes"]
         assert runtime.context.normal(job, after)[1]["fits"]
-        assert store.json(pending, job["id"])["admission"]["applied"] is False
+        assert store.json("result:pending:1", job["id"])["admission"]["applied"] is False
     finally:
         runtime.close()
 
@@ -282,7 +279,7 @@ def test_retry_rejects_when_policy_no_longer_fits_and_preserves_receipt(setup, p
         job = store.update_job(job["id"], route={**job["route"], "context_tokens": old_size + 4000})
         resolved = {**after, **prepare_step(runtime, after)}
         outcome = store.json(resolved["context_feedback"], job["id"])
-        assert outcome["feedback"]["status"] == "rejected"
+        assert outcome["feedback"]["status"] == "needs_agent_revision"
         assert all(resolved[k] == state[k] for k in POLICY)
         assert runtime.context.normal(job, resolved)[1]["fits"]
         store.update_job(job["id"], route={**job["route"], "context_tokens": 500000})

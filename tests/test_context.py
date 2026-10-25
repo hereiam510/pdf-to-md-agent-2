@@ -53,6 +53,7 @@ def test_unknown_image_cost_and_truly_oversized_pins_block_without_erasing(setup
         estimate({"messages": [{"content": [{"type": "image_url", "image_url": {"url": "data:image/png;base64,AAAA"}}]}]}, route)
     result, _ = history(store, job["id"], "old", "x" * 100000)
     state = {"history": ["old"], "revision": 1, "released": [], "pinned": [result["ref"]], "notes": "", "handoff": None}
-    with pytest.raises(StopRun, match="pinned objects exceed"):
+    with pytest.raises(StopRun) as failure:
         Context(store, Dispatcher(store)).compact_request(job, state)
+    assert failure.value.reason == "capacity_blocked"
     assert store.json(result["ref"], job["id"])["value"] == "x" * 100000

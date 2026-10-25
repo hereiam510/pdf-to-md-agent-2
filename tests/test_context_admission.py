@@ -13,7 +13,7 @@ import pytest
 from pdfmd.context import Context, estimate
 from pdfmd.documents import Documents
 from pdfmd.evidence import Evidence
-from pdfmd.nexus import Nexus, StopRun, parse_reply
+from pdfmd.nexus import Nexus, StopRun, instruction_basis, parse_reply
 from pdfmd.runtime import Runtime
 from pdfmd.schema import Route
 from pdfmd.storage import Store
@@ -34,7 +34,7 @@ def settle(store, job, key, *calls):
         value["output"].insert(0, {"type": "reasoning", "encrypted_content": "unchanged-opaque-item", "summary": []})
     reply = parse_reply(job["route"]["protocol"], json.dumps(value).encode())
     accepted = store.blob(job["id"], "accepted_response", reply)
-    store.put("request", key, job["id"], {"accepted_ref": accepted["ref"]})
+    store.put("request", key, job["id"], {"id": key, "accepted_ref": accepted["ref"], "instruction_basis": instruction_basis(job)})
     dispatcher = Dispatcher(store)
     return [dispatcher.execute(job["id"], f"{key}:{i}", c["name"], c["arguments"]) for i, c in enumerate(reply["calls"])]
 
@@ -177,8 +177,21 @@ def test_individually_unfit_pixels_keep_result_metadata_and_exact_original(setup
     assert result["image_ref"] == image_ref and "not included" in result["pixel_note"]
     assert store.bytes(image_ref, job["id"]) == original
     assert Evidence(store).read(job["id"], image_ref)["image_ref"] == image_ref
-    with pytest.raises(StopRun, match="pinned objects exceed"):
-        context.compact_request(job, {**state, "pinned": [image_ref]})
+    pinned = {**state, "pinned": [image_ref]}
+    # The actual text-only compaction can fit even though this pinned-pixel
+    # normal continuation is unreachable. The coordinator, not a mismatched
+    # normal guard inside the compaction builder, must stop that futile route.
+    compact_payload, compact_meta = context.compact_request(job, pinned)
+    assert compact_meta["capacity"]["fits"] and "data:image" not in json.dumps(compact_payload)
+    runtime = Runtime(store, Nexus(store, lambda _: pytest.fail("No inference for blocked input")))
+    try:
+        with pytest.raises(StopRun) as stopped:
+            runtime.prepare(pinned)
+        assert stopped.value.reason == "capacity_blocked"
+        assert not store.records("request", job["id"])[-1].get("payload_ref")
+    finally:
+        runtime.close()
+    assert store.bytes(image_ref, job["id"]) == original
 
 
 def test_large_authored_candidate_retains_exact_unicode_and_field_range_access(setup):
@@ -197,7 +210,7 @@ def test_large_authored_candidate_retains_exact_unicode_and_field_range_access(s
     assert evidence.read(job["id"], env["candidate_ref"])["value"] == args
     assert evidence.read(job["id"], env["candidate_ref"], json_pointer="/replace_blocks/0/markdown",
                          start=7, end=61)["value"] == markdown[7:61]
-    with pytest.raises(StopRun, match="pinned objects exceed"):
+    with pytest.raises(StopRun, match="No fitting compaction segment"):
         Context(store, Dispatcher(store)).compact_request(job, {**state, "pinned": [env["candidate_ref"]]})
 
 

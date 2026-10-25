@@ -1,4 +1,4 @@
-"""Capacity repair must preserve valid intent, not silently turn waiting into rejection."""
+"""Necessary-content excess commits revision need; history pressure remains retryable."""
 import base64
 from copy import deepcopy
 import json
@@ -50,6 +50,7 @@ def pending_capacity_case(store, original, protocol, scenario, selection="notes"
     if scenario == "release":
         old_pin = store.blob(job["id"], "evidence", {"text": "P" * 10000})["ref"]
         batch("pin-init", tool("context_update", {"pin": [{"ref": old_pin, "view": "full"}]}, "pin"))
+        state.update(runtime.coordinate(state))
         assert state["pinned"] == [old_pin] and not state.get("context_waiting")
     else:
         assert scenario == "handoff"
@@ -64,14 +65,14 @@ def pending_capacity_case(store, original, protocol, scenario, selection="notes"
     second = store.blob(job["id"], "evidence", {"text": "B" * 5000})["ref"]
     batch("pending", tool("read_evidence", {"ref": second}, "read"),
           tool("context_update", intent, "update"), admission_capacity=35000 if old_pin else 40000)
-    assert state["context_waiting"] == "result:pending:1"
+    assert state["context_waiting"] == "context-proposal:pending"
     return runtime, job, state
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
 @pytest.mark.parametrize("scenario", ["release", "handoff"])
 @pytest.mark.parametrize("selection", ["notes", "pin"])
-def test_unusable_fallback_waits_reopens_and_applies_exact_intent(setup, protocol, scenario, selection):
+def test_unusable_fallback_commits_revision_need_and_never_revives_on_restore(setup, protocol, scenario, selection):
     store, original = setup
     runtime, job, state = pending_capacity_case(store, original, protocol, scenario, selection)
     old = deepcopy(state)
@@ -83,18 +84,18 @@ def test_unusable_fallback_waits_reopens_and_applies_exact_intent(setup, protoco
     config = {"configurable": {"thread_id": job["id"]}}
     runtime.graph.update_state(config, state, as_node="tools")
     runtime.close()
-    low = 25000 if scenario == "release" else 19000
+    low = 4096
     store.update_job(job["id"], route={**job["route"], "context_tokens": low}, active_seconds=17, attempts=7)
     for _ in range(2):
         runtime = offline_runtime(Store(store.root))
         try:
             runtime.run(job["id"])
             saved = dict(runtime.graph.get_state(config).values)
-            assert saved["context_waiting"] == proposal_ref
+            assert saved["context_waiting"] is None
             assert all(saved[k] == old[k] for k in POLICY)
-            assert store.get("job", job["id"])["stop_reason"] == "capacity_blocked"
-            assert store.json(saved["context_check"], job["id"])["reason"] == "capacity_blocked"
-            assert not any(b["kind"] == "context_settlement" for b in store.records("blob", job["id"]))
+            assert store.get("job", job["id"])["stop_reason"] == "feedback_capacity_blocked"
+            assert store.json(saved["context_feedback"], job["id"])["summary"]["status"] == "needs_agent_revision"
+            assert store.get("context_disposition", proposal_ref)["status"] == "needs_agent_revision"
             assert store.get("job", job["id"])["attempts"] == 7
             assert store.bytes(proposal_ref, job["id"]) == proposal_bytes
             assert store.bytes(frozen["payload_ref"], job["id"]) == frozen_bytes
@@ -105,19 +106,25 @@ def test_unusable_fallback_waits_reopens_and_applies_exact_intent(setup, protoco
     def respond(request):
         payload = json.loads(request.content)
         seen.append(payload)
-        assert '"status": "applied"' in json.dumps(payload).replace('\\"', '"')
+        if not payload.get("tools"):
+            return httpx.Response(200, json=native(protocol, text=json.dumps(handoff(job,
+                current_state="Original content and the ineligible candidate remain available.",
+                unfinished_work=[], references=[], cautions=[]))))
+        assert '"status": "needs_agent_revision"' in json.dumps(payload).replace('\\"', '"')
         return httpx.Response(200, json=native(protocol, tool("report", {
             "state": "waiting", "message": "The local continuation check is complete."}, "report")))
-    store.update_job(job["id"], route={**job["route"], "context_tokens": 500000})
+    store.update_job(job["id"], route=job["route"])
     runtime = Runtime(Store(store.root), Nexus(store, lambda _: "offline", httpx.MockTransport(respond)))
     try:
         runtime.run(job["id"])
         final = dict(runtime.graph.get_state(config).values)
         assert final["context_waiting"] is None
-        assert all(final[k] == policy[k] for k in POLICY)
-        assert len(seen) == 1 and store.get("job", job["id"])["attempts"] == 8
+        assert all(final[k] == old[k] for k in POLICY)
+        assert len([p for p in seen if p.get("tools")]) == 1
+        assert store.get("job", job["id"])["attempts"] == 7 + len(seen)
         assert store.get("job", job["id"])["active_seconds"] >= 17
-        assert len([e for e in store.events(job["id"]) if e["type"] == "context_update_settled"]) == 1
+        assert len([b for b in store.records("blob", job["id"]) if b["kind"] == "context_settlement"
+                    and store.json(b["ref"], job["id"])["feedback"]["proposal_ref"] == proposal_ref]) == 1
         evidence = Evidence(store)
         assert evidence.read(job["id"], proposal_ref)["value"]["context_proposal"]["policy"] == policy
         assert base64.b64decode(evidence.read(job["id"], proposal_ref, view="raw")["data"]) == proposal_bytes
@@ -128,7 +135,7 @@ def test_unusable_fallback_waits_reopens_and_applies_exact_intent(setup, protoco
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
-def test_unfit_proposal_rejects_when_active_compaction_can_deliver_outcome(setup, protocol):
+def test_unfit_proposal_needs_revision_when_active_compaction_can_deliver_outcome(setup, protocol):
     store, original = setup
     runtime, job, state = pending_capacity_case(store, original, protocol, "handoff")
     try:
@@ -136,13 +143,13 @@ def test_unfit_proposal_rejects_when_active_compaction_can_deliver_outcome(setup
         assert not runtime.context.normal(job, state)[1]["fits"]
         decided = {**state, **runtime.coordinate(state)}
         receipt = store.bytes(decided["context_feedback"], job["id"])
-        assert store.json(decided["context_feedback"], job["id"])["summary"]["status"] == "rejected"
+        assert store.json(decided["context_feedback"], job["id"])["summary"]["status"] == "needs_agent_revision"
         assert decided["context_waiting"] is None and all(decided[k] == state[k] for k in POLICY)
         prepared = {**decided, **runtime.prepare(decided)}
         frozen = store.get("request", prepared["pending"])
         assert frozen["kind"] == "compaction" and frozen["meta"]["capacity"]["fits"]
         raw = store.bytes(frozen["payload_ref"], job["id"])
-        store.update_job(job["id"], route={**job["route"], "context_tokens": 500000})
+        store.update_job(job["id"], route={**job["route"], "context_tokens": 40000})
         # A historical decision and frozen input must not revive or be repriced.
         replayed = {**state, **runtime.coordinate(state)}
         assert replayed["context_waiting"] is None and replayed["context_feedback"] == decided["context_feedback"]

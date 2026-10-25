@@ -83,14 +83,14 @@ def run_retry_delivery(directory, route, protocol):
     runtime = Runtime(store, Nexus(store, lambda _: "local-fixture-only", httpx.MockTransport(respond)))
     config = {"configurable": {"thread_id": job["id"]}}
     runtime.graph.update_state(config, {**state_for(job, ["history"]), "pin_views": {}, "pending": None}, as_node="tools")
-    put = store.put
-    def stop_after_queue(kind, key, owner, value):
-        put(kind, key, owner, value)
-        if kind == "operation" and value.get("status") == "done" and value.get("tool") == "context_update":
+    wait = runtime.context_updates.wait
+    def stop_after_queue(*args, **kwargs):
+        result = wait(*args, **kwargs)
+        if args[2] == "compaction":
             store.update_job(job["id"], cancel_requested=True)
-    store.put = stop_after_queue
+        return result
+    runtime.context_updates.wait = stop_after_queue
     runtime.run(job["id"])
-    store.put = put
     waiting = dict(runtime.graph.get_state(config).values)
     assert waiting["context_waiting"] and waiting["notes"] != "Retain exact source wording, 25 mg and all three source figures."
     pending_bytes = store.bytes(waiting["context_waiting"], job["id"])
@@ -99,21 +99,19 @@ def run_retry_delivery(directory, route, protocol):
     runtime.close()
 
     store = Store(store.root)
-    store.update_job(job["id"], cancel_requested=False,
-                     route={**job["route"], "context_tokens": 4096, "output_tokens": 512})
+    store.update_job(job["id"], cancel_requested=False)
     blocked = offline_runtime(store)
-    blocked.run(job["id"])
     blocked_state = dict(blocked.graph.get_state(config).values)
     blocked.close()
     assert blocked_state["context_waiting"] == waiting["context_waiting"]
     check = store.json(blocked_state["context_check"], job["id"])
-    assert check["reason"] == "capacity_blocked"
+    assert check["reason"] == "compaction"
+    assert store.get("job", job["id"])["route"] == job["route"]
     assert store.get("job", job["id"])["attempts"] == before["attempts"]
     assert Documents(store).version(job["id"], original_version)["content"]["blocks"] == [original_text]
-    # Repair settings and reopen again. The existing proposal, not a model repeat,
+    # Reopen at unchanged capacity. The existing proposal, not a model repeat,
     # must resume through admission and finish the same source-led artifact.
     store = Store(store.root)
-    store.update_job(job["id"], route=job["route"])
     runtime = Runtime(store, Nexus(store, lambda _: "local-fixture-only", httpx.MockTransport(respond)))
     runtime.run(job["id"])
     final = dict(runtime.graph.get_state(config).values)
