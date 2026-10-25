@@ -4,6 +4,13 @@ This file records application changes and important validation limits. The entri
 
 ## Unreleased
 
+### 2026-10-25 — Capacity waiting and projection estimates
+
+- Retain already saved proposals when a capacity reduction makes the actual active fallback unusable, including pending releases and oversized previous handoffs.
+- Preview the fallback's normal/compaction input and bounded rejection outcome before a capacity rejection; retain legitimate rejection, supersession and frozen-input replay.
+- Keep short arguments/results inline when replacing them with references increases the measured native input. Do not defer a fitting neighbour because of an inflated scaffold.
+- Preserve same-batch settlement, original receipts, full/raw/field/range reads and consumed work. Dual-protocol regression and delivery checks are recorded in CURRENT_STATE; no Nexus call or release build is included.
+
 ### 2026-10-25 — Proposal validity, admission and outcome delivery
 
 - Distinguish retryable capacity waits, immutable terminal outcomes and outcome delivery; checkpoint coordination before request preparation.

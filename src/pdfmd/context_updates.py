@@ -80,16 +80,21 @@ class ContextUpdates:
             feedback["additional_deferrals"] = capacity["additional_deferrals"]
             if capacity["fits"] and not capacity["additional_deferrals"]:
                 return self.finish(job, state, key, feedback, policy)
-            # Required active content can be temporarily unusable after settings
-            # change. Retain valid intent; a successful reducing update above can
-            # still repair it without first making the old input fit.
-            active_core = self.context.normal(job, {**self.context.compaction_state(job, state), "history": [], "handoff": None})[1]
-            if not active_core["fits"]:
-                return self.wait(job, state, "capacity_blocked", "Active required content exceeds capacity. Pending intent is retained; "
-                                 "retry after correcting route capacity or providing a replacement instruction.", capacity=active_core)
             core = preview.normal(job, {**candidate, "history": [], "handoff": None})[1]
             if not core["fits"]:
+                # Capacity rejection abandons the pending chain. Its releases
+                # cannot be borrowed to prove that the remaining active policy
+                # can run. Measure that actual fallback, including the proposed
+                # rejection envelope, without committing a decision first.
+                fallback = {**state, "context_waiting": None}
+                rejected = Context(self.store, self.context.dispatcher,
+                    update_feedback=outcome("rejected", state["context_waiting"], self.ref(key), "proposed_capacity"))
+                if not rejected.normal(job, fallback)[1]["fits"]:
+                    rejected.compact_request(job, fallback)
                 return self.reject(job, state, key, "The proposed required content exceeds current capacity.", capacity=core)
+            # A feasible proposal may use its explicit releases for compaction.
+            # Neither this transient view nor a stripped required core proves
+            # that an unfitting proposal can safely be discarded.
             self.context.compact_request(job, state)
         except StopRun as exc:
             return self.wait(job, state, exc.reason, str(exc))

@@ -41,6 +41,7 @@ Read [the working agreement](AGENTS.md). Read [current state](docs/CURRENT_STATE
 | Owner | What it establishes |
 | --- | --- |
 | [Product requirements](docs/PRODUCT_REQUIREMENTS.md) | User outcomes, fidelity, autonomy and observable acceptance |
+| [Product phase plan](docs/PHASE_PLAN.md) | Delivery stages, completion conditions, existing milestone anchors and proposed next work |
 | [Architecture](docs/ARCHITECTURE.md) | Settled responsibilities and the preferred implementation baseline |
 | [Contracts](docs/CONTRACTS.md) | Document, context and recovery boundaries and the implemented first-version schemas |
 | [Decisions](docs/DECISIONS.md) | Effective choices, rationale and consequential alternatives |
@@ -79,7 +80,7 @@ The Phase 3 closeout distinguishes stencil coverage from page appearance. The ag
 
 Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](docs/REVIEW_HANDOFF.md) maps the changes and review evidence. The three accepted follow-up phases and the Phase 3 closeout are implemented. [Current state](docs/CURRENT_STATE.md#review-follow-up-progress) records checks and limitations separately from plan acceptance and release.
 
-History-pressure context updates are now retained as inactive proposals. The app compacts under the active policy and retries complete-input preflight before applying the composed update. The original receipt stays unchanged and a separate outcome reports application, rejection or supersession by new instructions. Saved proposals survive reopen without resetting budgets or changing frozen requests. See [the context contract](docs/CONTRACTS.md#q2-context-transitions) and [current evidence](docs/CURRENT_STATE.md#history-pressure-context-update-coordination).
+History-pressure context updates are retained as inactive proposals. Complete-input preflight applies the composed update when it fits, with compaction first when needed. Capacity rejection checks that the actual active policy can continue, without borrowing releases from a rejected proposal; temporary blocks retain pending intent through capacity repair and reopen. Short evidence arguments remain inline when references would cost more. Original receipts, complete access, budgets and frozen requests are preserved. See [the context contract](docs/CONTRACTS.md#q2-context-transitions) and [current evidence](docs/CURRENT_STATE.md#capacity-waiting-and-projection-estimates).
 
 ## Document checks
 

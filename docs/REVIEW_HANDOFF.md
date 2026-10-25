@@ -1,6 +1,6 @@
 # History-pressure context-update review handoff
 
-The current target is proposal validity, admission and outcome-delivery coordination over `d32e6e6`. Temporary waiting, immutable terminal decisions and the ability to send their feedback are distinct. Coordination checkpoints before request preparation; complete-input admission, explicit release projection and final-handoff checks preserve agent choice and useful work. [CURRENT_STATE](CURRENT_STATE.md#proposal-validity-admission-and-outcome-delivery) owns evidence and limits; [Q2](CONTRACTS.md#q2-context-transitions) owns behavior. No Nexus/model call, dependency upgrade, export portability, OCR recovery, Alpha or packaging work is included.
+The current target is capacity-waiting classification and native projection estimates over `e7e30c0`, including the pre-existing phase-plan/navigation additions identified by the before manifest. Capacity rejection checks a usable actual-policy fallback without borrowing pending releases; short-reference substitutions must save measured input. Same-batch settlement, original receipts, frozen requests and consumption remain unchanged. [CURRENT_STATE](CURRENT_STATE.md#capacity-waiting-and-projection-estimates) owns evidence and limits; [Q2](CONTRACTS.md#q2-context-transitions) owns behavior. No Nexus/model call, dependency upgrade, export portability, OCR recovery, Alpha or packaging work is included.
 
 ## Product and revision scope
 
@@ -8,7 +8,8 @@ The user supplies a PDF and scope. The app runs its own agent through Nexus and 
 
 | Batch | Implemented behavior | Main review locations |
 | --- | --- | --- |
-| Current: validity, admission and outcome delivery | Durable retryable waits; independent settlement checkpoint; bounded control receipts and native-envelope reserve; no compulsory compaction or admission via extra unselected deferrals; explicit release projection and proposal-aware final handoff | `context_outcomes.py`, `context_updates.py`, `context.py`, `runtime.py:coordinate/prepare/run`, `tools.py`; `tests/test_context_lifecycle.py`, retry and delivery tests |
+| Current: capacity waiting and projection estimates | Distinguish actual active fallback from proposed/release-projected input; retain intent when no fallback normal/compaction request fits; avoid reference expansion that wrongly defers fitting neighbours | `context_updates.py:resolve`, `context.py:admit_group`; `tests/test_context_capacity_wait.py`, `test_context_capacity_delivery.py`, `tests/desktop/context-retry*` |
+| Retained: validity, admission and outcome delivery | Durable retryable waits; independent settlement checkpoint; bounded control receipts and native-envelope reserve; no compulsory compaction or admission via extra unselected deferrals; explicit release projection and proposal-aware final handoff | `context_outcomes.py`, `context_updates.py`, `context.py`, `runtime.py:coordinate/prepare/run`, `tools.py`; `tests/test_context_lifecycle.py`, retry and delivery tests |
 | Retained: history-pressure update coordination | Save inactive proposal chains, compose subsequent valid intent in call order, retry after rolling compaction, atomically apply only fitting input, retain old policy on failure, supersede unsettled intent after amendments, replay committed settlements before advancing frozen boundaries | `src/pdfmd/context_updates.py`, `context.py:preflight/feedback`, `runtime.py:prepare/tools/resume_pending`; `tests/test_context_retry.py`, `test_context_retry_delivery.py`, `tests/desktop/context-retry*` |
 | Retained Phase 3 closeout | Coverage-only stencil component, agent-selected occurrence display and provenance; index/image/full/raw pins with atomic preflight/replay | `evidence.py:extract_image/_render_page`, `context.py:policy/preflight/pin_view/group`, `runtime.py:tools`, `tools.py:dispatch`; `tests/test_stencil_pins.py`, `tests/desktop/stencil-pins*` |
 | Retained Phase 3: PDF coordinates and images | Unrotated region contract, affine pixel mapping, display assets and original streams, image/mask provenance in saved/exported versions | `src/pdfmd/evidence.py`, `documents.py`, tool descriptions; `tests/test_pdf_delivery.py`, `tests/fixtures/pdf/`, `tests/desktop/pdf-delivery*` |
@@ -25,7 +26,20 @@ Exact contracts are in [Q1–Q3](CONTRACTS.md#implemented-first-version-contract
 
 ## Evidence and independent reproduction
 
-Use **`.local/review-2026-10-25-context-lifecycle.zip`** for this increment. It contains full source/docs/tests/locks, the exact before-source, incremental patch, readable review files, hashes, local test logs and both-protocol source/store/ZIP and actual-renderer evidence. The package verifier checks hashes, reconstructs the patch and inspects saved/reopened/exported contents. It excludes credentials, private inputs, provider stores, dependencies and release artifacts.
+Use **`.local/review-2026-10-25-context-capacity-wait.zip`** for the current correction. Its complete source includes the integrated phase plan, source/tests/locks and maintained guides; it excludes private inputs, credentials, root review scratch, dependencies and release builds. `before-source.zip` preserves the exact 613-file starting tree; the incremental patch isolates this batch from those pre-existing documentation changes. A separate base-commit patch includes their integration. The package manifest and verifier identify exact bytes and run boundaries.
+
+Review these questions against product behavior, not only implementation conformance:
+
+- Can saved release-plus-notes/full-pin proposals wait when both actual active and proposed required inputs exceed reduced capacity, even though a release-only view fits?
+- Does a large handoff with no fitting compaction input preserve pending intent? After settings repair and reopen, does the exact proposal apply once, with unchanged originals, historical receipts and consumed work?
+- Does a genuinely unusable proposal still reject when the active policy can continue, including through compaction? Do superseded/rejected results stay terminal and frozen requests retain their original route/payload?
+- Does the actual native input retain a fitting 1KB result beside a deferred 200KB result with short arguments? Does compaction retain its distinct aggregate-selection rule without silently changing pins or source access?
+
+Run `python -m pytest`, `pnpm build`, `pnpm exec playwright test tests/desktop/context-retry.spec.ts` and `python tools/check_docs.py` with the pinned environment. The desktop file covers both protocols and three cases: retained history compaction, pending release, and unavailable large-handoff compaction. All responses are in-memory scripted fixtures. CURRENT_STATE reports final results and distinguishes source/asset checks and actual renderers from real-model fidelity.
+
+### Preceding lifecycle evidence
+
+The preserved **`.local/review-2026-10-25-context-lifecycle.zip`** contains the preceding increment's full source/docs/tests/locks, exact before-source, incremental patch, readable review files, hashes, local test logs and both-protocol source/store/ZIP and actual-renderer evidence. Its verifier checks hashes, reconstructs the patch and inspects saved/reopened/exported contents. It excludes credentials, private inputs, provider stores, dependencies and release artifacts. The subsequent review corrected the claim that all capacity-wait branches were covered; the original evidence remains valid for its exercised cases.
 
 Review these current boundaries:
 
@@ -157,6 +171,8 @@ The final-handoff reproduction used an input budget of 63,488 estimate units. Re
 The PDF reproduction used installed PyMuPDF 2.0 / MuPDF 1.28.5 and Electron 45.0.0 / Chromium 156.0.8078.48. [PyMuPDF's coordinate rules](https://pymupdf.readthedocs.io/en/latest/page.html#modifying-pages) explain the unrotated extraction versus rotated rectangle distinction; [supported image outputs](https://pymupdf.readthedocs.io/en/latest/pixmap.html#supported-output-image-formats) explain the CMYK PNG failure. Saved/exported HTML, not only file hashes, established the JPX display failure. The CMYK JPEG changed from 5,358 to 5,842 bytes with different quantization tables; the raw original remained in the source PDF. The review did not quantify perceptual color error.
 
 ## Accepted three-phase follow-up
+
+These numbered phases retain their existing scope and evidence. The [product phase plan](PHASE_PLAN.md) links their completion anchors and proposes the broader delivery route using stages A-E; it does not renumber these phases or authorize new work.
 
 Use this sequence and these acceptance conditions as the development decision basis. These are follow-up phases, not the completed editing/continuation batches numbered above. Actual implementation status belongs in CURRENT_STATE. No backward compatibility is required. Choose local fixes or responsible-module refactoring by correctness, autonomy, fidelity and maintenance cost; current evidence does not require a framework replacement or establish that a few lines suffice.
 

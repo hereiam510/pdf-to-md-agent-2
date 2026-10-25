@@ -5,10 +5,11 @@ import { pathToFileURL } from 'node:url'
 import { execFileSync } from 'node:child_process'
 
 for (const protocol of ['chat_completions', 'responses']) {
-  test(`deferred context update delivers through save, reopen and export: ${protocol}`, async () => {
-    const directory = await fs.mkdtemp(resolve(`.local/context-retry-${protocol}-`))
+ for (const scenario of ['history', 'release', 'handoff']) {
+  test(`deferred context update delivers through save, reopen and export: ${protocol} ${scenario}`, async () => {
+    const directory = await fs.mkdtemp(resolve(`.local/context-capacity-${scenario}-${protocol}-`))
     const run = (mode: string) => JSON.parse(execFileSync(resolve('.venv/Scripts/python.exe'),
-      ['-X', 'utf8', 'tests/desktop/context-retry-fixture.py', mode, directory, protocol],
+      ['-X', 'utf8', 'tests/desktop/context-retry-fixture.py', mode, directory, protocol, scenario],
       { windowsHide: true, encoding: 'utf-8' }))
     const fixture = run('prepare')
     const launch = () => electron.launch({ args: [resolve('out/main/index.js')], env: { ...process.env,
@@ -56,4 +57,5 @@ for (const protocol of ['chat_completions', 'responses']) {
     } finally { await browser.close() }
     await fs.writeFile(join(directory, 'renderer-verification.json'), JSON.stringify({ observed, live_model_calls: 0 }, null, 2))
   })
+ }
 }

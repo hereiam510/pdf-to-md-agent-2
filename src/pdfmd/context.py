@@ -413,7 +413,8 @@ class Context:
                     *, images: bool = True, aggregate: bool = False) -> tuple[list[dict], set[str]]:
         """Project exact objects against the caller's actual input envelope."""
         group = self.group(job, request, state, images=images)
-        if measure(group)["fits"]:
+        original = measure(group)
+        if original["fits"]:
             return group, set()
         refs = self.batch_refs(job, request) - set(state.get("pinned", [])) - set(state.get("released", []))
         reply = self.store.json(self.store.get("request", request, job=job["id"])["accepted_ref"], job["id"])
@@ -422,6 +423,11 @@ class Context:
                 refs -= {f"candidate:{request}:{index}", f"result:{request}:{index}"}
         def projected(deferred):
             return self.group(job, request, state, images=images, deferred=deferred)
+        # References can be larger than short arguments/results. Such replacements
+        # cannot form a minimum scaffold: they would falsely exclude fitting
+        # neighbours. Charge the actual protocol envelope, including escaping and
+        # pixel metadata, rather than comparing unencoded body lengths.
+        refs = {ref for ref in refs if measure(projected({ref}))["input_estimate"] < original["input_estimate"]}
         deferred = set()
         if measure(projected(refs))["fits"]:
             # Normal admission never evicts individually fitting bodies merely
