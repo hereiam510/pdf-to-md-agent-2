@@ -56,6 +56,9 @@ COMPACT = """Prepare a self-sufficient continuation handoff for this PDF convers
 Preserve effective requirements, current saved state, unfinished work, unresolved dependencies, exact references, and cautions.
 Distinguish completed work from plans. Do not infer source fidelity from storage or page counts.
 Deferred bodies and image references were not read in this request. Keep their unresolved relevance explicit.
+pixels_delivered describes this request only. This text-only projection does not establish whether an image
+was supplied in earlier normal requests. Do not turn absent pixels here into a claim of past access failure
+or erase recorded visual findings; preserve their source references and uncertainty without certifying them.
 Include required facts from the previous handoff. The replacement must not depend on the previous handoff remaining in context.
 Return only a JSON object with these keys: task, current_state, unfinished_work, dependencies, references, cautions.
 Each value must be a string or an array of strings. Preserve useful exact references without copying their full bodies.
@@ -88,16 +91,18 @@ def estimate(payload: dict, route: Route) -> dict:
 
 class Context:
     def __init__(self, store: Store, dispatcher: Dispatcher, *, envelopes: dict | None = None,
-                 update_feedback: dict | None = None):
+                 update_feedback: dict | None = None, handoff_preview: dict | None = None):
         self.store, self.dispatcher = store, dispatcher
         # Read-only projections used during preflight; never persisted as history.
         self.envelopes = envelopes or {}
         self.update_feedback = update_feedback
+        self.handoff_preview = handoff_preview
 
     def prospective(self, job: dict, state: dict, key: str | None = None) -> "Context":
         """Preview the exact applied outcome at the next local decision boundary."""
         key = key or f"{job['id']}:{state['seq']}:{state['revision']}"
         return Context(self.store, self.dispatcher, envelopes=self.envelopes,
+                       handoff_preview=self.handoff_preview,
                        update_feedback=outcome("applied", state["context_waiting"],
                                                f"context-settlement:{key}", "admitted"))
 
@@ -264,6 +269,8 @@ class Context:
                            "context_candidate_ref": state.get("context_latest") or state.get("context_waiting")}, ensure_ascii=False)
 
     def handoff(self, job: str, state: dict):
+        if self.handoff_preview is not None:
+            return self.handoff_preview
         ref = state.get("handoff")
         if not ref:
             return None
@@ -426,6 +433,10 @@ class Context:
                 envelope["pixels_delivered"] = allowed
                 if not allowed:
                     envelope["pixel_note"] = "Saved pixels are not included in this input. They remain available by exact reference."
+                    if not images:
+                        envelope["pixel_delivery_scope"] = "current_request_only"
+                        envelope["prior_pixel_delivery"] = "not_determined_by_this_projection"
+                        envelope["pixel_note"] += " This text-only projection establishes neither past non-delivery nor model understanding."
                 elif not in_pins:
                     image_parts += self.pixels(job, image_ref, f"Pixels for tool call {call['id']}; saved reference {image_ref}.")
             text = json.dumps(envelope, ensure_ascii=False)
@@ -543,6 +554,56 @@ class Context:
                 "pinned": [ref for ref in state.get("pinned", []) if ref not in released],
                 "pin_views": {ref: views for ref, views in state.get("pin_views", {}).items() if ref not in released}}
 
+    def handoff_target(self, job: dict, state: dict) -> dict:
+        """Measure the actual continuation policy/outcome, not the COMPACT input."""
+        capacity = self.normal(job, self.compaction_state(job, state))[1]
+        proposal = self.waiting(job["id"], state)
+        if proposal and proposal["instruction_basis"] == instruction_basis(job):
+            preview = self.prospective(job, state)
+            target = {**state, "context_waiting": None}
+            core = preview.required(job, {**target, **proposal["policy"]})
+            if not core["proved_excess"]:
+                capacity = preview.admission(job, target, proposal["policy"])
+                capacity["fits"] &= not capacity["additional_deferrals"]
+        return capacity
+
+    def retention_target(self, job: dict, state: dict, covered: list[str], deferred: list[str]) -> dict | None:
+        """Prefer the latest result batch, without retaining arbitrary older suffixes."""
+        remaining = state["history"][len(covered):]
+        if len(remaining) != 1:
+            return None
+        request_id = remaining[0]
+        reply = self.store.json(self.store.get("request", request_id, job=job["id"])["accepted_ref"], job["id"])
+        results = set()
+        for index, call in enumerate(reply["calls"]):
+            if call["name"] == "context_update":
+                continue
+            env = self.envelope(job["id"], f"{request_id}:{index}")
+            results.add(env["result_ref"])
+            if isinstance(env["data"], dict) and env["data"].get("image_ref"):
+                results.add(env["data"]["image_ref"])
+        route = Route.model_validate(job["route"])
+        def measure(group):
+            return estimate(make_payload(route, SYSTEM, group, definitions(self.dispatcher.scripts)), route)
+        if not results.intersection(self.profitable_refs(job, request_id, state, measure)):
+            return None
+        previous = self.handoff(job["id"], state)
+        known = previous["content"] if previous else {
+            "task": job["scope"], "current_state": f"Saved version: {job['head']}. Continue from retained results.",
+            "unfinished_work": [], "dependencies": [], "references": [job["source_ref"]], "cautions": []}
+        # This is known framing/content, not an assumed zero-cost summary or a
+        # claim that its unknown semantic replacement will necessarily fit.
+        projected = {"content": known,
+                     "archive_ref": f"handoff:{job['id']}:{state['seq']}:{state['revision']}",
+                     "deferred_requests": deferred,
+                     "original_refs": [self.store.get("request", key, job=job["id"])["accepted_ref"] for key in covered]}
+        preview = Context(self.store, self.dispatcher, envelopes=self.envelopes,
+                          update_feedback=self.update_feedback, handoff_preview=projected)
+        target = preview.handoff_target(job, {**state, "history": remaining})
+        if target["fits"] and not target["projection"]["deferred"]:
+            return {"history": remaining, "deferred": target["projection"]["deferred"]}
+        return None
+
     def compact_request(self, job: dict, state: dict) -> tuple[dict, dict]:
         route = Route.model_validate(job["route"])
         active = state
@@ -577,8 +638,17 @@ class Context:
         normal_deferred = {item["request"]: set(item["refs"])
                            for item in self.normal(job, state)[1]["projection"]["deferred"]}
         chunks, covered, deferred, projection = [], [], [], []
+        retained = None
         has_body_savings = False
         for request_id in state.get("history", []):
+            if chunks and has_body_savings:
+                # Prefer releasing an older useful prefix over swallowing new
+                # results merely because the text-only COMPACT input fits them.
+                # Known handoff framing/content selects a target, not permission
+                # to send. Acceptance checks the actual replacement below.
+                retained = self.retention_target(job, active, covered, deferred)
+                if retained:
+                    break
             request = self.store.get("request", request_id, job=job["id"])
             def entry(messages):
                 return {"request": request_id, "accepted_ref": request["accepted_ref"], "messages": messages}
@@ -619,6 +689,7 @@ class Context:
             if estimate(with_candidate, route)["fits"]:
                 chosen = with_candidate
         return chosen, {"covered": covered, "revision": state["revision"], "deferred": deferred, "projection": projection,
+                        "retained_normal_target": retained,
                         "proposal_ref": active.get("context_waiting"),
                         "capacity": estimate(chosen, route)}
 
@@ -660,17 +731,16 @@ class Context:
         if after >= before:
             raise HandoffRejected(f"The handoff did not reduce the complete assembled input (estimated {before} before, {after} after). "
                                   "Keep the continuation facts and exact references more concise. Previous context is preserved.")
-        final_capacity = capacity
-        proposal = self.waiting(job["id"], state)
-        if proposal and proposal["instruction_basis"] == instruction_basis(job):
-            # The last summary must leave room for a feasible pending policy and
-            # its outcome. Never force an irreducibly oversized policy into use.
-            preview = self.prospective(job, candidate)
-            target = {**candidate, "context_waiting": None}
-            core = preview.required(job, {**target, **proposal["policy"]})
-            if not core["proved_excess"]:
-                final_capacity = preview.admission(job, target, proposal["policy"])
-                final_capacity["fits"] &= not final_capacity["additional_deferrals"]
+        final_capacity = self.handoff_target(job, candidate)
+        retained = meta.get("retained_normal_target")
+        if retained:
+            if candidate["history"] != retained["history"]:
+                raise ConflictError("The handoff no longer matches its retained normal history target.")
+            prior = {(item["request"], ref) for item in retained["deferred"] for ref in item["refs"]}
+            current = {(item["request"], ref) for item in final_capacity["projection"]["deferred"] for ref in item["refs"]}
+            if not final_capacity["fits"] or current - prior:
+                raise HandoffRejected("The handoff does not fit the retained normal continuation without additional evidence deferral. "
+                                      "Keep the handoff more concise; retained results and original history remain available.")
         if not candidate["history"] and not final_capacity["fits"]:
             capacity = final_capacity
             after = capacity["input_estimate"]

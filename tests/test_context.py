@@ -28,7 +28,7 @@ def test_rolling_handoff_preserves_uncovered_history_and_originals(setup):
     context = Context(store, Dispatcher(store))
     source, _ = history(store, job["id"], "old", "original\u03bc" * 14000, extra_texts=["a" * 30000, "b" * 30000])
     history(store, job["id"], "tail", "recent fact" * 5300)
-    state = {"job": job["id"], "history": ["old", "tail"], "revision": 2, "released": [], "pinned": [], "notes": "Cross-page dependency remains unresolved.", "handoff": None}
+    state = {"job": job["id"], "seq": 0, "history": ["old", "tail"], "revision": 2, "released": [], "pinned": [], "notes": "Cross-page dependency remains unresolved.", "handoff": None}
     assert not context.normal(job, state)[1]["fits"]
     payload, meta = context.compact_request(job, state)
     assert estimate(payload, Route.model_validate(job["route"]))["fits"]

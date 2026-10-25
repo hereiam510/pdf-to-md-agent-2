@@ -16,6 +16,7 @@ from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
 from test_context_admission import outputs
 from test_context_capacity_wait import pending_capacity_case
+from test_context_progress import compact_body
 from test_context_retry import POLICY
 from test_response_repairs import handoff, native
 from test_runtime import tool
@@ -94,9 +95,16 @@ def run_capacity_delivery(directory, route, protocol, scenario):
         if not payload.get("tools"):
             summaries.append(payload)
             retained_metadata = visible_image_metadata(payload)
+            references = [json.dumps({"image_metadata": image}) for image in retained_metadata]
+            if compact_body(payload).get("repair_feedback"):
+                # Follow the actual correction request instead of repeating the
+                # same oversized summary. Exact refs/paths remain in the handoff;
+                # original metadata and the retained normal results stay intact.
+                references = [json.dumps({key: image[key] for key in ("image_ref", "asset_path") if key in image})
+                              for image in retained_metadata]
             return httpx.Response(200, json=native(protocol, text=json.dumps(handoff(job,
                 current_state="Saved text and source images remain available; complete the source page.",
-                unfinished_work=[], references=[json.dumps({"image_metadata": image}) for image in retained_metadata],
+                unfinished_work=[], references=references,
                 cautions=[]))))
         normal.append(payload)
         if len(normal) == 1:

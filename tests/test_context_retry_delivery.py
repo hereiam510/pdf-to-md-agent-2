@@ -15,7 +15,7 @@ from pdfmd.runtime import Runtime
 from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
 from test_context_admission import outputs, state_for
-from test_context_progress import read_batch
+from test_context_progress import compact_body, read_batch
 from test_response_repairs import handoff, native
 from test_runtime import tool
 from test_stencil_pins import TEXT, fixture_job, verify_delivery, offline_runtime
@@ -48,7 +48,14 @@ def run_retry_delivery(directory, route, protocol):
         seen.append(payload)
         if not payload.get("tools"):
             summaries.append(payload)
-            assert "pending_context_update" in json.dumps(payload)
+            body = compact_body(payload)
+            if len(normal) < 2:
+                assert body["pending_context_update"]["applied"] is False
+            else:
+                # Later source results can require another summary after the
+                # proposal has applied; its exact selected notes must survive.
+                assert "pending_context_update" not in body
+                assert body["current_anchor"]["continuation_notes"] == "Retain exact source wording, 25 mg and all three source figures."
             # Deliberately omit pending notes/pins: the app must retain their exact intent.
             answer = handoff(job, current_state="Saved draft retained; finish the source page.",
                              unfinished_work=[], references=[], cautions=[])

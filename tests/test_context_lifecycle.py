@@ -86,7 +86,9 @@ def test_capacity_block_checkpoints_revision_need_or_supersession_and_reopens(se
 def test_committed_outcome_checkpoints_even_when_feedback_cannot_fit(setup, protocol, status):
     store, job, before, state, runtime = pending(setup, protocol)
     state = compact(runtime, job, state)
-    while state["history"]:
+    # A fitting continuation may retain fresh results. Do not force another
+    # summary merely to empty history before injecting the commit/checkpoint gap.
+    while not runtime.context.normal(job, state)[1]["fits"]:
         state = compact(runtime, job, state)
     key = f"{job['id']}:{state['seq']}:{state['revision']}"
     decision = runtime.context_updates.reject(job, state, key, "Complete diagnostics: " + "D" * 20000, status=status)
