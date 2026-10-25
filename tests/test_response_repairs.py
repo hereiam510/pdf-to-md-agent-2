@@ -43,6 +43,8 @@ def test_text_only_recovers_to_complete_saved_reopened_exported_source(setup, tm
                    if m.get("role") == "tool" or m.get("type") == "function_call_output"]
         if len(seen) == 1:
             value = native(protocol, text="I will inspect the source next.")
+            if protocol == "chat_completions":
+                value["choices"][0]["message"]["tool_calls"] = None
         elif len(seen) == 2:
             assert "Application continuation feedback" in json.dumps(payload)
             value = native(protocol, tool("inspect_pdf", {"pages": [1], "mode": "text"}))
@@ -253,7 +255,9 @@ def test_applied_handoff_before_checkpoint_has_stable_identity_and_one_event(set
         if json.loads(request.content).get("tools"):
             return converter.handle_request(request)
         compactions.append(request)
-        return httpx.Response(200, json=response(text=json.dumps(handoff(job))))
+        value = response(text=json.dumps(handoff(job)))
+        value["choices"][0]["message"]["tool_calls"] = None
+        return httpx.Response(200, json=value)
     service = Nexus(store, lambda _: "fixture", httpx.MockTransport(reply))
     runtime = Runtime(store, service)
     seed_compaction(runtime, store, job)

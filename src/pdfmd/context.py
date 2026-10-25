@@ -237,7 +237,7 @@ class Context:
         for group in groups:
             context_calls = set()
             for message in group:
-                context_calls.update(call["id"] for call in message.get("tool_calls", [])
+                context_calls.update(call["id"] for call in (message.get("tool_calls") or [])
                                      if call.get("function", {}).get("name") == "context_update")
                 if message.get("type") == "function_call" and message.get("name") == "context_update":
                     context_calls.add(message["call_id"])

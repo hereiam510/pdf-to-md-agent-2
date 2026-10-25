@@ -51,7 +51,12 @@ def parse_reply(protocol: str, raw: bytes) -> dict:
         elif content is not None:
             raise ValueError("This route returned an unsupported assistant content format. The original is retained.")
         native = [message]
-        for call in message.get("tool_calls", []):
+        native_calls = message.get("tool_calls")
+        if native_calls is None:
+            native_calls = []
+        if not isinstance(native_calls, list):
+            raise ValueError("The assistant tool_calls field must be an array or null.")
+        for call in native_calls:
             if call.get("type") != "function":
                 raise ValueError("Only complete function tool calls can be executed.")
             calls.append({"id": call["id"], "name": call["function"]["name"], "arguments": call["function"]["arguments"]})

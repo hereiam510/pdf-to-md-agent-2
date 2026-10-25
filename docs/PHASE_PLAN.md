@@ -1,6 +1,6 @@
 # Product delivery phase plan
 
-Updated 2026-10-26, Asia/Hong_Kong (UTC+08:00). The capacity-waiting/projection baseline was `a484b9b`; `c1e6fcc` preserves the adopted design before implementation. The user subsequently authorized the complete context coordination capability. [CURRENT_STATE](CURRENT_STATE.md#complete-context-update-coordination) separates new implementation/verification from inherited results. Stages B-E remain recommendations, not provider-call or release authorization.
+Updated 2026-10-26, Asia/Hong_Kong (UTC+08:00). Complete coordination reached bounded local acceptance at `551ea9c`, after baseline `a484b9b` and design checkpoint `c1e6fcc`. The user subsequently authorized Stage B on the complete 14-page Nursing source and existing Nexus route, then removed the original run request/time ceiling. [CURRENT_STATE](CURRENT_STATE.md#stage-b-complete-nursing-input) records the exact scope, configuration, interventions and actual results. Stages C-E remain recommendations, not separate execution or release authorization.
 
 ## Ownership and intended outcome
 
@@ -42,7 +42,7 @@ Letters distinguish these product stages from the completed numbered follow-up p
 | Stage | Useful outcome | Status and ordering |
 | --- | --- | --- |
 | A. Close the current context coordination baseline | Long-task context changes have explicit, recoverable outcomes and a bounded acceptance conclusion | Complete for bounded local acceptance: four policies, CC-R1/2/3 and representative continuation/delivery paths verified. Stage B remains separately authorized. |
-| B. Establish complete autonomous conversion on actual sources | The app's own agent completes agreed real PDF scopes and delivers verified saved/reopened/exported content | Recommended next product stage; source, route and finite live-call authorization remain to be selected. |
+| B. Establish complete autonomous conversion on actual sources | The app's own agent completes agreed real PDF scopes and delivers verified saved/reopened/exported content | In progress: complete Nursing 14-page excerpt through the existing Nexus route; source-led acceptance and intervention accounting remain distinct from a run reaching completion. |
 | C. Continue through ordinary interruptions | Selected recoverable network/local-operation failures no longer require avoidable manual reconstruction | Provisional; choose related increments from recorded gaps and Stage B observations. |
 | D. Make delivery usable outside the development checkout | Users install, reopen and export the selected version with working source assets in the declared target environment | Provisional; Windows first, with destination and installation acceptance defined before work. |
 | E. Improve provider choice and whole-task efficiency | Selected Nexus routes meet the same quality target with understood cost, latency and intervention tradeoffs | Conditional optimization, not a prerequisite for an initial useful Windows delivery. |

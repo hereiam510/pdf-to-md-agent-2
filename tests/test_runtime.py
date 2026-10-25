@@ -102,6 +102,35 @@ def test_responses_native_reasoning_and_duplicate_json_boundary():
         parse_reply("responses", json.dumps(native).encode())
 
 
+@pytest.mark.parametrize("shape", ["missing", "null", "empty"])
+def test_chat_text_reply_accepts_absent_tool_calls_without_rewriting_native(shape):
+    value = response(text="Preserve this exact handoff: 25 mg.")
+    message = value["choices"][0]["message"]
+    if shape == "missing":
+        message.pop("tool_calls")
+    elif shape == "null":
+        message["tool_calls"] = None
+    accepted = parse_reply("chat_completions", json.dumps(value).encode())
+    assert accepted["calls"] == []
+    assert accepted["text"] == message["content"]
+    assert accepted["native"] == [message]
+
+
+@pytest.mark.parametrize("calls", ["", {}, 0, False])
+def test_chat_nonlist_tool_calls_are_not_mistaken_for_no_calls(calls):
+    value = response(text="Do not accept a malformed call container.")
+    value["choices"][0]["message"]["tool_calls"] = calls
+    with pytest.raises(ValueError, match="tool_calls"):
+        parse_reply("chat_completions", json.dumps(value).encode())
+
+
+def test_text_only_native_history_does_not_hide_undelivered_context_outcome():
+    from pdfmd.context import Context
+    message = {"role": "assistant", "content": "Continuing.", "tool_calls": None}
+    assert not Context.outcome_in_groups([[message]], {"status": "needs_agent_revision"})
+    assert message["tool_calls"] is None
+
+
 def test_saved_accepted_reply_recovers_before_request_pointer_commit(setup, monkeypatch):
     store, job = setup
     calls = []
