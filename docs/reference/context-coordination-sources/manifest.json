@@ -1,0 +1,135 @@
+{
+  "recorded_at": "2026-10-25",
+  "timezone": "Asia/Hong_Kong (UTC+08:00)",
+  "baseline": "a484b9b2abf147d63d8bdecd2143430409fe9a53",
+  "purpose": "Verbatim inert review sources and existing local evidence; no tests rerun during import.",
+  "source_event_times": "Exact original discussion and test execution timestamps not established by this import; see INDEX.md.",
+  "files": [
+    {
+      "file": "review-01-capacity-wait.txt",
+      "source": "C:\\Users\\laichungling\\.codex\\attachments\\1bd15636-dac8-4338-b30a-4307aede8e1f\\Pasted text.txt",
+      "bytes": 26374,
+      "sha256": "b1371cc19c66ff62d25ead6d36d995d8d94d51b891cc35e9dcbf68b2dca8f8cc"
+    },
+    {
+      "file": "review-02-batch-tradeoffs.txt",
+      "source": "C:\\Users\\laichungling\\.codex\\attachments\\944c9202-dff7-41ad-b242-cef218eba54f\\Pasted text.txt",
+      "bytes": 13036,
+      "sha256": "68dc825d3da4b3c9454bcab7a239fff4c80333d107ad134014123677193b0ab9"
+    },
+    {
+      "file": "review-03-design-reconciliation.txt",
+      "source": "C:\\Users\\laichungling\\.codex\\attachments\\0d78bf96-3561-466e-bbad-68f1e57e22d0\\Pasted text.txt",
+      "bytes": 31616,
+      "sha256": "5edd7c35fce49a52ceca08391f587f0817f4716ecc56ff49cb155b084f0dafbb"
+    },
+    {
+      "file": "review-04-continuation-boundaries.txt",
+      "source": "C:\\Users\\laichungling\\.codex\\attachments\\f4b44593-a0f3-4e82-b4ed-0f0fd2ce7d34\\Pasted text.txt",
+      "bytes": 24111,
+      "sha256": "85d514fb765545fedf70ceaefa799a19965fd18b187d19642b7ec97149c4ef08"
+    },
+    {
+      "file": "review-05-disposition-closeout.txt",
+      "source": "C:\\Users\\laichungling\\.codex\\attachments\\f873d6a7-40bb-4673-9fe0-256fd8532e11\\Pasted text.txt",
+      "bytes": 12722,
+      "sha256": "14184666fb4a55d11ac06827ae1ce1d768dd116f77a86f3f13cd3ee3047645d1"
+    },
+    {
+      "file": "findings.json",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-capacity-rereview-e9976bec00c244d8b8db5beab54c4df4\\findings.json",
+      "bytes": 3913,
+      "sha256": "d1041285d36dfc0ba6df32ec88d6b5081096b6e3d5eb468f1166da186b7e85dc"
+    },
+    {
+      "file": "guard-control.json",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-capacity-rereview-e9976bec00c244d8b8db5beab54c4df4\\guard-control.json",
+      "bytes": 1345,
+      "sha256": "f9258960feaf33d9a319860e4aecdd3d82baa7b0cd755c9ea0c65dfb0baeb4d0"
+    },
+    {
+      "file": "savings.json",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-capacity-rereview-e9976bec00c244d8b8db5beab54c4df4\\savings.json",
+      "bytes": 1506,
+      "sha256": "710573eeaa4b86780a4e85b7a794682fc03d142847c9a54ea7ffe872c766fec1"
+    },
+    {
+      "file": "pytest.log",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-capacity-rereview-e9976bec00c244d8b8db5beab54c4df4\\pytest.log",
+      "bytes": 81,
+      "sha256": "9bc07732774655b1306379117070a4e5d9449f4160ea5819a88f6a1521eea5c9"
+    },
+    {
+      "file": "package.log",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-capacity-rereview-e9976bec00c244d8b8db5beab54c4df4\\package.log",
+      "bytes": 5631,
+      "sha256": "430db638156fa1af0a8847f2bb0849c6c9ce181a228a3b937ec374a05f4646f1"
+    },
+    {
+      "file": "reproduce.py.txt",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-capacity-rereview-e9976bec00c244d8b8db5beab54c4df4\\reproduce.py",
+      "bytes": 6849,
+      "sha256": "bab9fa4774bd0c86dba2edb16be60b7dd11fc2d73df586dae4a9861cdc8b4228"
+    },
+    {
+      "file": "guard-control.py.txt",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-capacity-rereview-e9976bec00c244d8b8db5beab54c4df4\\guard-control.py",
+      "bytes": 1744,
+      "sha256": "64eedcf2527c2529e53da2a96dd84a31da72fb19312acdea8f64ce005791fbe6"
+    },
+    {
+      "file": "savings.py.txt",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-capacity-rereview-e9976bec00c244d8b8db5beab54c4df4\\savings.py",
+      "bytes": 2844,
+      "sha256": "8eb346a77bdfa1d904f8e5bf04f7f9f499841aff6dddd039262e22e09b30125d"
+    },
+    {
+      "file": "baseline.json",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-context-capability-review-1knnknyt\\baseline.json",
+      "bytes": 192,
+      "sha256": "c8bb88363a0a633f79094034331ff8d425c408bab0ec3339c8d781da60a66a38"
+    },
+    {
+      "file": "adjacent-results.json",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-context-capability-review-1knnknyt\\adjacent-results.json",
+      "bytes": 3887,
+      "sha256": "6e139cf03bd581a44e2ad447f1bf3cf35f0d1723fc129f4e59010d1fddb03cca"
+    },
+    {
+      "file": "existing-tests.log",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-context-capability-review-1knnknyt\\existing-tests.log",
+      "bytes": 112,
+      "sha256": "ec627b7309cde9c4cdc216debd315f621a383271b368d06793fb39e62d832887"
+    },
+    {
+      "file": "adjacent.py.txt",
+      "source": "C:\\Users\\LAICHU~1\\AppData\\Local\\Temp\\pdfmd-context-capability-review-1knnknyt\\adjacent.py",
+      "bytes": 4878,
+      "sha256": "5442056ca3ccb80c3b8a37bd8832de2e695898233c452b0ceb606ff818dd7793"
+    },
+    {
+      "file": "review-06-policy-comparison.txt",
+      "source": "C:\\Users\\laichungling\\.codex\\attachments\\5e243f22-9e71-4da4-8517-3810a3cde11f\\Pasted text.txt",
+      "bytes": 29700,
+      "sha256": "25a71da02ccb7f6affa6ffd531e2916e3432112c075b822edd2b1fea235cdb47",
+      "recorded_at": "2026-10-25",
+      "source_event_time": "Original attachment time unknown; precedes D15 human selection."
+    },
+    {
+      "file": "review-07-required-capacity-options.txt",
+      "source": "C:\\Users\\laichungling\\.codex\\attachments\\59a95905-cb31-4f53-b923-dbb511d1ffa5\\Pasted text.txt",
+      "bytes": 28294,
+      "sha256": "887224a225072c421180176a28fc6fb52de9f19db4bd0ffda3487d18fe96a5a2",
+      "recorded_at": "2026-10-25",
+      "source_event_time": "Original attachment time unknown; follows D15 and precedes the D18 human B selection."
+    },
+    {
+      "file": "review-08-required-capacity-reconciliation.txt",
+      "source": "C:\\Users\\laichungling\\.codex\\attachments\\fe0329a0-01d5-463c-8b59-9fc6c4910eab\\Pasted text.txt",
+      "bytes": 11150,
+      "sha256": "b0fa95a524c14a8ac047c9522d1e15835bed5d2d2ce069ff7967020484b63e64",
+      "recorded_at": "2026-10-25",
+      "source_event_time": "Original attachment time unknown; follows review-07 and precedes the D18 human B selection."
+    }
+  ]
+}

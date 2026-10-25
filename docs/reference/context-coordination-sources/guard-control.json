@@ -1,0 +1,62 @@
+[
+  {
+    "protocol": "chat_completions",
+    "mode": "index",
+    "unchanged_old_policy_compaction_fits": true,
+    "full_old_content_visible": true,
+    "compaction_projection": [
+      {
+        "request": "pending",
+        "refs": [
+          "result:pending:0"
+        ]
+      }
+    ],
+    "handoff_accepted": true
+  },
+  {
+    "protocol": "chat_completions",
+    "mode": "notes",
+    "unchanged_old_policy_compaction_fits": true,
+    "full_old_content_visible": true,
+    "compaction_projection": [
+      {
+        "request": "pending",
+        "refs": [
+          "result:pending:0"
+        ]
+      }
+    ],
+    "handoff_accepted": true
+  },
+  {
+    "protocol": "responses",
+    "mode": "index",
+    "unchanged_old_policy_compaction_fits": true,
+    "full_old_content_visible": true,
+    "compaction_projection": [
+      {
+        "request": "pending",
+        "refs": [
+          "result:pending:0"
+        ]
+      }
+    ],
+    "handoff_accepted": true
+  },
+  {
+    "protocol": "responses",
+    "mode": "notes",
+    "unchanged_old_policy_compaction_fits": true,
+    "full_old_content_visible": true,
+    "compaction_projection": [
+      {
+        "request": "pending",
+        "refs": [
+          "result:pending:0"
+        ]
+      }
+    ],
+    "handoff_accepted": true
+  }
+]

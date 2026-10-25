@@ -1,0 +1,118 @@
+import sys, json, hashlib, zipfile, io
+from pathlib import Path
+from copy import deepcopy
+ROOT = Path(r'C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent-2')
+TEMP = Path(__file__).parent
+sys.path[:0] = [str(ROOT/'src'), str(ROOT/'tests')]
+import pymupdf
+from pdfmd.context import Context, HandoffRejected, estimate
+from pdfmd.context_updates import ContextUpdates
+from pdfmd.context_outcomes import outcome
+from pdfmd.storage import Store, encode
+from pdfmd.evidence import Evidence
+from pdfmd.tools import Dispatcher
+from pdfmd.nexus import StopRun
+from test_context_admission import protocol_job, state_for
+from test_context_progress import read_batch, compact_body
+from test_context_capacity_wait import pending_capacity_case
+from test_stencil_pins import accepted, offline_runtime
+from test_runtime import tool
+from test_response_repairs import handoff
+
+def new(name, protocol):
+    path = TEMP/name
+    path.mkdir()
+    with pymupdf.open() as pdf:
+        p = pdf.new_page()
+        p.insert_text((72,72), 'Keep every value: 25 mg.')
+        pdf.save(path/'source.pdf')
+    store = Store(path/'workspace')
+    route = {'endpoint':'http://127.0.0.1:8317/v1/chat/completions','model':'offline-fixture','context_tokens':65536,'output_tokens':2048}
+    job = Evidence(store).create_job(str(path/'source.pdf'), 'Convert the complete synthetic section.', route)
+    return store, protocol_job(store,job,protocol)
+
+records=[]
+for protocol in ('chat_completions','responses'):
+    for mode in ('index','range','notes'):
+        store,job=new(protocol+'-'+mode, protocol)
+        rt=offline_runtime(store)
+        context=rt.context
+        state={**state_for(job,[]),'notes':'','pin_views':{}}
+        if mode=='notes':
+            state['notes']='N'*10500
+            intent={'notes':'Compact notes.'}
+        else:
+            ref=store.blob(job['id'],'evidence',{'text':'P'*10500})['ref']
+            state.update(context.policy(job['id'],state,{'pin':[{'ref':ref,'view':'full'}]}))
+            spec={'ref':ref,'view':'index'} if mode=='index' else {'ref':ref,'view':'full','json_pointer':'/text','start':0,'end':100}
+            intent={'release':[ref],'pin':[spec]}
+        active=deepcopy(state)
+        core=context.normal(job,state)[1]
+        job=store.update_job(job['id'],route={**job['route'],'context_tokens':core['input_estimate']+2048+100})
+        baseline=context.normal(job,state)[1]
+        payload,_=context.normal(job,state)
+        frozen=rt.nexus.freeze(job['id'],'pending',payload,'normal',{'capacity':baseline})
+        refs=[store.blob(job['id'],'evidence',{'text':c*6000})['ref'] for c in 'AB']
+        accepted(store,job,'pending',tool('read_evidence',{'ref':refs[0]},'a'),tool('read_evidence',{'ref':refs[1]},'b'),tool('context_update',intent,'shrink'))
+        rec=store.get('request','pending')
+        store.put('request','pending',job['id'],{**frozen,**rec,'status':'accepted'})
+        state['pending']='pending'
+        state.update(rt.tools(state))
+        assert state.get('context_waiting')=='result:pending:2',state
+        policy=context.waiting(job['id'],state)['policy']
+        proposed_core=context.normal(job,{**state,**policy,'history':[],'handoff':None})[1]
+        check=rt.coordinate(state)
+        reason=store.json(check['context_check'],job['id'])['reason']
+        try:
+            rt.prepare({**state,**check})
+            stopped=False
+        except StopRun as e:
+            stopped=e.reason
+        assert baseline['fits'] and proposed_core['fits'] and stopped=='capacity_blocked'
+        projected_core=context.normal(job,{**context.compaction_state(job,state),'history':[],'handoff':None})[1]
+        # Feasibility control only: do not persist/activate this proposed view.
+        payload,meta=context.compact_request(job,{**state,**policy,'context_waiting':None})
+        assert meta['capacity']['fits']
+        assert all(state[k]==active[k] for k in ('pinned','released','notes','pin_views'))
+        records.append({'finding':'1','protocol':protocol,'mode':mode,'unchanged_route':True,
+          'allowance':job['route']['context_tokens']-2048,'old_core':baseline['input_estimate'],
+          'required_with_reserve':projected_core['input_estimate'],'reserve':projected_core['outcome_reserve'],
+          'proposed_core':proposed_core['input_estimate'],'coordinate_reason':reason,'prepare_stop':stopped,
+          'alternative_compaction_fits':True,'pending_preserved':True,'active_preserved':True})
+        rt.close()
+    store,job=new(protocol+'-reserve',protocol)
+    rt,job,state=pending_capacity_case(store,job,protocol,'release')
+    context=rt.context
+    policy=context.waiting(job['id'],state)['policy']
+    request='last-summary'
+    text=json.dumps(handoff(job,current_state='C'*1200))
+    content=json.loads(text)
+    archive={'content':content,'covered':state['history'],'deferred':[],'request':request,'projection':[],
+       'previous_archive_ref':state.get('handoff'),'originals':[store.get('request',r,job=job['id'])['accepted_ref'] for r in state['history']]}
+    ref=store.blob(job['id'],'handoff',archive,key='handoff:'+request)['ref']
+    candidate={**state,'handoff':ref,'history':[],'revision':state['revision']+1}
+    key=f"{job['id']}:{state['seq']}:{candidate['revision']}"
+    exact=Context(store,rt.dispatcher,update_feedback=outcome('applied',state['context_waiting'],ContextUpdates.ref(key),'admitted'))
+    exact_cap=exact.normal(job,{**candidate,**policy,'context_waiting':None})[1]
+    job=store.update_job(job['id'],route={**job['route'],'context_tokens':exact_cap['input_estimate']+2048+30})
+    reserved=context.normal(job,{**candidate,**policy})[1]
+    exact_cap=exact.normal(job,{**candidate,**policy,'context_waiting':None})[1]
+    compact,meta=context.compact_request(job,state)
+    assert meta['covered']==state['history']
+    # The archive stored above uses no deferral, as must this fitting compaction.
+    assert meta['projection']==[] and meta['deferred']==[]
+    try:
+        context.apply_handoff(job,state,text,meta,request)
+        error=None
+    except HandoffRejected as e:
+        error=str(e)
+    assert error and 'last history' in error,error
+    decision=rt.context_updates.resolve(job,candidate,key)
+    assert decision.get('notes')==policy['notes'] and decision['context_waiting'] is None
+    records.append({'finding':'2a','protocol':protocol,'allowance':job['route']['context_tokens']-2048,
+       'actual_applied_estimate':exact_cap['input_estimate'],'reserved_estimate':reserved['input_estimate'],
+       'gap':reserved['input_estimate']-exact_cap['input_estimate'],'handoff_rejection':error,
+       'resolve_same_handoff_applies':True,'hypothetical_candidate_not_graph_committed':True})
+    rt.close()
+(TEMP/'findings.json').write_text(json.dumps(records,indent=2),encoding='utf-8')
+print(json.dumps(records,indent=2))

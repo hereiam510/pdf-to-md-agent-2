@@ -2,6 +2,8 @@
 
 This guide explains context and evidence reasoning, concrete cases and alternatives without requiring the old checkout or conversation export. [The implemented contracts](../CONTRACTS.md#implemented-first-version-contracts) now select the first-version schemas and transitions; they supersede statements below that those choices remain open. Illustrative and historical mechanisms retain their original status. [CURRENT_STATE](../CURRENT_STATE.md) records verified scope rather than treating every discussed option as implemented.
 
+The later `a484b9b` capability review and repeated policy discussion are recorded in [Context management: discussion and design convergence](../discussions/CONTEXT_COORDINATION.md). The user has selected whole-batch commitment, no automatic partial context application, explicit agent reselection after new instructions, and B for confirmed necessary-content excess. The adopted [coordination target](CONTEXT_UPDATE_COORDINATION.md) integrates waiting/disposition/delivery, necessary-cost proof, explicit reuse and recovery. It is not implemented and does not replace this guide's current Q2 references; see [current status](../CURRENT_STATE.md#context-coordination-discussion-and-design-record) for the remaining reproduced gaps.
+
 The controlling baseline is a small Python LangGraph `StateGraph`, shared native Nexus request service and dispatcher, document/evidence core, SQLite metadata transactions, and immutable large files. Compact context policy belongs in Graph State for the single built-in executor. Large evidence hydration is transient. The earlier `create_agent` middleware assembly and external policy-version/activation tables are historical options superseded by that baseline.
 
 **Status language:**

@@ -1,0 +1,225 @@
+### 1. 本輪政策問題的核心解釋與對自主轉換的影響
+
+在接續已選定的三項基準政策（① 同批依序組合後整體准入、② 同批結構無效時整組不自動部分套用且不自動退回舊候選、③ 新指示到達後未提交候選停止自動准入並供明確重選）之上，本輪要決定的最後一個核心政策問題是：
+
+> **當候選 `Q` 的語法、引用與範圍完全合法，但其「必要內容（Required Core）」本身就超過目前的正常輸入容量時，系統應選擇：**
+> * **方向 A（等待條件改變）**：保留候選 `Q` 的自動准入資格（`auto_admit=True`），等待使用者調高容量或補充路由設定。
+> * **方向 B（轉交 Agent 修訂）**：取消候選 `Q` 的自動准入資格（`auto_admit=False`），將其標記為「需要 Agent 修訂」，保留完整內容，並在舊有效政策 `A` 下回報具體容量診斷，讓 Agent 自主改選表示方式（如 `index`、精確 `range` 或 `image`）後提交新修訂。
+> 
+> 
+
+**為甚麼這個選擇直接決定「自主轉換」的成敗？**
+
+* 「必要內容（Required Core）」是指排除所有可整理歷史與 handoff 後，僅由任務錨點（`anchor`）、Agent 選定的 `pinned` 物件、`notes`、系統提示、工具定義、圖片配額與輸出預留所構成的最低正常請求開銷（對應原碼 `Context.normal(job, {**state, **policy, "history": [], "handoff": None})`）。
+* **歷史整理（Compaction）只能壓縮 `history` 與 `handoff`，永遠無法縮小候選政策 `Q` 的必要內容**。
+* 在實際 PDF 轉換中，造成「候選必要內容超量」有**三種完全不同的成因**，而能夠解除阻塞的主體也不同：
+1. **成因 1：路由缺少必要設定，導致成本未知而無法准入**（例如候選要求 `view="image"`，但使用者尚未在路由設定 `image_tokens`，原碼 `context.py:74` 拋出 `StopRun("capacity_configuration")`）。這件事 **Agent 無法修好，只有使用者能設定**，若選 B 強迫拒絕候選，等使用者補好 `image_tokens` 後反而弄丟了 Agent 合法的圖片綁定意圖。
+2. **成因 2：在既有（或更高）容量設定下，Agent 初次提交的候選本身就超過路由總容量**（例如路由上限 64KB，Agent 試圖將一個 64KB 原始影像串流以 `view="raw"` 全文 Base64 綁定，需 ~87KB，見 `test_stencil_pins.py:130`）。這件事 **Agent 完全有能力自主修正**（改用 `view="index"`、`start`/`end` 區間或對應 `image_ref`），若選 A 停下等使用者把容量調高到 100KB，就會把原本 100% 可自主完成的轉換變成人工介入停機！
+3. **成因 3：候選 `Q` 提交時原本合規（在產生 `Q` 的容量下 `core["fits"] == True`），但在等待整理期間，使用者手動將路由 `context_tokens` 調低，導致 `Q` 的必要內容在新容量下變成超量**（見 `test_context_capacity_wait.py:86, 135`）。此時容量變化來自**使用者**，若舊政策 `A` 連帶也無法運行，使用者稍後把容量調回原值時，期望的是恢復原任務進度。
+
+
+
+因此，**單純一刀切選 A 或一刀切選 B 都會損害產品目標；最佳設計是依「超量成因與誰能解除阻塞」進行明確的條件分流**。
+
+---
+
+### 2. 方案比較：純方向 A vs. 純方向 B vs. 條件分流方案（推薦）
+
+| 比較維度 | 方案 A：一律保留自動准入資格並等待外部改變 | 方案 B：凡必要內容超量一律取消自動資格、轉交 Agent 修訂 | 方案 C（推薦）：依明確條件分流（設定缺失／外部降容阻塞走 A；Agent 超額選擇走 B） |
+| --- | --- | --- | --- |
+| **核心規則** | 只要語法合法，即使 `core["fits"] == False` 也保留 `auto_admit=True` 並停在 `capacity_blocked`，等使用者調高容量。 | 只要在當前容量下 `core["fits"] == False`，一律設為 `auto_admit=False`（需修訂／拒絕），嘗試以舊政策 `A` 送出診斷讓 Agent 重選。 | 區分「設定未知」「Agent 在當前容量下選了超大表示」「原本合規但被外部調低容量」三種條件，分別賦予明確處置與接續路徑（詳見第 3 節）。 |
+| **對 Agent 誤選超大 `raw` pin 的影響** | ❌ **破壞自主性**：原本 Agent 收到拒絕診斷就能改選 `index`/`image` 繼續轉換，選 A 會直接停機要求人工調高 `context_tokens`。 | ✅ **保持高自主性**：在舊政策 `A` 下立即回報容量明細與替代建議（`index`/`range`/`image_ref`），Agent 在下一輪即可自主修正。 | ✅ **保持高自主性**：初次提交時 `core["fits"] == False` 直接判定為 `requires_agent_revision (auto_admit=False)`，由 Agent 在 `A` 下自主修正。 |
+| **對缺少 `image_tokens` 設定的影響** | ✅ 等待使用者補齊設定後直接生效。 | ❌ 因設定缺失而把合法 `image` pin 判為需修改，或讓 Agent 誤以為不能用圖片。 | ✅ **精準等待設定**：缺少 `image_tokens` 時保持 `auto_admit=True`，停在 `capacity_configuration`，補設定後直接准入。 |
+| **對「原合規候選等待期間被調低容量、後又調回」的影響** | ✅ 容量調回後可直接准入。 | ⚠️ 若在低容量下連 `A` 都卡住（無法通知 Agent），或使用者只是誤調低容量又馬上調回，選 B 會使原本合規的 `Q` 喪失自動准入資格。 | ✅ **兼顧保護與回饋**：若低容量下 `A` 可執行，交 Agent 依新容量調整；若連 `A` 都無法執行（全面容量阻塞），保留原合規 `Q` 的資格，待容量調回後恢復。 |
+
+---
+
+### 3. 推薦的完整分流規則與四大概念解耦
+
+#### 3.1 四個正交狀態的明確分離（避免混為一談）
+
+在持久紀錄中，以下四件事完全獨立記錄，不互相覆寫：
+
+1. **內容保存（Content Retention）**：每個 `context_update` 的原始參數（`candidate:<op>`）、單筆驗證結果（`result:<op>`）與合成候選政策（`Q.policy`）**永遠不可變地保存在 store 中**，無論該候選後來是生效、等待、需修訂或被取代，皆可透過 `read_evidence` 或 `base` 引用。
+2. **自動准入資格（`auto_admit: bool`）**：代表「當容量或歷史條件允許時，系統是否可以在**沒有 Agent 新決策**的情況下自動將 `Q` 提交為有效政策 `A'`」。
+3. **候選處置狀態（Candidate Disposition）**：
+* `admitted`（已正式生效，成為新有效政策 `A'`，終態）
+* `pending_admission`（合法且 `auto_admit=True`：正在等待歷史整理 `compaction`、等待補充設定 `capacity_configuration`，或因全面容量下調暫時阻塞 `capacity_blocked`）
+* `requires_agent_revision`（**`auto_admit=False`**：候選因結構錯誤、初次提交時必要內容即超出當前容量、或下調容量後已決定交回 Agent 調整，必須由 Agent 提交新修訂，**絕不會因日後容量變大而自動生效**）
+* `needs_reselection`（**`auto_admit=False`**：因新使用者指示到達而停止自動准入，等待 Agent 在新指示下明確重選）
+* `superseded_by_revision` / `withdrawn`（**`auto_admit=False`**：已被 Agent 新的候選修訂取代或明確放棄，終態）
+
+
+4. **診斷與結果投遞狀態（Delivery Status）**：記錄該處置結果是否已透過本次請求的 tool output 投影或尾端 outcome 訊息放入凍結請求中。**投遞受阻只會讓「下一步執行計畫」進入等待或先壓縮舊政策 `A`，絕不會反過來把 `requires_agent_revision (auto_admit=False)` 改寫回 `auto_admit=True`！**
+
+#### 3.2 決定方向 A（保留資格等待）或方向 B（轉交 Agent 修訂）的明確條件表
+
+當批次末在 `coordinate` 評估有效候選 `Q`（其 `instruction_basis` 與當前相符）時，按以下順序與明確條件分流：
+
+| 判斷順序與明確條件 | 誰造成的阻塞／誰能解決 | 候選處置與 `auto_admit` 資格 | 下一步真正可執行的動作（含 `A` 受阻時的退路） |
+| --- | --- | --- | --- |
+| **1. 缺少必要設定或估算資料**<br>
+
+<br>（如候選含 `view="image"` 但路由 `image_tokens is None`） | **使用者設定不足**（Agent 無法替路由設定 token 配額） | **方向 A**：`pending_admission`<br>
+
+<br>**`auto_admit = True`** | 記錄暫時觀察 `waiting("capacity_configuration")` 並停止（若同批有合法 `report` 則正常 `END`）。使用者補齊設定按 Continue 後，直接重新准入 `Q`。 |
+| **2. 候選完整正常輸入已可容納**<br>
+
+<br>（`fits == True` 且無額外非選取證據延後） | 無阻塞（**App 本地完成**） | **正式生效**：`admitted`<br>
+
+<br>（寫入 `applied` settlement，`A' = Q`） | 以新政策 `A'` 組裝正常請求（若同批有 `report` 則正常 `END`）。 |
+| **3. 候選必要內容合規（`core["fits"] == True`），僅因歷史／handoff 造成正常輸入超量** | **歷史可整理壓力**（**App 透過整理請求解決**，不需麻煩 Agent 或使用者） | **方向 A**：`pending_admission`<br>
+
+<br>**`auto_admit = True`** | 檢查保留舊政策 `A`（及允許的明確 `release` 投影）的**實際 `compact_request**`：<br>
+
+<br>• 若實際壓縮請求可組裝、有可整理內容且總預算允許 → **執行整理（Compaction）**，完成後重新准入 `Q`。<br>
+
+<br>• 若連實際壓縮請求也放不下 → 記錄暫時觀察 `waiting("capacity_blocked")`，保持 `auto_admit=True` 等待容量調整。 |
+| **4. 候選在初次評估時必要內容即超量（`core["fits"] == False`，且 `origin_capacity == current_capacity`）** | **Agent 選擇了過大的表示方式**（如綁定巨型 `raw` 串流；**Agent 可自主改選 `index`/`range`/`image**`） | **方向 B**：**立即提交處置 `requires_agent_revision`（`auto_admit = False`）**，有效政策維持 `A` | 規劃將未准入診斷投遞給 Agent：<br>
+
+<br>① **優先檢查 `A`＋診斷的正常請求**：若 `fits`，立即發送正常請求讓 Agent 修改。<br>
+
+<br>② **次選檢查 `A`＋診斷的實際整理請求**：若正常請求因歷史太長放不下，但 `A` 的實際 `compact_request` 可執行，則**先以 `A` 執行整理**，整理後再發送正常診斷請求讓 Agent 修改。<br>
+
+<br>③ **若 `A` 的正常與整理請求皆不可執行**：記錄暫時觀察 `waiting("capacity_blocked", target="deliver_diagnostic")`。**注意：此時 `Q` 的處置已是 `auto_admit=False`；日後使用者調高容量後，只會解鎖發送「`A`＋診斷」給 Agent，絕不會自動套用 `Q`！** |
+| **5. 候選初次評估時原本合規（`origin_core_fits == True`），在等待整理期間因使用者調低容量而使 `core["fits"] == False**` | **使用者調低了容量設定**（需視新容量下舊政策 `A` 是否仍能運作決定由 Agent 適應新容量還是等待使用者調回） | **子條件分流**：<br>
+
+<br>• **5a（新容量下 `A` 連正常診斷與實際壓縮都無法執行）**：屬外部把容量調得過小 → **方向 A（保持 `pending_admission, auto_admit=True`）**。<br>
+
+<br>• **5b（新容量下 `A` 仍能正常續工或壓縮）**：新容量足以繼續工作，只是容不下舊 `Q` → **方向 B（轉為 `requires_agent_revision, auto_admit=False`）**。 | • **5a**：停在 `waiting("capacity_blocked")`。使用者把容量調回後，因 `auto_admit=True` 仍在，直接恢復 `Q` 的准入或壓縮！<br>
+
+<br>• **5b**：在 `A` 下（直接或先壓縮後）發送診斷告知 Agent「路由容量已下調至 X，原待處理候選 `Q` 超出新上限，請依新容量重新選擇或重用部分內容」。 |
+
+> **為甚麼不能「既保留 `auto_admit=True` 自動准入資格，又同時把控制權交回給 Agent 修改」？**
+> 如果 `Q` 仍掛著 `auto_admit=True`，而系統同時發出正常請求讓 Agent 繼續工作：萬一 Agent 在下一輪只呼叫了 `inspect_pdf` 或 `edit_document`（沒有呼叫 `context_update`），或者中間觸發了一次歷史整理使空間突然夠了，系統在下一次經過 `coordinate` 時就會在 Agent 毫無防備的情況下突然把舊 `Q` 自動套用生效！因此必須遵守鐵律：**凡是決定交回給 Agent 處理的候選（`requires_agent_revision` 或 `needs_reselection`），其 `auto_admit` 必須立即設為 `False**`。
+
+---
+
+### 4. 五個代表性情境在推薦規則下的具體表現與技術責任對照
+
+#### 4.1 情境總覽與技術責任表
+
+| 情境 | 有效政策 `A` | 候選 `Q` 保存內容與 `auto_admit` 資格 | 暫時觀察 vs. 已提交處置 | 下一個真正可執行的動作 | Agent 收到的資訊與可採取動作 | 重開與中斷延續依據 |
+| --- | --- | --- | --- | --- | --- | --- |
+| **情境 1：候選必要內容合規，僅歷史造成壓力** | 原有效政策 `A` 不變 | 保存完整 `Q.policy`、`origin_core_fits=True`；**`auto_admit = True`** | • 處置：未終結（`pending_admission`）<br>
+
+<br>• 觀察：`context_check` (`reason="compaction"`) | **整理（Compaction）**：以 `A`（及明確 `release` 投影）凍結並發送 `compact_request` | 壓縮階段收到 `COMPACT` 提示與 `pending_context_update` 標記；壓縮完成後 `Q` 自動准入為 `A'`，下一輪正常請求在 tool projection 看到 `applied=True` | • 壓縮前重開：讀 `context_waiting` (`auto_admit=True`) 重驗並恢復壓縮<br>
+
+<br>• 新指示：轉 `needs_reselection` (`auto_admit=False`) |
+| **情境 2：新候選必要內容超量（如大 `raw` pin），但 `A` 能送出診斷** | 原有效政策 `A` 不變 | 保存完整 `Q.policy` 與 `candidate:<op>`；**`auto_admit = False`** | • **已提交處置**：寫入 `context-settlement` (`status="requires_agent_revision"`, `auto_admit=False`) | **正常續工＋診斷投遞**：以 `A` 組裝包含該未准入診斷的正常請求 | 在 `A` 下收到明確診斷（含 `Q` 的估算明細、`proposal_ref`、以及改選 `index`/`range`/`image` 的建議）；可用 `base="active"` 或 `base_ref` 提交新修訂 | 讀 `context-settlement` 恢復已提交的 `requires_agent_revision` 處置，絕不重新准入 `Q` |
+| **情境 3：原合規候選等待整理時，使用者調低容量使其核心超量，稍後又調回容量** | 原有效政策 `A` 不變 | 保存完整 `Q.policy`、`origin_core_fits=True`：<br>
+
+<br>• **3a（低容量下連 `A` 都卡死）**：保持 **`auto_admit = True`**<br>
+
+<br>• **3b（低容量下 `A` 仍可執行並已發出診斷）**：已轉為 **`auto_admit = False`** | • **3a**：暫時觀察 `context_check` (`reason="capacity_blocked"`, 無終態 settlement）<br>
+
+<br>• **3b**：已提交 `context-settlement` (`requires_agent_revision`) | • **3a**：低容量時等待；**調回容量 Continue 後直接准入 `Q`（或執行壓縮後准入）**<br>
+
+<br>• **3b**：低容量時已以 `A` 執行正常／壓縮續工 | • **3a**：調回容量後直接看到 `Q` 已 `applied`<br>
+
+<br>• **3b**：看到容量變動與 `Q` 未准入診斷，可主動用 `base_ref` 重提 `Q` | • **3a**：讀 `context_waiting` (`auto_admit=True`)，容量恢復即自動延續<br>
+
+<br>• **3b**：讀已提交 `context-settlement` (`auto_admit=False`) |
+| **情境 4：候選已記為「需 Agent 修訂」或終態，之後容量增加到足以容納** | 原有效政策 `A` 不變 | 保存完整 `Q.policy` 於不可變 blob；**`auto_admit = False`** | • **已提交處置**：`context-settlement` 已記錄 `requires_agent_revision` / `rejected` / `superseded` | **以 `A` 正常續工（或投遞先前未送出的診斷）**，**絕不自動套用 `Q**` | 收到 `A` 與 `Q` 的診斷及 `proposal_ref`。若 Agent 看到新容量已夠大，可明確呼叫 `context_update(base_ref=Q_ref)` 建立新修訂並通過准入 | `ContextUpdates.recover` 認得已提交的 `context-settlement`，不會因當前 `context_tokens` 變大而推翻歷史處置 |
+| **情境 5：新候選超量，且舊政策 `A` 連同必要診斷也暫時放不下** | 原有效政策 `A` 不變 | 保存完整 `Q.policy`；**先確立處置 `requires_agent_revision`（`auto_admit = False`）** | • **已提交處置**：寫入 `context-settlement` (`requires_agent_revision`, `auto_admit=False`)<br>
+
+<br>• **暫時觀察**：若壓縮也不可行，寫入 `context_check` (`capacity_blocked`) | **分兩步檢查**：<br>
+
+<br>① **先查 `A` 的實際整理請求（`compact_request`）**：若可執行，**先以 `A` 整理歷史**，騰出空間後投遞診斷！<br>
+
+<br>② **若連 `A` 的實際整理請求也放不下**：誠實停在 `capacity_blocked`，等待外部調高容量 | • 若 ① 可行：完成壓縮後，Agent 在正常請求收到診斷並自主修正 `Q`<br>
+
+<br>• 若 ② 阻塞：等使用者調高容量按 Continue 後，系統發送「`A`＋診斷」給 Agent，Agent 再修正 `Q` | 處置（`context-settlement`, `auto_admit=False`）已在阻塞前提交；重開或調高容量後，延續「在 `A` 下投遞診斷」的決定，不自動激活 `Q` |
+
+#### 4.2 補充：各情境在「中斷重開、直接 Continue、加入新指示後 Continue」的行為
+
+1. **無新指示的中斷與直接 Continue**：
+* **請求已凍結（`request` 已存在）**：無論屬於哪個情境，重入 `coordinate` 與 `prepare` 均直接沿用已凍結的 `request`（原 payload、原路由、原 `replay_policy`），絕不拿新容量或新狀態改寫已凍結請求（`runtime.py:86, 97`）。
+* **請求未凍結，處置已提交（如情境 2、3b、4、5）**：`ContextUpdates.recover` 直接從 `context-settlement:<key>` 還原已確立的處置（包含 `auto_admit=False` 與待投遞的 `context_feedback` 指針），接著由 `prepare` 依當前容量嘗試組裝 `A` 的正常請求或 `A` 的實際壓縮請求。
+* **請求未凍結，候選仍具資格等待中（如情境 1、3a）**：Continue 重新進入 `coordinate`，以當前容量與狀態重新執行准入檢查（若容量已調高可直接 `applied`；若可壓縮則進入壓縮）。
+
+
+2. **加入新使用者指示（Amendment）後按 Continue**：
+* **對已提交的正式政策 `A`（以及已提交的 `requires_agent_revision` / `rejected` 處置）**：歷史事實維持不變；`A` 繼續作為有效政策，未投遞的結算回饋仍依實際 payload 互斥規則投遞。
+* **對尚未提交、原本具自動准入資格的候選 `Q`（如情境 1、3a 中的 `pending_admission`）**：沿用已選定的第 3 項基準政策——`coordinate` 偵測到 `proposal["instruction_basis"] != instruction_basis(job)`，立即將 `Q` 結算為 **`needs_reselection`（`auto_admit=False`）**，保留原始 `instruction_basis` 與完整內容不變，並在下一輪以 `A` 發出的請求中附上 `Q` 的摘要與引用，交由 Agent 在新指示下決定是否重用。
+
+
+
+#### 4.3 補充：容量估算五要素與「明確重用（Reuse）」的技術機制
+
+* **容量判斷的五種區分（不混用保守預留）**：
+1. **已知的實際超量**：對確定目標狀態（如候選 `Q` 核心，或已知結算結果）組裝實際協定 payload 後，`input_estimate + output_reserve > context_tokens`。
+2. **歷史造成的可整理壓力**：候選核心 `core["fits"] == True`，但加上 `history` / `handoff` 後超量，且實際 `compact_request` 可執行。
+3. **缺少設定而尚不確定**：如含圖片但 `image_tokens is None`，屬 `capacity_configuration`，不判定候選內容錯誤。
+4. **特定結果的實際回饋成本**：當評估 `applied`、`requires_agent_revision` 或 `needs_reselection` 時，使用該特定處置在目標請求中的**實際呈現方式**（若原批次仍在活躍 `history` 中則投影於 tool output；若不在則附加尾端 outcome 訊息）計算成本。
+5. **結果尚未確定時的有界預留（`reserved_outcome`）**：僅用於「在 `Q` 尚未結算前，評估舊政策或壓縮過程需預留多少未來回條空間」，**絕不用於判定 `compact_request` 入口生死（修復 R1）或否決已知將 `applied` 的最終 handoff（修復 R2）**。
+
+
+* **明確重用（Explicit Reuse）的基底與驗證機制**：
+* `context_update` 工具參數提供明確的基底選擇：`base: Literal["pending", "active"] = "pending"` 以及可選的 `reuse_proposal: str | None = None`（指向某個已保存的 `result:<op>` 候選回條，例如處於 `requires_agent_revision` 或 `needs_reselection` 的候選 `Q_old`）。
+* **當 Agent 指定 `reuse_proposal = Q_old_ref` 時**：
+1. **基底來源**：以 `Q_old` 中已保存的完整合成政策快照（`Q_old["context_proposal"]["policy"]`）作為初始基底（若未指定 `reuse_proposal` 且 `base="active"`，則以當前有效政策 `A` 為基底；若 `base="pending"`，則僅在存在 `auto_admit=True` 的待處理候選時以其為基底，否則以 `A` 為基底）。
+2. **疊加與重新驗證**：在該基底之上，依序套用本批次 `context_update` 傳入的 `release`、`pin`、`notes` 修改，並對最終合成的所有 `pin` 項目重新執行完整的存在性、類型、JSON Pointer、區間與路由視覺支援驗證。
+3. **建立全新修訂**：產生的是一個**全新的候選修訂 `Q_new**`，帶有當前最新的 `instruction_basis(job)`、本批次的新 operation ID，以及 `reused_from: Q_old_ref` 的溯源紀錄；原 `Q_old` 的歷史紀錄與終態保持原樣，絕非「舊終態自動復活」。
+
+
+
+
+
+---
+
+### 5. 證據分類：現有證據、設計推論與待實驗確認
+
+| 類別 | 具體內容 |
+| --- | --- |
+| **1. 已有原碼或既有實測證據支持** | • **R1 / R2 / R3 的具體故障機制**：由 `findings.json`、`guard-control.json`、`savings.json` 與 `src/pdfmd/context.py:517, 571, 629` 原碼直接證實。<br>
+
+<br>• **初次提交超大 `raw` 串流應拒絕並由 Agent 改選 `index`/`range`/`image**`：已有 `tests/test_stencil_pins.py:115-157, 209-218` 雙協定完整交付測試證實此自救流程可行。<br>
+
+<br>• **等待期間容量下調且連 `A` 都無法運行時應保留提案等待修復**：已有 `tests/test_context_capacity_wait.py:74-128` 雙協定測試與桌面交付產物證實。<br>
+
+<br>• **正常請求放不下時，實際整理請求仍可能放得下**：由 `guard-control.json`（`COMPACT` 無工具 schema 與圖片像素開銷，遠小於 `normal`）直接證實。 |
+| **2. 設計推論（由狀態機與責任邊界導出）** | • **情境 5 的兩步檢查（`Q` 超量且 `A` 正常診斷放不下時，先以 `A` 執行實際整理再送診斷）**：這是結合「處置先行（先記下 `Q` 需修訂）」與「`A` 的整理請求比正常請求小」的自然推論，能把原本會停在 `capacity_blocked` 的邊界轉化為可自主續工的路徑。<br>
+
+<br>• **`auto_admit=False` 防止容量調高後偷偷自動套用已拒絕／待重選候選**：由分離「處置確立」與「回饋投遞」直接導出。 |
+| **3. 仍需後續實驗（Stage B）確認** | • 真實模型在收到 `requires_agent_revision` 或 `needs_reselection` 診斷後，使用 `base="active"` 或 `reuse_proposal` 進行修訂的實際頻率與成功率。 |
+
+---
+
+### 6. 需要您拍板決定的取捨
+
+例行的技術設計（四種狀態欄位分離、五種容量成本區分、`reuse_proposal` 基底快照驗證、以及情境 5 先嘗試以 `A` 整理再送診斷的退路）均已收斂為上述具體方案。
+
+本輪真正需要您拍板決定的政策取捨只有一項（包含兩個相連的子確認）：
+
+1. **當候選必要內容本身超量（`core["fits"] == False`）時的分流政策（推薦採納第 3.2 節的「方案 C：條件分流」）**：
+* **確認 1A（初次提交即超量 → 轉交 Agent 修訂）**：當路由容量設定未變，而 Agent 新提交的候選必要內容本身就超過當前容量時，您是否同意**不進入容量等待（不要求使用者調高容量），而是立即確立為 `requires_agent_revision (auto_admit=False)`，在舊有效政策 `A` 下（必要時先以 `A` 壓縮歷史）將診斷送交 Agent 自主改選表示方式**？
+* **確認 1B（原本合規的等待中候選，因使用者調低容量而變成超量 → 視 `A` 是否可行分流）**：當候選 `Q` 提交時原本合規（`origin_core_fits == True`），卻在等待期間因使用者調低容量而使 `core["fits"] == False` 時，您是否同意「若新容量下連舊政策 `A` 的正常與壓縮請求都無法執行，則保留 `Q` 的自動准入資格（`auto_admit=True`）等待使用者把容量調回；若新容量下 `A` 仍可正常或壓縮續工，則將 `Q` 轉為 `requires_agent_revision (auto_admit=False)` 讓 Agent 依新容量重新選擇」？（或者您希望凡是 `origin_core_fits == True` 的候選被調低容量，一律停下等待使用者把容量調回？）
+
+
+
+---
+
+### 7. 政策選定後的本機驗收條件與未決事項清點
+
+#### 7.1 足以驗收本項完整能力的本機測試與流程條件（本輪不執行）
+
+一旦您確認上述政策並另行授權實作，本機驗收應包含以下可觀察條件（雙協定 Chat Completions / Responses）：
+
+1. **情境 1（對照與 R1/R2/R3 修復）**：候選必要內容合規（含 `full`→`index`、`full`→`range`、縮短 `notes`、以及同批 `pin(Y) → release(X)`），僅因歷史超量時，保留完整舊政策完成實際壓縮並在壓縮後自動准入生效；相同目標狀態快照下 `apply_handoff` 與 `resolve` 估算一致；短參數不掩蓋正空間收益。
+2. **情境 2（初次超量由 Agent 自主修正）**：新候選綁定超大 `raw` 串流（或同批含結構錯誤）時，立即確立 `requires_agent_revision (auto_admit=False)`，有效政策維持 `A`；Agent 在下一輪收到診斷，使用 `base="active"` 或修改範圍後提交新修訂並成功生效。
+3. **情境 3（等待期間調低容量再調回）**：驗證 3a（低容量下 `A` 亦阻塞時保留 `auto_admit=True`，調回容量後 `Q` 自動准入）與 3b（低容量下 `A` 可行時轉交 Agent 適應新容量）。
+4. **情境 4（`auto_admit=False` 跨越容量調高不自動復活）**：已被記為 `requires_agent_revision`、`needs_reselection`（新指示後）或 `rejected` 的候選，即使後來容量調高到足以容納，Continue 時**絕不自動套用**；但 Agent 可透過明確傳入 `reuse_proposal` 建立帶新 `instruction_basis` 的新修訂並通過准入。
+5. **情境 5（`Q` 超量且 `A` 正常診斷暫時放不下）**：
+* **5-Compact**：當 `A`＋診斷的正常請求放不下、但 `A` 的實際壓縮請求可執行時，系統先確立 `Q` 為 `auto_admit=False`，接著以 `A` 完成壓縮，再於壓縮後的正常請求將診斷送達 Agent 完成修正。
+* **5-Blocked**：當連 `A` 的實際壓縮請求也放不下（或缺少 `image_tokens`）時，誠實停在 `capacity_blocked` / `capacity_configuration`；調高容量後重開，延續原已確立的 `auto_admit=False` 決定（發送 `A`＋診斷，不自動套用 `Q`）。
+
+
+6. **核心保護與真實 Runtime 全流程**：確認同批有效 `report` 在各分支下均正常以 `agent_report` 結束；確認 `tools`/`coordinate` 持久間隙重開、原件與完整讀取、已提交版本、已消耗時間／次數與凍結請求邊界完全保持。
+
+#### 7.2 是否仍有直接阻礙實作的未決事項？
+
+* **沒有其他未決事項**。只要您對第 6 節的這項分流政策（確認 1A 與 1B）作出選擇，整個 Context 更新、組合、准入、整理、診斷投遞、重用與中斷恢復的政策拼圖就已 100% 完整且彼此一致。
+* 在您拍板並另行給予實作授權後，即可直接進入有界實作與本機驗證批次，**不再需要展開新一輪全面審查**。
+
+我在此停下，請告訴我您對第 6 節政策分流的選擇。

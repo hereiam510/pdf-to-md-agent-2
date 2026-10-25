@@ -60,6 +60,10 @@ The empty EVT-0258 body is empty in the direct view too. Later repository instru
 
 These preserve historical proposals with their corrections. They are not competing specifications or a new backlog. The technical guides organize the retained mechanisms for development rather than requiring the reader to reconstruct a decision from source chronology. Source URLs/library claims retain the date and scope of their original discussion. Documentation preservation is not a fresh provider-capability survey or version selection.
 
+### Subsequent context coordination discussion
+
+The [current topic record](../discussions/CONTEXT_COORDINATION.md) preserves the later `a484b9b` capability review, reviewer disagreements, policy selection and target-design synthesis. Its [selected source collection](context-coordination-sources/INDEX.md) now has a 20-file manifest, including the two later capacity-policy reviews; the first 18 source copies and manifest entries are unchanged. Supplied reports are copied verbatim; inline/main-conversation positions are attributed summaries with original timestamps marked unknown where unavailable. This addition does not invent EVT/ATT events or change historical export counts. [The target design](../design/CONTEXT_UPDATE_COORDINATION.md) records four adopted policies including B and the accepted integrated design, not an implemented contract or execution authorization.
+
 ## Known boundaries
 
 - EVT-0258 has an empty saved final-answer body. Some forum screenshots clip code/text in the original. The repository does not invent missing text. It preserves the available bytes locally.

@@ -5,3 +5,5 @@
 .gitattributes text eol=lf
 # Preserve copied event/attachment bytes and local source hashes on every OS.
 docs/reference/sources/** -text
+docs/reference/context-coordination-sources/** -text
+docs/reference/context-coordination-sources/*.txt -whitespace
