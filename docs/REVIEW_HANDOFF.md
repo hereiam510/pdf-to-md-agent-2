@@ -1,6 +1,16 @@
 # Complete context-update coordination review handoff
 
-The review target implements the four human-selected context policies over application baseline `a484b9b2abf147d63d8bdecd2143430409fe9a53`. Design checkpoint `c1e6fcc` preserves the pre-existing discussion, adopted design and inert evidence before production changes. The package manifest identifies the final implementation commit and exact source. The unrelated root `review-*.txt` scratch remains outside commits and the package.
+## Stage B observed-blocker follow-up
+
+The current Stage B source and acceptance status are in [CURRENT_STATE](CURRENT_STATE.md#stage-b-complete-nursing-input). Its private/local evidence directory is `.local/stage-b-2026-10-26-nursing/`. The real fourteen-page Nursing run exposed nullable `tool_calls` parsing (`8414c32`) and fresh image batches repeatedly summarized before normal-input delivery (`fbaddcd`). The latter correction has 318-case passing Python coverage across explicit run boundaries and six desktop cases; real subsequent normal inputs contain the five recent images. Source-led full conversion acceptance remains distinct.
+
+The user-requested pause then interrupted a compaction with an unknown result and frozen replay disabled. An ordinary Continue made no new call. Following explicit human selection, the current source adds exact-request **Resume context organization** using the existing immutable continuation receipt and graph-update path. Review the exception in [Q3](CONTRACTS.md#q3-execution-recovery-and-delivery), not as a changed automatic replay default. Relevant new evidence: `tests/test_compaction_recovery.py`, `tests/desktop/compaction-recovery.spec.ts` and its fixture; `recovery/backend-handoff.md`, `recovery/backend-source-identity.json`, `recovery-regression.log`, `recovery-desktop.log` and `recovery/desktop/` under the run directory. Twenty-two new backend cases (20 + 2), 95 retained regressions and two Electron/Edge cases pass. Normal unknown requests, original frozen records, consumed limits and correction episodes remain protected. No general OCR/network recovery, packaging or dependency change is included.
+
+The same directory preserves all live segments, user/developer interventions, immutable task snapshots, original replies and partial drafts. It contains private source material and is not part of the historical public-source review package below. No archive upload or push is authorized. Final product and whole-event archival checks remain pending the authorized live continuation.
+
+## Stage A review target
+
+The Stage A review target implements the four human-selected context policies over application baseline `a484b9b2abf147d63d8bdecd2143430409fe9a53`. Design checkpoint `c1e6fcc` preserves the pre-existing discussion, adopted design and inert evidence before production changes. Its package manifest identifies `551ea9c` and exact source. The unrelated root `review-*.txt` scratch remains outside commits and the package.
 
 The user supplies a PDF and complete scope; the app supports its own Nexus agent with faithful, reusable Markdown and source images. Preserve autonomous evidence/method/representation choices, original files/full access, previous useful documents, consumed work and frozen boundaries. This batch makes no live Nexus/model call, dependency upgrade, push, old-repository change, OCR recovery, export-portability, Alpha or packaging change. It does not claim real autonomous conversion quality.
 

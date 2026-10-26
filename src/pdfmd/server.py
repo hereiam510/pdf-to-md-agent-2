@@ -85,7 +85,7 @@ class Engine:
                 raise Conflict("Stop the task before changing its settings.") from exc
 
     def start(self, job: str, key: str, route: dict | None = None, limits: dict | None = None,
-              amendment: str = "", scripts: bool = False):
+              amendment: str = "", scripts: bool = False, recover_compaction_request: str | None = None):
         with self.guard:
             future = self.futures.get(job)
             if future and not future.done():
@@ -95,21 +95,27 @@ class Engine:
                 lock.acquire(timeout=0)
             except Timeout as exc:
                 raise Conflict("This task has an active executor in another process.") from exc
+            runtime = None
             try:
                 if not key:
                     raise ValueError("Enter the Nexus credential in Connection settings.")
+                if recover_compaction_request is not None:
+                    runtime = Runtime(self.store, Nexus(self.store, lambda _: self.keys[job], self.transport), scripts=scripts)
+                    runtime.validate_compaction_recovery(job, recover_compaction_request)
                 self._configure(job, route, limits, starting=True, amendment=amendment)
                 self.keys[job] = key
             except BaseException:
+                if runtime:
+                    runtime.close()
                 lock.release()
                 raise
 
             def run():
-                runtime = None
+                nonlocal runtime
                 try:
-                    runtime = Runtime(self.store, Nexus(self.store, lambda _: self.keys[job], self.transport), scripts=scripts)
+                    runtime = runtime or Runtime(self.store, Nexus(self.store, lambda _: self.keys[job], self.transport), scripts=scripts)
                     # This API is the user's Start/Continue action, distinct from crash re-entry.
-                    runtime.run(job, lock, continue_failed=True)
+                    runtime.run(job, lock, continue_failed=True, recover_compaction_request=recover_compaction_request)
                 except Exception:
                     logging.exception("Task stopped with a local engine error")
                 finally:
@@ -120,6 +126,27 @@ class Engine:
 
             self.futures[job] = self.pool.submit(run)
         return {"started": True, "job": job}
+
+    def compaction_recovery(self, job: str) -> dict | None:
+        """Inspect the authoritative graph position without changing a request."""
+        with self.guard:
+            future = self.futures.get(job)
+            if future and not future.done():
+                return None
+            if not any(r["kind"] == "compaction" and r["status"] == "unknown"
+                       for r in self.store.records("request", job)):
+                return None
+            lock = FileLock(str(self.store.root / f"task-{job}.lock"))
+            runtime = None
+            try:
+                with lock.acquire(timeout=0):
+                    runtime = Runtime(self.store, Nexus(self.store, lambda _: "", self.transport))
+                    return runtime.compaction_recovery(job)
+            except Timeout:
+                return None
+            finally:
+                if runtime:
+                    runtime.close()
 
     def close(self):
         for job, future in self.futures.items():
@@ -183,11 +210,13 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
         if value["status"] == "running" and not running:
             value["status"] = "interrupted"
         value["running"] = running
+        value["compaction_recovery"] = engine.compaction_recovery(job)
         return value
 
     @app.post("/jobs/{job}/start")
     def start(job: str, body: dict):
-        return engine.start(job, body.get("key", ""), body.get("route"), body.get("limits"), body.get("amendment", ""), body.get("scripts", False))
+        return engine.start(job, body.get("key", ""), body.get("route"), body.get("limits"), body.get("amendment", ""), body.get("scripts", False),
+                            recover_compaction_request=body.get("recover_compaction_request"))
 
     @app.post("/jobs/{job}/settings")
     def task_settings(job: str, body: dict):

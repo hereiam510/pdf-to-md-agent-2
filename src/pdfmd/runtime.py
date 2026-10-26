@@ -14,7 +14,7 @@ from .context import Context, HandoffRejected
 from .context_updates import ContextUpdates
 from .context_revisions import ContextRevisions
 from .nexus import Nexus, StopRun, instruction_basis
-from .storage import Store, encode
+from .storage import Conflict, Store, encode
 from .tools import Dispatcher, UnknownEffect
 
 
@@ -222,7 +222,44 @@ class Runtime:
         return {**result, "pending": None,
                 "repairs": {kind: value for kind, value in state.get("repairs", {}).items() if kind != "compaction"}}
 
-    def resume_pending(self, state: State, *, continue_failed: bool) -> dict | None:
+    def pending_request(self, job: str) -> dict | None:
+        """Return the request owned by the current resumable graph position."""
+        snapshot = self.graph.get_state({"configurable": {"thread_id": job}})
+        state = snapshot.values
+        if not snapshot.next or not state:
+            return None
+        key = state.get("pending") or f"{job}:{state['seq']}:{state['revision']}"
+        return self.store.maybe("request", key)
+
+    def accepted_locally(self, request: dict) -> bool:
+        return bool(request.get("accepted_ref") or self.store.maybe("blob", f"accepted:{request['id']}"))
+
+    def compaction_recovery(self, job: str) -> dict | None:
+        """Offer an explicit choice only for the current unresolved compaction."""
+        request = self.pending_request(job)
+        if (request and request["kind"] == "compaction" and request["status"] == "unknown"
+                and not self.accepted_locally(request)
+                and self.store.maybe("blob", f"continuation:{request['id']}") is None):
+            return {"request": request["id"]}
+        return None
+
+    def validate_compaction_recovery(self, job: str, selected: str) -> None:
+        """Validate before changing settings; a stale click grants no new choice."""
+        request = self.pending_request(job)
+        if (not isinstance(selected, str) or not selected or not request
+                or selected != request["id"] or request["kind"] != "compaction"):
+            raise Conflict("The selected compaction is no longer the task's pending request. Refresh the task before choosing recovery.")
+        # A response saved before its request pointer wins over a fresh send.
+        if self.accepted_locally(request):
+            return
+        receipt = self.store.maybe("blob", f"continuation:{selected}")
+        if receipt and self.store.json(receipt["ref"], job).get("reason") == "explicit_compaction_recovery":
+            return  # The same committed choice may still need its graph projection.
+        if request["status"] != "unknown" or receipt:
+            raise Conflict("Only an unresolved unknown compaction can receive this recovery choice.")
+
+    def resume_pending(self, state: State, *, continue_failed: bool,
+                       recover_compaction_request: str | None = None) -> dict | None:
         """Persist a chosen new-request transition before changing the graph checkpoint."""
         job = self.store.get("job", state["job"])
         key = state.get("pending") or f"{job['id']}:{state['seq']}:{state['revision']}"
@@ -232,42 +269,60 @@ class Runtime:
         receipt = self.store.maybe("blob", ref)
         if receipt is None:
             request = self.nexus.reconcile(job["id"], key)
-            # A locally accepted reply always wins. Unknown/in-flight outcomes retain their ID and replay gate.
+            # A locally accepted reply always wins. The explicit compaction choice
+            # creates a successor; it never changes this request's replay gate.
             if request["accepted_ref"] or job["cancel_requested"]:
                 return None
             unsent_amended = (request["status"] == "prepared" and not request["attempts"]
                               and request["instruction_basis"] != instruction_basis(job))
             failed = request["status"] in {"http_error", "rejected"} and continue_failed
-            if not (unsent_amended or failed):
+            recover_compaction = (recover_compaction_request == key and request["kind"] == "compaction"
+                                  and request["status"] == "unknown")
+            if not (unsent_amended or failed or recover_compaction):
                 return None
-            message = ("The unsent prepared request was superseded by new user instructions. No attempt was made."
+            message = ("The user explicitly chose a new continuation after this unknown compaction. "
+                       "No handoff or tools from the unknown response were applied. The original request, payload and attempts remain unchanged. "
+                       "Upstream completion and cost are unknown; a new request may duplicate upstream computation."
+                       if recover_compaction else
+                       "The unsent prepared request was superseded by new user instructions. No attempt was made."
                        if unsent_amended else
                        "The user chose Continue after a failed or rejected request. No tools from that response were executed. "
                        "The original request and response records remain available. HTTP failure does not establish remote cancellation or known cost. "
                        "Follow the latest user instructions and choose how to continue or repair the submission.")
+            choice = ({"authorization": {"kind": "human_compaction_recovery", "request": key},
+                       "payload_ref": request["payload_ref"]} if recover_compaction else {})
             self.store.blob(job["id"], "request_continuation", {"request": key, "status": request["status"],
-                            "reason": "new_instructions" if unsent_amended else request.get("failure", {}).get("reason", request["status"]),
+                            "reason": "explicit_compaction_recovery" if recover_compaction else
+                                      "new_instructions" if unsent_amended else request.get("failure", {}).get("reason", request["status"]),
                             "message": message, "diagnostic": request.get("failure", {}).get("message"), "response_ref": request.get("response_ref"),
-                            "attempts": list(request["attempts"]), "revision": state["revision"] + 1}, key=ref)
+                            "attempts": list(request["attempts"]), "revision": state["revision"] + 1, **choice}, key=ref)
         feedback = self.store.json(ref, job["id"])
         self.store.event_once(job["id"], "request_continued", key, {"request": key, "feedback_ref": ref, "reason": feedback["reason"]})
         recovered = self.context_updates.recover(job, state, key)
         return {**recovered, "revision": feedback["revision"], "pending": None, "next": "prepare", "terminal": False,
                 "continuation_feedback": ref}
 
-    def run(self, job: str, lock: FileLock | None = None, *, continue_failed: bool = False) -> None:
+    def run(self, job: str, lock: FileLock | None = None, *, continue_failed: bool = False,
+            recover_compaction_request: str | None = None) -> None:
         if lock is None:
             lock = FileLock(str(self.store.root / f"task-{job}.lock"))
             try:
                 lock.acquire(timeout=0)
             except Timeout as exc:
                 raise StopRun("already_running", "This task already has an active executor.") from exc
+        if recover_compaction_request is not None:
+            try:
+                self.validate_compaction_recovery(job, recover_compaction_request)
+            except BaseException:
+                lock.release()
+                raise
         config = {"configurable": {"thread_id": job}, "recursion_limit": 1_000_000}
         try:
             self.active_time.start(job)
             snapshot = self.graph.get_state(config)
             if snapshot.next:
-                continuation = self.resume_pending(dict(snapshot.values), continue_failed=continue_failed)
+                continuation = self.resume_pending(dict(snapshot.values), continue_failed=continue_failed,
+                                                   recover_compaction_request=recover_compaction_request)
                 if continuation:
                     # Supported state update: complete this transition as the model node and route to prepare.
                     self.graph.update_state(config, continuation, as_node="model")

@@ -62,6 +62,8 @@ The repository is a self-contained technical handoff (LIVE-06/07). [DEVELOPMENT_
 
 ## Reopening policy
 
+On 2026-10-26 (Asia/Hong_Kong), the user paused Stage B during an in-flight compaction and then requested continuation after quota restoration. Ordinary Continue preserved the unknown request and made no new call because its frozen replay policy was disabled. After that concrete blocker and the risk of duplicate upstream computation were explained, the user explicitly selected bounded compaction recovery and continuation. The selected exception is one manual successor transition for the exact current unknown compaction, with the original request/attempt/payload, work and usage preserved. It reuses the continuation receipt rather than changing the frozen replay gate or enabling automatic unknown retries. [CONTRACTS Q3](CONTRACTS.md#q3-execution-recovery-and-delivery) owns effective semantics; CURRENT_STATE owns verification and live results. General interruption recovery remains a separate scope.
+
 The three contracts in OPEN_QUESTIONS have selected executable forms. A framework comparison, hypothetical failure mode or historical unverified capability does not automatically create a task. Preserve useful observations. Reopen the relevant decision when actual implementation/delivery evidence or the user changes its premise.
 
 The first application increment is implemented; CURRENT_STATE records its checks and limitations. Historical facts that motivate a decision remain observations of their original scope. They are not rebuild verification or inherited permission to run experiments.

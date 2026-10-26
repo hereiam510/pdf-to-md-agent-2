@@ -171,7 +171,8 @@ app.whenReady().then(async () => {
         const current = await call(`/jobs/${id(args.job)}`)
         return call(`/jobs/${id(args.job)}/start`, 'POST', { key: apiKey,
           route: current.route ? undefined : configuration.route, limits: current.route ? undefined : configuration.limits,
-          amendment: args.amendment || '', scripts: args.scripts === true })
+          amendment: args.amendment || '', scripts: args.scripts === true,
+          recover_compaction_request: args.recover_compaction_request })
       }
       case 'taskSettings': return call(`/jobs/${id(args.job)}/settings`, 'POST', { route: args.route, limits: args.limits })
       case 'cancel': return call(`/jobs/${id(args.job)}/cancel`, 'POST', {})

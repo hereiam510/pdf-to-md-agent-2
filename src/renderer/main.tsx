@@ -124,8 +124,16 @@ function App() {
   const choose = () => act(async () => { const file = await api('choosePdf'); if (file) setImportName(file.name) })
   const select = (id: string) => { if (id !== active) setActive(id) }
   const running = Boolean(job?.running)
+  const recoveryRequest = !running ? job?.compaction_recovery?.request : undefined
   const latestCapacity = job?.requests?.at(-1)?.capacity
   const unmeasuredIntervals = (job?.active_time_gaps?.length || 0) + (job?.active_since != null && !running ? 1 : 0)
+  const continueTask = (recover_compaction_request?: string) => {
+    if (!settings.hasKey || !settings.route?.model) { setSettingsOpen(true); return }
+    void act(async () => {
+      await api('start', { job: active, amendment, scripts, recover_compaction_request })
+      setAmendment('')
+    })
+  }
 
   return <div className="app">
     <aside className="sidebar">
@@ -179,11 +187,9 @@ function App() {
           {job?.last_message && <div className="agent-message">{job.last_message}</div>}
           {activityOpen && <div className="activity-log">{job?.events?.map(event => <div key={event.seq}><time>{new Date(event.created * 1000).toLocaleTimeString()}</time><span>{event.type.replaceAll('_', ' ')}</span><code>{String(event.data.tool || event.data.reason || event.data.kind || event.data.version_id || '')}</code></div>)}</div>}
           <div className="agent-controls"><textarea aria-label="Instructions or reply" rows={2} placeholder={job?.status === 'waiting' ? 'Reply to the agent…' : 'Add an instruction or correction for the next step…'} value={amendment} onChange={e => setAmendment(e.target.value)} disabled={running} />
-            {running ? <button className="stop-button" disabled={job?.cancel_requested || busy} onClick={() => act(() => api('cancel', { job: active }))}><Icon name="stop" size={16} />{job?.cancel_requested ? 'Stopping…' : 'Stop'}</button> : <button className="primary" disabled={busy || !ready || Boolean(editing)} onClick={() => {
-              if (!settings.hasKey || !settings.route?.model) { setSettingsOpen(true); return }
-              void act(async () => { await api('start', { job: active, amendment, scripts }); setAmendment('') })
-            }}>{job?.attempts ? 'Continue' : 'Start conversion'}<Icon name="arrow" size={16} /></button>}
+            {running ? <button className="stop-button" disabled={job?.cancel_requested || busy} onClick={() => act(() => api('cancel', { job: active }))}><Icon name="stop" size={16} />{job?.cancel_requested ? 'Stopping…' : 'Stop'}</button> : <button className="primary" disabled={busy || !ready || Boolean(editing)} onClick={() => continueTask()}>{job?.attempts ? 'Continue' : 'Start conversion'}<Icon name="arrow" size={16} /></button>}
           </div>
+          {recoveryRequest && <div className="agent-meta"><p className="hint">The interrupted context organization has no accepted reply. Resume permits one replacement for that request, then continues the task. It may repeat upstream work. Saved content and recorded usage stay intact.</p><button className="text-button accent" disabled={busy || !ready || Boolean(editing)} onClick={() => continueTask(recoveryRequest)}>Resume context organization</button></div>}
           <div className="agent-meta"><span>{job?.attempts || 0} / {job?.limits.max_requests || defaultLimits.max_requests} model requests{latestCapacity ? ` · Estimated input ${latestCapacity.input_estimate.toLocaleString()} / ${(latestCapacity.capacity - latestCapacity.output_reserve).toLocaleString()}` : ''}</span><label className="check"><input type="checkbox" checked={scripts} onChange={e => setScripts(e.target.checked)} disabled={running} />Enable trusted task scripts</label></div>
           {job?.route && <div className="agent-meta"><span data-testid="effective-task-limits">Recorded active time {job.active_seconds.toFixed(1)} / {job.limits.max_active_seconds} s · New-request context {job.route.context_tokens.toLocaleString()} · Output reserve {job.route.output_tokens.toLocaleString()}</span><button className="text-button" disabled={running || busy} onClick={() => setSettingsJob(job)}>Task limits</button></div>}
           {unmeasuredIntervals > 0 && <p className="hint script-note" role="status">{unmeasuredIntervals} interrupted interval(s) have unknown active time. They remain recorded separately. The time budget uses known active time; this is not a complete usage total.</p>}

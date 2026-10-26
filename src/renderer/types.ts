@@ -11,6 +11,7 @@ export type Job = {
   active_since?: number; active_time_budget_policy?: 'known_active_only';
   active_time_gaps?: { id: string; from_wall: number; observed_wall: number; wall_span_seconds: number; active_seconds: null }[];
   cancel_requested: boolean; stop_reason: string | null; content_claim: string;
+  compaction_recovery?: { request: string } | null;
   versions?: { id: string; title: string; claim: string }[];
   requests?: { id: string; kind: string; status: string; capacity?: { input_estimate: number; capacity: number; output_reserve: number } }[];
   events?: { seq: number; type: string; data: Record<string, unknown>; created: number }[];
