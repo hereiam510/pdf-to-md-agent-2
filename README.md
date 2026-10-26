@@ -34,6 +34,8 @@ For the current local build, double-click `Start Workbench.cmd` to open the save
 
 The authorized local `references/` and `private/` copies are ignored. They are not part of the app or public source distribution. Do not commit credentials, task stores or conversion outputs.
 
+The development engine supports exact-version document indexes and field/range reads. Normal agent inputs include working-evidence/capacity feedback; optional `inspect_context` lists the frozen input and previews explicitly chosen policy changes. Smaller reads do not automatically remove earlier full content. See [the access and feedback contract](docs/CONTRACTS.md#exact-saved-document-and-evidence-access) and CURRENT_STATE for local verification and real-model limits.
+
 ## Start here
 
 Read [the working agreement](AGENTS.md). Read [current state](docs/CURRENT_STATE.md). Then read the owner relevant to the task:

@@ -67,6 +67,29 @@ class Documents:
                 raise ValueError(f"Saved version failed integrity verification: {name}")
         return json.loads((directory / "document.json").read_bytes())
 
+    def index(self, job: str, version_id: str) -> dict:
+        """Describe exact saved-version selectors without importing its bodies."""
+        saved = self.version(job, version_id)
+        content = saved["content"]
+        entries = []
+        for position, block in enumerate(content["blocks"]):
+            path = f"/content/blocks/{position}"
+            entries.append({"id": block["id"], "pages": block["pages"], "pointer": path,
+                            "markdown_pointer": path + "/markdown",
+                            "markdown_characters": len(block["markdown"]),
+                            "markdown_utf8_bytes": len(block["markdown"].encode("utf-8"))})
+        value = {"version_id": version_id, "source_ref": saved["source_ref"], "keys": list(saved),
+                 "content_keys": list(content), "claim": content["claim"], "known_gaps": content["known_gaps"],
+                 "blocks": entries, "block_count": len(entries), "pages_pointer": "/content/pages",
+                 "read": {"tool": "read_document", "version_id": version_id, "view": "full",
+                          "json_pointer": "/content/blocks", "start": 0, "end": len(entries)},
+                 "meaning": "Index of this immutable saved version, not block bodies or a source-fidelity verification. Empty JSON Pointer reads the full version envelope; edit_document accepts edits against its content, not this envelope. A precise read does not release an earlier full read from context."}
+        return {"version_id": version_id, "view": "index", "value": value,
+                "original_bytes": (self.root / version_id / "document.json").stat().st_size,
+                "returned_bytes": len(encode(value)), "returned_size_basis": "canonical JSON value",
+                "complete": False, "completeness": {"root": False, "target": False, "selection": True},
+                "access": {"view": "index", "representation": "document_index"}}
+
     def initial(self, job: dict) -> dict:
         return Document(title=job["name"], scope=job["scope"],
                         pages={str(i): {} for i in range(1, job["page_count"] + 1)}).model_dump()

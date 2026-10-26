@@ -1,5 +1,15 @@
 # Complete context-update coordination review handoff
 
+## Precise document access and working-evidence increment
+
+The current increment uses application baseline `49e6941` and discussion/authorization checkpoint `cb764b6`. The user authorized implementation, local dual-protocol tests, saved/reopened/exported verification, documentation and an independent review package; no Nexus call or live-task change is authorized. [CURRENT_STATE](CURRENT_STATE.md#stage-b-complete-nursing-input) owns exact results and limits. [Exact access](CONTRACTS.md#exact-saved-document-and-evidence-access) and [working evidence](CONTRACTS.md#working-evidence-feedback-and-optional-preview) own the effective contracts.
+
+Review `evidence.py`, `schema.py`, `documents.py` and `tools.py` for exact saved-version navigation and the three completeness meanings. Review `working_context.py`, `Context.normal` and Runtime's normal-request snapshot/callback for actual projected evidence, authored arguments, local cost and read-only previews. The frozen snapshot deliberately excludes all current-response tool results. No new policy writer or graph routing is introduced; an explicit `context_update` still passes the existing whole-batch admission and durable commit boundary.
+
+Focus acceptance on new precise reads and old full reads still retained, exact release references across repeated call IDs, native image versus index semantics, original/returned byte distinctions, cost including feedback itself, and explicit-release editing across reopen. The first whole regression failure log and documented pressure-fixture corrections remain available; passing tests must not be interpreted as unchanged serialized input size. The raw bounded subagent review identifies checked source hashes and its narrower scope. Parent-led final regression, delivery and actual renderer checks are separate evidence.
+
+The handoff package is `.local/review-2026-10-27-working-evidence.zip`: exact tested source, baseline source, scoped/cumulative patches, identity/manifest, independent review, offline before/after contrasts, test logs and synthetic delivery artifacts. Its standalone verifier checks hashes, test-source identity and saved/exported contents without running the app. Credentials, private Nursing inputs/task data, dependencies and unrelated scratch are excluded. The package is not uploaded. This is a review handoff, not authorization for another implementation batch or model call.
+
 ## Stage B observed-blocker follow-up
 
 The current Stage B source and acceptance status are in [CURRENT_STATE](CURRENT_STATE.md#stage-b-complete-nursing-input). Its private/local evidence directory is `.local/stage-b-2026-10-26-nursing/`. The real fourteen-page Nursing run exposed nullable `tool_calls` parsing (`8414c32`) and fresh image batches repeatedly summarized before normal-input delivery (`fbaddcd`). The latter correction has 318-case passing Python coverage across explicit run boundaries and six desktop cases; real subsequent normal inputs contain the five recent images. Source-led full conversion acceptance remains distinct.

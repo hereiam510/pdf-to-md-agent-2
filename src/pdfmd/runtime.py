@@ -16,6 +16,7 @@ from .context_revisions import ContextRevisions
 from .nexus import Nexus, StopRun, instruction_basis
 from .storage import Conflict, Store, encode
 from .tools import Dispatcher, UnknownEffect
+from .working_context import inspect as inspect_working_context, snapshot as context_snapshot
 
 
 class State(TypedDict, total=False):
@@ -111,7 +112,8 @@ class Runtime:
             payload, meta, kind = self.context_updates.continuation(job, state)
             if repairs.get(kind, {}).get("count", 0) > job["limits"].get("max_response_repairs", 2):
                 raise StopRun("response_repair_exhausted", f"Automatic {kind} correction limit reached. Saved work, candidates and replies remain available. Continue does not reset this correction episode.")
-            request = self.nexus.freeze(job["id"], key, payload, kind, {**meta, "repairs": repairs})
+            request = self.nexus.freeze(job["id"], key, payload, kind, {**meta, "repairs": repairs,
+                **({"context_snapshot": context_snapshot(job, state)} if kind == "normal" else {})})
         return {"pending": key, "next": "compact" if request["kind"] == "compaction" else "model", "terminal": False,
                 "repairs": repairs}
 
@@ -179,10 +181,12 @@ class Runtime:
                         raise StopRun("budget_exhausted", "Stopped before a new tool because the persistent active-time budget is exhausted.")
                     self.dispatcher.context_preflight = lambda intent, op, candidate: self.context_revisions.capture(
                         current, state, working, intent, op, candidate)
+                    self.dispatcher.context_inspector = lambda **args: inspect_working_context(self.context, request, current, **args)
                     try:
                         result = self.dispatcher.execute(job, operation, call["name"], call["arguments"])
                     finally:
                         self.dispatcher.context_preflight = None
+                        self.dispatcher.context_inspector = None
             self.active_time.checkpoint()
             data = result["data"]
             if call["name"] == "context_update":

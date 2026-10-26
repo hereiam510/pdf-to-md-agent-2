@@ -34,8 +34,12 @@ def definitions(scripts: bool = False) -> list[dict]:
          object_schema({"page": INT, "xref": INT, "occurrence": INT, "dpi": INT}, ["page", "xref"])),
         ("read_evidence", "Read saved originals, candidates, or native image pixels. JSON Pointer selects any field. Ranges are zero-based and half-open. Full/raw access remains available; a body exceeding input capacity is saved with an explicit deferral receipt.",
          object_schema({"ref": STRING, "view": {"enum": ["full", "index", "raw"]}, "json_pointer": STRING, "start": INT, "end": INT}, ["ref"])),
-        ("read_document", "Read an explicit saved version. Omit version_id to resolve the current head for this operation. No hidden truncation applies.",
-         object_schema({"version_id": STRING, "json_pointer": STRING, "start": INT, "end": INT})),
+        ("read_document", "Read an immutable saved version; omitted version_id resolves the head for this operation. Full returns the version envelope: content has blocks/pages/claim/known_gaps; assets and originals are envelope fields. Use /content/blocks or /content/blocks/0/markdown, not /blocks. Optional view=index lists block IDs, pages, sizes and exact selectors without their bodies. start/end select zero-based half-open Unicode characters or array items at json_pointer; no root-object range. Completeness distinguishes root, pointer target, and requested selection. No hidden truncation or mandatory index; smaller reads do not release older history.",
+         object_schema({"version_id": STRING, "view": {"enum": ["full", "index", "raw"]}, "json_pointer": STRING, "start": INT, "end": INT})),
+        ("inspect_context", "Optionally inspect the frozen normal input that produced this response: actual evidence representations, exact refs and local capacity. It excludes ALL tools in this response, even preceding calls. Omit start/end for the full inventory, or select an item range. Optional changes previews chosen pin/release/notes against that snapshot active policy, not pending proposals. This never applies, releases or certifies future admission; new tool results and actual batch outcomes may change cost. Use context_update for explicit changes. No preview step is required.",
+         object_schema({"start": INT, "end": INT, "changes": object_schema({"release": STRINGS, "notes": STRING,
+             "pin": {"type": "array", "items": object_schema({"ref": STRING, "view": {"enum": ["index", "image", "full", "raw"]},
+                 "json_pointer": STRING, "start": INT, "end": INT}, ["ref", "view"])}})})),
         ("preview_document", "Inspect actual saved-output pixels. Select an immutable version and viewport. The result identifies the visible region.",
          object_schema({"version_id": STRING, "top": INT, "width": INT, "height": INT}, ["version_id"])),
         ("edit_document", "Save a new version. Default mode=edit requires base_version == expected_head; mode=rebuild explicitly permits another saved or empty base without user approval. Both check the current head at commit. Preserve omitted fields and capture candidates before validation. Apply operations sequentially against the named base. Insert/replace accept either blocks or reuse_candidate (a task-owned candidate pointer to one Block or a block list); only selected content is copied. Top-level reuse_candidate replaces the entire block list. Page metadata uses printed, disposition, and note. Block pages must be included. Complete claims require every physical page classified and a note for each outside_scope or omitted_non_content page. Save partial work at any time.", Edit.model_json_schema()),
@@ -62,6 +66,7 @@ class Dispatcher:
         self.store, self.scripts = store, scripts
         self.active_time = None
         self.context_preflight = None
+        self.context_inspector = None
         self.documents = Documents(store)
         self.evidence = Evidence(store)
 
@@ -168,7 +173,15 @@ class Dispatcher:
                 return {"head": None, "message": "No document version is saved yet."}
             saved = self.documents.version(job, version)
             ref = self.store.blob(job, "document_view", saved, {"version": version})
+            if args.get("view") == "index":
+                if set(args) - {"view"}:
+                    raise ValueError("Document index does not take selectors. Use view=full with an exact index pointer and optional start/end.")
+                return {"ref": ref["ref"], **self.documents.index(job, version)}
             return {"version_id": version, **self.evidence.read(job, ref["ref"], **args)}
+        if name == "inspect_context":
+            if self.context_inspector is None:
+                raise ValueError("Context inspection requires an active runtime response with a frozen input.")
+            return self.context_inspector(**args)
         if name == "edit_document":
             return self.documents.edit(job, operation, args, digest, candidate)
         if name == "preview_document":

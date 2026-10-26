@@ -130,10 +130,13 @@ class Edit(Strict):
 
 
 def pointer(value: Any, path: str) -> Any:
+    if not isinstance(path, str):
+        raise ValueError("JSON Pointer must be a string; use '' for the complete root.")
     if not path:
         return value
     if not path.startswith("/"):
         raise ValueError("Use an RFC 6901 JSON Pointer beginning with '/'.")
+    traversed = ""
     for part in path[1:].split("/"):
         if re.search(r"~(?![01])", part):
             raise ValueError("Invalid JSON Pointer escape; use ~0 for '~' and ~1 for '/'.")
@@ -141,7 +144,20 @@ def pointer(value: Any, path: str) -> Any:
         if isinstance(value, list):
             if not re.fullmatch(r"0|[1-9][0-9]*", key):
                 raise ValueError("JSON Pointer array indices must be nonnegative integers without leading zeros.")
-            value = value[int(key)]
-        else:
+            index = int(key)
+            if index >= len(value):
+                raise ValueError(f"JSON Pointer array at {traversed or '(root)'} has {len(value)} items; index {index} is outside it.")
+            value = value[index]
+        elif isinstance(value, dict):
+            if key not in value:
+                keys = list(value)
+                available = repr(keys[:12]) + (f" (first 12 of {len(keys)} keys)" if len(keys) > 12 else "")
+                hint = ""
+                if not traversed and isinstance(value.get("content"), dict) and key in value["content"]:
+                    hint = f" Saved document fields are under /content; use /content/{part}."
+                raise ValueError(f"JSON Pointer key {key!r} is absent at {traversed or '(root)'}. Available keys: {available}.{hint}")
             value = value[key]
+        else:
+            raise ValueError(f"JSON Pointer cannot descend through the scalar at {traversed or '(root)'}. Read that value directly.")
+        traversed += "/" + part
     return value

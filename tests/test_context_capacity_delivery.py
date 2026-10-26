@@ -26,9 +26,9 @@ from test_stencil_pins import TEXT, fixture_job, verify_delivery, offline_runtim
 def visible_image_metadata(payload):
     """Read only evidence actually included in this scripted model input."""
     found = {}
-    def keep(value):
+    def keep(value, read_ref=None):
         if isinstance(value, dict) and "asset_path" in value:
-            found[value["asset_path"]] = value
+            found[value["asset_path"]] = {**value, **({"read_ref": read_ref} if read_ref else {})}
     def restored(handoff_value):
         for reference in (handoff_value or {}).get("content", {}).get("references", []):
             if reference.startswith('{"image_metadata":'):
@@ -47,10 +47,37 @@ def visible_image_metadata(payload):
     for group in groups:
         for result in outputs(group):
             data = result.get("data", {})
-            keep(data)
+            keep(data, result.get("result_ref"))
             if isinstance(data, dict):
-                keep(data.get("value"))
+                keep(data.get("value"), data.get("ref"))
     return list(found.values())
+
+
+def visible_source_text(payload):
+    """Carry source text through an actual handoff rather than an external answer."""
+    text = []
+    def restored(value):
+        for reference in (value or {}).get("content", {}).get("references", []):
+            if reference.startswith('{"source_text":'):
+                text.append(json.loads(reference)["source_text"])
+    if payload.get("tools"):
+        groups = [payload]
+        for message in payload.get("messages", payload.get("input", [])):
+            content = message.get("content")
+            if isinstance(content, str) and content.startswith("Continuation handoff:\n"):
+                restored(json.loads(content.split("\n", 1)[1]))
+    else:
+        compact_input = compact_body(payload)
+        restored(compact_input.get("previous_handoff"))
+        groups = compact_input["history"]
+    for group in groups:
+        for result in outputs(group):
+            data = result.get("data", {})
+            selected = data.get("value", {}) if isinstance(data, dict) else {}
+            for page in selected.get("pages", []) if isinstance(selected, dict) else []:
+                if isinstance(page.get("content"), str):
+                    text.append(page["content"])
+    return list(dict.fromkeys(text))
 
 
 def run_capacity_delivery(directory, route, protocol, scenario):
@@ -95,13 +122,14 @@ def run_capacity_delivery(directory, route, protocol, scenario):
         if not payload.get("tools"):
             summaries.append(payload)
             retained_metadata = visible_image_metadata(payload)
-            references = [json.dumps({"image_metadata": image}) for image in retained_metadata]
-            if compact_body(payload).get("repair_feedback"):
-                # Follow the actual correction request instead of repeating the
-                # same oversized summary. Exact refs/paths remain in the handoff;
-                # original metadata and the retained normal results stay intact.
-                references = [json.dumps({key: image[key] for key in ("image_ref", "asset_path") if key in image})
-                              for image in retained_metadata]
+            # A scripted summarizer explicitly retains exact source text and the
+            # image identity/geometry needed to continue. Full metadata remains
+            # readable through its exact receipt ref; none is obtained from the
+            # store or a developer answer while constructing a model response.
+            references = [json.dumps({"source_text": text}) for text in visible_source_text(payload)]
+            references += [json.dumps({"image_metadata": {key: image[key] for key in
+                ("image_ref", "asset_path", "width", "height", "region", "read_ref") if key in image}})
+                for image in retained_metadata]
             return httpx.Response(200, json=native(protocol, text=json.dumps(handoff(job,
                 current_state="Saved text and source images remain available; complete the source page.",
                 unfinished_work=[], references=references,
@@ -122,13 +150,14 @@ def run_capacity_delivery(directory, route, protocol, scenario):
                      tool("extract_image", {"page": 1, "xref": mask, "occurrence": 1, "dpi": 144}, "blue"),
                      tool("extract_image", {"page": 1, "xref": xref}, "cmyk")]
         elif len(normal) == 3:
-            batch = outputs(payload)[-4:]
-            assert batch[0]["data"]["value"]["pages"][0]["content"].strip() == TEXT
+            assert any(text.strip() == TEXT for text in visible_source_text(payload))
+            visible = visible_image_metadata(payload)
+            assert len(visible) == 3, "The retained native results or handoff must identify all figures."
             # At the original allowance, source pixels may be explicitly
             # deferred. Select the saved full extraction metadata through the
             # advertised references; do not repair the fixture by raising capacity.
-            calls = [tool("read_evidence", {"ref": result["result_ref"], "view": "full"}, f"image-metadata-{i}")
-                     for i, result in enumerate(batch[1:])]
+            calls = [tool("read_evidence", {"ref": image["read_ref"], "view": "full"}, f"image-metadata-{i}")
+                     for i, image in enumerate(visible)]
         elif len(normal) == 4:
             # The reads may now be in the model-authored handoff instead of the
             # native tool tail. Never assume an empty tail means no figures.

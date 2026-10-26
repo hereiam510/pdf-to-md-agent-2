@@ -9,6 +9,7 @@ from pdfmd.context import Context
 from pdfmd.nexus import Nexus
 from pdfmd.runtime import Runtime
 from pdfmd.storage import Store
+from pdfmd.tools import Dispatcher
 from test_context_admission import protocol_job, state_for
 from test_context_progress import read_batch
 from test_response_repairs import handoff, native
@@ -21,7 +22,6 @@ POLICY = ("pinned", "pin_views", "released", "notes")
 
 def pressure(store, original, protocol, kind="notes"):
     job = protocol_job(store, original, protocol)
-    job = store.update_job(job["id"], route={**job["route"], "context_tokens": 28000})
     refs, envs = read_batch(store, job, "history", ["A" * 5000])
     second = store.blob(job["id"], "evidence", {"text": "B" * 5000})["ref"]
     state = {**state_for(job, ["history"]), "notes": "Active notes.", "pin_views": {}}
@@ -33,6 +33,14 @@ def pressure(store, original, protocol, kind="notes"):
         _, smaller = read_batch(store, job, "small", ["s" * 1000])
         state["history"].append("small")
         intent = {"release": [smaller[0]["result_ref"]]}
+    # Calibrate the initial fixture to the current advertised tool/feedback
+    # envelope. Each 5 KB result must fit on its own, while the next full result
+    # creates aggregate history pressure. Keep this allowance fixed thereafter;
+    # a stale absolute 28 KB cap tests individual-result deferral instead.
+    capacity = Context(store, Dispatcher(store)).normal(job, state)[1]
+    assert not capacity["projection"]["deferred"]
+    job = store.update_job(job["id"], route={**job["route"],
+        "context_tokens": capacity["input_estimate"] + capacity["output_reserve"] + 1800})
     accepted(store, job, "pending", tool("read_evidence", {"ref": second}, "read"),
              tool("context_update", intent, "update"))
     state["pending"] = "pending"

@@ -42,6 +42,10 @@ Compaction prefix selection also has a continuation responsibility. A fitting te
 
 ## Content and context are separate
 
+Precise saved-document navigation is owned by the document/evidence core. The immutable version envelope stays the read identity; its optional index supplies pointers into `content` and exact sizes without copying block bodies. Evidence reads distinguish complete roots, complete pointer targets and complete requested selections. That distinction prevents a fulfilled one-block read from claiming a complete document or a complete twelve-block target from appearing truncated.
+
+`working_context.py` describes the normal assembler's actual projection rather than maintaining a second retention policy. It adds a compact, self-costed summary and exposes optional `inspect_context` inventory/agent-selected previews. Runtime snapshots the compact input basis only when creating a new frozen normal request; replay preserves that basis. The inspector uses the recorded payload as observation authority and requires exact reconstruction before hypothetical projection. Current-batch results are explicitly outside that snapshot. It never modifies policy, head, candidate disposition or consumption. Large originals remain in the existing immutable store; no hydrated bodies are added to graph state.
+
 PDF geometry and image derivation belong to the evidence core. The public region frame matches extraction's unrotated page points; the renderer alone converts to display coordinates and records the actual raster transform. Image extraction retains encoded image/mask streams separately from a display asset, including original/derivative identity and color/encoding provenance. The document core follows only the selected assets' original-stream references into an immutable version and export. This keeps originals portable without exposing JPX/encoded streams as preview images or adding a model-side conversion recipe. [The PDF contract](CONTRACTS.md#pdf-coordinates-and-image-delivery) owns exact fields and limits.
 
 Keep complete immutable originals outside the model context. Distinguish:

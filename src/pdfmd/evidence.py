@@ -12,7 +12,7 @@ from typing import Any
 import pymupdf
 
 from .schema import Limits, Route, pointer
-from .storage import Store, uid
+from .storage import Store, encode, uid
 
 
 # MuPDF is not thread-safe. Never share a live Document across callers.
@@ -87,50 +87,83 @@ class Evidence:
     def read(self, job: str, ref: str, view: str = "full", json_pointer: str = "",
              start: int | None = None, end: int | None = None) -> dict:
         record = self.store.get("blob", ref, job=job)
+        identity = {"version_id": record["meta"]["version"]} if record["kind"] == "document_view" else {}
+        if view not in {"full", "index", "raw"}:
+            raise ValueError("Use full, index, or raw. Full reads have no hidden truncation.")
+        if view == "index" and (json_pointer or start is not None or end is not None):
+            raise ValueError("Index returns metadata only. Use view='full' for JSON Pointer and text/array ranges, or view='raw' for byte ranges.")
+        if view == "raw" and json_pointer:
+            raise ValueError("Raw reads select original byte ranges, not JSON fields. Use view='full' with json_pointer for decoded values.")
         if record["kind"] == "image_stream" and json_pointer:
             raise ValueError("An encoded image stream is binary. Use its index for metadata or full/raw byte ranges.")
         if view == "raw" or (view == "full" and record["kind"] == "image_stream"):
             raw = self.store.bytes(ref, job)
             first, last = self.bounds(len(raw), start, end)
-            return {"ref": ref, "encoding": "base64", "unit": "byte", "range": [first, last],
-                    "total": len(raw), "data": base64.b64encode(raw[first:last]).decode(), "complete": first == 0 and last == len(raw),
+            whole = first == 0 and last == len(raw)
+            return {**identity, "ref": ref, "encoding": "base64", "unit": "byte", "range": [first, last],
+                    "total": len(raw), "data": base64.b64encode(raw[first:last]).decode(), "complete": whole,
+                    "completeness": {"root": whole, "target": whole, "selection": True},
+                    "access": {"view": view, "representation": "base64_original_bytes"},
+                    "original_bytes": len(raw), "returned_bytes": last - first, "returned_size_basis": "decoded bytes",
                     "meta": record["meta"]}
-        if record["kind"] == "image":
+        if record["kind"] == "image" and view == "full":
+            if json_pointer or start is not None or end is not None:
+                raise ValueError("Native image reads do not take JSON Pointer or text ranges. Use view='raw' for exact byte ranges, or render_page for a chosen source region.")
             return {"ref": ref, "image_ref": ref, "meta": record["meta"], "bytes": record["bytes"],
-                    "coverage": "complete saved image at native dimensions"}
-        if view == "index" and record["kind"] == "image_stream":
-            return {"ref": ref, "kind": record["kind"], "bytes": record["bytes"], "meta": record["meta"],
-                    "complete": False, "read": "read_evidence(ref, view='raw', start=null, end=null)"}
+                    "original_bytes": record["bytes"], "returned_bytes": None, "returned_size_basis": "native image reference; no text body",
+                    "access": {"view": view, "representation": "native_image_reference"}, "complete": True,
+                    "completeness": {"root": True, "target": True, "selection": True},
+                    "coverage": "complete saved image selected at native dimensions; actual pixel inclusion is reported by the context projection"}
+        if view == "index" and record["kind"] in {"image", "image_stream"}:
+            result = {"ref": ref, "kind": record["kind"], "bytes": record["bytes"], "meta": record["meta"],
+                      "read": "read_evidence(ref, view='full' or 'raw', start=null, end=null)"}
+            return {**identity, **self.index_result(result, record["bytes"])}
         try:
             data = self.store.json(ref, job)
         except (ValueError, UnicodeDecodeError):
             data = self.store.bytes(ref, job).decode("utf-8", errors="strict")
         if view == "index":
-            return {"ref": ref, "bytes": record["bytes"], "kind": record["kind"], "meta": record["meta"],
-                    "keys": list(data) if isinstance(data, dict) else None,
-                    "warnings": data.get("warnings", []) if isinstance(data, dict) else [],
-                    "coverage": data.get("coverage") if isinstance(data, dict) else None,
-                    "complete": False, "read": "read_evidence(ref, view='full', json_pointer='', start=null, end=null)"}
-        if view != "full":
-            raise ValueError("Use full, index, or raw. Full reads have no hidden truncation.")
+            result = {"ref": ref, "bytes": record["bytes"], "kind": record["kind"], "meta": record["meta"],
+                      "keys": list(data) if isinstance(data, dict) else None,
+                      "warnings": data.get("warnings", []) if isinstance(data, dict) else [],
+                      "coverage": data.get("coverage") if isinstance(data, dict) else None,
+                      "read": "read_evidence(ref, view='full', json_pointer='', start=null, end=null)"}
+            return {**identity, **self.index_result(result, record["bytes"])}
         selected = pointer(data, json_pointer)
         span = None
         total = len(selected) if isinstance(selected, (str, list)) else None
+        target_complete = True
         if start is not None or end is not None:
             if not isinstance(selected, (str, list)):
-                raise ValueError("Ranges apply to a string or array selected by JSON Pointer.")
-            first, last = self.bounds(len(selected), start, end)
+                hint = " For a saved document, select /content/blocks or /content/blocks/0/markdown; view='index' lists exact block pointers." if isinstance(data, dict) and "content" in data else ""
+                raise ValueError("Ranges apply to a string or array selected by JSON Pointer; the selected value is an object or scalar." + hint)
+            first, last = self.bounds(total, start, end)
             span = [first, last]
+            target_complete = first == 0 and last == total
             selected = selected[first:last]
-        return {"ref": ref, "pointer": json_pointer, "range": span, "total": total,
-                "complete": not json_pointer and span is None, "unit": "Unicode character or array item",
-                "value": selected, "bytes": record["bytes"]}
+        whole = not json_pointer and target_complete
+        string = isinstance(selected, str)
+        return {**identity, "ref": ref, "pointer": json_pointer, "range": span, "total": total,
+                "complete": whole, "completeness": {"root": whole, "target": target_complete, "selection": True},
+                "access": {"view": view, "representation": "decoded_value"},
+                "unit": "Unicode character" if string else "array item" if isinstance(selected, list) else None,
+                "value": selected, "bytes": record["bytes"], "original_bytes": record["bytes"],
+                "returned_bytes": len(selected.encode("utf-8")) if string else len(encode(selected)),
+                "returned_size_basis": "UTF-8 string" if string else "canonical JSON value"}
+
+    @staticmethod
+    def index_result(result: dict, original_bytes: int) -> dict:
+        """Index fulfillment does not assert that the original content was read."""
+        return {**result, "original_bytes": original_bytes, "returned_bytes": len(encode(result)),
+                "returned_size_basis": "canonical index JSON before access bookkeeping",
+                "complete": False, "completeness": {"root": False, "target": False, "selection": True},
+                "access": {"view": "index", "representation": "metadata_index"}}
 
     @staticmethod
     def bounds(length: int, start: int | None, end: int | None) -> tuple[int, int]:
         first, last = 0 if start is None else start, length if end is None else end
-        if not 0 <= first <= last <= length:
-            raise ValueError("Range endpoints must be zero-based, half-open, and within the saved value.")
+        if type(first) is not int or type(last) is not int or not 0 <= first <= last <= length:
+            raise ValueError(f"Range endpoints must be integer, zero-based, half-open, and within the selected value [0, {length}).")
         return first, last
 
     def image(self, job: str, raw: bytes, extension: str, meta: dict, *, component: bool = False) -> dict:

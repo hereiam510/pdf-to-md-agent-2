@@ -10,6 +10,7 @@ from .context_outcomes import control_result, outcome, policy_ref, reserved_outc
 from .schema import Route
 from .storage import Store, encode
 from .tools import Dispatcher, definitions
+from .working_context import with_feedback
 
 
 SYSTEM = """You convert the user's PDF into complete, readable, reusable Markdown and faithful source images.
@@ -31,6 +32,11 @@ Each insert/replace accepts either blocks or reuse_candidate selecting one Block
 delete uses id. patch uses id, zero-based half-open Unicode start/end, expected text, and replacement text.
 page_updates merges supplied fields by physical-page key. Omitted fields remain unchanged.
 Read complete saved originals or precise fields/ranges with read_evidence. Index views are not complete evidence.
+read_document reads an immutable version envelope: /content/blocks is the block array. Optional view=index lists exact selectors.
+Completeness distinguishes the whole root, selected pointer target, and fulfilled requested selection; none certifies PDF fidelity.
+Working context feedback describes this input, including earlier full reads that smaller reads do not remove.
+inspect_context optionally lists this frozen input and previews your chosen pin/release/notes changes without applying them.
+Its snapshot excludes this response's new tool results. Use context_update explicitly for any actual change; no preview is required.
 context_update can release or pin saved references and maintain continuity notes.
 Omitted notes keep the current notes; a supplied string replaces them completely; an empty string clears them.
 Within one update, release runs before pin. A pin of the same reference wins.
@@ -321,7 +327,11 @@ class Context:
         pixels = []
         if mode == "index":
             view = {"ref": ref, "kind": record["kind"], "bytes": record["bytes"], "meta": record["meta"],
+                    "access": {"view": "index", "representation": "metadata"},
+                    "completeness": {"root": False, "target": False, "selection": True},
                     "complete": False, "read": {"ref": ref, "view": "raw" if record["kind"] in {"image", "image_stream"} else "full"}}
+            if record["kind"] == "document_view":
+                view.update(version_id=record["meta"]["version"], view="index")
         elif mode == "image":
             if not job["route"]["vision"]:
                 raise ValueError("This route does not accept image pins. Choose index/raw or a vision-capable route.")
@@ -337,6 +347,9 @@ class Context:
                 text = self.store.bytes(ref, job["id"]).decode("utf-8")
                 first, last = self.dispatcher.evidence.bounds(len(text), spec.get("start"), spec.get("end"))
                 view = {"ref": ref, "encoding": "utf-8", "value": text[first:last], "range": [first, last],
+                        "access": {"view": "full", "representation": "text"},
+                        "completeness": {"root": first == 0 and last == len(text), "target": first == 0 and last == len(text), "selection": True},
+                        "original_bytes": record["bytes"], "returned_bytes": len(text[first:last].encode("utf-8")),
                         "unit": "Unicode character", "bytes": record["bytes"], "complete": first == 0 and last == len(text)}
             else:
                 view = self.dispatcher.evidence.read(job["id"], **spec)
@@ -375,7 +388,7 @@ class Context:
             result["selected_value_warnings"] = selected["warnings"]
         if isinstance(data, dict) and "ref" in data:
             # Describe the requested source selection without presenting it as read.
-            result["source_view"] = {key: data[key] for key in ("ref", "pointer", "range", "total", "unit", "complete") if key in data}
+            result["source_view"] = {key: data[key] for key in ("ref", "version_id", "pointer", "range", "total", "unit", "complete", "completeness", "access") if key in data}
             result["source_view"]["body_in_message"] = False
             if isinstance(data.get("value"), dict):
                 result["value_keys"] = list(data["value"])
@@ -515,7 +528,7 @@ class Context:
             result_tail = list(tail)
             if outcome and not self.outcome_in_groups(groups, outcome):
                 result_tail.append({"role": "user", "content": "Deferred context update outcome:\n" + json.dumps(outcome, ensure_ascii=False)})
-            return make_payload(route, SYSTEM, [*messages, *[m for group in groups for m in group], *result_tail, *extra], definitions(self.dispatcher.scripts))
+            return with_feedback(route, SYSTEM, [*messages, *[m for group in groups for m in group], *result_tail, *extra], definitions(self.dispatcher.scripts), job["head"])
         def measure(groups):
             capacity = estimate(pack(groups), route)
             reserve = 0

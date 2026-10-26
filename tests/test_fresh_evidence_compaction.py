@@ -44,9 +44,9 @@ def image_hashes(payload):
     return found
 
 
-def pressure_fixture(store, initial, protocol, *, capacity=65536):
+def pressure_fixture(store, initial, protocol, *, capacity=None):
     job = protocol_job(store, initial, protocol)
-    job = store.update_job(job["id"], route={**job["route"], "image_tokens": 12000, "context_tokens": capacity})
+    job = store.update_job(job["id"], route={**job["route"], "image_tokens": 12000})
     read_batch(store, job, "older", ["O" * 30000])
     exact = store.blob(job["id"], "evidence", {"text": "E" * 16000})
     envs = settle(store, job, "fresh",
@@ -54,7 +54,22 @@ def pressure_fixture(store, initial, protocol, *, capacity=65536):
                   tool("render_page", {"page": 1, "dpi": 72}, "new-pixels"),
                   tool("render_page", {"page": 1, "dpi": 96}, "new-detail"))
     state = state_for(job, ["older", "fresh"])
-    return job, Context(store, Dispatcher(store)), state, exact, envs
+    context = Context(store, Dispatcher(store))
+    if capacity is None:
+        # Establish the intended initial geometry from actual native input.
+        # Tool descriptions, exact-read metadata and working-context feedback
+        # are real costs: the former fixed 65,536 no longer held this complete
+        # fresh batch. Leave room for a short handoff, but not the old prefix.
+        # This is fixture setup; the allowance never changes during the flow.
+        generous = {**job, "route": {**job["route"], "context_tokens": 1_000_000}}
+        measured = context.normal(generous, {**state, "history": ["fresh"]})[1]
+        assert measured["projection"]["deferred"] == []
+        capacity = measured["input_estimate"] + measured["output_reserve"] + 2000
+    job = store.update_job(job["id"], route={**job["route"], "context_tokens": capacity})
+    fresh = context.normal(job, {**state, "history": ["fresh"]})[1]
+    assert fresh["fits"] and fresh["projection"]["deferred"] == []
+    assert not context.normal(job, state)[1]["fits"]
+    return job, context, state, exact, envs
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)

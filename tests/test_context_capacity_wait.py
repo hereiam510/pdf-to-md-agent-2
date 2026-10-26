@@ -8,7 +8,8 @@ import pytest
 
 from pdfmd.context import Context, SYSTEM, estimate
 from pdfmd.evidence import Evidence
-from pdfmd.nexus import Nexus, make_payload
+from pdfmd.nexus import Nexus
+from pdfmd.working_context import with_feedback
 from pdfmd.runtime import Runtime
 from pdfmd.schema import Route
 from pdfmd.storage import Store
@@ -171,8 +172,8 @@ def test_short_arguments_do_not_defer_an_individually_fitting_result(setup, prot
     # large result is archived. This is an observable retention target, not a copy
     # of the implementation's per-object classification algorithm.
     group = context.group(job, "short", state, deferred={envs[0]["result_ref"]})
-    alternative = make_payload(Route.model_validate(job["route"]), SYSTEM,
-        [{"role": "user", "content": context.anchor(job, state)}, *group], definitions(False))
+    alternative = with_feedback(Route.model_validate(job["route"]), SYSTEM,
+        [{"role": "user", "content": context.anchor(job, state)}, *group], definitions(False), job["head"])
     size = estimate(alternative, Route.model_validate(job["route"]))
     job = store.update_job(job["id"], route={**job["route"],
         "context_tokens": size["input_estimate"] + size["output_reserve"] + 20})
