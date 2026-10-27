@@ -10,6 +10,13 @@ class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class WaitPolicy(Strict):
+    """Explicit streaming policy; values are starting points, not provider limits."""
+    first_progress_seconds: float = Field(default=600, ge=1, le=3600, allow_inf_nan=False)
+    idle_progress_seconds: float = Field(default=300, ge=1, le=3600, allow_inf_nan=False)
+    total_seconds: float | None = Field(default=None, ge=1, le=3600, allow_inf_nan=False)
+
+
 class Route(Strict):
     endpoint: str
     model: str = Field(min_length=1)
@@ -19,6 +26,8 @@ class Route(Strict):
     image_tokens: int | None = Field(default=None, ge=1)
     vision: bool = False
     timeout_seconds: float = Field(default=180, ge=1, le=3600)
+    # Missing/null retains the historical non-streaming deadline of a saved route.
+    wait_policy: WaitPolicy | None = None
     parameters: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -30,7 +39,7 @@ class Route(Strict):
         expected = "/chat/completions" if self.protocol == "chat_completions" else "/responses"
         if not url.path.rstrip("/").endswith(expected):
             raise ValueError(f"The endpoint must end with {expected}.")
-        reserved = {"model", "messages", "input", "tools", "stream", "store", "instructions", "max_tokens", "max_completion_tokens", "max_output_tokens", "background", "previous_response_id"}
+        reserved = {"model", "messages", "input", "tools", "stream", "stream_options", "store", "instructions", "max_tokens", "max_completion_tokens", "max_output_tokens", "background", "previous_response_id"}
         if reserved.intersection(self.parameters):
             raise ValueError("Generation parameters contain controller-owned fields.")
         if self.output_tokens >= self.context_tokens:

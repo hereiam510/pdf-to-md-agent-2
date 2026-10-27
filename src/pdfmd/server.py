@@ -49,20 +49,24 @@ class Engine:
                 "SELECT 1 FROM records WHERE job=? AND kind='request' LIMIT 1", (job,)).fetchone() is not None
             updated_route = (Route.model_validate({**(current["route"] or {}), **route}).model_dump()
                              if route is not None else current["route"])
+            if (current["route"] is not None and route is not None
+                    and "wait_policy" not in current["route"] and "wait_policy" not in route):
+                # An unrelated settings save must not migrate a historical route.
+                updated_route.pop("wait_policy", None)
             updated_limits = (Limits.model_validate({**current["limits"], **limits}).model_dump()
                               if limits is not None else current["limits"])
             if starting and updated_route is None:
                 raise ValueError("Configure a Nexus connection before starting this task.")
             if frozen:
                 for name, before, after, allowed in (
-                    ("route", current["route"], updated_route, {"context_tokens", "output_tokens", "image_tokens", "timeout_seconds"}),
+                    ("route", current["route"], updated_route, {"context_tokens", "output_tokens", "image_tokens", "timeout_seconds", "wait_policy"}),
                     ("limits", current["limits"], updated_limits, {"max_requests", "max_active_seconds"}),
                 ):
                     changed = {key for key in set(before) | set(after) if before.get(key) != after.get(key)}
                     if changed - allowed:
                         raise Conflict(f"This task already has a frozen request. Cannot change {name}: "
                                        + ", ".join(sorted(changed - allowed))
-                                       + ". Only capacity, new-request deadline and total request/time allowances can change.")
+                                       + ". Only capacity, new-request waiting policy and total request/time allowances can change.")
             if updated_route != current["route"] or updated_limits != current["limits"]:
                 change = {"id": uid(), "before": {"route": current["route"], "limits": current["limits"]},
                           "after": {"route": updated_route, "limits": updated_limits}}
@@ -148,6 +152,20 @@ class Engine:
                 if runtime:
                     runtime.close()
 
+    def receive_observation(self, job: str, request: dict) -> dict | None:
+        """Expose bounded receive facts, never native fragments or raw headers."""
+        if not request["attempts"]:
+            return None
+        attempt = self.store.get("attempt", request["attempts"][-1], job=job)
+        retained = self.store.maybe("stream_receive", attempt["id"])
+        observed = (retained["transport"] if attempt["status"] == "in_flight" and retained
+                    else attempt.get("transport", {}))
+        allowed = {"mode", "settled", "stop_cause", "headers_elapsed_seconds", "first_body_elapsed_seconds",
+                   "last_body_elapsed_seconds", "received_body_bytes", "first_progress_elapsed_seconds",
+                   "last_progress_elapsed_seconds", "event_count", "progress_count", "protocol_complete", "terminal_event"}
+        return {**{name: observed[name] for name in allowed if name in observed},
+                "http_status": observed.get("http_status", attempt.get("http_status"))}
+
     def close(self):
         for job, future in self.futures.items():
             if not future.done():
@@ -198,6 +216,7 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
         value["versions"] = list(reversed(engine.store.records("version", job)))
         value["requests"] = [{"id": r["id"], "kind": r["kind"], "status": r["status"], "capacity": r["meta"].get("capacity"),
                               "attempts": len(r["attempts"]), "route": r["route"],
+                              "receive": engine.receive_observation(job, r),
                               "replay_policy": r.get("replay_policy", {k: value["limits"][k] for k in ("replay_unknown", "max_attempts_per_request")})}
                              for r in engine.store.records("request", job)]
         value["active_time_gaps"] = engine.store.records("active_time_gap", job)

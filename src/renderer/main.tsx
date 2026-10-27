@@ -3,11 +3,13 @@ import { createRoot } from 'react-dom/client'
 import type { Job, Limits, Route, Settings } from './types'
 import { useDocumentSession } from './useDocumentSession'
 import { TaskSettings } from './TaskSettings'
+import { initialWaitPolicy, WaitingSettings } from './WaitingSettings'
+import { ReceiveProgress } from './ReceiveProgress'
 import './style.css'
 
 const api = window.workbench.invoke
 const statusNames: Record<string, string> = { ready: 'Ready to convert', running: 'Working', completed: 'Completed', paused: 'Paused', waiting: 'Needs your input', blocked: 'Needs attention', cancelled: 'Stopped', interrupted: 'Interrupted' }
-const defaults: Route = { endpoint: '', model: '', protocol: 'chat_completions', context_tokens: 131072, output_tokens: 8192, image_tokens: 4096, vision: false, timeout_seconds: 180, parameters: {} }
+const defaults: Route = { endpoint: '', model: '', protocol: 'chat_completions', context_tokens: 131072, output_tokens: 8192, image_tokens: 4096, vision: false, timeout_seconds: 180, wait_policy: initialWaitPolicy, parameters: {} }
 const defaultLimits: Limits = { max_requests: 80, max_active_seconds: 7200, replay_unknown: false, max_attempts_per_request: 1, max_response_repairs: 2 }
 
 function Icon({ name, size = 20 }: { name: 'plus' | 'file' | 'settings' | 'arrow' | 'download' | 'stop' | 'close' | 'book'; size?: number }) {
@@ -16,7 +18,8 @@ function Icon({ name, size = 20 }: { name: 'plus' | 'file' | 'settings' | 'arrow
 }
 
 function Connection({ initial, close, onSave }: { initial: Settings; close: () => void; onSave: (settings: Settings) => void }) {
-  const [route, setRoute] = useState<Route>({ ...defaults, ...initial.route })
+  const [route, setRoute] = useState<Route>({ ...defaults, ...initial.route,
+    wait_policy: initial.route ? initial.route.wait_policy : { ...initialWaitPolicy } })
   const [limits, setLimits] = useState<Limits>({ ...defaultLimits, ...initial.limits })
   const [key, setKey] = useState('')
   const [remember, setRemember] = useState(initial.remember ?? true)
@@ -42,7 +45,7 @@ function Connection({ initial, close, onSave }: { initial: Settings; close: () =
       <label className="check"><input type="checkbox" checked={route.vision} onChange={e => field('vision', e.target.checked)} />This route accepts image inputs</label>
       {route.vision && <label>Conservative token allowance per image<input type="number" required min="1" value={route.image_tokens ?? ''} onChange={e => field('image_tokens', Number(e.target.value))} /></label>}
       <div className="form-row"><label>Maximum model requests<input type="number" min="1" value={limits.max_requests} onChange={e => setLimits(l => ({ ...l, max_requests: Number(e.target.value) }))} /></label><label>Active time limit (minutes)<input type="number" min="1" value={limits.max_active_seconds / 60} onChange={e => setLimits(l => ({ ...l, max_active_seconds: Number(e.target.value) * 60 }))} /></label></div>
-      <label>Request timeout (seconds)<input type="number" min="1" max="3600" value={route.timeout_seconds} onChange={e => field('timeout_seconds', Number(e.target.value))} /></label>
+      <WaitingSettings value={route.wait_policy} deadline={route.timeout_seconds} onChange={value => field('wait_policy', value)} onDeadline={value => field('timeout_seconds', value)} legacyLabel="Request timeout (seconds)" />
     </details>
     <details><summary>Optional recovery and model parameters</summary><p className="hint">Limits remain in force after resume. An interrupted request can have unknown upstream usage.</p>
       <label>Automatic response corrections<input type="number" min="0" value={limits.max_response_repairs} onChange={e => setLimits(l => ({ ...l, max_response_repairs: Number(e.target.value) }))} /></label>
@@ -126,6 +129,7 @@ function App() {
   const running = Boolean(job?.running)
   const recoveryRequest = !running ? job?.compaction_recovery?.request : undefined
   const latestCapacity = job?.requests?.at(-1)?.capacity
+  const latestRequest = job?.requests?.at(-1)
   const unmeasuredIntervals = (job?.active_time_gaps?.length || 0) + (job?.active_since != null && !running ? 1 : 0)
   const continueTask = (recover_compaction_request?: string) => {
     if (!settings.hasKey || !settings.route?.model) { setSettingsOpen(true); return }
@@ -185,6 +189,7 @@ function App() {
         </div>
         <section className="agent-panel"><div className="agent-header"><div><span className={`agent-indicator ${running ? 'working' : ''}`} /><strong>Conversion agent</strong><span className="muted small">{job?.route?.model || settings.route?.model || 'Connect Nexus to begin'}</span></div><button className="text-button" onClick={() => setActivityOpen(!activityOpen)}>{activityOpen ? 'Hide activity' : 'View activity'} <span className="event-count">{job?.events?.length || 0}</span></button></div>
           {job?.last_message && <div className="agent-message">{job.last_message}</div>}
+          {latestRequest?.receive && <ReceiveProgress receive={latestRequest.receive} status={latestRequest.status} running={running} />}
           {activityOpen && <div className="activity-log">{job?.events?.map(event => <div key={event.seq}><time>{new Date(event.created * 1000).toLocaleTimeString()}</time><span>{event.type.replaceAll('_', ' ')}</span><code>{String(event.data.tool || event.data.reason || event.data.kind || event.data.version_id || '')}</code></div>)}</div>}
           <div className="agent-controls"><textarea aria-label="Instructions or reply" rows={2} placeholder={job?.status === 'waiting' ? 'Reply to the agent…' : 'Add an instruction or correction for the next step…'} value={amendment} onChange={e => setAmendment(e.target.value)} disabled={running} />
             {running ? <button className="stop-button" disabled={job?.cancel_requested || busy} onClick={() => act(() => api('cancel', { job: active }))}><Icon name="stop" size={16} />{job?.cancel_requested ? 'Stopping…' : 'Stop'}</button> : <button className="primary" disabled={busy || !ready || Boolean(editing)} onClick={() => continueTask()}>{job?.attempts ? 'Continue' : 'Start conversion'}<Icon name="arrow" size={16} /></button>}

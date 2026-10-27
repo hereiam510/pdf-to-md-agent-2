@@ -58,6 +58,8 @@ for (const protocol of ['chat_completions', 'responses']) {
       await app.evaluate(({ dialog }, source) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [source] }) }, source)
       await window.getByRole('button', { name: 'Nexus connection' }).click()
       await window.getByLabel('Protocol').selectOption(protocol)
+      // This retained scenario verifies the explicit legacy total-deadline path.
+      await window.getByLabel('Response waiting', { exact: true }).selectOption('complete')
       await window.getByLabel('Full endpoint URL').fill(`http://127.0.0.1:${address.port}/v1/${protocol === 'responses' ? 'responses' : 'chat/completions'}`)
       await window.getByLabel('Model alias').fill('Local settings fixture')
       await window.getByLabel('Nexus credential', { exact: true }).fill('fixture-only')
