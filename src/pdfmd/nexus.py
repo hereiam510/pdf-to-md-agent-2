@@ -113,9 +113,10 @@ def make_payload(route: Route, instructions: str, messages: list[dict], tools: l
 
 
 class Nexus:
-    def __init__(self, store: Store, credentials: Callable[[str], str], transport=None):
+    def __init__(self, store: Store, credentials: Callable[[str], str], transport=None, *, clock=None):
         self.store, self.credentials, self.transport = store, credentials, transport
         self.active_time = None
+        self.clock = clock or time.monotonic
 
     def freeze(self, job: str, key: str, payload: dict, kind: str, meta: dict) -> dict:
         old = self.store.maybe("request", key)
@@ -164,6 +165,14 @@ class Nexus:
         token = self.credentials(job)
         route = Route.model_validate(request["route"])
         attempt_id = uid()
+        started = time.time()
+        observed = {"deadline_seconds": route.timeout_seconds,
+                    "connect_timeout_seconds": min(30, route.timeout_seconds),
+                    "settled": False, "stop_cause": None, "error_type": None,
+                    "http_status": None, "headers_elapsed_seconds": None,
+                    "first_body_elapsed_seconds": None, "last_body_elapsed_seconds": None,
+                    "received_body_bytes": 0, "body_complete": None,
+                    "body_complete_elapsed_seconds": None, "elapsed_seconds": None}
         with self.store.transaction() as db:
             current = self.store.get_tx(db, "job", job)
             elapsed = self.active_time.elapsed(current) if self.active_time else current["active_seconds"]
@@ -177,15 +186,14 @@ class Nexus:
             request["status"] = "in_flight"
             self.store.put_tx(db, "request", key, job, request)
             self.store.put_tx(db, "attempt", attempt_id, job,
-                              {"id": attempt_id, "request": key, "status": "in_flight", "started": time.time(), "usage": None})
+                              {"id": attempt_id, "request": key, "status": "in_flight", "started": started, "usage": None,
+                               "transport": {k: v for k, v in observed.items() if k != "http_status"}})
         self.store.event(job, "request_started", {"request": key, "kind": request["kind"], "attempt": attempt_id})
         payload = self.store.json(request["payload_ref"], job)
         received = bytearray()
-        status = None
-        started = time.time()
         failure = None
         try:
-            status = asyncio.run(self.exchange(job, route, token, payload, received))
+            status = asyncio.run(self.exchange(job, route, token, payload, received, observed))
             if status < 200 or status >= 300:
                 request["status"] = "http_error"
                 failure = StopRun("provider_error", f"Nexus returned HTTP {status}. The error body is withheld to protect credentials. No context-overflow diagnosis is assumed.")
@@ -204,20 +212,34 @@ class Nexus:
                     request.update(status="accepted", accepted_ref=ref["ref"])
         except (httpx.HTTPError, asyncio.TimeoutError):
             request["status"] = "unknown"
-            failure = StopRun("unknown_outcome", "The connection ended before a complete accepted reply. Remote completion and usage are unknown.")
+            cause = observed["stop_cause"]
+            detail = (f"The local {route.timeout_seconds:g}-second request deadline was reached."
+                      if cause == "request_deadline" else
+                      "The connection ended before a complete accepted reply (" + str(cause or "unclassified") + ").")
+            status_text = (f"HTTP {observed['http_status']} headers were received."
+                           if observed["http_status"] is not None else "No HTTP status was observed.")
+            failure = StopRun("unknown_outcome", f"{detail} {status_text} "
+                              f"Received {observed['received_body_bytes']} success-body bytes. "
+                              "Remote completion and usage are unknown.")
         except StopRun as exc:
             request["status"] = "unknown"
             failure = exc
         finally:
             # Only success-stream bytes are retained. Arbitrary HTTP error bodies can echo credentials.
             if received and request["status"] == "unknown":
-                self.store.blob(job, "partial_native_response", bytes(received),
-                                {"request": key, "attempt": attempt_id, "complete_transport": False})
+                complete = observed["body_complete"] is True
+                raw = self.store.blob(job, "native_response" if complete else "partial_native_response", bytes(received),
+                                      {"request": key, "attempt": attempt_id, "complete_transport": complete,
+                                       "within_deadline": (observed["body_complete_elapsed_seconds"] < route.timeout_seconds)
+                                       if complete else None})
+                if complete:
+                    request["response_ref"] = raw["ref"]
             if failure:
                 request["failure"] = {"reason": failure.reason, "message": str(failure)}
             self.store.put("request", key, job, request)
             attempt = {"id": attempt_id, "request": key, "status": request["status"], "started": started,
-                       "finished": time.time(), "http_status": status, "usage": None, "remote_cancelled": None}
+                       "finished": time.time(), "http_status": observed["http_status"], "usage": None, "remote_cancelled": None,
+                       "transport": {k: v for k, v in observed.items() if k != "http_status"}}
             if request["accepted_ref"]:
                 attempt["usage"] = self.store.json(request["accepted_ref"], job)["usage"]
             self.store.put("attempt", attempt_id, job, attempt)
@@ -225,35 +247,78 @@ class Nexus:
             raise failure
         return self.store.json(request["accepted_ref"], job)
 
-    async def exchange(self, job, route, token, payload, received):
+    async def exchange(self, job, route, token, payload, received, observed):
+        started = self.clock()
+        elapsed = lambda: max(0.0, self.clock() - started)
+
         async def perform():
             async with httpx.AsyncClient(http2=True, trust_env=False, follow_redirects=False,
-                                         timeout=httpx.Timeout(route.timeout_seconds, connect=min(30, route.timeout_seconds)),
+                                         timeout=httpx.Timeout(route.timeout_seconds, connect=observed["connect_timeout_seconds"]),
                                          transport=self.transport) as client:
                 async with client.stream("POST", route.endpoint, headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
                                          content=encode(payload)) as response:
+                    # These observations survive a later body timeout. Do not retain response headers.
+                    observed["http_status"] = response.status_code
+                    observed["headers_elapsed_seconds"] = elapsed()
                     if 200 <= response.status_code < 300:
+                        observed["body_complete"] = False
                         async for chunk in response.aiter_bytes():
                             received.extend(chunk)
+                            if chunk:
+                                moment = elapsed()
+                                if observed["first_body_elapsed_seconds"] is None:
+                                    observed["first_body_elapsed_seconds"] = moment
+                                observed["last_body_elapsed_seconds"] = moment
+                                observed["received_body_bytes"] = len(received)
+                        observed["body_complete"] = True
+                        observed["body_complete_elapsed_seconds"] = elapsed()
+                        # A synchronous transport segment can finish before the poller gets control.
+                        # Full late bytes remain evidence, but cannot bypass the frozen deadline.
+                        if observed["body_complete_elapsed_seconds"] >= route.timeout_seconds:
+                            observed["stop_cause"] = "request_deadline"
+                            raise asyncio.TimeoutError()
+                        observed["stop_cause"] = "complete"
+                    else:
+                        # An observed error status is sufficient; arbitrary error bodies may echo credentials.
+                        observed["stop_cause"] = "http_error"
                     return response.status_code
 
         task = asyncio.create_task(perform())
-        started = time.monotonic()
         try:
             while not task.done():
                 if self.active_time:
                     self.active_time.checkpoint(force=False)
                 current = self.store.get("job", job)
-                elapsed = self.active_time.elapsed(current) if self.active_time else current["active_seconds"]
+                active_elapsed = self.active_time.elapsed(current) if self.active_time else current["active_seconds"]
                 if current["cancel_requested"]:
                     raise StopRun("cancelled", "Local request cancelled. Upstream cancellation and final cost are unknown.")
-                if elapsed >= current["limits"]["max_active_seconds"]:
+                if active_elapsed >= current["limits"]["max_active_seconds"]:
                     raise StopRun("budget_exhausted", "Active-time budget exhausted. Upstream completion and cost are unknown.")
-                if time.monotonic() - started >= route.timeout_seconds:
+                remaining = route.timeout_seconds - elapsed()
+                if remaining <= 0:
+                    observed["stop_cause"] = "request_deadline"
                     raise asyncio.TimeoutError()
-                await asyncio.wait({task}, timeout=0.1)
+                await asyncio.wait({task}, timeout=min(0.1, remaining))
             return await task
+        except httpx.TimeoutException as exc:
+            observed["stop_cause"] = next((cause for kind, cause in (
+                (httpx.ConnectTimeout, "connect_timeout"), (httpx.ReadTimeout, "read_timeout"),
+                (httpx.WriteTimeout, "write_timeout"), (httpx.PoolTimeout, "pool_timeout")) if isinstance(exc, kind)), "transport_timeout")
+            observed["error_type"] = type(exc).__name__
+            raise
+        except httpx.HTTPError as exc:
+            observed.update(stop_cause="transport_error", error_type=type(exc).__name__)
+            raise
+        except asyncio.TimeoutError:
+            if observed["stop_cause"] != "request_deadline":
+                observed["stop_cause"] = "transport_timeout"
+            raise
+        except StopRun as exc:
+            observed["stop_cause"] = {"cancelled": "user_stop", "budget_exhausted": "active_time_limit"}.get(exc.reason, "local_stop")
+            raise
         finally:
             if not task.done():
                 task.cancel()
                 await asyncio.gather(task, return_exceptions=True)
+            observed["elapsed_seconds"] = elapsed()
+            observed["settled"] = True

@@ -13,7 +13,7 @@ from filelock import FileLock
 
 from pdfmd.documents import Documents
 from pdfmd.evidence import Evidence
-from pdfmd.nexus import Nexus, StopRun
+from pdfmd.nexus import Nexus, StopRun, instruction_basis
 from pdfmd.runtime import Runtime
 from pdfmd.server import Engine, create_app
 from pdfmd.storage import Conflict, Store
@@ -102,6 +102,67 @@ def test_frozen_replay_policy_does_not_follow_later_task_values(setup, protocol,
     assert store.get("job", job["id"])["attempts"] == len(sent)
 
 
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+@pytest.mark.parametrize("kind", ["normal", "compaction"])
+def test_deadline_change_is_only_used_by_newly_frozen_requests(setup, protocol, kind):
+    store, initial = setup
+    job = protocol_job(store, initial, protocol)
+    job = store.update_job(job["id"], active_seconds=17, amendments=["Preserve the source units."])
+    sent = []
+
+    def reply(request):
+        sent.append({"payload": request.content, "timeout": request.extensions["timeout"]})
+        if len(sent) == 1:
+            raise httpx.ReadError("offline unknown outcome")
+        return httpx.Response(200, json=native(protocol, text="Retained reply."))
+
+    nexus = Nexus(store, lambda _: "fixture-only", httpx.MockTransport(reply))
+    prepared = nexus.freeze(job["id"], "old-prepared", {"original": "unsent"}, kind, {"basis": "retained"})
+    unknown = nexus.freeze(job["id"], "old-unknown", {"original": "unknown"}, kind, {"basis": "retained"})
+    with pytest.raises(StopRun):
+        nexus.send(job["id"], unknown["id"])
+    unknown = store.get("request", unknown["id"])
+    before = store.get("job", job["id"])
+    old_payloads = {request["id"]: store.bytes(request["payload_ref"], job["id"])
+                    for request in [prepared, unknown]}
+    engine = Engine(store.root)
+    try:
+        updated = engine.configure(job["id"], route={"timeout_seconds": 600})
+        assert updated == {**before, "route": {**before["route"], "timeout_seconds": 600}}
+        assert instruction_basis(updated) == instruction_basis(before)
+        assert len(sent) == 1 and updated["attempts"] == 1 and updated["active_seconds"] == 17
+        changes = store.records("task_settings", job["id"])
+        assert len(changes) == 1
+        assert changes[0]["before"] == {"route": before["route"], "limits": before["limits"]}
+        assert changes[0]["after"] == {"route": updated["route"], "limits": before["limits"]}
+        # Omitted settings and re-entry retain the explicit task value and every old request.
+        assert engine.configure(job["id"]) == updated
+        assert store.records("task_settings", job["id"]) == changes
+        for request in [prepared, unknown]:
+            assert store.get("request", request["id"]) == request
+            assert store.bytes(request["payload_ref"], job["id"]) == old_payloads[request["id"]]
+            assert nexus.freeze(job["id"], request["id"], {"replacement": "must not apply"}, kind, {}) == request
+        # A new deadline does not reopen the unknown request's exhausted replay gate.
+        with pytest.raises(StopRun) as stopped:
+            nexus.send(job["id"], unknown["id"])
+        assert stopped.value.reason == "unknown_outcome" and len(sent) == 1
+        assert store.get("request", unknown["id"]) == unknown
+        nexus.send(job["id"], prepared["id"])
+        assert sent[-1]["payload"] == old_payloads[prepared["id"]]
+        assert sent[-1]["timeout"]["read"] == prepared["route"]["timeout_seconds"] == 180
+        newly_frozen = nexus.freeze(job["id"], "new-request", {"new": "input"}, kind, {})
+        assert newly_frozen["route"] == updated["route"]
+        assert newly_frozen["instruction_basis"] == prepared["instruction_basis"]
+        assert newly_frozen["replay_policy"] == prepared["replay_policy"]
+        nexus.send(job["id"], newly_frozen["id"])
+        assert sent[-1]["timeout"]["read"] == 600
+        assert sent[-1]["timeout"]["connect"] == 30
+        assert store.get("job", job["id"])["attempts"] == len(sent) == 3
+        assert store.get("job", job["id"])["active_seconds"] == 17
+    finally:
+        engine.close()
+
+
 def test_stale_active_interval_is_unknown_not_ten_thousand_seconds_of_work(setup, monkeypatch):
     store, job = setup
     import time
@@ -131,18 +192,31 @@ def test_settings_are_atomic_and_do_not_relax_recovery_or_protocol(setup, protoc
     try:
         for route, limits in [({"protocol": "responses" if protocol == "chat_completions" else "chat_completions",
                                 "endpoint": "http://127.0.0.1/v1/" + ("responses" if protocol == "chat_completions" else "chat/completions")}, {}),
+                              ({"endpoint": job["route"]["endpoint"].replace(":8317", ":8318")}, {}),
+                              ({"model": "another-model"}, {}), ({"vision": False}, {}),
+                              ({"parameters": {"temperature": 0.4}}, {}),
                               ({"context_tokens": 131072}, {"max_requests": 90, "replay_unknown": True}),
                               ({}, {"max_attempts_per_request": 3}), ({}, {"max_response_repairs": 9})]:
             with pytest.raises(Conflict):
-                engine.configure(job["id"], route=route, limits=limits)
+                engine.configure(job["id"], route={"timeout_seconds": 600, **route}, limits=limits)
             assert store.get("job", job["id"]) == job
+            assert not store.records("task_settings", job["id"])
+            assert store.get("request", "frozen") == frozen
+        for invalid_deadline in [0, 3600.01, None, "invalid"]:
+            with pytest.raises(ValueError):
+                engine.configure(job["id"], route={"timeout_seconds": invalid_deadline, "context_tokens": 131072},
+                                 limits={"max_requests": 90})
+            assert store.get("job", job["id"]) == job
+            assert not store.records("task_settings", job["id"])
+            assert store.get("request", "frozen") == frozen
         with pytest.raises(ValueError):
             engine.configure(job["id"], route={"output_tokens": 131072})
         with FileLock(str(store.root / f"task-{job['id']}.lock")):
             with pytest.raises(Conflict, match="Stop the task"):
-                engine.configure(job["id"], limits={"max_requests": 90})
-        updated = engine.configure(job["id"], route={"context_tokens": 131072}, limits={"max_requests": 90})
+                engine.configure(job["id"], route={"timeout_seconds": 600}, limits={"max_requests": 90})
+        updated = engine.configure(job["id"], route={"context_tokens": 131072, "timeout_seconds": 600}, limits={"max_requests": 90})
         assert updated["attempts"] == 0 and updated["active_seconds"] == 0
+        assert updated["route"]["timeout_seconds"] == 600
         assert store.get("request", "frozen") == frozen
         assert len(store.records("task_settings", job["id"])) == 1
     finally:
@@ -150,7 +224,7 @@ def test_settings_are_atomic_and_do_not_relax_recovery_or_protocol(setup, protoc
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
-def test_total_allowance_does_not_reopen_same_correction_episode(setup, protocol):
+def test_deadline_and_total_allowance_do_not_reopen_same_correction_episode(setup, protocol):
     store, initial = setup
     job = protocol_job(store, initial, protocol)
     store.update_job(job["id"], limits={**job["limits"], "max_response_repairs": 0})
@@ -161,7 +235,7 @@ def test_total_allowance_does_not_reopen_same_correction_episode(setup, protocol
     engine = Engine(store.root, transport=httpx.MockTransport(reply))
     try:
         assert start(engine, job["id"])["stop_reason"] == "response_repair_exhausted"
-        engine.configure(job["id"], limits={"max_requests": 100, "max_active_seconds": 9000})
+        engine.configure(job["id"], route={"timeout_seconds": 600}, limits={"max_requests": 100, "max_active_seconds": 9000})
         assert start(engine, job["id"])["stop_reason"] == "response_repair_exhausted"
         assert len(seen) == 1
         # A meaningful instruction remains an existing supported episode boundary.
@@ -195,7 +269,7 @@ def test_settings_do_not_bypass_unknown_local_effect(setup, protocol):
     runtime.close()
     engine = Engine(store.root, transport=httpx.MockTransport(reply))
     try:
-        engine.configure(job["id"], limits={"max_requests": 100})
+        engine.configure(job["id"], route={"timeout_seconds": 600}, limits={"max_requests": 100})
         current = start(engine, job["id"])
         assert current["stop_reason"] == "local_outcome_unknown" and len(sent) == 1
     finally:
@@ -255,7 +329,7 @@ def test_settings_continue_to_saved_reopened_exported_source(tmp_path, route, pr
         originals = {b["ref"]: sha256(store.bytes(b["ref"], job["id"])).hexdigest() for b in store.records("blob", job["id"])}
         frozen = store.records("request", job["id"])
         configured = client.post(f"/jobs/{job['id']}/settings", json={
-            "route": {"context_tokens": 131072, "output_tokens": 3072},
+            "route": {"context_tokens": 131072, "output_tokens": 3072, "timeout_seconds": 600},
             "limits": {"max_requests": 10, "max_active_seconds": 1800}})
         assert configured.status_code == 200
         changed = configured.json()
@@ -268,6 +342,7 @@ def test_settings_continue_to_saved_reopened_exported_source(tmp_path, route, pr
     with TestClient(app, headers=headers) as client:
         loaded = client.get(f"/jobs/{job['id']}").json()
         assert loaded["route"]["context_tokens"] == 131072 and loaded["limits"]["max_requests"] == 10
+        assert loaded["route"]["timeout_seconds"] == 600
         assert client.post(f"/jobs/{job['id']}/start", json={"key": "fixture-only"}).status_code == 200
         app.state.engine.futures[job["id"]].result(timeout=30)
         current = client.get(f"/jobs/{job['id']}").json()
@@ -289,6 +364,9 @@ def test_settings_continue_to_saved_reopened_exported_source(tmp_path, route, pr
         recovered = store.get("request", old["id"])
         for field in ["id", "payload_ref", "route", "meta", "replay_policy"]:
             assert recovered[field] == old[field]
+    new_requests = [request for request in store.records("request", job["id"])
+                    if request["id"] not in {old["id"] for old in frozen}]
+    assert new_requests and all(request["route"]["timeout_seconds"] == 600 for request in new_requests)
     evidence = Evidence(store)
     text_ref = evidence.inspect(job["id"], [1], "text")["ref"]
     assert evidence.read(job["id"], text_ref)["complete"]

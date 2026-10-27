@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 import httpx
 import pytest
 
+from pdfmd.documents import Documents
 from pdfmd.nexus import Nexus
 from pdfmd.runtime import Runtime
 from pdfmd.server import Engine, create_app
@@ -20,14 +21,14 @@ from test_runtime import tool
 PROTOCOLS = ["chat_completions", "responses"]
 
 
-def seed(runtime, store, job):
+def seed(runtime, store, job, pins=()):
     """Seed complete historical records, then let real Runtime prepare/send."""
     payload, capacity = runtime.context.normal(job, state_for(job, []))
     frozen = runtime.nexus.freeze(job["id"], "seed-history", payload, "normal", {"capacity": capacity})
     refs, _ = read_batch(store, job, "seed-history", ["A" * 30000, "B" * 30000])
     accepted = store.get("request", "seed-history")["accepted_ref"]
     store.put("request", "seed-history", job["id"], {**frozen, "status": "accepted", "accepted_ref": accepted})
-    state = state_for(job, ["seed-history"])
+    state = state_for(job, ["seed-history"], pins)
     runtime.graph.update_state({"configurable": {"thread_id": job["id"]}}, state, as_node="tools")
     assert not runtime.context.normal(job, state)[1]["fits"]
     return refs
@@ -61,10 +62,14 @@ def fail_unknown(setup, protocol):
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
-def test_explicit_compaction_recovery_continues_edit_and_preserves_delivery(delivery, tmp_path, protocol):
+def test_task_deadline_change_then_compaction_recovery_preserves_delivery(delivery, tmp_path, protocol):
     store, original, version, image, source = delivery
     job = protocol_job(store, store.get("job", original["id"]), protocol)
-    store.update_job(job["id"], active_seconds=17)
+    job = store.update_job(job["id"], route={**job["route"], "timeout_seconds": 180}, active_seconds=17)
+    documents = Documents(store)
+    original_version = documents.version(job["id"], version)
+    original_files = {name: (documents.root / version / name).read_bytes()
+                      for name in store.get("version", version, job=job["id"])["files"]}
     seen = []
     def reply(request):
         payload = json.loads(request.content)
@@ -74,7 +79,7 @@ def test_explicit_compaction_recovery_continues_edit_and_preserves_delivery(deli
         if len(seen) == 2:
             assert not payload.get("tools")
             assert "explicit_compaction_recovery" in json.dumps(payload)
-            assert payload.get("max_completion_tokens", payload.get("max_output_tokens")) == 3072
+            assert payload.get("max_completion_tokens", payload.get("max_output_tokens")) == job["route"]["output_tokens"]
             value = native(protocol, text=json.dumps(handoff(job, current_state="Complete saved version: " + version)))
         elif len(seen) == 3:
             value = native(protocol, tool("edit_document", {"base_version": version, "expected_head": version,
@@ -86,35 +91,81 @@ def test_explicit_compaction_recovery_continues_edit_and_preserves_delivery(deli
         return httpx.Response(200, json=value)
     transport = httpx.MockTransport(reply)
     runtime = Runtime(store, Nexus(store, lambda _: "offline", transport))
-    refs = seed(runtime, store, job)
+    refs = seed(runtime, store, job, pins=[image["ref"]])
     runtime.run(job["id"])
     old = runtime.pending_request(job["id"])
+    policy = {field: runtime.graph.get_state({"configurable": {"thread_id": job["id"]}}).values.get(field)
+              for field in ("notes", "pinned", "pin_views", "released")}
     runtime.close()
+    assert old["route"]["timeout_seconds"] == 180
+    old_attempt = store.get("attempt", old["attempts"][0], job=job["id"])
+    original_requests = store.records("request", job["id"])
+    original_operations = store.records("operation", job["id"])
+    original_blobs = {blob["ref"]: store.bytes(blob["ref"], job["id"])
+                      for blob in store.records("blob", job["id"])}
     frozen = store.bytes(old["payload_ref"], job["id"])
     before = store.get("job", job["id"])
     app = create_app(store.root, "local", transport=transport)
     with TestClient(app, headers={"Authorization": "Bearer local"}) as client:
         engine = app.state.engine
         assert client.get(f"/jobs/{job['id']}").json()["compaction_recovery"] == {"request": old["id"]}
+        response = client.post(f"/jobs/{job['id']}/settings", json={"route": {"timeout_seconds": 600}})
+        assert response.status_code == 200
+        updated_route = {**before["route"], "timeout_seconds": 600}
+        assert response.json() == {**before, "route": updated_route}
+        assert len(seen) == 1 and store.records("request", job["id"]) == original_requests
+        settings = store.records("task_settings", job["id"])
+        assert len(settings) == 1
+        assert settings[0]["before"] == {"route": before["route"], "limits": before["limits"]}
+        assert settings[0]["after"] == {"route": updated_route, "limits": before["limits"]}
         # Ordinary Continue remains the original frozen replay gate.
         start(engine, job["id"])
         assert len(seen) == 1 and engine.store.get("job", job["id"])["stop_reason"] == "unknown_outcome"
         response = client.post(f"/jobs/{job['id']}/start", json={"key": "offline",
-            "recover_compaction_request": old["id"], "route": {"output_tokens": 3072}})
+            "recover_compaction_request": old["id"]})
         assert response.status_code == 200
         engine.futures[job["id"]].result(timeout=30)
         assert client.get(f"/jobs/{job['id']}").json()["compaction_recovery"] is None
+        completed = store.get("job", job["id"])
+        requests = store.records("request", job["id"])
+        response = client.post(f"/jobs/{job['id']}/start", json={"key": "offline",
+            "recover_compaction_request": old["id"]})
+        assert response.status_code == 409 and "pending request" in response.json()["error"]
+        assert store.get("job", job["id"]) == completed
+        assert store.records("request", job["id"]) == requests and len(seen) == 4
     current = store.get("job", job["id"])
     assert current["status"] == "completed" and current["attempts"] == 4
     assert current["active_seconds"] >= before["active_seconds"] >= 17
     assert store.get("request", old["id"]) == old and store.bytes(old["payload_ref"], job["id"]) == frozen
+    assert store.get("attempt", old_attempt["id"], job=job["id"]) == old_attempt
+    assert old_attempt["transport"]["deadline_seconds"] == 180
+    new_requests = [request for request in requests if request["id"] not in {r["id"] for r in original_requests}]
+    assert len(new_requests) == 3 and sum(r["kind"] == "compaction" for r in new_requests) == 1
+    for request in new_requests:
+        assert request["route"] == updated_route and request["replay_policy"] == old["replay_policy"]
+        assert request["status"] == "accepted" and len(request["attempts"]) == 1
+        assert store.get("attempt", request["attempts"][0], job=job["id"])["transport"]["deadline_seconds"] == 600
+    for request in original_requests:
+        assert store.get("request", request["id"], job=job["id"]) == request
+    for operation in original_operations:
+        assert store.get("operation", operation["id"], job=job["id"]) == operation
+    for ref, content in original_blobs.items():
+        assert store.bytes(ref, job["id"]) == content
+    reopened = Runtime(store, Nexus(store, lambda _: "offline", transport))
+    state = reopened.graph.get_state({"configurable": {"thread_id": job["id"]}}).values
+    reopened.close()
+    assert {field: state.get(field) for field in policy} == policy
     choice = store.json(f"continuation:{old['id']}", job["id"])
     assert choice["authorization"] == {"kind": "human_compaction_recovery", "request": old["id"]}
     assert choice["payload_ref"] == old["payload_ref"] and choice["attempts"] == old["attempts"]
     assert len([e for e in store.events(job["id"]) if e["type"] == "request_continued"]) == 1
     assert not any(op["id"].startswith(old["id"] + ":") for op in store.records("operation", job["id"]))
     assert [store.json(ref, job["id"])["text"] for ref in refs] == ["A" * 30000, "B" * 30000]
-    assert current["head"] != version and current["limits"] == before["limits"]
+    assert current["head"] != version and current["limits"] == before["limits"] and current["route"] == updated_route
+    assert documents.version(job["id"], version) == original_version
+    assert documents.version(job["id"], current["delivery"])["content"]["blocks"] == original_version["content"]["blocks"]
+    for name, content in original_files.items():
+        assert (documents.root / version / name).read_bytes() == content
     check_delivery(store, job, current["delivery"], image, source, tmp_path / "recovered.zip")
 
 

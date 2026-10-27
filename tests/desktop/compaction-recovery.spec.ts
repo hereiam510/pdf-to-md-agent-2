@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url'
 import { execFileSync } from 'node:child_process'
 
 for (const protocol of ['chat_completions', 'responses']) {
-  test(`explicit compaction recovery preserves frozen work and delivery: ${protocol}`, async () => {
+  test(`task deadline and explicit compaction recovery preserve frozen work and delivery: ${protocol}`, async () => {
     const evidenceRoot = resolve(process.env.PDFMD_RECOVERY_EVIDENCE || '.local/compaction-recovery-desktop')
     await fs.mkdir(evidenceRoot, { recursive: true })
     const directory = await fs.mkdtemp(join(evidenceRoot, `${protocol}-`))
@@ -77,6 +77,23 @@ for (const protocol of ['chat_completions', 'responses']) {
       await page.getByRole('button', { name: 'Save connection' }).click()
       await expect(page.getByRole('button', { name: 'Resume context organization', exact: true })).toBeVisible()
       expect((await getJob()).compaction_recovery.request).toBe(fixture.unknown_request.id)
+      await page.getByRole('button', { name: 'Task limits', exact: true }).click()
+      const deadline = page.getByLabel('Request deadline (seconds)', { exact: true })
+      await expect(deadline).toHaveValue('180')
+      await deadline.fill(String(fixture.deadline_seconds))
+      await page.screenshot({ path: join(directory, 'deadline-settings.png') })
+      await page.getByRole('button', { name: 'Save task limits' }).click()
+      await expect(page.getByRole('form', { name: 'Task limits', exact: true })).toBeHidden()
+      const configured = await getJob()
+      expect(configured.route).toEqual({ ...fixture.route, timeout_seconds: fixture.deadline_seconds })
+      expect(configured.limits).toEqual(fixture.limits)
+      expect(configured.attempts).toBe(fixture.attempts_before)
+      expect(configured.active_seconds).toBe(fixture.active_seconds_before)
+      expect(configured.requests.find((request: any) => request.id === fixture.unknown_request.id).route).toEqual(fixture.route)
+      expect(configured.compaction_recovery.request).toBe(fixture.unknown_request.id)
+      expect(payloads).toHaveLength(0)
+      observed.push({ stage: 'task_deadline_saved', future_deadline_seconds: configured.route.timeout_seconds,
+        frozen_deadline_seconds: fixture.unknown_request.route.timeout_seconds, requests_sent: payloads.length })
       await page.getByRole('button', { name: 'Continue', exact: true }).click()
       await expect.poll(async () => (await getJob()).events.filter((e: any) => e.type === 'stopped').length,
         { timeout: 15000 }).toBe(fixture.unknown_stop_events_before + 1)
@@ -90,6 +107,25 @@ for (const protocol of ['chat_completions', 'responses']) {
       expect(completed.attempts).toBe(fixture.attempts_before + 3)
       expect(completed.compaction_recovery).toBeNull()
       expect(completed.versions).toHaveLength(2)
+      expect(completed.route).toEqual(configured.route)
+      const originalIds = new Set(fixture.original_requests.map((request: any) => request.id))
+      const successors = completed.requests.filter((request: any) => !originalIds.has(request.id))
+      expect(successors).toHaveLength(3)
+      expect(successors.filter((request: any) => request.kind === 'compaction')).toHaveLength(1)
+      for (const request of successors) {
+        expect(request.route).toEqual(configured.route)
+        expect(request.replay_policy).toEqual(fixture.unknown_request.replay_policy)
+      }
+      const duplicate = await page.evaluate(async args => {
+        try {
+          await globalThis.window.workbench.invoke('start', args)
+          return { rejected: false, error: '' }
+        } catch (error) { return { rejected: true, error: String(error) } }
+      }, { job: fixture.job, recover_compaction_request: fixture.unknown_request.id })
+      expect(duplicate.rejected).toBe(true)
+      expect(duplicate.error).toContain('pending request')
+      expect(await getJob()).toEqual(completed)
+      expect(payloads).toHaveLength(3)
       for (const stage of ['saved', 'reopened']) {
         const body = page.frameLocator('iframe').locator('body')
         await expect(body).toContainText(fixture.opening)
@@ -107,6 +143,7 @@ for (const protocol of ['chat_completions', 'responses']) {
           await page.locator('.document-item').first().click()
           expect((await getJob()).attempts).toBe(completed.attempts)
           expect((await getJob()).compaction_recovery).toBeNull()
+          expect((await getJob()).route).toEqual(configured.route)
           expect(payloads).toHaveLength(3)
         }
       }
@@ -131,7 +168,9 @@ for (const protocol of ['chat_completions', 'responses']) {
         observed.push({ stage: 'exported', browser: browser.version() })
       } finally { await browser.close() }
       await fs.writeFile(join(directory, 'renderer-verification.json'), JSON.stringify({ observed,
-        ordinary_continue_requests: 0, explicit_recovery_requests: 3, live_model_calls: 0 }, null, 2))
+        settings_alone_requests: 0, ordinary_continue_requests: 0, explicit_recovery_requests: 3,
+        duplicate_recovery_rejected: true, new_request_deadline_seconds: fixture.deadline_seconds,
+        live_model_calls: 0 }, null, 2))
     } finally {
       if (app) await app.close()
       await fs.writeFile(join(directory, 'fixture-payloads.json'), JSON.stringify({ payloads, errors }, null, 2))

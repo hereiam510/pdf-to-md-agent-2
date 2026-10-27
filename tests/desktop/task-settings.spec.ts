@@ -43,6 +43,18 @@ for (const protocol of ['chat_completions', 'responses']) {
     try {
       let window = await app.firstWindow()
       await expect(window.getByText('Local engine ready')).toBeVisible({ timeout: 60000 })
+      // Observe the renderer's settings payload at the real main-process API boundary.
+      // Capture only task settings bodies, never credentials or request headers.
+      await app.evaluate(() => {
+        const actualFetch = globalThis.fetch
+        ;(globalThis as any).taskSettingsWrites = []
+        globalThis.fetch = (input, init) => {
+          if (/\/jobs\/[^/]+\/settings$/.test(String(input)) && init?.method === 'POST') {
+            ;(globalThis as any).taskSettingsWrites.push(JSON.parse(String(init.body)))
+          }
+          return actualFetch(input, init)
+        }
+      })
       await app.evaluate(({ dialog }, source) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [source] }) }, source)
       await window.getByRole('button', { name: 'Nexus connection' }).click()
       await window.getByLabel('Protocol').selectOption(protocol)
@@ -60,6 +72,7 @@ for (const protocol of ['chat_completions', 'responses']) {
       await expect(window.locator('.status')).toHaveText('Needs attention', { timeout: 15000 })
       expect(payloads).toHaveLength(0)
       await window.getByRole('button', { name: 'Task limits', exact: true }).click()
+      await expect(window.getByLabel('Request deadline (seconds)', { exact: true })).toHaveValue('180')
       await window.getByLabel('Task context capacity', { exact: true }).fill('65536')
       await window.getByLabel('Task output reserve', { exact: true }).fill('2048')
       await window.getByRole('button', { name: 'Save task limits' }).click()
@@ -87,9 +100,22 @@ for (const protocol of ['chat_completions', 'responses']) {
       await window.getByLabel('Task output reserve', { exact: true }).fill('4096')
       await window.getByLabel('Task total model requests', { exact: true }).fill('10')
       await window.getByLabel('Task active time limit (seconds)', { exact: true }).fill('1800')
+      const deadline = window.getByLabel('Request deadline (seconds)', { exact: true })
+      await expect(deadline).toHaveValue('180')
+      await expect(deadline).toHaveAttribute('min', '1')
+      await expect(deadline).toHaveAttribute('max', '3600')
+      await deadline.fill('600')
       await window.screenshot({ path: join(directory, 'settings-before-save.png') })
       await window.getByRole('button', { name: 'Save task limits' }).click()
       await expect(window.getByTestId('effective-task-limits')).toContainText('131,072')
+      const settingsWrites = await app.evaluate(() => (globalThis as any).taskSettingsWrites)
+      expect(settingsWrites).toHaveLength(2)
+      expect(settingsWrites[0].route.timeout_seconds).toBe(180)
+      expect(settingsWrites[1]).toEqual({
+        route: { context_tokens: 131072, output_tokens: 4096, image_tokens: before.route.image_tokens, timeout_seconds: 600 },
+        limits: { max_requests: 10, max_active_seconds: 1800 }
+      })
+      expect(payloads).toHaveLength(1)
       // Connection defaults still contain the original 2048/1; Continue must use the task's saved values.
       await window.getByRole('button', { name: 'Continue', exact: true }).click()
       await expect(window.locator('.status')).toHaveText('Completed', { timeout: 30000 })
@@ -97,16 +123,22 @@ for (const protocol of ['chat_completions', 'responses']) {
       const current = await window.evaluate(job => globalThis.window.workbench.invoke('job', { job }), before.id)
       expect(current.attempts).toBe(4)
       expect(current.limits.max_requests).toBe(10)
+      expect(current.route.timeout_seconds).toBe(600)
       expect(current.active_seconds).toBeGreaterThanOrEqual(17)
       expect(current.active_seconds).toBeLessThan(100)
       expect(current.active_time_gaps).toHaveLength(1)
       expect(current.requests[1].route.context_tokens).toBe(65536)
+      expect(current.requests[1].route.timeout_seconds).toBe(180)
       expect(current.requests[2].route.context_tokens).toBe(131072)
+      expect(current.requests[2].route.timeout_seconds).toBe(600)
       await expect(window.getByText('interrupted interval(s) have unknown active time.', { exact: false })).toBeVisible()
       await app.close(); app = await launch(); window = await app.firstWindow()
       await expect(window.getByText('Local engine ready')).toBeVisible({ timeout: 60000 })
       await window.locator('.document-item').first().click()
       await expect(window.getByTestId('effective-task-limits')).toContainText('131,072')
+      await window.getByRole('button', { name: 'Task limits', exact: true }).click()
+      await expect(window.getByLabel('Request deadline (seconds)', { exact: true })).toHaveValue('600')
+      await window.getByRole('button', { name: 'Close', exact: true }).click()
       await expect(window.frameLocator('iframe').getByText('End of the synthetic section.', { exact: false })).toBeVisible()
       await window.frameLocator('iframe').locator('img').evaluateAll(async images => Promise.all(images.map(i => (i as HTMLImageElement).decode())))
       await app.evaluate(({ dialog }, destination) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath: destination }) }, destination)
@@ -116,7 +148,7 @@ for (const protocol of ['chat_completions', 'responses']) {
       const verification = JSON.parse(execFileSync(resolve('.venv/Scripts/python.exe'), ['tests/desktop/verify_delivery.py',
         workspace, source, destination, current.id, current.delivery], { windowsHide: true, encoding: 'utf-8' }))
       expect(verification).toMatchObject({ verified: true, source_pages: 2, blocks: 3, assets: 1, claim: 'complete' })
-      await fs.writeFile(join(directory, 'verification.json'), JSON.stringify({ ...verification, protocol, before, current, live_model_calls: 0 }, null, 2))
+      await fs.writeFile(join(directory, 'verification.json'), JSON.stringify({ ...verification, protocol, before, current, settingsWrites, live_model_calls: 0 }, null, 2))
       await fs.writeFile(join(directory, 'fixture-payloads.json'), JSON.stringify(payloads, null, 2))
     } finally {
       await app.close()

@@ -55,14 +55,14 @@ class Engine:
                 raise ValueError("Configure a Nexus connection before starting this task.")
             if frozen:
                 for name, before, after, allowed in (
-                    ("route", current["route"], updated_route, {"context_tokens", "output_tokens", "image_tokens"}),
+                    ("route", current["route"], updated_route, {"context_tokens", "output_tokens", "image_tokens", "timeout_seconds"}),
                     ("limits", current["limits"], updated_limits, {"max_requests", "max_active_seconds"}),
                 ):
                     changed = {key for key in set(before) | set(after) if before.get(key) != after.get(key)}
                     if changed - allowed:
                         raise Conflict(f"This task already has a frozen request. Cannot change {name}: "
                                        + ", ".join(sorted(changed - allowed))
-                                       + ". Only capacity and total request/time allowances can change.")
+                                       + ". Only capacity, new-request deadline and total request/time allowances can change.")
             if updated_route != current["route"] or updated_limits != current["limits"]:
                 change = {"id": uid(), "before": {"route": current["route"], "limits": current["limits"]},
                           "after": {"route": updated_route, "limits": updated_limits}}
