@@ -152,8 +152,8 @@ class Nexus:
     def _settle_accepted(self, job: str, key: str, *, verified_stream: dict | None = None) -> dict:
         """Validate immutable evidence, then atomically merge current metadata.
 
-        Only a freshly archived complete stream from this send can reuse the
-        receive-time reconstruction. Reopen always strictly reconstructs it.
+        Only a freshly archived complete stream from this send can reuse its
+        disk reconstruction and receive-boundary check. Reopen repeats both.
         No file reads/decoder work occurs while holding the write transaction.
         """
         request = self.store.get("request", key, job=job)
@@ -211,8 +211,17 @@ class Nexus:
             if verified_stream != stream:
                 durable = self.store.read_stream(job, key, attempt_id)
                 decoder = StreamDecoder(route.protocol)
-                decoder.feed(durable["data"])
-                if encode(decoder.finish()) != native_bytes:
+                try:
+                    decoder.feed(durable["data"])
+                    value = decoder.finish_received()
+                except StreamError as exc:
+                    # Historical acceptance is retained even if its received
+                    # suffix cannot meet the shared criterion. Do not demote
+                    # pointers/usage, replay inference or roll back tool effects.
+                    raise StopRun("accepted_evidence_conflict",
+                                  "Saved acceptance conflicts with its received stream: " + str(exc)
+                                  + " All evidence and committed tool effects are retained; no request was sent.") from exc
+                if encode(value) != native_bytes:
                     raise ValueError("Accepted native response contradicts its source stream.")
             receipt = self.store.maybe("stream_receive", attempt_id)
             if receipt and (receipt.get("request") != key or receipt.get("attempt") != attempt_id):
@@ -569,8 +578,10 @@ class Nexus:
                                     observed.update(terminal_elapsed_seconds=moment, stop_cause="complete")
                                 record_observation()
                             if decoder.complete:
-                                # Terminal protocol output is sufficient. Do not wait for
-                                # a gateway to close an otherwise complete SSE connection.
+                                # Check all bytes already received, including the suffix
+                                # in this chunk, using the same rule as saved replay.
+                                # Do not wait for gateway EOF or read another chunk.
+                                decoder.finish_received()
                                 return response.status_code
                 observed["body_complete"] = True
                 observed["body_complete_elapsed_seconds"] = elapsed()

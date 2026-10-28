@@ -88,7 +88,7 @@ class StreamDecoder:
         """
         self.last_feed = FeedResult()
         if self._ended:
-            raise StreamError("The stream decoder has already reached EOF.")
+            raise StreamError("The stream decoder has already reached its receive boundary.")
         try:
             text = self._utf8.decode(chunk)
         except UnicodeError as exc:
@@ -407,8 +407,14 @@ class StreamDecoder:
         except (KeyError, IndexError, TypeError) as exc:
             raise StreamError("The completed response omitted streamed content.") from exc
 
-    def finish(self) -> dict:
-        """EOF never dispatches an unfinished SSE frame or manufactures a result."""
+    def finish_received(self) -> dict:
+        """Validate the entire received prefix at terminal stop or natural EOF.
+
+        A recognized comment prefix cannot become data, so it needs no trailing
+        newline. Every received UTF-8 character must still be complete. Pending
+        data and other unfinished lines are not silently discarded. This does
+        not assert HTTP EOF or read bytes beyond the caller's receive boundary.
+        """
         self._ended = True
         try:
             self._utf8.decode(b"", final=True)
@@ -416,6 +422,10 @@ class StreamDecoder:
             raise StreamError("The stream ended inside a UTF-8 character.") from exc
         if not self.complete:
             raise StreamError("The stream ended before its required terminal event.")
-        if self._line or self._data:
+        if self._data or (self._line and self._line[0] != ":"):
             raise StreamError("The stream ended inside a trailing SSE event.")
         return deepcopy(self.value)
+
+    def finish(self) -> dict:
+        """Natural EOF uses the same rule; it cannot manufacture a terminal."""
+        return self.finish_received()
