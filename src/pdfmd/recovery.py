@@ -655,14 +655,21 @@ def resolve(store, job, key, basis, *, choice=CHOICE):
                 view = ReadView(store.root, db)
                 if catalog_basis(view, job) != plan["catalog"]:
                     raise Conflict("Task/evidence changed while preparing recovery; refresh and select again.")
+                # The per-task basis cannot see foreign rows with colliding
+                # primary keys. Check every publication target's SQL owner in
+                # this same transaction before adopting or updating it.
+                if store.get_tx(db, "conflict_resolution", key, job=job) is not None:
+                    raise Conflict("This request already has a committed resolution.")
                 for blob in aliases:
-                    prior = store.get_tx(db, "blob", blob["ref"])
+                    prior = store.get_tx(db, "blob", blob["ref"], job=job)
                     if prior and prior != blob:
                         raise Conflict("Recovery alias conflicts with an existing immutable object.")
                     store.put_tx(db, "blob", blob["ref"], job, blob)
                 for record in operation_records:
+                    store.get_tx(db, "operation", record["id"], job=job)
                     store.put_tx(db, "operation", record["id"], job, record)
                 for kind, identity, value in ctx["writes"]:
+                    store.get_tx(db, kind, identity, job=job)
                     store.put_tx(db, kind, identity, job, value)
                 store.put_tx(db, "conflict_resolution", key, job, authority)
             committed(store, receipt)
