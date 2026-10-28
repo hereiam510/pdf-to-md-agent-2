@@ -142,6 +142,25 @@ class Nexus:
         """Recover locally accepted bytes without sending anything."""
         request = self.store.get("request", key, job=job)
         staged = self.store.maybe("blob", f"accepted:{key}")
+        accepted_ref = request["accepted_ref"] or (staged["ref"] if staged else None)
+        if accepted_ref:
+            acceptance = self.store.get("blob", accepted_ref, job=job)
+            accepted = self.store.json(accepted_ref, job)
+            if accepted.get("stream_ref"):
+                stream = self.store.get("blob", accepted["stream_ref"], job=job)
+                attempt_id = stream["meta"]["attempt"]
+                self.store.read_stream(job, key, attempt_id)
+                native = self.store.get("blob", accepted["native_ref"], job=job)
+                if (acceptance["ref"] != accepted_ref or acceptance["kind"] != "accepted_response"
+                        or acceptance["meta"].get("request") != key
+                        or acceptance["meta"].get("attempt") != attempt_id
+                        or stream["ref"] != f"raw-stream:{attempt_id}" or not stream["meta"].get("complete_protocol")
+                        or native["kind"] != "assembled_response" or native["meta"].get("request") != key
+                        or native["meta"].get("attempt") != attempt_id
+                        or native["meta"].get("source_stream_ref") != stream["ref"]
+                        or not native["meta"].get("complete_protocol")):
+                    raise ValueError("Accepted streaming evidence has inconsistent provenance.")
+                self.store.bytes(native["ref"], job)
         if not request["accepted_ref"] and staged:
             # Accepting bytes and updating the request pointer are separate commits.
             accepted = self.store.json(staged["ref"], job)
@@ -213,34 +232,40 @@ class Nexus:
         payload = self.store.json(request["payload_ref"], job)
         received = bytearray()
         decoder = StreamDecoder(route.protocol) if streaming else None
-        chunks = []
+        cursor = {"format": "ordered_chunks_v1", "chunk_count": 0, "bytes": 0,
+                  "sha256": sha256(b"").hexdigest(), "last_chunk_ref": None}
+        stream_digest = sha256()
 
         def record_chunk(chunk, moment):
             # Immutable decoded SSE bytes are persisted before interpretation. Each attempt
             # has its own sequence; re-entry never appends to another attempt's stream.
+            index = cursor["chunk_count"]
             blob = self.store.blob(job, "stream_chunk", chunk,
-                                   {"request": key, "attempt": attempt_id, "index": len(chunks),
-                                    "elapsed_seconds": moment}, key=f"stream:{attempt_id}:{len(chunks)}")
-            chunks.append(blob["ref"])
+                                   {"request": key, "attempt": attempt_id, "index": index,
+                                    "elapsed_seconds": moment}, key=f"stream:{attempt_id}:{index}")
+            stream_digest.update(chunk)
+            cursor.update(chunk_count=index + 1, bytes=cursor["bytes"] + len(chunk),
+                          sha256=stream_digest.hexdigest(), last_chunk_ref=blob["ref"])
 
         def record_observation():
             # Checkpoint observations independently of final acceptance. A hard stop may
             # leave extra durable chunks beyond this observation; absence is not zero work.
             self.store.put("stream_receive", attempt_id, job,
-                           {"attempt": attempt_id, "request": key, "chunks": list(chunks),
+                           {"attempt": attempt_id, "request": key, "cursor": dict(cursor),
                             "transport": deepcopy(observed)})
 
         failure = None
         try:
-            status = asyncio.run(self.exchange(job, route, token, payload, received, observed,
-                                               decoder=decoder, wait=wait, record_chunk=record_chunk,
-                                               record_observation=record_observation))
+            with self.store.connection_scope():
+                status = asyncio.run(self.exchange(job, route, token, payload, received, observed,
+                                                   decoder=decoder, wait=wait, record_chunk=record_chunk,
+                                                   record_observation=record_observation))
             if status < 200 or status >= 300:
                 request["status"] = "http_error"
                 failure = StopRun("provider_error", f"Nexus returned HTTP {status}. The error body is withheld to protect credentials. No context-overflow diagnosis is assumed.")
             else:
                 if streaming:
-                    stream = self.archive_stream(job, request, attempt_id, received, observed, chunks)
+                    stream = self.archive_stream(job, request, attempt_id, received, observed, cursor)
                     raw = self.store.blob(job, "assembled_response", decoder.value,
                                           {"request": key, "attempt": attempt_id, "source_stream_ref": stream["ref"],
                                            "protocol": route.protocol, "complete_protocol": decoder.complete})
@@ -289,7 +314,7 @@ class Nexus:
             # Only success-stream bytes are retained. Arbitrary HTTP error bodies can echo credentials.
             if streaming:
                 if received:
-                    self.archive_stream(job, request, attempt_id, received, observed, chunks)
+                    self.archive_stream(job, request, attempt_id, received, observed, cursor)
                 if decoder.value is not None and not request.get("response_ref"):
                     candidate = self.store.blob(job, "assembled_response", decoder.value,
                                                {"request": key, "attempt": attempt_id, "source_stream_ref": request.get("stream_ref"),
@@ -320,13 +345,29 @@ class Nexus:
             raise failure
         return self.store.json(request["accepted_ref"], job)
 
-    def archive_stream(self, job, request, attempt_id, received, observed, chunks):
+    def archive_stream(self, job, request, attempt_id, received, observed, cursor):
         key = f"raw-stream:{attempt_id}"
         previous = self.store.maybe("blob", key)
         if previous is None:
+            count = cursor["chunk_count"]
+            known_prefix = (type(count) is int and 0 <= count <= len(received)
+                            and cursor["bytes"] == len(received)
+                            and cursor["sha256"] == sha256(received).hexdigest()
+                            and cursor["last_chunk_ref"] == (f"stream:{attempt_id}:{count - 1}" if count else None))
+            if not observed["protocol_complete"] and not request["accepted_ref"] and known_prefix:
+                # Preserve unaccepted partial evidence without a second full file
+                # pass after Stop. Each cursor entry already completed blob durability.
+                refs = [f"stream:{attempt_id}:{index}" for index in range(count)]
+                validation = "registration_only"
+            else:
+                durable = self.store.read_stream(job, request["id"], attempt_id)
+                if durable["data"] != bytes(received):
+                    raise ValueError("Received stream does not match its durable chunk evidence.")
+                refs, validation = durable["chunks"], "reconstructed"
             previous = self.store.blob(job, "raw_stream", bytes(received),
                                        {"request": request["id"], "attempt": attempt_id,
-                                        "chunks": list(chunks), "encoding": "decoded HTTP body / SSE UTF-8",
+                                        "chunks": refs, "chunk_validation": validation,
+                                        "encoding": "decoded HTTP body / SSE UTF-8",
                                         "complete_protocol": observed["protocol_complete"],
                                         "complete_transport": observed["body_complete"],
                                         "terminal_event": observed["terminal_event"]}, key=key)

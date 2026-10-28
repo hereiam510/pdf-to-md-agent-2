@@ -76,7 +76,10 @@ def test_continued_progress_exceeds_old_and_candidate_total_cutoffs_then_accepts
     assert raw == b"".join(b for _, b in parts)
     assert store.get("blob", accepted["native_ref"])["kind"] == "assembled_response"
     assert store.get("blob", accepted["native_ref"])["meta"]["source_stream_ref"] == accepted["stream_ref"]
-    assert len(store.records("stream_receive", job["id"])[0]["chunks"]) == 4
+    receipt = store.records("stream_receive", job["id"])[0]
+    assert "chunks" not in receipt and receipt["cursor"]["chunk_count"] == 4
+    recovered = store.read_stream(job["id"], request["id"], attempt["id"])
+    assert recovered["data"] == raw and recovered["checkpoint_count"] == 4
     reopened = Store(store.root)
     # Accepted bytes win even when current settings change or credentials/network disappear.
     reopened.update_job(job["id"], route={**job["route"], "timeout_seconds": 1})
