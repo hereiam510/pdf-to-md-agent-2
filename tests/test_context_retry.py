@@ -10,7 +10,7 @@ from pdfmd.nexus import Nexus
 from pdfmd.runtime import Runtime
 from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
-from test_context_admission import protocol_job, state_for
+from test_context_admission import protocol_job, state_for, synthetic_text
 from test_context_progress import read_batch
 from test_response_repairs import handoff, native
 from test_runtime import tool
@@ -22,8 +22,8 @@ POLICY = ("pinned", "pin_views", "released", "notes")
 
 def pressure(store, original, protocol, kind="notes"):
     job = protocol_job(store, original, protocol)
-    refs, envs = read_batch(store, job, "history", ["A" * 5000])
-    second = store.blob(job["id"], "evidence", {"text": "B" * 5000})["ref"]
+    refs, envs = read_batch(store, job, "history", [synthetic_text("history-A", 5000)])
+    second = store.blob(job["id"], "evidence", {"text": synthetic_text("history-B", 5000)})["ref"]
     state = {**state_for(job, ["history"]), "notes": "Active notes.", "pin_views": {}}
     intent = {"notes": "Page two inspected; preserve 25 mg."}
     if kind == "index":
@@ -84,9 +84,12 @@ def test_history_pressure_queues_then_preflights_after_compaction(setup, protoco
         expected = runtime.context.policy(job["id"], state, intent)
         assert all(resolved[k] == expected[k] for k in POLICY)
         assert runtime.context.normal(job, resolved)[1]["fits"]
-        assert outcome["feedback"]["capacity"] == {k: v for k, v in runtime.context.normal(job, resolved)[1].items() if k != "projection"}
+        # Application changes policy-reference identity in the actual payload;
+        # compare measured costs independently from that new request hash.
+        assert outcome["feedback"]["capacity"] == {
+            k: v for k, v in runtime.context.normal(job, resolved)[1].items() if k != "projection"}
         assert store.bytes("result:pending:1", job["id"]) == receipt
-        assert store.json(ref, job["id"])["text"] == "A" * 5000
+        assert store.json(ref, job["id"])["text"] == synthetic_text("history-A", 5000)
         assert store.get("job", job["id"])["attempts"] == 0
     finally:
         runtime.close()
@@ -238,7 +241,7 @@ def test_waiting_update_survives_multiple_progressive_compactions(setup, protoco
     store, original = setup
     job, state, intent, ref = pressure(store, original, protocol)
     for i in range(5):
-        read_batch(store, job, f"extra{i}", [str(i) * 5000])
+        read_batch(store, job, f"extra{i}", [synthetic_text(f"extra{i}", 5000)])
         state["history"].append(f"extra{i}")
     runtime = offline_runtime(store)
     try:
@@ -272,7 +275,7 @@ def test_retry_rejects_when_policy_no_longer_fits_and_preserves_receipt(setup, p
     job, state, intent, ref = pressure(store, original, protocol)
     accepted(store, job, "pending", tool("read_evidence", {"ref": ref}, "read"),
              tool("context_update", intent, "first"),
-             tool("context_update", {"notes": "N" * 6000}, "update"))
+             tool("context_update", {"notes": synthetic_text("N", 6000)}, "update"))
     runtime = offline_runtime(store)
     try:
         after = {**state, **runtime.tools(state)}
@@ -284,7 +287,12 @@ def test_retry_rejects_when_policy_no_longer_fits_and_preserves_receipt(setup, p
                 current_state="Saved work remains.", unfinished_work=[], references=[], cautions=[])),
                 meta, f"remaining:{after['revision']}")
         old_size = runtime.context.normal(job, after)[1]["input_estimate"]
-        job = store.update_job(job["id"], route={**job["route"], "context_tokens": old_size + 4000})
+        policy = runtime.context.waiting(job["id"], after)["policy"]
+        required = runtime.context.required(job, {**after, **policy})["input_estimate"]
+        allowance = (old_size + required) // 2
+        assert old_size < allowance < required
+        job = store.update_job(job["id"], route={**job["route"],
+            "context_tokens": allowance + job["route"]["output_tokens"]})
         resolved = {**after, **prepare_step(runtime, after)}
         outcome = store.json(resolved["context_feedback"], job["id"])
         assert outcome["feedback"]["status"] == "needs_agent_revision"

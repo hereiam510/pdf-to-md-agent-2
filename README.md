@@ -40,12 +40,15 @@ The development engine supports exact-version document indexes and field/range r
 
 ## Start here
 
+New unfrozen capacity decisions use a complete native-request BPE proxy with explicit text/native reserves and separately configured images/output. The pinned public vocabulary is bundled; conversion does not download tokenizer data. Counter failure has a named byte fallback, and uncertain mandatory-content estimates are distinct from confirmed excess. Existing frozen requests, receipts and consumption retain their original identity. See [the counting and uncertainty mechanism](docs/design/CONTEXT_AND_EVIDENCE.md#capacity-accounting) and CURRENT_STATE for local evidence and uncalibrated routes.
+
 Read [the working agreement](AGENTS.md). Read [current state](docs/CURRENT_STATE.md). Then read the owner relevant to the task:
 
 | Owner | What it establishes |
 | --- | --- |
 | [Product requirements](docs/PRODUCT_REQUIREMENTS.md) | User outcomes, fidelity, autonomy and observable acceptance |
 | [Product phase plan](docs/PHASE_PLAN.md) | Delivery stages, completion conditions, existing milestone anchors and proposed next work |
+| [Runtime review findings](docs/reviews/RUNTIME_REVIEW_2026-10.md) | Complete independent review, reconciliation, user clarifications, evidence strength and unresolved next questions; not an authorized patch queue |
 | [Architecture](docs/ARCHITECTURE.md) | Settled responsibilities and the preferred implementation baseline |
 | [Contracts](docs/CONTRACTS.md) | Document, context and recovery boundaries and the implemented first-version schemas |
 | [Decisions](docs/DECISIONS.md) | Effective choices, rationale and consequential alternatives |

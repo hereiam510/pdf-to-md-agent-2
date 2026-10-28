@@ -36,6 +36,8 @@ These targets retain the product intention without creating a full platform/prov
 <a id="nexus-subscription-and-portability"></a>
 ## 2. Nexus subscription access and the portability premise
 
+The local [R01 request proxy](CONTEXT_AND_EVIDENCE.md#capacity-accounting) is declared independently of the model alias. OpenAI-shaped native JSON does not establish the upstream tokenizer or actual context window. The shared native service still freezes and sends exact selected payloads; public BPE resources are bundled locally, and no remote token-counting or provider probe becomes a runtime dependency.
+
 The route corrected during the discussion was:
 
 ```text

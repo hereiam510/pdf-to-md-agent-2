@@ -97,6 +97,10 @@ def run_capacity_delivery(directory, route, protocol, scenario):
     policy = runtime.context.waiting(job["id"], state)["policy"]
     frozen = store.get("request", "pending")
     frozen_bytes = store.bytes(frozen["payload_ref"], job["id"])
+    # Recovery fixture: preserve a pre-existing confirmed disposition; do not
+    # manufacture a provider-cost proof from today's approximate estimator.
+    runtime.context_updates.reject(job, state, f"{job['id']}:{state['seq']}:{state['revision']}",
+        "Historical confirmed necessary-content excess.", reason="required_content_exceeds_capacity")
     config = {"configurable": {"thread_id": job["id"]}}
     runtime.graph.update_state(config, state, as_node="tools")
     runtime.close()
@@ -109,7 +113,7 @@ def run_capacity_delivery(directory, route, protocol, scenario):
         blocked.run(job["id"])
         waiting = dict(blocked.graph.get_state(config).values)
         blocked.close()
-        assert store.get("job", job["id"])["stop_reason"] == "feedback_capacity_blocked"
+        assert store.get("job", job["id"])["stop_reason"] == "necessary_estimate_uncertain"
         assert store.get("job", job["id"])["attempts"] == before["attempts"] == 0
         assert waiting["context_waiting"] is None and all(waiting[k] == state[k] for k in POLICY)
         assert store.json(waiting["context_feedback"], job["id"])["summary"]["status"] == "needs_agent_revision"

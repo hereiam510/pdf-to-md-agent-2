@@ -1,6 +1,8 @@
 """Purpose-specific context planning; all responses and evidence are local fixtures."""
 from copy import deepcopy
 import json
+import random
+import string
 
 import pytest
 
@@ -19,6 +21,11 @@ from pdfmd.nexus import parse_reply
 PROTOCOLS = ["chat_completions", "responses"]
 
 
+def varied_text(size, seed=0):
+    """Deterministic synthetic text for capacity transitions, not calibration."""
+    return "".join(random.Random(seed).choices(string.ascii_letters + string.digits + " ", k=size))
+
+
 def candidate(store, job, state, policy, operations=()):
     ref = "context-proposal:fixture"
     store.blob(job["id"], "context_proposal", {"context_proposal": {
@@ -35,16 +42,16 @@ def test_actual_compaction_of_old_policy_is_not_gated_by_normal_reserve(setup, p
     context = Context(store, Dispatcher(store))
     state = {**state_for(job, []), "notes": "", "pin_views": {}}
     if kind == "notes":
-        state["notes"] = "N" * 10500
+        state["notes"] = varied_text(10500)
         changes = {"notes": "Keep exact source values and continue."}
         retained = state["notes"]
     else:
-        saved = store.blob(job["id"], "evidence", {"text": "P" * 10500})["ref"]
+        saved = store.blob(job["id"], "evidence", {"text": varied_text(10500)})["ref"]
         state.update(context.policy(job["id"], state, {"pin": [{"ref": saved, "view": "full"}]}))
         selected = {"ref": saved, "view": "index"} if kind == "index" else {
             "ref": saved, "view": "full", "json_pointer": "/text", "start": 0, "end": 100}
         changes = {"pin": [selected]}
-        retained = "P" * 10500
+        retained = varied_text(10500)
     before = deepcopy(state)
     baseline = context.normal(job, state)[1]
     job = store.update_job(job["id"], route={**job["route"],
@@ -69,7 +76,7 @@ def test_last_handoff_uses_specific_applied_outcome_not_unknown_reserve(setup, p
     store, initial = setup
     job = protocol_job(store, initial, protocol)
     context = Context(store, Dispatcher(store))
-    pin = store.blob(job["id"], "evidence", {"text": "P" * 10000})["ref"]
+    pin = store.blob(job["id"], "evidence", {"text": varied_text(18000)})["ref"]
     state = {**state_for(job, []), "notes": "Active notes.", "pin_views": {}}
     state.update(context.policy(job["id"], state, {"pin": [{"ref": pin, "view": "full"}]}))
     read_batch(store, job, "history", ["A" * 5000, "B" * 5000])
@@ -98,8 +105,8 @@ def test_last_handoff_uses_specific_applied_outcome_not_unknown_reserve(setup, p
 def test_positive_body_saving_preserves_the_later_full_evidence_batch(setup, protocol):
     store, initial = setup
     job = protocol_job(store, initial, protocol)
-    _, envs = read_batch(store, job, "mixed", ["H" * 200000, "S" * 600])
-    read_batch(store, job, "tail", ["A" * 22000, "B" * 22000])
+    _, envs = read_batch(store, job, "mixed", [varied_text(100000), "S" * 600])
+    read_batch(store, job, "tail", [varied_text(22000, 1), varied_text(22000, 2)])
     context = Context(store, Dispatcher(store))
     state = state_for(job, ["mixed", "tail"])
     roomy = {**job, "route": {**job["route"], "context_tokens": 1000000}}
@@ -121,20 +128,43 @@ def test_positive_body_saving_preserves_the_later_full_evidence_batch(setup, pro
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
-def test_necessary_cost_is_one_way_and_preserves_semantic_history(setup, protocol):
+def test_mandatory_projection_is_not_a_token_lower_bound_and_preserves_history(setup, protocol):
     store, initial = setup
     job = protocol_job(store, initial, protocol)
     context = Context(store, Dispatcher(store))
-    read_batch(store, job, "history", ["A" * 30000, "B" * 30000])
+    bodies = [varied_text(50000, 1), varied_text(50000, 2)]
+    read_batch(store, job, "history", bodies)
     state = state_for(job, ["history"])
     bound = context.required(job, state)
     assert bound["fits"] and not bound["proved_excess"] and not bound["proves_full_admission"]
+    assert not bound["proof_available"] and bound["necessary_cost_lower_bound"] is None
     payload, capacity = context.normal(job, state)
-    assert not capacity["fits"] and "A" * 30000 in json.dumps(payload) and "B" * 30000 in json.dumps(payload)
+    assert not capacity["fits"] and all(body in json.dumps(payload) for body in bodies)
     assert state["history"] == ["history"]
-    oversized = {**state, "notes": "N" * 100000}
-    assert context.required(job, oversized)["proved_excess"]
-    assert not context.required(job, oversized)["proves_full_admission"]
+    oversized = {**state, "notes": varied_text(100000)}
+    reservation = context.required(job, oversized)
+    assert not reservation["fits"] and reservation["classification"] == "necessary_estimate_uncertain"
+    assert not reservation["proved_excess"] and not reservation["proof_available"]
+    assert reservation["necessary_cost_lower_bound"] is None and not reservation["proves_full_admission"]
+
+
+@pytest.mark.parametrize("protocol", PROTOCOLS)
+def test_reservation_alone_cannot_prove_mandatory_token_excess(setup, protocol):
+    store, initial = setup
+    job = protocol_job(store, initial, protocol)
+    context = Context(store, Dispatcher(store))
+    state = state_for(job, [])
+    measured = context.required(job, state)
+    # Both values come from the proxy: this chooses a synthetic boundary only.
+    # It does not use the unreserved count as independent token ground truth.
+    allowance = (measured["unreserved_estimate"] + measured["input_estimate"]) // 2
+    job = store.update_job(job["id"], route={**job["route"],
+        "context_tokens": allowance + job["route"]["output_tokens"]})
+    required = context.required(job, state)
+    assert required["unreserved_estimate"] < allowance < required["input_estimate"]
+    assert not required["fits"] and required["classification"] == "necessary_estimate_uncertain"
+    assert not required["proved_excess"] and not required["proof_available"]
+    assert required["necessary_cost_lower_bound"] is None
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
@@ -180,11 +210,17 @@ def test_unknown_image_cost_is_not_proved_excess_and_true_compaction_overflow_st
     with pytest.raises(StopRun) as failure:
         context.required(unknown, state)
     assert failure.value.reason == "capacity_configuration"
-    huge = store.blob(job["id"], "evidence", {"text": "P" * 100000})["ref"]
+    conservative = {**job, "route": {**job["route"], "image_tokens": 100000}}
+    configured = context.required(conservative, state)
+    assert configured["images"] == 1 and not configured["fits"]
+    assert not configured["proved_excess"] and not configured["proof_available"]
+    assert configured["classification"] == "necessary_estimate_uncertain"
+    body = varied_text(120000)
+    huge = store.blob(job["id"], "evidence", {"text": body})["ref"]
     read_batch(store, job, "history", ["A" * 1000])
     oversized = {**state_for(job, ["history"]), "pinned": [huge]}
     with pytest.raises(StopRun) as failure:
         context.compact_request(job, oversized)
     assert failure.value.reason == "capacity_blocked"
-    assert store.json(huge, job["id"])["text"] == "P" * 100000
+    assert store.json(huge, job["id"])["text"] == body
     assert oversized["pinned"] == [huge] and oversized["history"] == ["history"]

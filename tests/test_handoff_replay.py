@@ -18,6 +18,7 @@ from pdfmd.storage import Conflict, Store
 from pdfmd.tools import Dispatcher
 from test_context_admission import image_source, outputs, protocol_job
 from test_context_progress import compact_body, nearly_full_pins, read_batch
+from test_context_plans import varied_text
 from test_response_repairs import handoff, native
 from test_runtime import tool
 
@@ -25,7 +26,7 @@ from test_runtime import tool
 def prepared_handoff(store, job):
     context = Context(store, Dispatcher(store))
     state = nearly_full_pins(store, job, context)
-    read_batch(store, job, "last", ["A" * 3000, "B" * 3000])
+    read_batch(store, job, "last", [varied_text(3000, 1), varied_text(3000, 2)])
     state["history"] = ["last"]
     _, meta = context.compact_request(job, state)
     text = json.dumps(handoff(job, current_state="Saved work retained.",
@@ -53,7 +54,7 @@ def test_receipt_distinguishes_applied_handoff_from_archived_candidate(setup, mo
     archive = store.bytes("handoff:handoff-request", job["id"])
     events = store.events(job["id"])
     # This new instruction makes even the old concise candidate too large.
-    current = store.update_job(job["id"], amendments=["Keep these additional requirements. " * 100])
+    current = store.update_job(job["id"], amendments=["Keep these additional requirements. " + varied_text(4000, 31)])
     if settled:
         replayed = context.apply_handoff(current, state, text, meta, "handoff-request")
         assert replayed == applied
@@ -65,7 +66,7 @@ def test_receipt_distinguishes_applied_handoff_from_archived_candidate(setup, mo
             from pdfmd.nexus import StopRun
             with pytest.raises(StopRun) as stopped:
                 runtime.prepare(replayed)
-            assert stopped.value.reason == "capacity_blocked"
+            assert stopped.value.reason == "necessary_estimate_uncertain"
         finally:
             runtime.close()
     else:
@@ -124,7 +125,7 @@ def test_corrected_handoff_replays_across_amendment_and_delivers(tmp_path, route
     candidate = store.blob(job["id"], "candidate", raw_candidate)
     state = nearly_full_pins(store, job, Context(store, Dispatcher(store)), [image["ref"], candidate["ref"]])
     large_pin = state["pinned"][0]
-    read_batch(store, job, "last", ["A" * 3000, "B" * 3000])
+    read_batch(store, job, "last", [varied_text(3000, 1), varied_text(3000, 2)])
     state["history"] = ["last"]
     originals = {r["ref"]: r["sha256"] for r in store.records("blob", job["id"])}
     amendment = "Preserve the exact source wording, 25 mg, and original figure. Finish the whole page."
@@ -136,7 +137,7 @@ def test_corrected_handoff_replays_across_amendment_and_delivers(tmp_path, route
         if not payload.get("tools"):
             compactions.append(payload)
             if len(compactions) == 1:
-                answer = handoff(job, current_state="C" * 1600)
+                answer = handoff(job, current_state=varied_text(1600, 17))
             else:
                 assert len(compactions) == 2
                 assert "last history" in compact_body(payload)["repair_feedback"]["message"]

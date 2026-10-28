@@ -22,6 +22,11 @@ from test_response_repairs import handoff, native
 from test_runtime import tool
 
 
+def synthetic_text(label, length):
+    """Deterministic varied source data; repeated filler now compresses in BPE."""
+    return "".join(random.Random(label).choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=length))
+
+
 def protocol_job(store, job, protocol):
     return store.update_job(job["id"], route={**job["route"], "protocol": protocol, "vision": True,
         "image_tokens": 1024, "endpoint": "http://127.0.0.1:8317/v1/" + (
@@ -76,7 +81,7 @@ def test_large_first_full_result_is_explicitly_deferred_with_exact_reads(tmp_pat
     context = Context(store, Dispatcher(store))
     payload, capacity = context.normal(job, state)
     assert capacity["fits"] and capacity["images"] == 0
-    assert capacity["projection"]["before_admission_estimate"] > 1000000
+    assert capacity["projection"]["before_admission_estimate"] > job["route"]["context_tokens"] - job["route"]["output_tokens"]
     assert capacity["projection"]["deferred"] == [{"request": "extract", "refs": [env["result_ref"]]}]
     deferred = outputs(payload)[0]
     assert deferred["ok"] and not deferred["body_in_context"]
@@ -121,7 +126,7 @@ def test_pins_survive_prefix_compaction_and_restart_without_retaining_history(se
                   tool("render_page", {"page": 1, "dpi": 72}, "pixels"))
     pins = [envs[0]["result_ref"], envs[0]["candidate_ref"], envs[1]["data"]["image_ref"]]
     large = [store.blob(job["id"], "evidence", {"text": value})["ref"]
-             for value in ("large" * 40000, "A" * 30000, "B" * 30000)]
+             for value in (synthetic_text("large", 200000), synthetic_text("A", 40000), synthetic_text("B", 40000))]
     settle(store, job, "pressure", *[tool("read_evidence", {"ref": ref}, f"r{i}") for i, ref in enumerate(large)])
     state = state_for(job, ["first", "pressure"], pins)
     context = Context(store, Dispatcher(store))
@@ -153,7 +158,7 @@ def test_pins_survive_prefix_compaction_and_restart_without_retaining_history(se
 
 def test_fitting_reads_stay_full_aggregate_pressure_is_not_arbitrary_eviction(setup):
     store, job = setup
-    refs = [store.blob(job["id"], "evidence", {"text": value})["ref"] for value in ("a" * 30000, "b" * 30000)]
+    refs = [store.blob(job["id"], "evidence", {"text": value})["ref"] for value in (synthetic_text("a", 40000), synthetic_text("b", 40000))]
     envs = settle(store, job, "both", *[tool("read_evidence", {"ref": ref}, str(i)) for i, ref in enumerate(refs)])
     payload, capacity = Context(store, Dispatcher(store)).normal(job, state_for(job, ["both"]))
     assert not capacity["fits"] and capacity["projection"]["deferred"] == []
@@ -187,7 +192,7 @@ def test_individually_unfit_pixels_keep_result_metadata_and_exact_original(setup
     try:
         with pytest.raises(StopRun) as stopped:
             runtime.prepare(pinned)
-        assert stopped.value.reason == "capacity_blocked"
+        assert stopped.value.reason == "necessary_estimate_uncertain"
         assert not store.records("request", job["id"])[-1].get("payload_ref")
     finally:
         runtime.close()

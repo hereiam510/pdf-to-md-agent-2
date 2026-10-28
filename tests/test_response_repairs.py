@@ -1,5 +1,6 @@
 """Offline recovery checks. Scripted replies test mechanics, not model judgment."""
 import json
+import random
 import zipfile
 
 import httpx
@@ -13,6 +14,11 @@ from pdfmd.schema import Route
 from pdfmd.storage import Store
 from test_context import history
 from test_runtime import response, tool, transport_for
+
+
+def repair_source(label, length):
+    """Varied deterministic fixture text keeps pressure meaningful under BPE."""
+    return "".join(random.Random(label).choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=length))
 
 
 def native(protocol, *calls, text=None):
@@ -177,8 +183,8 @@ def test_correction_can_formalize_question_or_partial_stop_without_more_conversi
 def seed_compaction(runtime, store, job):
     # The giant body can now be deferred before normal inference. Two individually
     # fitting results still create aggregate pressure and exercise real compaction.
-    result, _ = history(store, job["id"], "large-history", "Retained evidence. " * 10000,
-                        extra_texts=["Earlier extraction. " * 1500, "Later extraction. " * 1700])
+    result, _ = history(store, job["id"], "large-history", repair_source("retained", 180000),
+                        extra_texts=[repair_source("earlier", 40000), repair_source("later", 40000)])
     state = {"job": job["id"], "seq": 1, "revision": 1, "history": ["large-history"],
              "handoff": None, "notes": "Preserve all source values.", "released": [], "pinned": [], "repairs": {}, "terminal": False}
     runtime.graph.update_state({"configurable": {"thread_id": job["id"]}}, state, as_node="tools")
@@ -203,7 +209,7 @@ def test_handoff_correction_returns_to_conversion_and_preserves_originals(setup,
         compactions.append(payload)
         if len(compactions) == 1:
             value = response(tool("edit_document", {})) if failure == "tools" else response(text=(
-                "```json\n{}\n```" if failure == "schema" else json.dumps(handoff(job, current_state="x" * 300000))))
+                "```json\n{}\n```" if failure == "schema" else json.dumps(handoff(job, current_state=repair_source("non-reduction", 300000)))))
         else:
             body = json.loads(payload["messages"][1]["content"])
             feedback = body["repair_feedback"]
@@ -220,7 +226,7 @@ def test_handoff_correction_returns_to_conversion_and_preserves_originals(setup,
     current = store.get("job", job["id"])
     assert current["status"] == "completed" and len(compactions) == 2 and len(normal) == 3
     assert current["attempts"] == 5
-    assert store.json(original["ref"], job["id"])["value"] == "Retained evidence. " * 10000
+    assert store.json(original["ref"], job["id"])["value"] == repair_source("retained", 180000)
     corrections = [b for b in store.records("blob", job["id"]) if b["kind"] == "response_repair"]
     failed = store.get("request", store.json(corrections[0]["ref"], job["id"])["request"])
     assert failed["status"] == "accepted" and failed["accepted_ref"]

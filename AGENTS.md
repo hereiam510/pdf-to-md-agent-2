@@ -4,6 +4,8 @@ The agent completes conversion. The app provides reliable tools. Deliver complet
 
 Start with [README](README.md) and [CURRENT_STATE](docs/CURRENT_STATE.md). Consult the relevant [requirements](docs/PRODUCT_REQUIREMENTS.md), [architecture](docs/ARCHITECTURE.md) and [contracts](docs/CONTRACTS.md). They describe the rebuild, not inherited implementation status.
 
+Before planning related work, follow CURRENT_STATE to applicable unresolved review findings and the phase plan. Cite the relevant finding IDs, assess their current evidence and product impact, and explain important deferrals and revisit conditions. A finding record is not implementation authority or a requirement to resolve every item before delivery; numerical uncertainty alone does not dismiss a high-impact concern.
+
 Use [DEVELOPMENT_GUIDE](docs/DEVELOPMENT_GUIDE.md) and the relevant technical guide for complete local explanations. Development knowledge must remain understandable from this repository alone. Preserve mechanisms, rationale, examples, constraints and unresolved choices in maintained prose. A source ID or bundled quote alone is not a sufficient technical explanation.
 
 Preserve useful exact technical names as well as their meaning. [TECHNICAL_TERMS](docs/TECHNICAL_TERMS.md) is a lookup aid. The module guides own the explanations.

@@ -24,6 +24,7 @@ class Route(Strict):
     context_tokens: int = Field(ge=2048)
     output_tokens: int = Field(ge=256)
     image_tokens: int | None = Field(default=None, ge=1)
+    estimation_profile: Literal["bpe_proxy_v1", "utf8_fallback_v1"] = "bpe_proxy_v1"
     vision: bool = False
     timeout_seconds: float = Field(default=180, ge=1, le=3600)
     # Missing/null retains the historical non-streaming deadline of a saved route.

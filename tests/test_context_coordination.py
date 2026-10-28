@@ -1,6 +1,7 @@
 """Behavioral checks for whole-batch context authority. All transports are local mocks."""
 from copy import deepcopy
 import json
+import random
 
 import httpx
 import pytest
@@ -17,6 +18,7 @@ from test_context_admission import outputs, protocol_job, state_for
 from test_context_progress import read_batch
 from test_response_repairs import handoff, native
 from test_runtime import tool
+from test_context_plans import varied_text
 
 
 PROTOCOLS = ["chat_completions", "responses"]
@@ -58,11 +60,27 @@ def raw_receipts(store, job):
             for b in store.records("blob", job["id"]) if b["kind"] == "tool_result"}
 
 
+def historical_required_excess(runtime, job, state):
+    """Commit a synthetic OLD disposition; current proxy does not prove excess.
+
+    This fixture exercises recovery/non-revival of a previously recorded fact,
+    rather than deriving a new confirmed-excess decision from today's estimate.
+    """
+    key = f"{job['id']}:{state['seq']}:{state['revision']}"
+    proposal = runtime.context.waiting(job["id"], state)
+    runtime.context_updates.register(job, state, proposal)
+    return {**state, **runtime.context_updates.reject(job, state, key,
+        "Synthetic historical disposition made by the former estimator; no current token proof is asserted.",
+        capacity={"method": "synthetic_historical_settlement", "current_estimator_evidence": False},
+        reason="required_content_exceeds_capacity")}
+
+
 @pytest.mark.parametrize("protocol", PROTOCOLS)
 def test_whole_batch_replacement_uses_final_policy_and_settles_before_report(setup, protocol):
     store, original = setup
     job = protocol_job(store, original, protocol)
-    refs = [store.blob(job["id"], "evidence", {"text": char * 9000})["ref"] for char in "XY"]
+    bodies = [varied_text(9000, seed) for seed in (1, 2)]
+    refs = [store.blob(job["id"], "evidence", {"text": body})["ref"] for body in bodies]
     state = {**state_for(job, [], [refs[0]]), "pin_views": {refs[0]: [{"ref": refs[0], "view": "full"}]}}
     context = Context(store, Dispatcher(store))
     cap = context.normal(job, state)[1]
@@ -94,8 +112,8 @@ def test_whole_batch_replacement_uses_final_policy_and_settles_before_report(set
                 assert saved["admission"]["applied"] is False
         assert store.get("job", job["id"])["stop_reason"] == "agent_report"
         assert store.get("job", job["id"])["attempts"] == 1
-        for ref, char in zip(refs, "XY"):
-            assert Evidence(store).read(job["id"], ref)["value"] == {"text": char * 9000}
+        for ref, body in zip(refs, bodies):
+            assert Evidence(store).read(job["id"], ref)["value"] == {"text": body}
     finally:
         runtime.close()
 
@@ -137,10 +155,11 @@ def test_invalid_later_update_blocks_entire_context_revision_but_keeps_document(
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
-def test_oversized_final_candidate_has_durable_revision_result_even_when_feedback_blocked(setup, protocol):
+def test_unconfirmed_mandatory_overflow_waits_then_transfers_choice_without_claiming_proof(setup, protocol):
     store, original = setup
     job = protocol_job(store, original, protocol)
-    raw = store.blob(job["id"], "evidence", b"R" * 100000)["ref"]
+    original_raw = random.Random(17).randbytes(100000)
+    raw = store.blob(job["id"], "evidence", original_raw)["ref"]
     state = {**state_for(job, []), "notes": "Keep the active policy", "pin_views": {}}
     runtime = offline(store)
     try:
@@ -152,13 +171,16 @@ def test_oversized_final_candidate_has_durable_revision_result_even_when_feedbac
         # Make even the unchanged active-policy diagnostic request unusable.
         store.update_job(job["id"], route={**job["route"], "context_tokens": 4096, "output_tokens": 512}, attempts=7, active_seconds=17)
         decided = coordinate(runtime, changed)
-        record = settlements(store, job)[-1]
-        assert record["feedback"]["status"] == "needs_agent_revision"
-        assert record["feedback"]["reason"] == "required_content_exceeds_capacity"
-        assert not decided.get("context_waiting") and decided["notes"] == state["notes"]
+        assert not settlements(store, job)
+        assert decided.get("context_waiting") and decided["notes"] == state["notes"]
+        check = store.json(decided["context_check"], job["id"])
+        assert check["reason"] == "necessary_estimate_uncertain"
+        assert not check["capacity"]["proof_available"] and not check["capacity"]["proved_excess"]
+        assert store.get("context_disposition", decided["context_waiting"])["status"] == "eligible_pending"
         assert decided["pinned"] == []
-        with pytest.raises(StopRun):
+        with pytest.raises(StopRun) as failure:
             runtime.prepare(decided)
+        assert failure.value.reason == "necessary_estimate_uncertain"
         config = {"configurable": {"thread_id": job["id"]}}
         runtime.graph.update_state(config, decided, as_node="tools")
     finally:
@@ -169,6 +191,13 @@ def test_oversized_final_candidate_has_durable_revision_result_even_when_feedbac
     try:
         final = coordinate(reopened, snapshot(reopened, job))
         assert not final.get("context_waiting") and final["pinned"] == []
+        record = settlements(store, job)[-1]
+        assert record["feedback"]["status"] == "needs_agent_revision"
+        assert record["feedback"]["reason"] == "necessary_estimate_uncertain"
+        assert not record["feedback"]["capacity"]["proved_excess"]
+        store.update_job(job["id"], route={**job["route"], "context_tokens": 500000})
+        replay = coordinate(reopened, snapshot(reopened, job))
+        assert replay["pinned"] == [] and not replay.get("context_waiting")
         assert settlements(store, job)[-1] == record
         assert len(settlements(store, job)) == 1
         assert store.bytes("result:oversize:0", job["id"]) == original_receipt
@@ -176,7 +205,7 @@ def test_oversized_final_candidate_has_durable_revision_result_even_when_feedbac
         assert store.get("request", "oversize")["route"] == frozen["route"]
         assert store.get("job", job["id"])["attempts"] == 7
         assert store.get("job", job["id"])["active_seconds"] == 17
-        assert store.bytes(raw, job["id"]) == b"R" * 100000
+        assert store.bytes(raw, job["id"]) == original_raw
     finally:
         reopened.close()
 
@@ -198,8 +227,13 @@ def test_restoring_exact_original_capacity_respects_committed_disposition(setup,
         assert runtime.context.normal(job, {**changed, "notes": proposed})[1]["fits"]
         store.update_job(job["id"], route={**job["route"], "context_tokens": 4096, "output_tokens": 512})
         if dispose_before_restore:
-            changed = coordinate(runtime, changed)
+            changed = historical_required_excess(runtime, store.get("job", job["id"]), changed)
             assert settlements(store, job)[-1]["feedback"]["status"] == "needs_agent_revision"
+            assert settlements(store, job)[-1]["feedback"]["reason"] == "required_content_exceeds_capacity"
+        else:
+            changed = coordinate(runtime, changed)
+            assert not settlements(store, job) and changed["context_waiting"]
+            assert store.json(changed["context_check"], job["id"])["reason"] == "necessary_estimate_uncertain"
         store.update_job(job["id"], route=job["route"])
         final = coordinate(runtime, changed)
         outcome = settlements(store, job)[-1]["feedback"]["status"]

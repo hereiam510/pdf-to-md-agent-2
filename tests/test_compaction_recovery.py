@@ -11,7 +11,7 @@ from pdfmd.nexus import Nexus
 from pdfmd.runtime import Runtime
 from pdfmd.server import Engine, create_app
 from pdfmd.storage import Conflict
-from test_context_admission import protocol_job, state_for
+from test_context_admission import protocol_job, state_for, synthetic_text
 from test_context_progress import read_batch
 from test_continuation import delivery, check_delivery
 from test_response_repairs import handoff, native
@@ -25,7 +25,7 @@ def seed(runtime, store, job, pins=()):
     """Seed complete historical records, then let real Runtime prepare/send."""
     payload, capacity = runtime.context.normal(job, state_for(job, []))
     frozen = runtime.nexus.freeze(job["id"], "seed-history", payload, "normal", {"capacity": capacity})
-    refs, _ = read_batch(store, job, "seed-history", ["A" * 30000, "B" * 30000])
+    refs, _ = read_batch(store, job, "seed-history", [synthetic_text("recovery-A", 40000), synthetic_text("recovery-B", 40000)])
     accepted = store.get("request", "seed-history")["accepted_ref"]
     store.put("request", "seed-history", job["id"], {**frozen, "status": "accepted", "accepted_ref": accepted})
     state = state_for(job, ["seed-history"], pins)
@@ -160,7 +160,7 @@ def test_task_deadline_change_then_compaction_recovery_preserves_delivery(delive
     assert choice["payload_ref"] == old["payload_ref"] and choice["attempts"] == old["attempts"]
     assert len([e for e in store.events(job["id"]) if e["type"] == "request_continued"]) == 1
     assert not any(op["id"].startswith(old["id"] + ":") for op in store.records("operation", job["id"]))
-    assert [store.json(ref, job["id"])["text"] for ref in refs] == ["A" * 30000, "B" * 30000]
+    assert [store.json(ref, job["id"])["text"] for ref in refs] == [synthetic_text("recovery-A", 40000), synthetic_text("recovery-B", 40000)]
     assert current["head"] != version and current["limits"] == before["limits"] and current["route"] == updated_route
     assert documents.version(job["id"], version) == original_version
     assert documents.version(job["id"], current["delivery"])["content"]["blocks"] == original_version["content"]["blocks"]

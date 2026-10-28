@@ -16,7 +16,7 @@ from pdfmd.nexus import Nexus
 from pdfmd.runtime import Runtime
 from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
-from test_context_admission import image_source, outputs, protocol_job, settle, state_for
+from test_context_admission import image_source, outputs, protocol_job, settle, state_for, synthetic_text
 from test_response_repairs import handoff, native
 from test_runtime import tool
 
@@ -34,12 +34,15 @@ def compact_body(payload):
 
 def nearly_full_pins(store, job, context, pins=()):
     state = state_for(job, [])
-    pin = store.blob(job["id"], "evidence", {"text": "P" * 100})
+    pin = store.blob(job["id"], "evidence", {"text": synthetic_text("near-full-pin", 40000)})
     state["pinned"] = [pin["ref"], *pins]
-    overhead = context.normal(job, state)[1]["input_estimate"] - 100
-    available = job["route"]["context_tokens"] - job["route"]["output_tokens"]
-    pin = store.blob(job["id"], "evidence", {"text": "P" * (available - 1000 - overhead)})
-    state["pinned"] = [pin["ref"], *pins]
+    measured = context.normal(job, state)[1]
+    # Select this synthetic boundary from its complete request; this is a
+    # lower test allowance, never evidence for a larger real route window.
+    capacity = measured["input_estimate"] + measured["output_reserve"] + 650
+    assert capacity < job["route"]["context_tokens"]
+    job["route"] = {**job["route"], "context_tokens": capacity}
+    store.update_job(job["id"], route=job["route"])
     assert context.normal(job, state)[1]["fits"]
     return state
 
@@ -48,19 +51,20 @@ def nearly_full_pins(store, job, context, pins=()):
 def test_compaction_retains_fitting_result_from_mixed_oversized_batch(setup, protocol):
     store, original_job = setup
     job = protocol_job(store, original_job, protocol)
-    refs, envs = read_batch(store, job, "mixed", ["H" * 200000, "S" * 20000])
-    read_batch(store, job, "tail", ["T" * 34000])
+    huge, small = synthetic_text("H", 200000), synthetic_text("S", 20000)
+    refs, envs = read_batch(store, job, "mixed", [huge, small])
+    read_batch(store, job, "tail", [synthetic_text("T", 50000)])
     state = state_for(job, ["mixed", "tail"])
     context = Context(store, Dispatcher(store))
     normal, capacity = context.normal(job, state)
-    assert not capacity["fits"] and "S" * 20000 in json.dumps(normal)
+    assert not capacity["fits"] and small in json.dumps(normal)
     payload, meta = context.compact_request(job, state)
     assert meta["capacity"]["fits"]
-    assert "H" * 200000 not in json.dumps(payload)
-    assert "S" * 20000 in json.dumps(payload)
+    assert huge not in json.dumps(payload)
+    assert small in json.dumps(payload)
     assert meta["covered"][0] == "mixed" and "mixed" in meta["deferred"]
     assert meta["projection"][0] == {"request": "mixed", "refs": [envs[0]["result_ref"]]}
-    assert store.json(refs[0], job["id"])["text"] == "H" * 200000
+    assert store.json(refs[0], job["id"])["text"] == huge
     assert store.json(envs[1]["result_ref"], job["id"]) == envs[1]["data"]
 
 
@@ -69,7 +73,8 @@ def test_reference_only_prefix_includes_pressure_batch_instead_of_tiny_handoff(s
     store, original_job = setup
     job = protocol_job(store, original_job, protocol)
     _, pinned = read_batch(store, job, "pinned", ["P" * 15000])
-    refs, _ = read_batch(store, job, "pressure", ["A" * 22000, "B" * 22000])
+    pressure = [synthetic_text("A", 22000), synthetic_text("B", 22000)]
+    refs, _ = read_batch(store, job, "pressure", pressure)
     state = state_for(job, ["pinned", "pressure"], [pinned[0]["result_ref"]])
     context = Context(store, Dispatcher(store))
     # Construct the actual boundary: the second batch fits alone but not with
@@ -84,12 +89,12 @@ def test_reference_only_prefix_includes_pressure_batch_instead_of_tiny_handoff(s
     payload, meta = context.compact_request(job, state)
     assert meta["covered"] == ["pinned", "pressure"]
     assert meta["capacity"]["fits"]
-    assert any(value * 22000 in json.dumps(payload) for value in ("A", "B"))
+    assert any(value in json.dumps(payload) for value in pressure)
     text = json.dumps(handoff(job, cautions=["Retain unresolved source details. " * 12]))
     changed = context.apply_handoff(job, state, text, meta, "joined-handoff")
     assert changed["history"] == [] and changed["pinned"] == state["pinned"]
     assert context.normal(job, changed)[1]["fits"]
-    assert [store.json(ref, job["id"])["text"] for ref in refs] == ["A" * 22000, "B" * 22000]
+    assert [store.json(ref, job["id"])["text"] for ref in refs] == pressure
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
@@ -105,9 +110,9 @@ def test_last_handoff_must_fit_normal_input_and_keep_history_for_correction(setu
     _, meta = context.compact_request(job, state)
     assert meta["covered"] == ["last"] and meta["capacity"]["fits"]
     with pytest.raises(HandoffRejected, match="last history"):
-        context.apply_handoff(job, state, json.dumps(handoff(job, current_state="C" * 1600)), meta, "too-large-last")
+        context.apply_handoff(job, state, json.dumps(handoff(job, current_state=synthetic_text("long-handoff", 1600))), meta, "too-large-last")
     assert state == before
-    assert store.json("handoff:too-large-last", job["id"])["content"]["current_state"] == "C" * 1600
+    assert store.json("handoff:too-large-last", job["id"])["content"]["current_state"] == synthetic_text("long-handoff", 1600)
     concise = {"task": job["scope"], "current_state": "Unfinished; original evidence retained.",
                "unfinished_work": [], "dependencies": [], "references": [], "cautions": []}
     changed = context.apply_handoff(job, state, json.dumps(concise), meta, "fitting-last")
@@ -119,8 +124,9 @@ def test_last_handoff_must_fit_normal_input_and_keep_history_for_correction(setu
 def test_partial_reduction_can_replace_same_handoff_while_uncovered_history_overflows(setup, protocol):
     store, original_job = setup
     job = protocol_job(store, original_job, protocol)
-    read_batch(store, job, "earlier", ["H" * 200000, "S" * 20000])
-    read_batch(store, job, "later", ["A" * 30000, "B" * 30000])
+    small = synthetic_text("S", 20000)
+    read_batch(store, job, "earlier", [synthetic_text("H", 200000), small])
+    read_batch(store, job, "later", [synthetic_text("A", 30000), synthetic_text("B", 30000)])
     content = handoff(job, current_state="Unresolved source details remain. " * 20)
     previous = store.blob(job["id"], "handoff", {"content": content, "deferred": [], "originals": []})
     state = {**state_for(job, ["earlier", "later"]), "handoff": previous["ref"]}
@@ -131,7 +137,7 @@ def test_partial_reduction_can_replace_same_handoff_while_uncovered_history_over
         "context_tokens": later_size + 256 + job["route"]["output_tokens"]})
     before = context.normal(job, state)[1]
     payload, meta = context.compact_request(job, state)
-    assert meta["covered"] == ["earlier"] and "S" * 20000 in json.dumps(payload)
+    assert meta["covered"] == ["earlier"] and small in json.dumps(payload)
     changed = context.apply_handoff(job, state, json.dumps(content), meta, "partial")
     after = context.normal(job, changed)[1]
     assert after["input_estimate"] < before["input_estimate"] and not after["fits"]
@@ -179,7 +185,7 @@ def test_final_handoff_correction_reopens_and_delivers_exact_source(tmp_path, ro
             compactions.append(payload)
             if len(compactions) == 1:
                 store.update_job(job["id"], cancel_requested=True)
-                answer = handoff(job, current_state="C" * 1600)
+                answer = handoff(job, current_state=synthetic_text("long-handoff", 1600))
             else:
                 assert len(compactions) == 2
                 assert "last history" in compact_body(payload)["repair_feedback"]["message"]
@@ -295,7 +301,7 @@ def test_unfit_final_handoff_uses_persistent_bounded_correction(setup, protocol)
     seen = []
     def reply(request):
         seen.append(json.loads(request.content))
-        return httpx.Response(200, json=native(protocol, text=json.dumps(handoff(job, current_state="C" * 1600))))
+        return httpx.Response(200, json=native(protocol, text=json.dumps(handoff(job, current_state=synthetic_text("long-handoff", 1600)))))
     service = Nexus(store, lambda _: "fixture", httpx.MockTransport(reply))
     config = {"configurable": {"thread_id": job["id"]}}
     runtime = Runtime(store, service)

@@ -13,7 +13,7 @@ from pdfmd.runtime import Runtime
 from pdfmd.server import Engine
 from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
-from test_response_repairs import native, seed_compaction, handoff
+from test_response_repairs import native, seed_compaction, handoff, repair_source
 from test_runtime import tool
 
 
@@ -435,6 +435,7 @@ def test_continue_after_failed_compaction_preserves_history_and_delivery(deliver
     transport = httpx.MockTransport(reply)
     runtime = Runtime(store, Nexus(store, lambda _: 'fixture', transport))
     original = seed_compaction(runtime, store, job)
+    original_bytes = store.bytes(original['ref'], job['id'])
     runtime.run(job['id'])
     state = runtime.graph.get_state({'configurable': {'thread_id': job['id']}}).values
     assert state['history'] == ['large-history'] and state['handoff'] is None
@@ -443,7 +444,8 @@ def test_continue_after_failed_compaction_preserves_history_and_delivery(deliver
     continue_job(store, job, transport, 'Preserve the complete saved result while compacting.')
     assert len(seen) == 3 and len(compactions) == 2
     assert store.get('job', job['id'])['status'] == 'completed'
-    assert store.json(original['ref'], job['id'])['value'] == 'Retained evidence. ' * 10000
+    assert store.bytes(original['ref'], job['id']) == original_bytes
+    assert store.json(original['ref'], job['id'])['value'] == repair_source('retained', 180000)
     check_delivery(store, job, version, image, source, tmp_path / 'after-compaction.zip')
 
 

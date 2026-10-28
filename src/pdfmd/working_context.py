@@ -135,19 +135,21 @@ def with_feedback(route: Route, system: str, messages: list[dict], tools: list[d
     from .nexus import make_payload
 
     summary = summarize(inventory(messages), head)
-    # Measure feedback itself, not a guessed reserve. Keep its measured text
-    # width monotonic: otherwise remaining=9/10 can oscillate with the cost of
-    # printing that digit. JSON trailing spaces preserve numeric field types.
+    # Measure feedback itself. BPE digit/boundary costs need not be monotonic.
+    # Report a monotonic self-inclusive reservation; it may exceed the final
+    # exact proxy by a few tokens, and is labeled accordingly.
     summary.update(input_estimate=0, output_reserve=route.output_tokens, remaining=0, native_images=0,
-                   estimate_kind="local_utf8_and_configured_images_not_provider_usage")
+                   estimate_kind="local_request_proxy_not_provider_usage",
+                   feedback_estimate="self_inclusive_upper_reservation")
     width = 0
     for _ in range(12):
         text = json.dumps(summary, ensure_ascii=False)
         width = max(width, len(text))
         payload = make_payload(route, system, [*messages, {"role": "user", "content": PREFIX + text.ljust(width)}], tools)
         capacity = estimate(payload, route)
-        values = {"input_estimate": capacity["input_estimate"],
-                  "remaining": route.context_tokens - route.output_tokens - capacity["input_estimate"],
+        reservation = max(summary["input_estimate"], capacity["input_estimate"])
+        values = {"input_estimate": reservation,
+                  "remaining": route.context_tokens - route.output_tokens - reservation,
                   "native_images": capacity["images"]}
         if all(summary[key] == value for key, value in values.items()):
             return payload
@@ -172,6 +174,7 @@ def inspect(context, request: dict, current_job: dict, *, changes: dict | None =
     rows = inventory(messages)
     first, last = context.dispatcher.evidence.bounds(len(rows), start, end)
     capacity = estimate(payload, route)
+    capacity["assessment"] = "current_method_on_unchanged_frozen_payload"
     # Component deltas use the actual native envelope. They are marginal costs,
     # not a promise that independently measured categories add to total cost.
     without_tools = {key: value for key, value in payload.items() if key != "tools"}
@@ -206,6 +209,7 @@ def inspect(context, request: dict, current_job: dict, *, changes: dict | None =
               "snapshot_head": saved["job"]["head"] if saved else None, "current_head": current_job["head"],
               "scope": "The frozen normal input that produced this response. Excludes ALL tool results in this response, including earlier calls. Frozen does not mean sent or understood.",
               "current_input": capacity, "inventory": rows[first:last], "total": len(rows), "range": [first, last],
+              "recorded_capacity": deepcopy(request["meta"].get("capacity")),
               "selection_complete": True, "inventory_complete": first == 0 and last == len(rows),
               "policy_unchanged": True,
               "cost_note": "Body bytes exclude receipt/envelope escaping. Group deltas are separate native-envelope measurements, not additive totals; image allowance can overlap groups. Total includes all input and feedback; output reserve is separate. These are local estimates, not provider usage. release_ref names the exact result, arguments or pin representation; ref names its source when available."}

@@ -49,17 +49,19 @@ class Engine:
                 "SELECT 1 FROM records WHERE job=? AND kind='request' LIMIT 1", (job,)).fetchone() is not None
             updated_route = (Route.model_validate({**(current["route"] or {}), **route}).model_dump()
                              if route is not None else current["route"])
-            if (current["route"] is not None and route is not None
-                    and "wait_policy" not in current["route"] and "wait_policy" not in route):
-                # An unrelated settings save must not migrate a historical route.
-                updated_route.pop("wait_policy", None)
+            if current["route"] is not None and route is not None:
+                # An unrelated save must not materialize defaults in a legacy
+                # route, or mistake them for an unauthorized connection change.
+                for name in ("wait_policy", "estimation_profile"):
+                    if name not in current["route"] and name not in route:
+                        updated_route.pop(name, None)
             updated_limits = (Limits.model_validate({**current["limits"], **limits}).model_dump()
                               if limits is not None else current["limits"])
             if starting and updated_route is None:
                 raise ValueError("Configure a Nexus connection before starting this task.")
             if frozen:
                 for name, before, after, allowed in (
-                    ("route", current["route"], updated_route, {"context_tokens", "output_tokens", "image_tokens", "timeout_seconds", "wait_policy"}),
+                    ("route", current["route"], updated_route, {"context_tokens", "output_tokens", "image_tokens", "estimation_profile", "timeout_seconds", "wait_policy"}),
                     ("limits", current["limits"], updated_limits, {"max_requests", "max_active_seconds"}),
                 ):
                     changed = {key for key in set(before) | set(after) if before.get(key) != after.get(key)}

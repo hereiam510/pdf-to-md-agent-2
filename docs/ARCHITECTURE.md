@@ -106,7 +106,7 @@ No backward compatibility or old-run migration is required. Useful old code can 
 | `src/desktop/main.ts`, `preload.ts` | Sandboxed renderer, explicit IPC actions, native file dialogs, encrypted connection settings, authenticated loopback engine, isolated preview worker |
 | `src/renderer/` | Source/scope selection, source-page display, agent activity, saved preview/Markdown/evidence, local block edits, version selection and ZIP export |
 | `src/pdfmd/server.py`, `runtime.py` | Task lifecycle, one executor per job, `StateGraph` and SQLite checkpointer |
-| `nexus.py`, `context.py`, `context_outcomes.py` | Complete native replies, frozen attempts, shared limits, actual native request plans, necessary-cost proof, exact outcome presentation, profitable object projections, independent pins and bounded rolling handoffs |
+| `nexus.py`, `context.py`, `request_estimation.py`, `context_outcomes.py` | Complete native replies, frozen attempts, shared limits, actual native request plans, explicit proxy/reservation/mandatory-proof distinctions, exact outcome presentation, profitable object projections, independent pins and bounded rolling handoffs |
 | `context_revisions.py`, `context_updates.py` | Ordered whole-batch capture/reuse, eligibility and disposition, atomic catalog policy commitment, committed-effect recovery and executable continuation selection |
 | `storage.py`, `schema.py`, `documents.py` | Immutable objects, metadata transactions, typed document edits, candidates, version integrity and export |
 | `evidence.py`, `tools.py`, `tools/ocr-worker.cjs` | PDF text/layout/raw/pixel access, shared dispatch, local Tesseract OCR, saved-output screenshots and opt-in host scripts |

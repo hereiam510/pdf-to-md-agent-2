@@ -56,7 +56,7 @@ def run_coordination_delivery(directory, route, protocol):
         elif len(seen)==2:
             encoded=json.dumps(payload).replace('\\"','"')
             assert 'needs_agent_revision' in encoded
-            assert 'required_content_exceeds_capacity' in encoded
+            assert 'necessary_estimate_uncertain' in encoded
             assert snapshot(active_runtime[0],job)["pinned"]==[]
             first=store.records("request",job["id"])[0]
             candidate=store.get("operation",f"{first['id']}:0")["candidate_ref"]

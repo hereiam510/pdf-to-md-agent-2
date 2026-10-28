@@ -1,4 +1,4 @@
-"""Necessary-content excess commits revision need; history pressure remains retryable."""
+"""Historical dispositions stay final; current estimate uncertainty stays distinct."""
 import base64
 from copy import deepcopy
 import json
@@ -14,7 +14,7 @@ from pdfmd.runtime import Runtime
 from pdfmd.schema import Route
 from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher, definitions
-from test_context_admission import outputs, protocol_job, state_for
+from test_context_admission import outputs, protocol_job, state_for, synthetic_text
 from test_context_progress import read_batch
 from test_context_retry import POLICY
 from test_response_repairs import handoff, native
@@ -45,28 +45,35 @@ def pending_capacity_case(store, original, protocol, scenario, selection="notes"
         state["pending"] = key
         state.update(runtime.tools(state))
 
-    history = store.blob(job["id"], "evidence", {"text": "A" * 5000})["ref"]
+    history = store.blob(job["id"], "evidence", {"text": synthetic_text("history-A", 5000)})["ref"]
     batch("history", tool("read_evidence", {"ref": history}, "history"))
     old_pin = None
     if scenario == "release":
-        old_pin = store.blob(job["id"], "evidence", {"text": "P" * 10000})["ref"]
+        old_pin = store.blob(job["id"], "evidence", {"text": synthetic_text("prior-pin", 10000)})["ref"]
         batch("pin-init", tool("context_update", {"pin": [{"ref": old_pin, "view": "full"}]}, "pin"))
         state.update(runtime.coordinate(state))
         assert state["pinned"] == [old_pin] and not state.get("context_waiting")
     else:
         assert scenario == "handoff"
         state["handoff"] = store.blob(job["id"], "handoff", {
-            "content": handoff(job, current_state="H" * 16000), "deferred": [], "originals": []})["ref"]
-    intent = {"notes": "N" * 8000}
+            "content": handoff(job, current_state=synthetic_text("prior-handoff", 16000)), "deferred": [], "originals": []})["ref"]
+    intent = {"notes": synthetic_text("new-notes", 8000)}
     if selection == "pin":
-        new_pin = store.blob(job["id"], "evidence", {"text": "N" * 8000})["ref"]
+        new_pin = store.blob(job["id"], "evidence", {"text": synthetic_text("new-notes", 8000)})["ref"]
         intent = {"pin": [{"ref": new_pin, "view": "full"}]}
     if old_pin:
         intent["release"] = [old_pin]
-    second = store.blob(job["id"], "evidence", {"text": "B" * 5000})["ref"]
+    second = store.blob(job["id"], "evidence", {"text": synthetic_text("history-B", 5000)})["ref"]
     batch("pending", tool("read_evidence", {"ref": second}, "read"),
-          tool("context_update", intent, "update"), admission_capacity=35000 if old_pin else 40000)
+          tool("context_update", intent, "update"))
     assert state["context_waiting"] == "context-proposal:pending"
+    policy = runtime.context.waiting(job["id"], state)["policy"]
+    preview = runtime.context.prospective(job, state)
+    mandatory = preview.required(job, {**state, **policy, "context_waiting": None})
+    complete = preview.admission(job, {**state, "context_waiting": None}, policy)
+    allowance = (mandatory["input_estimate"] + complete["input_estimate"]) // 2
+    assert mandatory["input_estimate"] < allowance < complete["input_estimate"]
+    job = store.update_job(job["id"], route={**job["route"], "context_tokens": allowance + job["route"]["output_tokens"]})
     return runtime, job, state
 
 
@@ -77,6 +84,10 @@ def test_unusable_fallback_commits_revision_need_and_never_revives_on_restore(se
     store, original = setup
     runtime, job, state = pending_capacity_case(store, original, protocol, scenario, selection)
     old = deepcopy(state)
+    # Seed an explicitly historical confirmed disposition. A current local
+    # proxy overflow alone cannot establish this claim.
+    runtime.context_updates.reject(job, state, f"{job['id']}:{state['seq']}:{state['revision']}",
+        "Historical confirmed necessary-content excess.", reason="required_content_exceeds_capacity")
     proposal_ref = state["context_waiting"]
     proposal_bytes = store.bytes(proposal_ref, job["id"])
     policy = runtime.context.waiting(job["id"], state)["policy"]
@@ -94,7 +105,7 @@ def test_unusable_fallback_commits_revision_need_and_never_revives_on_restore(se
             saved = dict(runtime.graph.get_state(config).values)
             assert saved["context_waiting"] is None
             assert all(saved[k] == old[k] for k in POLICY)
-            assert store.get("job", job["id"])["stop_reason"] == "feedback_capacity_blocked"
+            assert store.get("job", job["id"])["stop_reason"] == "necessary_estimate_uncertain"
             assert store.json(saved["context_feedback"], job["id"])["summary"]["status"] == "needs_agent_revision"
             assert store.get("context_disposition", proposal_ref)["status"] == "needs_agent_revision"
             assert store.get("job", job["id"])["attempts"] == 7
@@ -136,12 +147,21 @@ def test_unusable_fallback_commits_revision_need_and_never_revives_on_restore(se
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
-def test_unfit_proposal_needs_revision_when_active_compaction_can_deliver_outcome(setup, protocol):
+def test_historical_revision_need_can_deliver_through_active_compaction(setup, protocol):
     store, original = setup
     runtime, job, state = pending_capacity_case(store, original, protocol, "handoff")
     try:
-        job = store.update_job(job["id"], route={**job["route"], "context_tokens": 26000})
-        assert not runtime.context.normal(job, state)[1]["fits"]
+        historical = runtime.context_updates.reject(job, state, f"{job['id']}:{state['seq']}:{state['revision']}",
+            "Historical confirmed necessary-content excess.", reason="required_content_exceeds_capacity")
+        diagnostic = {**state, **historical}
+        mandatory = runtime.context.required(job, diagnostic)["input_estimate"]
+        compact = runtime.context.compact_request(job, diagnostic)[1]["capacity"]["input_estimate"]
+        normal = runtime.context.normal(job, diagnostic)[1]["input_estimate"]
+        allowance = (max(mandatory, compact) + normal) // 2
+        assert max(mandatory, compact) < allowance < normal
+        job = store.update_job(job["id"], route={**job["route"],
+            "context_tokens": allowance + job["route"]["output_tokens"]})
+        assert not runtime.context.normal(job, diagnostic)[1]["fits"]
         decided = {**state, **runtime.coordinate(state)}
         receipt = store.bytes(decided["context_feedback"], job["id"])
         assert store.json(decided["context_feedback"], job["id"])["summary"]["status"] == "needs_agent_revision"

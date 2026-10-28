@@ -6,7 +6,8 @@ import pytest
 from pdfmd.nexus import StopRun
 from pdfmd.storage import Store
 from test_context_admission import protocol_job, state_for
-from test_context_coordination import accepted_batch, coordinate, offline, settlements
+from test_context_coordination import accepted_batch, coordinate, historical_required_excess, offline, settlements
+from test_context_plans import varied_text
 from test_context_progress import read_batch
 from test_runtime import tool
 
@@ -67,9 +68,15 @@ def test_committed_decision_recovers_before_new_settings_and_graph(setup, protoc
                 return event(owner, kind, key, data)
             patch.setattr(store, "event_once", crash)
             with pytest.raises(RuntimeError, match="before graph"):
-                coordinate(runtime, after)
+                if oversize:
+                    historical_required_excess(runtime, job, after)
+                else:
+                    coordinate(runtime, after)
         saved = deepcopy(settlements(store, job)[-1])
         assert saved["feedback"]["status"] == ("needs_agent_revision" if oversize else "applied")
+        if oversize:
+            assert saved["feedback"]["reason"] == "required_content_exceeds_capacity"
+            assert saved["feedback"]["capacity"]["method"] == "synthetic_historical_settlement"
         bytes0 = store.bytes("result:commit-gap:0", job["id"])
     finally:
         runtime.close()
@@ -92,26 +99,37 @@ def test_committed_decision_recovers_before_new_settings_and_graph(setup, protoc
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
-def test_fitting_compaction_does_not_create_reachable_required_diagnostic(setup, protocol):
+def test_fitting_compaction_does_not_turn_uncertain_active_policy_into_fitting_diagnostic(setup, protocol):
     store, original = setup
     job = protocol_job(store, original, protocol)
-    state = {**state_for(job, []), "notes": "A" * 10000, "pin_views": {}}
+    state = {**state_for(job, []), "notes": varied_text(10000), "pin_views": {}}
     read_batch(store, job, "history", ["Useful original " * 300])
     state["history"] = ["history"]
     runtime = offline(store)
     try:
         after, _ = accepted_batch(runtime, job, state, "large", tool("context_update", {"notes": "Q" * 80000}))
-        job = store.update_job(job["id"], route={**job["route"], "context_tokens": 17000})
-        decided = coordinate(runtime, after)
+        decided = historical_required_excess(runtime, job, after)
+        # Select a real interval where COMPACT fits but mandatory normal input
+        # does not. The counter establishes this synthetic transition's setup,
+        # not an independent claim about actual upstream token cost.
+        compact = runtime.context.compact_request(job, decided)[1]["capacity"]
+        mandatory = runtime.context.required(job, decided)
+        assert compact["input_estimate"] < mandatory["input_estimate"]
+        allowance = (compact["input_estimate"] + mandatory["input_estimate"]) // 2
+        job = store.update_job(job["id"], route={**job["route"],
+            "context_tokens": allowance + job["route"]["output_tokens"]})
+        decided = coordinate(runtime, decided)
         assert settlements(store, job)[-1]["feedback"]["status"] == "needs_agent_revision"
-        assert not runtime.context.required(job, decided)["fits"]
+        required = runtime.context.required(job, decided)
+        assert not required["fits"] and not required["proved_excess"] and not required["proof_available"]
         _, meta = runtime.context.compact_request(job, decided)
         assert meta["capacity"]["fits"]  # Different purpose, actually executable envelope.
         with pytest.raises(StopRun) as error:
             runtime.prepare(decided)
-        assert error.value.reason == "feedback_capacity_blocked"
+        assert error.value.reason == "necessary_estimate_uncertain"
         assert store.get("job", job["id"])["attempts"] == 0
         assert decided["notes"] == state["notes"]
-        assert store.json(decided["context_check"], job["id"])["reason"] == "feedback_capacity_blocked"
+        assert store.json(decided["context_check"], job["id"])["reason"] == "necessary_estimate_uncertain"
+        assert settlements(store, job)[-1]["feedback"]["reason"] == "required_content_exceeds_capacity"
     finally:
         runtime.close()

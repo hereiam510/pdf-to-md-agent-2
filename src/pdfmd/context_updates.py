@@ -129,8 +129,24 @@ class ContextUpdates:
                     "message": "The complete batch revision passed actual normal-input admission."}
                 return self.finish(job, state, key, feedback, policy)
             required = preview.required(job, candidate)
-            if not required["fits"]:
+            if required["proved_excess"]:
                 return self.reject(job, state, key, "The final candidate's necessary content exceeds the current allowance.", capacity=required)
+            if not required["fits"]:
+                # A proxy, configured image allowance or safety margin cannot
+                # prove necessary-token excess. Offer a real fitting diagnostic
+                # or preserve eligibility in an explicit uncertainty wait.
+                diagnostic = Context(self.store, self.context.dispatcher,
+                    update_feedback=outcome("needs_agent_revision", state["context_waiting"], self.ref(key), "necessary_estimate_uncertain"))
+                try:
+                    if diagnostic.normal(job, {**state, "context_waiting": None})[1]["fits"]:
+                        return self.reject(job, state, key,
+                            "The mandatory-content reservation does not fit; actual necessary-token excess is unconfirmed. Choose a representation or revise the route assumptions.",
+                            capacity=required, reason="necessary_estimate_uncertain")
+                except (StopRun, ValueError):
+                    pass
+                return self.wait(job, state, "necessary_estimate_uncertain",
+                    "The mandatory-content reservation and active diagnostic do not fit. Actual necessary-token excess is unconfirmed; saved intent remains eligible. Review route assumptions or explicitly choose a new revision.",
+                    capacity=required)
             repair = state.get("repairs", {}).get("compaction", {})
             if repair.get("count", 0) > job["limits"].get("max_response_repairs", 2):
                 diagnostic = Context(self.store, self.context.dispatcher,
@@ -170,8 +186,11 @@ class ContextUpdates:
         # Only the target's supported lower bound can establish an obstruction
         # history compaction cannot fix. A failing full normal input cannot.
         required = self.context.required(job, state)
-        if not required["fits"]:
+        if required["proved_excess"]:
             raise StopRun("feedback_capacity_blocked" if state.get("context_feedback") else "capacity_blocked",
                 "Necessary active-policy content exceeds the current allowance. History compaction cannot make this normal request fit. Saved policy, candidate, decisions and work are retained; change the route capacity or another authorized required condition.")
+        if not required["fits"]:
+            raise StopRun("necessary_estimate_uncertain",
+                "The mandatory active-policy reservation does not fit. The local proxy cannot prove actual necessary-token excess. Saved policy, candidates, history and work are retained; review route assumptions or explicitly revise the selected content.")
         payload, meta = self.context.compact_request(job, state)
         return payload, meta, "compaction"

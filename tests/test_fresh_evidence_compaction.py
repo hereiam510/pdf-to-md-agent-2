@@ -18,7 +18,7 @@ from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
 from test_context_admission import outputs, protocol_job, settle, state_for
 from test_context_progress import compact_body, read_batch
-from test_context_plans import candidate
+from test_context_plans import candidate, varied_text
 from test_response_repairs import handoff, native
 from test_runtime import tool
 
@@ -44,10 +44,10 @@ def image_hashes(payload):
     return found
 
 
-def pressure_fixture(store, initial, protocol, *, capacity=None):
+def pressure_fixture(store, initial, protocol, *, headroom=2000):
     job = protocol_job(store, initial, protocol)
     job = store.update_job(job["id"], route={**job["route"], "image_tokens": 12000})
-    read_batch(store, job, "older", ["O" * 30000])
+    read_batch(store, job, "older", [varied_text(30000, 13)])
     exact = store.blob(job["id"], "evidence", {"text": "E" * 16000})
     envs = settle(store, job, "fresh",
                   tool("read_evidence", {"ref": exact["ref"]}, "new-text"),
@@ -55,16 +55,13 @@ def pressure_fixture(store, initial, protocol, *, capacity=None):
                   tool("render_page", {"page": 1, "dpi": 96}, "new-detail"))
     state = state_for(job, ["older", "fresh"])
     context = Context(store, Dispatcher(store))
-    if capacity is None:
-        # Establish the intended initial geometry from actual native input.
-        # Tool descriptions, exact-read metadata and working-context feedback
-        # are real costs: the former fixed 65,536 no longer held this complete
-        # fresh batch. Leave room for a short handoff, but not the old prefix.
-        # This is fixture setup; the allowance never changes during the flow.
-        generous = {**job, "route": {**job["route"], "context_tokens": 1_000_000}}
-        measured = context.normal(generous, {**state, "history": ["fresh"]})[1]
-        assert measured["projection"]["deferred"] == []
-        capacity = measured["input_estimate"] + measured["output_reserve"] + 2000
+    # Establish the intended geometry from complete current native input.
+    # Lower the fixture allowance to leave room for a short handoff but not the
+    # old prefix. This chooses a test transition, not an upstream capacity claim.
+    measured = context.normal(job, {**state, "history": ["fresh"]})[1]
+    assert measured["projection"]["deferred"] == []
+    capacity = measured["input_estimate"] + measured["output_reserve"] + headroom
+    assert capacity < initial["route"]["context_tokens"]
     job = store.update_job(job["id"], route={**job["route"], "context_tokens": capacity})
     fresh = context.normal(job, {**state, "history": ["fresh"]})[1]
     assert fresh["fits"] and fresh["projection"]["deferred"] == []
@@ -113,12 +110,13 @@ def test_actual_handoff_must_fit_retained_normal_target_without_silent_eviction(
     _, meta = context.compact_request(job, state)
     assert meta["covered"] == ["older"]
     # This summary shrinks the old prefix, but not enough to carry its retained
-    # normal tool results. Net byte savings alone must not accept it.
-    oversized = json.dumps(handoff(job, current_state="C" * 25000))
+    # normal tool results. Net estimated savings alone must not accept it.
+    long_state = varied_text(25000, 17)
+    oversized = json.dumps(handoff(job, current_state=long_state))
     with pytest.raises(HandoffRejected, match="retained.*normal"):
         context.apply_handoff(job, state, oversized, meta, "long-summary")
     assert state == before
-    assert store.json("handoff:long-summary", job["id"])["content"]["current_state"] == "C" * 25000
+    assert store.json("handoff:long-summary", job["id"])["content"]["current_state"] == long_state
     assert not any(e["type"] == "context_compacted" for e in store.events(job["id"]))
     revised = context.apply_handoff(job, state, json.dumps(handoff(job)), meta, "short-summary")
     assert revised["history"] == ["fresh"] and context.normal(job, revised)[1]["fits"]
@@ -128,8 +126,9 @@ def test_actual_handoff_must_fit_retained_normal_target_without_silent_eviction(
 def test_unfit_suffix_keeps_rolling_compaction_fallback(setup, protocol):
     store, initial = setup
     job = protocol_job(store, initial, protocol)
-    read_batch(store, job, "older", ["O" * 30000])
-    refs, _ = read_batch(store, job, "large-tail", ["A" * 30000, "B" * 30000])
+    read_batch(store, job, "older", [varied_text(30000, 13)])
+    bodies = [varied_text(50000, 1), varied_text(50000, 2)]
+    refs, _ = read_batch(store, job, "large-tail", bodies)
     context = Context(store, Dispatcher(store))
     state = state_for(job, ["older", "large-tail"])
     assert not context.normal(job, {**state, "history": ["large-tail"]})[1]["fits"]
@@ -139,7 +138,7 @@ def test_unfit_suffix_keeps_rolling_compaction_fallback(setup, protocol):
     assert context.normal(job, changed)[1]["input_estimate"] < context.normal(job, state)[1]["input_estimate"]
     if changed["history"]:
         assert context.compact_request(job, changed)[1]["capacity"]["fits"]
-    assert [store.json(ref, job["id"])["text"] for ref in refs] == ["A" * 30000, "B" * 30000]
+    assert [store.json(ref, job["id"])["text"] for ref in refs] == bodies
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)
@@ -165,13 +164,13 @@ def test_compaction_pixel_absence_is_explicitly_current_request_only(setup, prot
 @pytest.mark.parametrize("protocol", PROTOCOLS)
 def test_retained_target_uses_specific_pending_policy_and_applied_outcome(setup, protocol):
     store, initial = setup
-    job, context, state, _, _ = pressure_fixture(store, initial, protocol, capacity=75000)
-    policy = context.policy(job["id"], state, {"notes": "N" * 6000})
+    job, context, state, _, _ = pressure_fixture(store, initial, protocol, headroom=8000)
+    policy = context.policy(job["id"], state, {"notes": varied_text(6000, 23)})
     state = candidate(store, job, state, policy)
     _, meta = context.compact_request(job, state)
     assert meta["covered"] == ["older"] and meta["retained_normal_target"]
     with pytest.raises(HandoffRejected, match="retained.*normal"):
-        context.apply_handoff(job, state, json.dumps(handoff(job, current_state="C" * 8000)), meta, "pending-long")
+        context.apply_handoff(job, state, json.dumps(handoff(job, current_state=varied_text(8000, 17))), meta, "pending-long")
     active_after = {**state, "history": ["fresh"], "handoff": "handoff:pending-long", "context_waiting": None}
     assert context.normal(job, active_after)[1]["fits"]
     preview = context.prospective(job, state)
@@ -187,7 +186,7 @@ def test_retained_results_cannot_disappear_to_make_long_summary_fit(setup, proto
     job, context, state, _, _ = pressure_fixture(store, initial, protocol)
     _, meta = context.compact_request(job, state)
     with pytest.raises(HandoffRejected, match="retained.*normal"):
-        context.apply_handoff(job, state, json.dumps(handoff(job, current_state="C" * 37000)), meta, "deferring-summary")
+        context.apply_handoff(job, state, json.dumps(handoff(job, current_state=varied_text(28000, 17))), meta, "deferring-summary")
     observed = context.normal(job, {**state, "history": ["fresh"], "handoff": "handoff:deferring-summary"})[1]
     assert observed["fits"] and observed["projection"]["deferred"]
     assert not any(e["type"] == "context_compacted" for e in store.events(job["id"]))
@@ -203,7 +202,7 @@ def test_retained_target_correction_budget_survives_runtime_reopen(setup, protoc
         payload = json.loads(request.content)
         assert not payload.get("tools")  # Only offline compaction corrections.
         seen.append(payload)
-        return httpx.Response(200, json=native(protocol, text=json.dumps(handoff(job, current_state="C" * 25000))))
+        return httpx.Response(200, json=native(protocol, text=json.dumps(handoff(job, current_state=varied_text(25000, 17)))))
     service = Nexus(store, lambda _: "offline-only", httpx.MockTransport(reply))
     runtime = Runtime(store, service)
     config = {"configurable": {"thread_id": job["id"]}}

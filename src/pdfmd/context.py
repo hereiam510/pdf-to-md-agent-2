@@ -11,6 +11,7 @@ from .schema import Route
 from .storage import Store, encode
 from .tools import Dispatcher, definitions
 from .working_context import with_feedback
+from .request_estimation import estimate
 
 
 SYSTEM = """You convert the user's PDF into complete, readable, reusable Markdown and faithful source images.
@@ -71,37 +72,15 @@ Each value must be a string or an array of strings. Preserve useful exact refere
 """
 
 
-def estimate(payload: dict, route: Route) -> dict:
-    images = 0
-
-    def walk(value):
-        nonlocal images
-        if isinstance(value, dict):
-            if value.get("type") in {"image_url", "input_image"}:
-                images += 1
-                return {"type": value["type"], "image": "[native image charged separately]"}
-            return {k: walk(v) for k, v in value.items()}
-        if isinstance(value, list):
-            return [walk(v) for v in value]
-        return value
-
-    textual = len(encode(walk(payload)))
-    if images and route.image_tokens is None:
-        raise StopRun("capacity_configuration", "Configure a conservative per-image token allowance for this route before sending pixels.")
-    # Deliberately conservative, portable approximation. This is not provider usage.
-    input_estimate = textual + 1024 + images * (route.image_tokens or 0)
-    return {"method": "utf8_bytes_plus_1024_and_configured_images", "input_estimate": input_estimate,
-            "images": images, "output_reserve": route.output_tokens, "capacity": route.context_tokens,
-            "fits": input_estimate + route.output_tokens <= route.context_tokens}
-
-
 class Context:
     def __init__(self, store: Store, dispatcher: Dispatcher, *, envelopes: dict | None = None,
                  update_feedback: dict | None = None, handoff_preview: dict | None = None):
         self.store, self.dispatcher = store, dispatcher
         # Read-only projections used during preflight; never persisted as history.
         self.envelopes = envelopes or {}
-        self.update_feedback = update_feedback
+        # Saved settlements are canonical JSON. Match that exact ordering even
+        # inside native JSON strings; equal byte lengths need not cost equal BPE.
+        self.update_feedback = json.loads(encode(update_feedback)) if update_feedback is not None else None
         self.handoff_preview = handoff_preview
 
     def prospective(self, job: dict, state: dict, key: str | None = None) -> "Context":
@@ -113,23 +92,24 @@ class Context:
                                                f"context-settlement:{key}", "admitted"))
 
     def required(self, job: dict, state: dict) -> dict:
-        """A supported necessary-cost lower bound, never a complete continuation.
+        """Mandatory projection, not a token lower bound or full continuation.
 
-        Handoff/history facts still belong in normal(). Their shortest faithful
-        rendering is unknown. Omitting them here only weakens this one-way proof.
-        Optional separate outcome envelopes are likewise not a universal minimum.
+        No local proxy currently proves a provider-token minimum, even without
+        its margin. Future proof sources must be independently justified.
         """
         route = Route.model_validate(job["route"])
         messages = [{"role": "user", "content": self.anchor(job, state)}, *self.pins(job, state)]
         payload = make_payload(route, SYSTEM, messages, definitions(self.dispatcher.scripts))
         capacity = estimate(payload, route)
-        return {**capacity, "purpose": "necessary_cost_lower_bound",
-                "proved_excess": not capacity["fits"], "proves_full_admission": False,
+        return {**capacity, "purpose": "mandatory_content_estimate",
+                "proof_available": False, "necessary_cost_lower_bound": None,
+                "proved_excess": False, "proves_full_admission": False,
+                "classification": "reservation_fits" if capacity["fits"] else "necessary_estimate_uncertain",
                 "components": ["system", "task_and_current_anchors", "chosen_notes_and_pins",
                                "tool_descriptions", "native_envelope", "configured_images", "output_reserve"],
-                "excluded_from_proof": ["reducible_history_and_handoff", "optional_outcome_placement",
+                "excluded_from_projection": ["reducible_history_and_handoff", "optional_outcome_placement",
                                         "repair_and_continuation_presentation"],
-                "qualification": "A fitting bound does not establish a complete or semantically sufficient request."}
+                "qualification": "Neither proxy overflow nor a smaller projection proves actual necessary-token excess; fitting does not establish complete admission."}
 
     def envelope(self, job: str, operation: str) -> dict:
         if operation in self.envelopes:
@@ -272,7 +252,8 @@ class Context:
                            "current_head": job["head"], "selected_delivery": job["delivery"],
                            "continuation_notes": state.get("notes", ""),
                            "context_policy_ref": policy_ref(state),
-                           "context_candidate_ref": state.get("context_latest") or state.get("context_waiting")}, ensure_ascii=False)
+                           "context_candidate_ref": (self.update_feedback["proposal_ref"] if self.update_feedback is not None
+                                                     else state.get("context_latest") or state.get("context_waiting"))}, ensure_ascii=False)
 
     def handoff(self, job: str, state: dict):
         if self.handoff_preview is not None:
@@ -534,7 +515,7 @@ class Context:
             reserve = 0
             if state.get("context_waiting") and not outcome:
                 future = {"role": "user", "content": "Deferred context update outcome:\n" + json.dumps(reserved_outcome(state))}
-                reserve = estimate(pack(groups, [future]), route)["input_estimate"] - capacity["input_estimate"]
+                reserve = max(0, estimate(pack(groups, [future]), route)["input_estimate"] - capacity["input_estimate"])
             capacity["outcome_reserve"] = reserve
             capacity["input_estimate"] += reserve
             capacity["fits"] = capacity["input_estimate"] + route.output_tokens <= route.context_tokens

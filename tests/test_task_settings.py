@@ -40,7 +40,7 @@ def test_capacity_can_change_before_first_request(setup, protocol):
         return httpx.Response(200, json=native(protocol, tool("report", {"state": "waiting", "message": "Ready."})))
     engine = Engine(store.root, transport=httpx.MockTransport(reply))
     try:
-        assert start(engine, job["id"])["stop_reason"] == "capacity_blocked"
+        assert start(engine, job["id"])["stop_reason"] == "necessary_estimate_uncertain"
         assert not seen and not store.records("request", job["id"])
         current = start(engine, job["id"], route=job["route"])
         assert current["status"] == "waiting" and current["attempts"] == len(seen) == 1
@@ -324,7 +324,7 @@ def test_settings_continue_to_saved_reopened_exported_source(tmp_path, route, pr
         assert client.post(f"/jobs/{job['id']}/start", json={"key": "fixture-only"}).status_code == 200
         app.state.engine.futures[job["id"]].result(timeout=30)
         stopped = client.get(f"/jobs/{job['id']}").json()
-        assert stopped["stop_reason"] == ("capacity_blocked" if boundary == "capacity" else "budget_exhausted")
+        assert stopped["stop_reason"] == ("necessary_estimate_uncertain" if boundary == "capacity" else "budget_exhausted")
         assert stopped["head"] == original_version
         originals = {b["ref"]: sha256(store.bytes(b["ref"], job["id"])).hexdigest() for b in store.records("blob", job["id"])}
         frozen = store.records("request", job["id"])

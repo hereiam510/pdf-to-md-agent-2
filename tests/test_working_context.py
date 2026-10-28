@@ -28,8 +28,8 @@ def test_feedback_counts_itself_at_digit_boundaries(protocol, route):
         payload = with_feedback(selected, "x" * 12000, [], [], None)
         actual = estimate(payload, selected)
         summary = feedback(payload)
-        assert summary["input_estimate"] == actual["input_estimate"]
-        assert summary["remaining"] == limit - selected.output_tokens - actual["input_estimate"]
+        assert actual["input_estimate"] <= summary["input_estimate"] <= actual["input_estimate"] + 16
+        assert summary["remaining"] == limit - selected.output_tokens - summary["input_estimate"]
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "responses"])

@@ -14,7 +14,7 @@ from pdfmd.nexus import Nexus
 from pdfmd.runtime import Runtime
 from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
-from test_context_admission import outputs, state_for
+from test_context_admission import outputs, state_for, synthetic_text
 from test_context_progress import compact_body, read_batch
 from test_response_repairs import handoff, native
 from test_runtime import tool
@@ -35,10 +35,14 @@ def run_retry_delivery(directory, route, protocol):
     payload, capacity = Context(store, Dispatcher(store)).normal(job, state_for(job, []))
     seed_request = Nexus(store, lambda _: pytest.fail("No seed inference")).freeze(
         job["id"], "history", payload, "normal", {"capacity": capacity})
-    first, _ = read_batch(store, job, "history", ["A" * 11000])
+    first_text = synthetic_text("delivery-A", 11000)
+    first, _ = read_batch(store, job, "history", [first_text])
     accepted_ref = store.get("request", "history")["accepted_ref"]
     store.put("request", "history", job["id"], {**seed_request, "status": "accepted", "accepted_ref": accepted_ref})
-    second = store.blob(job["id"], "evidence", {"text": "B" * 11000})["ref"]
+    second = store.blob(job["id"], "evidence", {"text": synthetic_text("delivery-B", 11000)})["ref"]
+    initial = Context(store, Dispatcher(store)).normal(job, state_for(job, ["history"]))[1]
+    job = store.update_job(job["id"], route={**job["route"],
+        "context_tokens": initial["input_estimate"] + initial["output_reserve"] + 1800})
     original_version = job["head"]
     original_text = Documents(store).version(job["id"], original_version)["content"]["blocks"][0]
     seen, normal, summaries, retained = [], [], [], {}
@@ -134,8 +138,8 @@ def run_retry_delivery(directory, route, protocol):
     assert saved["content"]["blocks"][0] == original_text
     assert Documents(store).version(job["id"], original_version)["content"]["blocks"] == [original_text]
     evidence = Evidence(store)
-    assert evidence.read(job["id"], first[0])["value"] == {"text": "A" * 11000}
-    assert evidence.read(job["id"], first[0], json_pointer="/text", start=2, end=8)["value"] == "A" * 6
+    assert evidence.read(job["id"], first[0])["value"] == {"text": first_text}
+    assert evidence.read(job["id"], first[0], json_pointer="/text", start=2, end=8)["value"] == first_text[2:8]
     assert base64.b64decode(evidence.read(job["id"], first[0], view="raw")["data"]) == store.bytes(first[0], job["id"])
     assert all(r["meta"]["capacity"]["fits"] for r in store.records("request", job["id"]) if "meta" in r)
     fixture = {"job": job["id"], "version": current["head"], "original_version": original_version,

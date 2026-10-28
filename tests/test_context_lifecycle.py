@@ -9,7 +9,7 @@ from pdfmd.context import HandoffRejected
 from pdfmd.nexus import Nexus, StopRun, parse_reply
 from pdfmd.runtime import Runtime
 from pdfmd.storage import Store
-from test_context_admission import outputs
+from test_context_admission import outputs, synthetic_text
 from test_context_retry import POLICY, compact, prepare_step, pressure
 from test_response_repairs import handoff, native
 from test_runtime import tool
@@ -37,6 +37,11 @@ def pending(setup, protocol):
 def test_capacity_block_checkpoints_revision_need_or_supersession_and_reopens(setup, protocol, amend):
     store, job, before, state, runtime = pending(setup, protocol)
     original = store.bytes(state["context_waiting"], job["id"])
+    if not amend:
+        # Historical confirmed decision survives new estimator/capacity. Fresh
+        # proxy overflow is instead covered as an eligible uncertainty wait.
+        runtime.context_updates.reject(job, state, f"{job['id']}:{state['seq']}:{state['revision']}",
+            "Historical confirmed necessary-content excess.", reason="required_content_exceeds_capacity")
     runtime.graph.update_state(config(job), state, as_node="tools")
     runtime.close()
     store.update_job(job["id"], route={**job["route"], "context_tokens": 4096, "output_tokens": 512},
@@ -46,7 +51,7 @@ def test_capacity_block_checkpoints_revision_need_or_supersession_and_reopens(se
         runtime.run(job["id"])
         saved = dict(runtime.graph.get_state(config(job)).values)
         runtime.close()
-        assert store.get("job", job["id"])["stop_reason"] == "feedback_capacity_blocked"
+        assert store.get("job", job["id"])["stop_reason"] == "necessary_estimate_uncertain"
         assert all(saved[k] == before[k] for k in POLICY)
         if amend:
             assert saved["context_waiting"] is None
@@ -99,7 +104,7 @@ def test_committed_outcome_checkpoints_even_when_feedback_cannot_fit(setup, prot
     runtime.run(job["id"])
     projected = dict(runtime.graph.get_state(config(job)).values)
     assert projected["context_waiting"] is None and projected["context_feedback"] == decision["context_feedback"]
-    assert store.get("job", job["id"])["stop_reason"] == "feedback_capacity_blocked"
+    assert store.get("job", job["id"])["stop_reason"] == "necessary_estimate_uncertain"
     assert all(projected[k] == before[k] for k in POLICY)
     runtime.close()
     runtime = offline_runtime(Store(store.root))
@@ -124,8 +129,8 @@ def test_large_update_cannot_admit_itself_by_deferring_visible_evidence(setup, p
     store, original = setup
     job, state, _, _ = pressure(store, original, protocol)
     read = json.loads(store.json(store.get("request", "pending")["accepted_ref"], job["id"])["calls"][0]["arguments"])
-    ref = store.blob(job["id"], "evidence", {"text": "N" * 6000})["ref"]
-    intent = {"notes": "N" * 6000} if kind == "notes" else {"pin": [{"ref": ref, "view": "full"}]}
+    ref = store.blob(job["id"], "evidence", {"text": synthetic_text("N", 6000)})["ref"]
+    intent = {"notes": synthetic_text("N", 6000)} if kind == "notes" else {"pin": [{"ref": ref, "view": "full"}]}
     accepted(store, job, "pending", tool("read_evidence", read, "read"), tool("context_update", intent, "update"))
     runtime = offline_runtime(store)
     try:
@@ -151,7 +156,7 @@ def test_large_update_cannot_admit_itself_by_deferring_visible_evidence(setup, p
         assert after["notes"] == intent["notes"] if kind == "notes" else after["pinned"] == [ref]
         assert store.bytes("context-proposal:pending", job["id"]) == saved
         assert store.bytes("result:pending:1", job["id"]) == original_receipt
-        assert store.json(ref, job["id"]) == {"text": "N" * 6000}
+        assert store.json(ref, job["id"]) == {"text": synthetic_text("N", 6000)}
     finally:
         runtime.close()
 
@@ -182,7 +187,7 @@ def test_final_handoff_preserves_space_for_pending_policy_and_outcome(setup, pro
     job, state, intent, ref = pressure(store, original, protocol)
     calls = store.json(store.get("request", "pending")["accepted_ref"], job["id"])["calls"]
     accepted(store, job, "pending", tool("read_evidence", json.loads(calls[0]["arguments"]), "read"),
-             tool("context_update", intent, "first"), tool("context_update", {"notes": "N" * 6000}, "second"))
+             tool("context_update", intent, "first"), tool("context_update", {"notes": synthetic_text("N", 6000)}, "second"))
     runtime = offline_runtime(store)
     try:
         after = {**state, **runtime.tools(state)}
@@ -194,12 +199,12 @@ def test_final_handoff_preserves_space_for_pending_policy_and_outcome(setup, pro
         original = deepcopy(after)
         with pytest.raises(HandoffRejected, match="pending policy"):
             runtime.context.apply_handoff(job, after, json.dumps(handoff(job,
-                current_state="C" * 6000, unfinished_work=[], references=[], cautions=[])), meta, "long")
+                current_state=synthetic_text("C", 6000), unfinished_work=[], references=[], cautions=[])), meta, "long")
         assert after == original and store.maybe("blob", "handoff:long")
         after = runtime.context.apply_handoff(job, after, json.dumps(handoff(job,
             current_state="Keep source work.", unfinished_work=[], references=[], cautions=[])), meta, "short")
         after.update(prepare_step(runtime, after))
-        assert not after["context_waiting"] and after["notes"] == "N" * 6000
+        assert not after["context_waiting"] and after["notes"] == synthetic_text("N", 6000)
         assert runtime.context.normal(job, after)[1]["fits"]
     finally:
         runtime.close()
@@ -212,7 +217,7 @@ def test_explicit_release_can_reduce_compaction_without_early_policy_application
     job = store.update_job(job["id"], route={**job["route"], "context_tokens": 50000})
     runtime = offline_runtime(store)
     try:
-        pin = store.blob(job["id"], "evidence", {"text": "P" * 10200})["ref"]
+        pin = store.blob(job["id"], "evidence", {"text": synthetic_text("P", 10200)})["ref"]
         accepted(store, job, "pin-init", tool("context_update", {"pin": [{"ref": pin, "view": "full"}]}, "pin"))
         state["pending"] = "pin-init"
         state.update(runtime.tools(state))
@@ -222,16 +227,23 @@ def test_explicit_release_can_reduce_compaction_without_early_policy_application
         assert capacity["fits"]
         key = "accepted-before-capacity-change"
         request = runtime.nexus.freeze(job["id"], key, payload, "normal", {"capacity": capacity})
-        ref = store.blob(job["id"], "evidence", {"text": "B" * 5000})["ref"]
+        ref = store.blob(job["id"], "evidence", {"text": synthetic_text("B", 5000)})["ref"]
         reply = parse_reply(protocol, json.dumps(native(protocol, tool("read_evidence", {"ref": ref}, "read"),
                             tool("context_update", {"release": [pin]}, "release"))).encode())
         accepted_ref = store.blob(job["id"], "accepted_response", reply)["ref"]
         store.put("request", key, job["id"], {**request, "status": "accepted", "accepted_ref": accepted_ref})
         frozen = store.bytes(request["payload_ref"], job["id"])
-        job = store.update_job(job["id"], route={**job["route"], "context_tokens": 28000})
         state["pending"] = key
         state.update(runtime.tools(state))
         assert state["context_waiting"] and state["pinned"] == [pin]
+        policy = runtime.context.waiting(job["id"], state)["policy"]
+        preview = runtime.context.prospective(job, state)
+        mandatory = preview.required(job, {**state, **policy, "context_waiting": None})
+        complete = preview.admission(job, {**state, "context_waiting": None}, policy)
+        allowance = (mandatory["input_estimate"] + complete["input_estimate"]) // 2
+        assert mandatory["input_estimate"] < allowance < complete["input_estimate"]
+        job = store.update_job(job["id"], route={**job["route"],
+            "context_tokens": allowance + job["route"]["output_tokens"]})
         state.update(prepare_step(runtime, state))
         compact_request = store.get("request", state["pending"])
         assert compact_request["kind"] == "compaction"
@@ -247,7 +259,7 @@ def test_explicit_release_can_reduce_compaction_without_early_policy_application
             if compact_request["kind"] == "normal":
                 break
         assert state["context_waiting"] is None and pin not in state["pinned"] and pin in state["released"]
-        assert store.json(pin, job["id"]) == {"text": "P" * 10200}
+        assert store.json(pin, job["id"]) == {"text": synthetic_text("P", 10200)}
         assert store.bytes(request["payload_ref"], job["id"]) == frozen
         assert store.get("request", key)["route"]["context_tokens"] == 50000
         assert store.get("job", job["id"])["attempts"] == 0
@@ -262,7 +274,7 @@ def test_outcome_reservation_covers_terminal_feedback_at_exact_allowance(setup, 
     job, state, intent, ref = pressure(store, original, protocol)
     calls = store.json(store.get("request", "pending")["accepted_ref"], job["id"])["calls"]
     accepted(store, job, "pending", tool("read_evidence", json.loads(calls[0]["arguments"]), "read"),
-             tool("context_update", intent, "first"), tool("context_update", {"notes": "N" * 6000}, "large"))
+             tool("context_update", intent, "first"), tool("context_update", {"notes": synthetic_text("N", 6000)}, "large"))
     runtime = offline_runtime(store)
     try:
         after = {**state, **runtime.tools(state)}
@@ -295,7 +307,7 @@ def test_handoff_only_reduction_preserves_progress_and_original_archive(setup, p
     try:
         _, meta = runtime.context.compact_request(job, state)
         state = runtime.context.apply_handoff(job, state, json.dumps(handoff(job,
-            current_state="C" * 2000, unfinished_work=[], references=[], cautions=[])), meta, "initial-summary")
+            current_state=synthetic_text("C", 2000), unfinished_work=[], references=[], cautions=[])), meta, "initial-summary")
         assert state["history"] == []
         original_bytes = store.bytes(state["handoff"], job["id"])
         required = runtime.context.normal(job, {**state, "handoff": None})[1]
@@ -307,7 +319,7 @@ def test_handoff_only_reduction_preserves_progress_and_original_archive(setup, p
         assert request["kind"] == "compaction" and request["meta"]["covered"] == []
         with pytest.raises(HandoffRejected, match="did not reduce"):
             runtime.context.apply_handoff(job, state, json.dumps(handoff(job,
-                current_state="C" * 4000, unfinished_work=[], references=[], cautions=[])), request["meta"], "no-progress")
+                current_state=synthetic_text("C", 4000), unfinished_work=[], references=[], cautions=[])), request["meta"], "no-progress")
         result = runtime.context.apply_handoff(job, state, json.dumps(handoff(job,
             current_state="Keep complete source work.", unfinished_work=[], references=[], cautions=[])), request["meta"], request["id"])
         assert runtime.context.normal(job, result)[1]["fits"]

@@ -138,7 +138,8 @@ def test_unadmitted_pin_preserves_policy_then_exact_views_fit_and_replay(tmp_pat
     saved_receipt = store.bytes(saved["result_ref"], job["id"])
     denied = store.json(state["context_feedback"], job["id"])
     assert denied["summary"]["status"] == "needs_agent_revision"
-    assert denied["summary"]["reason"] == "required_content_exceeds_capacity" and "Base64" in denied["feedback"]["message"]
+    assert denied["summary"]["reason"] == "necessary_estimate_uncertain"
+    assert denied["feedback"]["capacity"]["proved_excess"] is False
     for field in ["pinned", "pin_views", "released", "notes"]:
         assert state[field] == before[field]
     assert runtime.context.normal(job, state)[1]["fits"]
@@ -226,7 +227,7 @@ def run_delivery(directory, route, protocol):
             receipt = results[-1]
             assert receipt["ok"] and receipt["data"]["admission"] == {"applied": False, "status": "saved"}
             assert receipt["data"]["context_outcome"]["status"] == "needs_agent_revision"
-            assert receipt["data"]["context_outcome"]["reason"] == "required_content_exceeds_capacity"
+            assert receipt["data"]["context_outcome"]["reason"] == "necessary_estimate_uncertain"
             retained["original_context_receipt"] = (receipt["result_ref"], store.bytes(receipt["result_ref"], job["id"]))
             anchor = json.loads(next(m["content"] for m in payload.get("messages", payload.get("input")) if m.get("role") == "user"))
             calls = [tool("context_update", {"base": {"kind": "active", "ref": anchor["context_policy_ref"]}, "pin": [
@@ -422,7 +423,7 @@ def test_image_pin_configuration_failure_keeps_prior_policy(tmp_path, route, pro
         assert result["notes"] == state["notes"] and result["pinned"] == []
         decided = store.json(result["context_feedback"], job["id"])["summary"]
         assert decided["status"] == "needs_agent_revision"
-        assert decided["reason"] == ["invalid_revision", "unknown_capacity_agent_choice", "required_content_exceeds_capacity"][i]
+        assert decided["reason"] == ["invalid_revision", "unknown_capacity_agent_choice", "necessary_estimate_uncertain"][i]
         assert env["ok"] is (i != 0)
         state = result
     runtime.close()
