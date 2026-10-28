@@ -257,12 +257,12 @@ def test_locally_accepted_handoff_wins_before_pointer_commit(setup, monkeypatch,
     transport = httpx.MockTransport(reply)
     runtime = Runtime(store, Nexus(store, lambda _: "offline", transport))
     seed(runtime, store, job)
-    original = store.put
-    def fail(kind, key, owner, value):
+    original = store.put_tx
+    def fail(db, kind, key, owner, value):
         if kind == "request" and value.get("kind") == "compaction" and value["status"] == "accepted":
             raise RuntimeError("accepted bytes before pointer")
-        return original(kind, key, owner, value)
-    monkeypatch.setattr(store, "put", fail)
+        return original(db, kind, key, owner, value)
+    monkeypatch.setattr(store, "put_tx", fail)
     with pytest.raises(RuntimeError, match="accepted bytes"):
         runtime.run(job["id"])
     old = runtime.pending_request(job["id"])

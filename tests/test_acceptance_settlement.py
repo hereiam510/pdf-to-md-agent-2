@@ -200,14 +200,19 @@ def test_only_staging_owned_attempt_is_settled_with_earlier_unknown_preserved(se
 
 
 @pytest.mark.parametrize("contradiction", ["pointer", "attempt_request", "attempt_member", "attempt_usage",
-    "attempt_stream", "native_owner", "native_bytes", "partial", "stage_usage", "row_owner"])
+    "attempt_stream", "native_owner", "native_bytes", "partial", "stage_usage", "row_owner",
+    "diagnostic_response_kind", "diagnostic_stream_kind"])
 def test_contradictory_acceptance_is_rejected_without_metadata_mutation(setup, monkeypatch, contradiction):
     store, job, nexus, request, sends, inflight = prepare(setup, "responses", True, monkeypatch)
     accepted = nexus.send(job["id"], request["id"])
     current = store.get("request", request["id"])
     attempt = inflight[0]
     store.put("attempt", attempt["id"], job["id"], attempt)
-    if contradiction == "pointer":
+    if contradiction.startswith("diagnostic_"):
+        field = "response_ref" if contradiction == "diagnostic_response_kind" else "stream_ref"
+        wrong_kind_ref = current["accepted_ref"] if field == "response_ref" else accepted["native_ref"]
+        store.put("request", request["id"], job["id"], {**current, "accepted_ref": None, "status": "in_flight", field: wrong_kind_ref})
+    elif contradiction == "pointer":
         store.put("request", request["id"], job["id"], {**current, "accepted_ref": accepted["native_ref"]})
     elif contradiction == "attempt_request":
         store.put("attempt", attempt["id"], job["id"], {**attempt, "request": "another-request"})

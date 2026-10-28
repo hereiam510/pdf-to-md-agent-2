@@ -228,10 +228,13 @@ class Nexus:
         # attempt of this request. Validate their ownership before superseding.
         for field in ("response_ref", "stream_ref"):
             previous = request.get(field)
-            if previous and previous not in evidence:
-                record = blob(previous)
-                if (record["meta"].get("request") != key
-                        or record["meta"].get("attempt") not in request["attempts"]):
+            if previous:
+                record = evidence[previous] if previous in evidence else blob(previous)
+                kinds = {"native_response", "partial_native_response", "assembled_response"} if field == "response_ref" else {"raw_stream"}
+                desired_ref = native["ref"] if field == "response_ref" else stream_ref
+                if (record["kind"] not in kinds or record["meta"].get("request") != key
+                        or record["meta"].get("attempt") not in request["attempts"]
+                        or (record["meta"]["attempt"] == attempt_id and previous != desired_ref)):
                     raise ValueError("Request diagnostic pointer has inconsistent provenance.")
         observed = meta.get("transport")
         if observed is None and receipt:

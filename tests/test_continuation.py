@@ -459,12 +459,12 @@ def test_accepted_bytes_win_over_continue_even_before_request_pointer_commit(del
                  tool('report', {'state': 'waiting', 'message': 'New instructions received.'}))
         return httpx.Response(200, json=native('chat_completions', value))
     transport = httpx.MockTransport(reply)
-    original = store.put
-    def fail(kind, key, owner, value):
+    original = store.put_tx
+    def fail(db, kind, key, owner, value):
         if kind == 'request' and value['status'] == 'accepted':
             raise RuntimeError('accepted bytes before request pointer')
-        return original(kind, key, owner, value)
-    monkeypatch.setattr(store, 'put', fail)
+        return original(db, kind, key, owner, value)
+    monkeypatch.setattr(store, 'put_tx', fail)
     runtime = Runtime(store, Nexus(store, lambda _: 'fixture', transport))
     with pytest.raises(RuntimeError):
         runtime.run(job['id'])
