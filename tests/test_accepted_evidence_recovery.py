@@ -182,16 +182,17 @@ def test_known_effects_are_paired_without_reexecution(setup, monkeypatch, protoc
         assert dispatcher.envelope(job["id"], f"{key}:{i}", store.get("operation", f"{key}:{i}")) == old
 
 
-@pytest.mark.parametrize("stage", ["staged", "skipping", "unknown", "done_only", "nominal_done"])
+@pytest.mark.parametrize("stage", ["staged", "skipping", "unknown", "done_only", "nominal_done", "failed_process"])
 def test_tool_effect_certainty_uses_more_than_status_or_blob(setup, monkeypatch, stage):
     from pdfmd.recovery import diagnose, resolve
     from pdfmd.tools import Dispatcher
-    store, job, key, reply, _ = historical(setup, monkeypatch, "responses")
+    store, job, key, reply, _ = historical(setup, monkeypatch, "responses", calls=
+        [tool("run_script", {"code": "print('synthetic candidate only')"}, "process")] if stage == "failed_process" else None)
     call, op = reply["calls"][0], f"{key}:0"
     dispatcher = Dispatcher(store)
     args_hash, candidate = dispatcher.capture(job["id"], op, call["name"], call["arguments"])
     record = {"id": op, "tool": call["name"], "args_hash": args_hash, "candidate_ref": candidate["ref"],
-              "status": "skipping" if stage == "skipping" else "done" if stage in {"done_only", "nominal_done"} else "started"}
+              "status": "skipping" if stage == "skipping" else "done" if stage in {"done_only", "nominal_done", "failed_process"} else "started"}
     store.put("operation", op, job["id"], record)
     if stage == "staged":
         store.blob(job["id"], "tool_result", {"head": None, "message": "No document version is saved yet."},
@@ -199,6 +200,9 @@ def test_tool_effect_certainty_uses_more_than_status_or_blob(setup, monkeypatch,
     elif stage == "nominal_done":
         store.blob(job["id"], "tool_result", {"unconfirmed_effect": True},
                    {"operation": op, "args_hash": args_hash, "ok": True}, key=f"result:{op}")
+    elif stage == "failed_process":
+        store.blob(job["id"], "tool_result", {"error": "A process failed without retained completion/log evidence."},
+                   {"operation": op, "args_hash": args_hash, "ok": False}, key=f"result:{op}")
     result = diagnose(store.root, job["id"])
     assert result["eligible"] == (stage in {"staged", "skipping"})
     if result["eligible"]:

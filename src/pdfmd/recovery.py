@@ -127,11 +127,13 @@ def verify_version(view, job, version):
 
 def completed_effect(view, job, op, call, data, ok):
     """A matching envelope also needs a recognizable retained effect/result."""
+    name = call["name"]
     if data.get("execution") == "not_started":
         return not ok and data.get("skipped") is True
     if not ok:
+        if name in {"run_script", "ocr_page", "preview_document"}:
+            return False  # A generic error cannot prove process/effect completion.
         return isinstance(data.get("error"), str) or data.get("context_rejected") is True
-    name = call["name"]
     if name == "edit_document":
         return True  # The atomic operation/version/file relation is checked below.
     if name == "report":
