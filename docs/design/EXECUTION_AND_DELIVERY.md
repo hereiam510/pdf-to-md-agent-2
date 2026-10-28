@@ -22,6 +22,8 @@ Inside the transaction, task-scoped row reads recheck current request/attempt ID
 | `http_status`, `transport` | New staging retains the settled receive observation, including legacy non-streaming cleanup/deadline diagnostics. Older staging can use its same-attempt `stream_receive` observation. Existing settled diagnostics must agree with the available authority. Absent legacy diagnostics stay absent/unknown; acceptance does not invent HTTP 200 or cleanup success. |
 | `started`, `remote_cancelled`, unrelated fields | Preserve current values. A missing cancellation value is recorded as unknown, never inferred from local completion. Other attempts and their unknown usage/cancellation remain untouched. |
 
+Staging captures `received_at` with the sender's wall clock after complete native validation. It records the original acceptance-staging moment. Transport observations separately retain body/protocol elapsed timings. Recovery reads these saved facts; it makes no new measurement of the original reply's arrival or remote completion.
+
 | Saved state | Recovery outcome |
 | --- | --- |
 | Complete valid staging, no pointer | Validate and atomically publish request plus its attempt. |
