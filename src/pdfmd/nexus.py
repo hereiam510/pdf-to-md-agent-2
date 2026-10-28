@@ -5,6 +5,7 @@ import asyncio
 from copy import deepcopy
 import json
 from hashlib import sha256
+import math
 import time
 from typing import Callable
 
@@ -142,43 +143,160 @@ class Nexus:
         """Recover locally accepted bytes without sending anything."""
         request = self.store.get("request", key, job=job)
         staged = self.store.maybe("blob", f"accepted:{key}")
-        accepted_ref = request["accepted_ref"] or (staged["ref"] if staged else None)
-        if accepted_ref:
-            acceptance = self.store.get("blob", accepted_ref, job=job)
-            accepted = self.store.json(accepted_ref, job)
-            if accepted.get("stream_ref"):
-                stream = self.store.get("blob", accepted["stream_ref"], job=job)
-                attempt_id = stream["meta"]["attempt"]
-                self.store.read_stream(job, key, attempt_id)
-                native = self.store.get("blob", accepted["native_ref"], job=job)
-                if (acceptance["ref"] != accepted_ref or acceptance["kind"] != "accepted_response"
-                        or acceptance["meta"].get("request") != key
-                        or acceptance["meta"].get("attempt") != attempt_id
-                        or stream["ref"] != f"raw-stream:{attempt_id}" or not stream["meta"].get("complete_protocol")
-                        or native["kind"] != "assembled_response" or native["meta"].get("request") != key
-                        or native["meta"].get("attempt") != attempt_id
-                        or native["meta"].get("source_stream_ref") != stream["ref"]
-                        or not native["meta"].get("complete_protocol")):
-                    raise ValueError("Accepted streaming evidence has inconsistent provenance.")
-                self.store.bytes(native["ref"], job)
-        if not request["accepted_ref"] and staged:
-            # Accepting bytes and updating the request pointer are separate commits.
-            accepted = self.store.json(staged["ref"], job)
-            request.update(status="accepted", accepted_ref=staged["ref"])
-            if accepted.get("stream_ref"):
-                request.update(stream_ref=accepted["stream_ref"], response_ref=accepted["native_ref"])
-            self.store.put("request", key, job, request)
-            attempt = self.store.get("attempt", staged["meta"]["attempt"], job=job)
-            attempt.update(status="accepted", usage=self.store.json(staged["ref"], job)["usage"],
-                           finished=staged["meta"]["received_at"])
-            if accepted.get("stream_ref"):
-                attempt["stream_ref"] = accepted["stream_ref"]
-                receipt = self.store.maybe("stream_receive", attempt["id"])
-                if receipt:
-                    attempt["http_status"] = receipt["transport"]["http_status"]
-                    attempt["transport"] = {k: v for k, v in receipt["transport"].items() if k != "http_status"}
-            self.store.put("attempt", attempt["id"], job, attempt)
+        if request["accepted_ref"] or staged:
+            return self._settle_accepted(job, key)
+        if request["status"] == "accepted":
+            raise Conflict("Accepted request has no saved acceptance evidence.")
         return request
+
+    def _settle_accepted(self, job: str, key: str, *, verified_stream: dict | None = None) -> dict:
+        """Validate immutable evidence, then atomically merge current metadata.
+
+        Only a freshly archived complete stream from this send can reuse the
+        receive-time reconstruction. Reopen always strictly reconstructs it.
+        No file reads/decoder work occurs while holding the write transaction.
+        """
+        request = self.store.get("request", key, job=job)
+        ref = f"accepted:{key}"
+        evidence = {}
+
+        def blob(reference):
+            record = self.store.get("blob", reference, job=job)
+            if (record.get("ref") != reference or record.get("job") != job
+                    or not isinstance(record.get("meta"), dict)):
+                raise ValueError("Accepted evidence has inconsistent provenance.")
+            evidence[reference] = record
+            return record
+
+        stage = blob(ref)
+        meta = stage["meta"]
+        attempt_id = meta.get("attempt")
+        received_at = meta.get("received_at")
+        if (request.get("id") != key or request.get("job") != job
+                or request.get("accepted_ref") not in (None, ref)
+                or stage["kind"] != "accepted_response" or meta.get("request") != key
+                or not isinstance(attempt_id, str) or request["attempts"].count(attempt_id) != 1
+                or type(received_at) not in (int, float) or not math.isfinite(received_at)):
+            raise ValueError("Accepted evidence has inconsistent provenance.")
+        accepted = self.store.json(ref, job)
+        if not isinstance(accepted, dict):
+            raise ValueError("Accepted staging must contain a complete response object.")
+        payload = blob(request["payload_ref"])
+        if (payload["kind"] != "request_input" or payload["meta"].get("request") != key
+                or payload["meta"].get("kind") != request["kind"]):
+            raise ValueError("Frozen input has inconsistent provenance.")
+        self.store.bytes(payload["ref"], job)
+        native = blob(accepted["native_ref"])
+        route = Route.model_validate(request["route"])
+        streaming = route.wait_policy is not None
+        stream_ref = accepted.get("stream_ref")
+        if (native["meta"].get("request") != key or native["meta"].get("attempt") != attempt_id
+                or bool(stream_ref) != streaming):
+            raise ValueError("Accepted evidence has inconsistent provenance.")
+        native_bytes = self.store.bytes(native["ref"], job)
+        parsed = parse_reply(route.protocol, native_bytes)
+        expected = {**parsed, "native_ref": native["ref"]}
+        receipt = None
+        if streaming:
+            stream = blob(stream_ref)
+            if (stream_ref != f"raw-stream:{attempt_id}" or stream["kind"] != "raw_stream"
+                    or stream["meta"].get("request") != key or stream["meta"].get("attempt") != attempt_id
+                    or stream["meta"].get("complete_protocol") is not True
+                    or stream["meta"].get("chunk_validation") == "registration_only"
+                    or native["kind"] != "assembled_response"
+                    or native["meta"].get("source_stream_ref") != stream_ref
+                    or native["meta"].get("protocol") != route.protocol
+                    or native["meta"].get("complete_protocol") is not True):
+                raise ValueError("Accepted streaming evidence has inconsistent provenance.")
+            if verified_stream != stream:
+                durable = self.store.read_stream(job, key, attempt_id)
+                decoder = StreamDecoder(route.protocol)
+                decoder.feed(durable["data"])
+                if encode(decoder.finish()) != native_bytes:
+                    raise ValueError("Accepted native response contradicts its source stream.")
+            receipt = self.store.maybe("stream_receive", attempt_id)
+            if receipt and (receipt.get("request") != key or receipt.get("attempt") != attempt_id):
+                raise ValueError("Accepted stream observation has inconsistent provenance.")
+            expected["stream_ref"] = stream_ref
+        elif (native["kind"] != "native_response" or native["meta"].get("complete_transport") is not True
+                or native["meta"].get("within_deadline") is False):
+            raise ValueError("Accepted native evidence has inconsistent provenance.")
+        if accepted != expected:
+            raise ValueError("Accepted staging contradicts its complete native response.")
+
+        # Unpublished diagnostic pointers can still name an earlier failed
+        # attempt of this request. Validate their ownership before superseding.
+        for field in ("response_ref", "stream_ref"):
+            previous = request.get(field)
+            if previous and previous not in evidence:
+                record = blob(previous)
+                if (record["meta"].get("request") != key
+                        or record["meta"].get("attempt") not in request["attempts"]):
+                    raise ValueError("Request diagnostic pointer has inconsistent provenance.")
+        observed = meta.get("transport")
+        if observed is None and receipt:
+            observed = receipt["transport"]
+        if observed is not None and (not isinstance(observed, dict)
+                or (observed.get("http_status") is not None
+                    and (type(observed["http_status"]) is not int or not 200 <= observed["http_status"] < 300))):
+            raise ValueError("Accepted transport evidence is inconsistent.")
+
+        with self.store.transaction() as db:
+            current = self.store.get_tx(db, "request", key, job=job)
+            attempt = self.store.get_tx(db, "attempt", attempt_id, job=job)
+            if (current is None or attempt is None or current.get("id") != key or current.get("job") != job
+                    or attempt.get("id") != attempt_id or attempt.get("request") != key
+                    or current.get("attempts", []).count(attempt_id) != 1
+                    or current.get("accepted_ref") not in (None, ref)
+                    or current.get("status") not in {"in_flight", "unknown", "accepted"}
+                    or attempt.get("status") not in {"in_flight", "unknown", "accepted"}):
+                raise Conflict("Accepted request/attempt identity or state is inconsistent.")
+            # Recheck the frozen identity and validated catalog descriptors, not
+            # stale whole-record copies. Preserve unrelated current fields.
+            for field in ("kind", "payload_ref", "route", "instruction_basis", "replay_policy", "attempts"):
+                if current.get(field) != request.get(field):
+                    raise Conflict("Request identity changed during acceptance validation.")
+            for reference, record in evidence.items():
+                if self.store.get_tx(db, "blob", reference, job=job) != record:
+                    raise Conflict("Accepted evidence changed during validation.")
+            if streaming and self.store.get_tx(db, "stream_receive", attempt_id, job=job) != receipt:
+                raise Conflict("Accepted stream observation changed during validation.")
+            desired = {"response_ref": native["ref"], **({"stream_ref": stream_ref} if streaming else {})}
+            for field in ("response_ref", "stream_ref"):
+                value = current.get(field)
+                if ((current["accepted_ref"] and value not in (None, desired.get(field)))
+                        or value not in (None, request.get(field), desired.get(field))):
+                    raise Conflict("Request acceptance pointers are inconsistent.")
+            if attempt.get("stream_ref") not in (None, stream_ref):
+                raise Conflict("Attempt acceptance pointer is inconsistent.")
+            if attempt.get("usage") is not None and attempt["usage"] != accepted["usage"]:
+                raise Conflict("Attempt usage contradicts accepted evidence.")
+            if attempt.get("http_status") is not None and (type(attempt["http_status"]) is not int
+                    or not 200 <= attempt["http_status"] < 300):
+                raise Conflict("Attempt HTTP status contradicts accepted evidence.")
+            finished = attempt.get("finished")
+            if finished is not None and (type(finished) not in (int, float) or not math.isfinite(finished)):
+                raise Conflict("Attempt finish time is inconsistent.")
+            updated_attempt = {**attempt, "status": "accepted", "usage": accepted["usage"],
+                               "finished": received_at if finished is None else finished}
+            updated_attempt.setdefault("remote_cancelled", None)
+            if streaming:
+                updated_attempt["stream_ref"] = stream_ref
+            if observed is not None:
+                http_status = observed.get("http_status")
+                if attempt.get("http_status") not in (None, http_status):
+                    raise Conflict("Attempt HTTP status contradicts accepted evidence.")
+                transport = {k: v for k, v in observed.items() if k != "http_status"}
+                old_transport = attempt.get("transport", {})
+                if old_transport.get("settled") and any(k in old_transport and old_transport[k] != v for k, v in transport.items()):
+                    raise Conflict("Attempt transport contradicts accepted evidence.")
+                updated_attempt.update(http_status=http_status, transport={**old_transport, **transport})
+            updated_request = {**current, "status": "accepted", "accepted_ref": ref, **desired}
+            if updated_request != current:
+                self.store.put_tx(db, "request", key, job, updated_request)
+            if updated_attempt != attempt:
+                self.store.put_tx(db, "attempt", attempt_id, job, updated_attempt)
+        return updated_request
 
     def send(self, job: str, key: str) -> dict:
         if self.active_time:
@@ -255,6 +373,7 @@ class Nexus:
                             "transport": deepcopy(observed)})
 
         failure = None
+        verified_stream = None
         try:
             with self.store.connection_scope():
                 status = asyncio.run(self.exchange(job, route, token, payload, received, observed,
@@ -266,6 +385,7 @@ class Nexus:
             else:
                 if streaming:
                     stream = self.archive_stream(job, request, attempt_id, received, observed, cursor)
+                    verified_stream = stream
                     raw = self.store.blob(job, "assembled_response", decoder.value,
                                           {"request": key, "attempt": attempt_id, "source_stream_ref": stream["ref"],
                                            "protocol": route.protocol, "complete_protocol": decoder.complete})
@@ -284,7 +404,8 @@ class Nexus:
                     if streaming:
                         accepted["stream_ref"] = request["stream_ref"]
                     ref = self.store.blob(job, "accepted_response", accepted,
-                                          {"request": key, "attempt": attempt_id, "received_at": time.time()}, key=f"accepted:{key}")
+                                          {"request": key, "attempt": attempt_id, "received_at": time.time(),
+                                           "transport": deepcopy(observed)}, key=f"accepted:{key}")
                     request.update(status="accepted", accepted_ref=ref["ref"])
         except StreamError:
             # Do not echo provider error events, which can contain arbitrary secrets.
@@ -332,15 +453,16 @@ class Nexus:
                     request["response_ref"] = raw["ref"]
             if failure:
                 request["failure"] = {"reason": failure.reason, "message": str(failure)}
-            self.store.put("request", key, job, request)
-            attempt = {"id": attempt_id, "request": key, "status": request["status"], "started": started,
-                       "finished": time.time(), "http_status": observed["http_status"], "usage": None, "remote_cancelled": None,
-                       "transport": {k: v for k, v in observed.items() if k != "http_status"}}
-            if streaming:
-                attempt["stream_ref"] = request.get("stream_ref")
             if request["accepted_ref"]:
-                attempt["usage"] = self.store.json(request["accepted_ref"], job)["usage"]
-            self.store.put("attempt", attempt_id, job, attempt)
+                request = self._settle_accepted(job, key, verified_stream=verified_stream)
+            else:
+                self.store.put("request", key, job, request)
+                attempt = {"id": attempt_id, "request": key, "status": request["status"], "started": started,
+                           "finished": time.time(), "http_status": observed["http_status"], "usage": None, "remote_cancelled": None,
+                           "transport": {k: v for k, v in observed.items() if k != "http_status"}}
+                if streaming:
+                    attempt["stream_ref"] = request.get("stream_ref")
+                self.store.put("attempt", attempt_id, job, attempt)
         if failure:
             raise failure
         return self.store.json(request["accepted_ref"], job)

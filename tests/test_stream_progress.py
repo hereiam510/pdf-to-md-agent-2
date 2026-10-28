@@ -163,12 +163,12 @@ def test_staged_acceptance_survives_pointer_failure_and_reentry_without_resendin
     clock = Clock()
     body = Body([(1, delta(protocol, "Done")), (2, ending(protocol, "Done"))], clock=clock)
     store, job, nexus, request, _ = frozen_stream(setup, protocol, body, clock)
-    original_put = store.put
-    def crash(kind, key, job_id, value):
+    original_put = store.put_tx
+    def crash(db, kind, key, job_id, value):
         if kind == "request" and value.get("accepted_ref"):
             raise OSError("injected pointer failure")
-        return original_put(kind, key, job_id, value)
-    monkeypatch.setattr(store, "put", crash)
+        return original_put(db, kind, key, job_id, value)
+    monkeypatch.setattr(store, "put_tx", crash)
     with pytest.raises(OSError):
         nexus.send(job["id"], request["id"])
     reopened = Store(store.root)

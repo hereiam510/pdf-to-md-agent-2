@@ -42,14 +42,15 @@ def test_corrupt_acceptance_stage_cannot_publish_or_rewrite_unknown_attempt(setu
 
     # Genuine accepted-object/request-pointer gap on the second mocked attempt.
     original_put = store.put
-    def pointer_gap(kind, key, owner, value):
+    original_put_tx = store.put_tx
+    def pointer_gap(db, kind, key, owner, value):
         if kind == "request" and value.get("accepted_ref"):
             raise OSError("synthetic acceptance pointer gap")
-        return original_put(kind, key, owner, value)
-    monkeypatch.setattr(store, "put", pointer_gap)
+        return original_put_tx(db, kind, key, owner, value)
+    monkeypatch.setattr(store, "put_tx", pointer_gap)
     with pytest.raises(OSError, match="acceptance pointer gap"):
         nexus.send(job["id"], request["id"])
-    monkeypatch.setattr(store, "put", original_put)
+    monkeypatch.setattr(store, "put_tx", original_put_tx)
     pending = store.get("request", request["id"])
     assert pending["accepted_ref"] is None and len(pending["attempts"]) == 2
     stage_key = "accepted:" + request["id"]
@@ -76,10 +77,8 @@ def test_corrupt_acceptance_stage_cannot_publish_or_rewrite_unknown_attempt(setu
     reopened = Store(store.root)
     def forbidden(_):
         pytest.fail("Evidence rejection must not request credentials or resend")
-    # A corrupt self-reference fails the scoped lookup before chain validation;
-    # the other cases reach explicit provenance rejection. Both must be read-only.
-    error = "Unknown blob reference" if mismatch == "ref" else "inconsistent provenance"
-    with pytest.raises(ValueError, match=error):
+    # Deterministic stage lookup now validates the self-reference directly.
+    with pytest.raises(ValueError, match="inconsistent provenance"):
         Nexus(reopened, forbidden).send(job["id"], request["id"])
     assert reopened.get("request", request["id"]) == before_request
     assert reopened.records("attempt", job["id"]) == before_attempts

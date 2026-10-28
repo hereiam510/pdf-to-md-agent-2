@@ -1,5 +1,11 @@
 # Product delivery phase plan
 
+## R13 accepted-result settlement increment — 2026-10-28
+
+The human selected and authorized the [pre-existing P2 R13 repair](reviews/RUNTIME_REVIEW_2026-10.md#r13--accepted-result-settlement-consistency-selected-2026-10-28). Record the decision, establish a failing persistent old-window case, implement one validated/idempotent settlement path with atomic SQLite request/attempt publication, then verify send/reconcile/Runtime and synthetic saved/reopened/exported preservation before a scoped local checkpoint. CURRENT_STATE owns actual completion and evidence limits. This does not reopen R01/context choices or expand R02 into journals/segments/caches. R07 remains independent; revisit it on separate selection or relevant malformed-reply evidence. After this increment stop: future Nursing work needs separate future frozen-request settings, exact unknown-request recovery and gateway/unknown/invalid-handoff exit authority. No live call, real-task mutation, dependency change, push, package or installation follows.
+
+Implementation and focused persistent/Runtime/interruption/delivery checks are complete (98 final focused passes; 8 pre-fix failures retained). Next within this authorization: final full regressions, independent saved-result inspection, documentation/protection checks and local checkpoint/closeout. Do not enter live continuation from this local milestone.
+
 ## R02 storage increment authorized — 2026-10-28
 
 The current human instruction authorizes scoped local checkpoints of accumulated work, a fixed-size receive-observation/cursor prototype, isolated offline comparison and fault/interruption checks, and production adoption when evidence supports meaningful improvement with unchanged per-chunk durability, complete-response validation, accepted-result publication and attempt isolation. This supersedes earlier batch-specific Git/prototype/implementation prohibitions; their historical records remain historical. No live Nexus/model request, Nursing/settings/recovery mutation, dependency change, original-project edit, push, packaging, installation or publication is authorized.

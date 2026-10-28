@@ -136,16 +136,16 @@ def test_saved_accepted_reply_recovers_before_request_pointer_commit(setup, monk
     calls = []
     service = Nexus(store, lambda _: "key", httpx.MockTransport(lambda req: calls.append(req) or httpx.Response(200, json=response(text="Saved reply"))))
     service.freeze(job["id"], "gap", {"model": "fixture", "messages": []}, "normal", {})
-    original = store.put
+    original = store.put_tx
     injected = []
 
-    def fail_pointer(kind, key, owner, value):
+    def fail_pointer(db, kind, key, owner, value):
         if kind == "request" and value["status"] == "accepted" and not injected:
             injected.append(True)
             raise RuntimeError("injected pointer gap")
-        return original(kind, key, owner, value)
+        return original(db, kind, key, owner, value)
 
-    monkeypatch.setattr(store, "put", fail_pointer)
+    monkeypatch.setattr(store, "put_tx", fail_pointer)
     with pytest.raises(RuntimeError):
         service.send(job["id"], "gap")
     assert service.send(job["id"], "gap")["text"] == "Saved reply"

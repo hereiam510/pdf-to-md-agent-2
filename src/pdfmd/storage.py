@@ -93,9 +93,11 @@ class Store:
                 raise
 
     @staticmethod
-    def get_tx(db: sqlite3.Connection, kind: str, key: str) -> dict | None:
-        row = db.execute("SELECT data FROM records WHERE kind=? AND id=?", (kind, key)).fetchone()
-        return json.loads(row[0]) if row else None
+    def get_tx(db: sqlite3.Connection, kind: str, key: str, *, job: str | None = None) -> dict | None:
+        row = db.execute("SELECT job,data FROM records WHERE kind=? AND id=?", (kind, key)).fetchone()
+        if row is not None and job is not None and row[0] != job:
+            raise ValueError(f"Inconsistent {kind} ownership for this task: {key}")
+        return json.loads(row[1]) if row else None
 
     @staticmethod
     def put_tx(db: sqlite3.Connection, kind: str, key: str, job: str, value: dict) -> None:
