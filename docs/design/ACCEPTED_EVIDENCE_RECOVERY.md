@@ -1,0 +1,143 @@
+# Accepted-evidence conflict diagnosis and recovery
+
+## Status, authority and ownership
+
+Target design selected and synthesized on 2026-10-29, Asia/Hong_Kong (UTC+08:00), after the human agreed with both rounds of review corrections. **Designed, not implemented or runtime-verified.** This document is the coherent implementation target for the selected local recovery increment. Current executable behavior remains in [CONTRACTS](../CONTRACTS.md) and [Execution and delivery](EXECUTION_AND_DELIVERY.md). [DECISIONS](../DECISIONS.md#recovery-target-design-selected-2026-10-29) records selection; [DESIGN_OPTIONS](../DESIGN_OPTIONS.md#recovery-transition-discussion-2026-10-29) retains attributed proposals, corrections and alternatives; [PHASE_PLAN](../PHASE_PLAN.md#selected-sequence-conflict-diagnosis-and-recovery-then-nursing) owns order; [CURRENT_STATE](../CURRENT_STATE.md) owns actual completion evidence.
+
+The design/documentation turn does not authorize code execution, experiments, model calls or real task mutation. A supplied implementation prompt authorizes its bounded local implementation only when the human starts that new task. Neither this design nor local acceptance starts Nursing. Future real continuation still needs its exact task/request, future-only settings and exit plan selected separately.
+
+Source baseline at synthesis: `master`, `b36ad63736cb6b0e85b1a9718cc65539328d692e`, plus uncommitted discussion documents. Reconfirm the actual working tree at implementation start. Existing `review-code.txt`, `review-docs.txt`, `review-src.txt`, ignored evidence and real workspaces are not implementation inputs to overwrite. No old chat or external attachment is required to implement this document.
+
+## Outcome and bounded scope
+
+The user can understand a historical accepted-evidence conflict, preserve all useful work and complete an explicit local resolution when the evidence supports it. The task then supports inspection, explicit-version export, amendments and a separate Continue. The agent chooses the subsequent conversion methods and evidence autonomously. A diagnostic-only screen is a useful intermediate result, not completion of this increment.
+
+First-version recovery supports both protocols and both published acceptance and staging-only publication gaps, for the current resumable request K, when all of these hold:
+
+1. A complete saved acceptance staging object, frozen input, native object and raw stream have verified ownership, hashes, descriptors and links. Raw terminal bytes without staging are insufficient.
+2. Native parsing and the exact staged projection agree; request/attempt metadata has no known contradictions. Historical null/unknown facts remain distinct from conflicting known values.
+3. Replaying all durable received bytes completes `decoder.feed()` without error, reaches a terminal, and reconstructs exactly the saved native bytes. Only `finish_received()` fails on the recognized incomplete UTF-8 or trailing unfinished SSE data/non-comment boundary rule.
+4. Every local operation is established completed or established not started, and required context/handoff facts can be reconciled without guessing. All effects remain tied to the exact call identity and arguments.
+
+Broader feed-time errors, native/reconstruction disagreement, absent staging, corrupt/missing records, contradictory ownership and unknown tool effects receive accurate diagnostics but no recovery action in this increment. These are unsupported conditions, not proof of irrecoverability. Compatible historical comments continue to use normal validated acceptance recovery; diagnostics alone perform no settlement.
+
+## Preserved invariants and reasons
+
+- Keep frozen requests, raw/native/staging objects, original accepted pointers, request/attempt status and usage/time facts, candidates, versions, committed effects and all attempts unchanged by conflict resolution. Do not fill a missing `accepted_ref`, republish acceptance or change an attempt to accepted to make Context readers work. Validated diagnostic facts may be displayed separately from original publication state.
+- A committed resolution authorizes a new local planning boundary, not execution of the conflicting reply. Unstarted calls receive truthful not-started results; completed tools are never replayed. A historical batch may be presented as history without becoming a new executable batch.
+- Do not force accept, hide truncation, reset consumption/budgets, erase manual edits, change the conversion scope, silently unpin or downgrade full access, or edit SQLite manually to manufacture success.
+- Local resolution requires no provider credential or remote call. Diagnosis, local resolution and Continue remain distinct actions. Existing process-level trusted-script opt-in is unchanged; host-user execution is not a sandbox.
+- Catalog, immutable files and graph checkpoints do not share a transaction. Durable evidence registration, committed recovery authority and graph projection are distinct facts, explicitly visible during interruption recovery.
+
+The alternatives of filling `accepted_ref`, merely adding a retry button, rewriting proposals, or relying on transient continuation feedback are rejected because they conflate acceptance, preservation and continuation. A new generic recovery engine or storage migration is unnecessary for the bounded outcome. Internal refactoring is allowed where needed; preservation of old function boundaries is not a requirement.
+
+## Diagnostic service and shared evidence checking
+
+Provide an authenticated on-demand local diagnostic API and integrate it into the existing task/evidence UI. Do not replay complete streams in periodic job-list polling. Endpoints and module names may follow local conventions; behavior below is required.
+
+Use a shared no-write evidence checker for diagnostics and acceptance settlement. Keep pure validation separate from publication and action selection. It validates task/request/attempt membership, frozen protocol/input, blob kinds/descriptors/bytes, strict stream order/cursor/aggregate, assembled/native correspondence, staged parser projection, and existing metadata consistency. It returns structured observations and an evidence identity. It must not call `Nexus.reconcile`, tool reconciliation, event writers, credentials or model transport. Settlement still rechecks mutable identities inside its short catalog transaction. Preserve the fresh-send optimization that avoids a redundant complete constituent-file replay when a fresh verified stream is already available; it must never bypass required boundary/native checks.
+
+Read existing databases through genuinely read-only access. Avoid write-capable Store/Runtime initialization, schema setup, PRAGMA changes, incidental receipt repair and graph creation. Use supported read-only checkpoint access or a narrow reader verified against the installed checkpointer schema/lifecycle. Missing or unsupported graph metadata is an explicit outcome. Do not invoke recovery while reading. Avoid immutable-SQLite shortcuts that ignore a live WAL. A diagnostic against an active task must either report busy/unavailable or identify a stable snapshot; it cannot offer an action from a torn multi-source view. An evidence fingerprint is a stale-view guard, not permission to execute.
+
+Return separate dimensions: storage integrity, provenance, native/reconstruction consistency, receive-boundary compatibility, original publication state, operation/effect certainty, and recovery eligibility with exact reasons. Missing data and checker/parser limitations are explicit unknowns; a parser failure alone is not proof of disk corruption. The UI shows exact request/attempt and evidence references, violated rule, done/not-started/unknown operations, current head and retained versions, original known/unknown usage, and existing export access. Do not expose credentials or unfiltered transport headers. Compatible staging may be described as verified evidence awaiting publication, not already settled acceptance.
+
+## Resolution authority and identities
+
+One committed resolution per request K is sufficient for this increment. A logical `conflict_resolution` catalog record points to an immutable resolution receipt; exact schema names are implementation choices. Its minimum meaning is:
+
+- Schema version, mode, job/request/attempt, classifier/rule identity and the evidence descriptor fingerprint.
+- Explicit human local-resolution choice and exact observed graph checkpoint/basis, head, instruction basis, relevant settings, active context policy, pending proposal relationships and operations.
+- Original request/attempt publication facts and staging/native/raw references; a field named `accepted_staging_ref` denotes saved evidence, not successful new acceptance.
+- Per-call disposition and exact candidate/result/effect references; context/report/handoff disposition and their provenance.
+- Exact graph source basis, expected successor changes and a durable resolution identity carried by the graph. Store target counters/history changes computed once; do not store only an instruction to increment whatever state is current later.
+
+The committed catalog record is authority. An orphan candidate blob, final-looking filename, event, or browser acknowledgement is not authority. Repeated submission of the same committed resolution returns its outcome and completes any pending projection; it does not create another choice. A different attempted resolution for K is an explicit conflict. New human choices after this scope would need a separately designed transition, not mutation of the original receipt.
+
+## Local operation classification and settlement
+
+Inspect every call in the saved batch, preserving call order and argument identity. `status=done` alone is insufficient: validate result/candidate ownership and bytes, `args_hash`, and any committed document-version relation. A durable staged result can establish an effect when its identity and underlying effect agree; complete its operation metadata in the recovery catalog transaction. A verified atomic document commit is an existing effect, not a reason to execute edit_document again.
+
+No operation record, or a valid `skipping` record, can establish not-started only after checking conflicting result/effect evidence. An existing skipping intent has its own reason; preserve that fact rather than retroactively attributing it to conflict recovery. Finish its truthful receipt where needed and link the resolution. A started operation without a proven result/effect is unknown. First-version recovery does not replay even apparently harmless unknown tools to discover their result.
+
+For genuinely unstarted calls, save original candidates and publish paired results with `ok=false`, `skipped=true`, `execution=not_started`, and a precise recovery reason. These are host disposition receipts, not model-produced tool results. No conflicting call is dispatched. All operations needed for historical pairing have complete records before graph publication. Use the common catalog transaction for recovered metadata and new not-started results; do not call mutating Dispatcher helpers during diagnosis or candidate preparation.
+
+## Context, reports and document heads
+
+Recover already committed context effects through their recorded settlement and exact basis; do not infer a commit from a proposal or staged settlement. Preserve existing applied/superseded/ineligible outcomes. Do not overwrite immutable `context-proposal:<K>` or reuse an existing settlement identity with different bytes.
+
+For the conflicted batch's still-uncommitted context intent, require explicit agent reselection after recovery, including when all calls were captured and the candidate is structurally valid. Record a linked recovery disposition with `needs_agent_revision` and a truthful interruption/replanning reason; it is not `invalid_revision` merely because execution stopped. Preserve originals for explicit `reuse`. If no complete proposal exists, preserve captured and unstarted candidates in a new linked recovery representation; never invent a complete applied policy. Normal feedback readers must understand its actual schema and operation references.
+
+Identify whether an older pending proposal is an explicit base/superseded ancestor of K or unrelated to K. Do not automatically revive an older implicit fallback when K becomes ineligible. Preserve an unrelated pending proposal and let the normal coordinator handle it under existing rules; do not indiscriminately clear `context_waiting`. Context selection, supersession, new instructions and whole-batch admission remain effective. Recovery itself applies no uncommitted policy. Preserve durable active-policy facts even when their graph projection is incomplete.
+
+Preserve report receipts, completion claims, saved versions and export records. An explicit re-plan makes the old active report nonterminal for this successor; record that control decision and clear the corresponding graph report/terminal control. Do not treat a retained historical completion claim as proof of current complete delivery. Use the current verified document head at the first commit; never roll it back to a response-time head. Later manual edits remain authoritative and are not overwritten by replaying a committed graph patch.
+
+## Finite transition contract
+
+Published-pointer versus staging-only is an independent supported dimension. Before each new resolution commit, K must match the actual resumable graph position; diagnosis of an arbitrary historical request does not authorize changing the current task. After a commit, lookup by resolution identity remains possible even when K is no longer pending.
+
+| Case | Catalog decision | Exact graph successor meaning |
+| --- | --- | --- |
+| Current evidence is compatible | No conflict resolution; ordinary validated acceptance/reuse remains available | Diagnosis changes nothing |
+| N: eligible normal conflict, zero/some/all tools complete | Preserve verified effects; settle all confirmed unstarted calls; commit context/report disposition and resolution | Include K exactly once as resolved history; advance normal sequence and revision once from the recorded source basis; clear K pending and old terminal report; retain unrelated policy/history; route through coordinate before prepare |
+| U: any required effect/integrity/basis remains unknown or contradictory | No resolution commit; retain candidates and diagnostics | No graph advance |
+| C1: eligible compaction with verified committed handoff | Link exact handoff/archive/event receipt and original transition basis | Recover that historical handoff, covered-prefix removal and revision transition exactly once; no normal sequence increment or normal-history entry; preserve unrelated state and completed context effects |
+| C2: eligible compaction with no committed handoff | Preserve candidate and prior history/handoff; record re-plan choice | Advance revision once, no normal sequence increment; clear K pending; keep prior handoff/history; do not execute unexpected compaction tool calls or promote an uncommitted handoff |
+| P: resolution committed but graph unfinished | Reuse committed authority, never another resolution | Project only from the recorded source position, or recognize an already-projected/later descendant; no tool/model action |
+
+For C1, an event name or blob existence alone is insufficient: validate covered prefix, revision, originals, archive and their exact binding. If they cannot be established, use U, not C2. Recovery does not rejudge a historical committed handoff against today's capacity. For C2, retained unexpected tool-call candidates are evidence only, not a normal executable batch. Missing handoff publication and explicit rejection are distinct diagnostic facts.
+
+Clear only correction-episode entries that the completed transition actually consumes (normal for N, successfully committed compaction for C1); do not generically reset repair counters. C2 retains unrelated/ongoing correction facts under existing basis rules. Keep Stop/cancel, limits, active-time accounting and unknown costs intact. Local recovery does not silently clear a Stop, consume a new model attempt, charge offline time as model execution, or permit dispatch past existing gates. A completed local recovery is shown as ready for user-controlled continuation without claiming task completion; job presentation derives from resolution/projection state and preserves the original stop evidence.
+
+## Model-visible history and downstream consumers
+
+Introduce one shared batch-reading responsibility with explicit ordinary-accepted versus resolved-historical classification. A resolution takes precedence in classification even when a historical accepted pointer exists. Ordinary history follows existing acceptance semantics. Resolved history requires a committed resolution, verified saved projection and complete operation pairing; it never silently falls back to any staging blob it can find. Absence or inconsistency is explicit failure.
+
+Return saved native call identities, actual/not-started result envelopes, original references and resolution provenance. Present the original complete native batch as historical content with a host explanation of the conflict/disposition, not a newly generated or newly accepted response. This presentation cannot authorize dispatch. Preserve protocol-correct call/result pairing for both CC and Responses and retain complete originals for full/raw/field/range access. A summary alone does not replace them. Retain active instructions, policy and current document head in the anchor.
+
+Use this responsibility in normal assembly, batch references, profitable/reference selection, retention previews, all capacity projections, compaction entries and handoff original/coverage construction. Search actual dependencies; the historical review's six locations are not an exhaustive checklist. The current source has seven direct accepted-pointer reads in context.py, and other consumers also need scoped inspection. This is not permission for a whole-project rewrite.
+
+Keep each resolved batch's resolution reference discoverable after transient `continuation_feedback` is cleared and after the batch is compacted. Archives retain both evidence origins and resolution provenance without changing older immutable archives. New projections and schemas may explicitly distinguish those roles. All estimator consumers must estimate the actual new representation, with no hidden extra prompt text or missing recovery costs. Existing pin choices, source coverage and explicit reuse remain unchanged.
+
+## Prepare, commit, project
+
+Acquire the existing per-task executor/mutation lock for local resolution; reject a live executor. Validate diagnosis basis, graph checkpoint, request/attempt, evidence, operations, head, instructions, relevant configuration and context under that lock. Hold it through publication/projection or release safely on failure. Mutators outside that lock still require field-specific transaction rechecks. Expensive immutable validation occurs before the short write transaction.
+
+**A — prepare inert candidates.** Write durable immutable bytes under unique or content-derived candidate identities. Do not register authoritative `result:<op>`, `context-settlement:<...>` or `conflict-resolution:<K>` aliases before the decision. Existing authoritative aliases are not rewritten. Candidate preparation may leave preserved orphan objects after interruption; no consumer may treat them as a committed recovery. A changed-basis retry uses new candidates instead of colliding with a stale fixed alias.
+
+**B — one catalog commit.** In one short transaction, recheck the original mutable identities and validated descriptors against current rows. Atomically publish final aliases, verified existing-result operation settlement, not-started operations, necessary context disposition, the immutable resolution reference and the resolution authority record. Known contradictions abort the whole transaction. Request/attempt acceptance and usage/time remain unchanged. Event/receipt writes that must be atomic use the same connection/transaction; current `event_once` cannot simply be nested here. Alternatively derive a separately deduplicated notification afterward from committed authority. Do not perform filesystem validation, graph updates or provider calls inside the catalog transaction.
+
+**C — graph projection.** Use the installed framework's supported checkpoint API to publish the recorded successor with a resolution marker. Read applicable official guidance before coding; no dependency upgrade is implied. Do not rerun tool nodes or invoke the graph to obtain the patch. Read-only diagnostics never perform C. The local resolve action, a duplicate resolve action, or a subsequent explicit Continue may finish an already committed C before any reconciliation/dispatch of K. Continue must fail closed if projection cannot be safely established.
+
+Distinguish source checkpoint, matching projected successor and later legitimate progress. Reentry computes no new increments, appends no duplicate K, and performs no rollback to an earlier head/history. Use a durable marker/checkpoint lineage or an equivalent explicit proof of projection, not counter comparison alone. A catalog row by itself is insufficient to overwrite arbitrary graph state. Unexpected graph divergence is an explicit stopped condition. A repeated API call returns the original outcome even after pending changes. Legitimate newer amendments/settings/head are not stale-click errors after commit: preserve those service facts, complete only the owned graph transition where valid, and assess current instructions/configuration before any future freeze.
+
+## UI and API behavior
+
+- Diagnosis is read-only, on demand, authenticated and credential-free. Show relevant references and understandable reasons, not raw exception-only output or a generic corruption label.
+- Offer a single explicit local "Preserve work and prepare to re-plan" action only when eligible. Its request identifies K and the diagnostic basis. No force-accept or blind retry action exists.
+- Before the first commit, stale facts require refresh and a new explicit selection. After commit, duplicate requests reuse the same decision; a network/UI timeout must not create a second operation.
+- Show local committed-but-projection-pending separately from fully ready. Offer completion of that same local recovery, without a provider call. Busy/stale/unsupported cases are actionable explanations, not misleading success.
+- Once projected, allow saved-version review/export, amendments and separate normal Continue. Preserve truthful job status and original stop evidence. Do not require a provider credential for either diagnostic or local resolution. No combined resolve-and-send control is required in this increment.
+
+## Acceptance and stopping conditions
+
+Use isolated file-backed stores, distinct ignored artifact directories and scripted protocol responses. Reuse old evidence read-only or through copies; never mutate original evidence or Nursing. Derive checks from the supported workflow, not just helpers. Required distinguishing coverage:
+
+1. Both protocols; compatible comments, supported unfinished data/non-comment/UTF-8 boundaries, unsupported feed-time errors, absent staging and malformed/inconsistent evidence. Shared checker preserves ordinary send/reconcile boundaries and R02 validation cost/durability behavior.
+2. Diagnosis through actual API/UI without catalog/graph/blob mutation, setup/repair side effects, credentials or network; missing graph, busy task and stale view are explicit.
+3. Published and staging-only N cases: zero/partial/all tools completed; staged-result and document-commit recovery; true not-started and prior skipping intent; uncertain effects remain blocked. No conflicting call dispatch.
+4. Context: incomplete and complete uncommitted intent, exact committed effect recovery, superseded/ineligible outcomes, unrelated pending proposal, no implicit old fallback, explicit reuse afterward. Report receipts remain while the old active report cannot prematurely terminate re-planning.
+5. C1/C2: exact committed handoff recovery versus retained unapplied candidate; original history/coverage and normal sequence behavior; no unexpected compaction tools execute.
+6. Interrupt after A/before B, change basis and retry; abandoned candidates never settle operations or obstruct new candidates. B is all-or-nothing, including final aliases, recovered operation metadata and resolution authority.
+7. Interrupt after B/before C, after C/before API acknowledgement, duplicate click, reopen and repeat after further progress. Same choice, same effects; no rollback, double append, counter inflation or provider call during local resolution. Retain legitimate later amendments/head/settings.
+8. Subsequent normal and compaction inputs for both protocols preserve native pairing, recovery provenance, full access and actual estimate costs. Further archive/reopen retains the resolution after temporary feedback clears.
+9. Source-led local user workflow: inspect diagnostic, resolve, reopen, optionally amend, Continue using scripted transport, preserve/create useful Markdown and source images, save/reopen/export and independently compare actual bytes/pixels/references with the synthetic source. Tests, tool calls or absence of exceptions alone do not establish this outcome.
+
+Capture before/after identities and failures, including raw/native/staging/request/attempt/usage/time and committed-effect invariants. Run focused checks while developing, then appropriate complete regressions/UI checks once integrated; do not keep repeating unchanged passing suites. Prior 768-case results are historical evidence, not proof of this feature. Genuine OS/power-loss durability, live Nexus behavior, Nursing completion and installed-product readiness remain unverified unless separately exercised under authorization.
+
+Stop local implementation when the connected diagnostic/resolution/reopen/Continue workflow meets these boundaries and evidence is recorded. A meaningful design violation or unsupported required transition returns for a bounded decision; it must not be concealed by a partial feature or blanket exception handling. Do not automatically start Nursing after success.
+
+## Related work, records and handoff
+
+R13's completed atomic acceptance and shared terminal rule remain the baseline; this adds recovery usability without weakening them. R01 estimation must include the real new history projection, but no route calibration/capacity change is selected. Preserve R02 strict reconstruction and per-chunk durability; no journal/cache/storage expansion is selected. R07's general malformed-reply handling remains separate; diagnose uncheckable evidence accurately without incidental broad parser changes. R03 unknown effects stay unsupported here unless the existing evidence already establishes a completed effect. Revisit other R/H/CTX findings only for an actual dependency or their separately selected work; they are not all Nursing prerequisites.
+
+After implementation, update the effective execution/context/API contracts and guides with actual behavior, then CURRENT_STATE, PHASE_PLAN, REVIEW_HANDOFF and the relevant R13 finding cross-reference with source identity, checks, failures, limitations and next work. Mark this target's implementation status honestly; keep historical discussion as rationale. Review packages must include this design and necessary evidence rather than local-only links. Nursing remains all fourteen pages (historical two drafts through page 8, 62 attempts, unknown compaction under legacy 180-second waiting); those are historical facts to recheck before a separately authorized real run. Do not modify its settings, frozen requests, consumption or artifacts during this local increment.
