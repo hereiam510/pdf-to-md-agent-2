@@ -10,6 +10,12 @@ class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ConflictResolutionSelection(Strict):
+    request: str = Field(min_length=1)
+    basis: str
+    choice: Literal["preserve_and_replan"] = "preserve_and_replan"
+
+
 class WaitPolicy(Strict):
     """Explicit streaming policy; values are starting points, not provider limits."""
     first_progress_seconds: float = Field(default=600, ge=1, le=3600, allow_inf_nan=False)

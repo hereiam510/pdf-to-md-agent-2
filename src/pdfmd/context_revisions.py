@@ -35,7 +35,7 @@ class ContextRevisions:
             if not isinstance(fields, list) or not fields or any(f not in FIELDS for f in fields):
                 raise ValueError("Reuse fields must select notes, pin or release.")
             sources = []
-            if blob["kind"] == "context_proposal":
+            if blob["kind"] in {"context_proposal", "recovery_context"}:
                 proposal = self.store.json(ref, job)["context_proposal"]
                 chosen = selection.get("operations")
                 if not isinstance(chosen, list) or not chosen or len(set(chosen)) != len(chosen) or any(op not in proposal["operations"] for op in chosen):

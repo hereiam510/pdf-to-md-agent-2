@@ -165,7 +165,10 @@ app.whenReady().then(async () => {
       case 'job': return call(`/jobs/${id(args.job)}`)
       case 'page': return call(`/jobs/${id(args.job)}/page/${Number(args.page)}`)
       case 'version': return call(`/jobs/${id(args.job)}/versions/${id(args.version)}`)
-      case 'evidence': return call(`/jobs/${id(args.job)}/evidence/${id(args.ref)}`)
+      case 'evidence': return call(`/jobs/${id(args.job)}/evidence/${id(args.ref)}${args.view === 'raw' ? '?view=raw' : ''}`)
+      case 'diagnoseConflict': return call(`/jobs/${id(args.job)}/accepted-evidence-diagnosis`)
+      case 'resolveConflict': return call(`/jobs/${id(args.job)}/accepted-evidence-resolution`, 'POST', {
+        request: args.request, basis: args.basis, choice: 'preserve_and_replan' })
       case 'start': {
         const configuration = await settings()
         const current = await call(`/jobs/${id(args.job)}`)

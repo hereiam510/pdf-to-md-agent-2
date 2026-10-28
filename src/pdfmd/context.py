@@ -5,6 +5,7 @@ from copy import deepcopy
 import json
 from typing import Callable
 
+from .history import batch_reply, batch_identity, provenance
 from .nexus import StopRun, instruction_basis, make_payload, unique_object
 from .context_outcomes import control_result, outcome, policy_ref, reserved_outcome
 from .schema import Route
@@ -252,6 +253,7 @@ class Context:
                            "current_head": job["head"], "selected_delivery": job["delivery"],
                            "continuation_notes": state.get("notes", ""),
                            "context_policy_ref": policy_ref(state),
+                           **({"historical_resolution_refs": state["resolutions"]} if state.get("resolutions") else {}),
                            "context_candidate_ref": (self.update_feedback["proposal_ref"] if self.update_feedback is not None
                                                      else state.get("context_latest") or state.get("context_waiting"))}, ensure_ascii=False)
 
@@ -263,7 +265,8 @@ class Context:
             return None
         record = self.store.json(ref, job)
         return {"content": record["content"], "archive_ref": ref,
-                "deferred_requests": record["deferred"], "original_refs": record["originals"]}
+                "deferred_requests": record["deferred"], "original_refs": record["originals"],
+                **({"resolution_refs": record["resolution_refs"]} if "resolution_refs" in record else {})}
 
     def repair_feedback(self, job: str, state: dict, kind: str) -> dict | None:
         item = state.get("repairs", {}).get(kind)
@@ -338,7 +341,8 @@ class Context:
 
     def batch_refs(self, job: dict, request_id: str) -> set[str]:
         request = self.store.get("request", request_id, job=job["id"])
-        reply = self.store.json(request["accepted_ref"], job["id"])
+        batch = batch_reply(self.store, job["id"], request_id)
+        reply = batch["reply"]
         refs = set()
         for index, _ in enumerate(reply["calls"]):
             operation = f"{request_id}:{index}"
@@ -378,7 +382,8 @@ class Context:
     def group(self, job: dict, request_id: str, state: dict, *, defer: bool = False, images: bool = True,
               deferred: set[str] | None = None) -> list[dict]:
         request = self.store.get("request", request_id, job=job["id"])
-        reply = self.store.json(request["accepted_ref"], job["id"])
+        batch = batch_reply(self.store, job["id"], request_id)
+        reply = batch["reply"]
         native = deepcopy(reply["native"])
         pinned = set(state.get("pinned", []))
         released = set(state.get("released", [])) - pinned
@@ -404,9 +409,9 @@ class Context:
                     return "capacity deferred; relevance unresolved"
                 return None
 
-            if control or reason(candidate_ref):
+            if (control and batch["classification"] != "resolved_historical") or reason(candidate_ref):
                 arguments = json.dumps({"archived_arguments_ref": candidate_ref, "projection_only": True,
-                                        "reason": "context update arguments saved exactly" if control else reason(candidate_ref)})
+                                        "reason": "context update arguments saved exactly" if control and batch["classification"] == "ordinary_accepted" else reason(candidate_ref)})
                 if protocol == "chat_completions":
                     native[0]["tool_calls"][index]["function"]["arguments"] = arguments
                 else:
@@ -415,7 +420,7 @@ class Context:
                             item["arguments"] = arguments
             data = envelope["data"]
             image_ref = data.get("image_ref") if isinstance(data, dict) else None
-            if control:
+            if control and batch["classification"] != "resolved_historical":
                 envelope = control_result(envelope, settlement if operation in settled_operations else None)
             elif reason(result_ref):
                 envelope = self.omitted_result(job, envelope, reason(result_ref))
@@ -437,6 +442,13 @@ class Context:
             output.append({"role": "tool", "tool_call_id": call["id"], "content": text} if protocol == "chat_completions"
                           else {"type": "function_call_output", "call_id": call["id"], "output": text})
         group = [*native, *output]
+        if batch["resolution_ref"]:
+            receipt = batch["receipt"]
+            group.append({"role": "user", "content": "Historical conflict resolution:\n" + json.dumps({
+                "classification": batch["classification"], "request": request_id,
+                "accepted_staging_ref": batch["evidence_ref"], "resolution_ref": batch["resolution_ref"],
+                "native_ref": reply["native_ref"], "stream_ref": reply["stream_ref"],
+                "message": receipt["message"], "receive_boundary": receipt["receive_boundary"]}, ensure_ascii=False)})
         if image_parts:
             group.append({"role": "user", "content": image_parts})
         return group
@@ -448,9 +460,10 @@ class Context:
         existing = deferred or set()
         original = measure(self.group(job, request, state, images=images, deferred=existing))["input_estimate"]
         refs = self.batch_refs(job, request) - set(state.get("pinned", [])) - set(state.get("released", [])) - existing
-        reply = self.store.json(self.store.get("request", request, job=job["id"])["accepted_ref"], job["id"])
+        batch = batch_reply(self.store, job["id"], request)
+        reply = batch["reply"]
         for index, call in enumerate(reply["calls"]):
-            if call["name"] == "context_update":
+            if call["name"] == "context_update" and batch["classification"] == "ordinary_accepted":
                 envelope = self.envelope(job["id"], f"{request}:{index}")
                 refs -= {envelope["candidate_ref"], envelope["result_ref"]}
         return {ref for ref in refs if measure(self.group(job, request, state, images=images,
@@ -567,7 +580,7 @@ class Context:
         if len(remaining) != 1:
             return None
         request_id = remaining[0]
-        reply = self.store.json(self.store.get("request", request_id, job=job["id"])["accepted_ref"], job["id"])
+        reply = batch_reply(self.store, job["id"], request_id)["reply"]
         results = set()
         for index, call in enumerate(reply["calls"]):
             if call["name"] == "context_update":
@@ -590,7 +603,9 @@ class Context:
         projected = {"content": known,
                      "archive_ref": f"handoff:{job['id']}:{state['seq']}:{state['revision']}",
                      "deferred_requests": deferred,
-                     "original_refs": [self.store.get("request", key, job=job["id"])["accepted_ref"] for key in covered]}
+                     "original_refs": provenance(self.store, job["id"], covered)["originals"],
+                     **({"resolution_refs": provenance(self.store, job["id"], covered)["resolution_refs"]}
+                        if any(provenance(self.store, job["id"], covered)["resolution_refs"]) else {})}
         preview = Context(self.store, self.dispatcher, envelopes=self.envelopes,
                           update_feedback=self.update_feedback, handoff_preview=projected)
         target = preview.handoff_target(job, {**state, "history": remaining})
@@ -645,7 +660,10 @@ class Context:
                     break
             request = self.store.get("request", request_id, job=job["id"])
             def entry(messages):
-                return {"request": request_id, "accepted_ref": request["accepted_ref"], "messages": messages}
+                identity = batch_identity(self.store, job["id"], request_id)
+                return {"request": request_id, "accepted_ref": request["accepted_ref"], "messages": messages,
+                        **({"classification": identity["classification"], "accepted_staging_ref": identity["evidence_ref"],
+                            "resolution_ref": identity["resolution_ref"]} if identity["resolution_ref"] else {})}
             chunk = entry(self.group(job, request_id, state, images=False))
             payload = assemble([*chunks, chunk])
             if (not estimate(payload, route)["fits"] and chunks and has_body_savings
@@ -706,7 +724,9 @@ class Context:
         record = {"content": content, "covered": covered, "deferred": meta["deferred"], "request": request,
                   "projection": meta.get("projection", []),
                   "previous_archive_ref": state.get("handoff"),
-                  "originals": [self.store.get("request", item, job=job["id"])["accepted_ref"] for item in covered]}
+                  "originals": provenance(self.store, job["id"], covered)["originals"],
+                  **({"resolution_refs": provenance(self.store, job["id"], covered)["resolution_refs"]}
+                     if any(provenance(self.store, job["id"], covered)["resolution_refs"]) else {})}
         ref = self.store.blob(job["id"], "handoff", record, key=f"handoff:{request}")
         candidate = {**state, "handoff": ref["ref"], "history": state["history"][len(covered):], "revision": state["revision"] + 1}
         receipt = self.store.maybe("event_receipt", f"{job['id']}:context_compacted:{request}")

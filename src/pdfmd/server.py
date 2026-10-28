@@ -10,6 +10,7 @@ import logging
 import os
 from pathlib import Path
 import socket
+import sqlite3
 import threading
 
 from fastapi import FastAPI, Header, HTTPException, Depends
@@ -22,7 +23,7 @@ from .documents import Documents
 from .evidence import Evidence
 from .nexus import Nexus
 from .runtime import Runtime
-from .schema import Limits, Route
+from .schema import ConflictResolutionSelection, Limits, Route
 from .storage import Conflict, Store, uid
 from .tools import Dispatcher
 
@@ -142,17 +143,36 @@ class Engine:
             if not any(r["kind"] == "compaction" and r["status"] == "unknown"
                        for r in self.store.records("request", job)):
                 return None
-            lock = FileLock(str(self.store.root / f"task-{job}.lock"))
-            runtime = None
+            from .recovery import existing_task_lease, inspection
             try:
-                with lock.acquire(timeout=0):
-                    runtime = Runtime(self.store, Nexus(self.store, lambda _: "", self.transport))
-                    return runtime.compaction_recovery(job)
-            except Timeout:
+                with existing_task_lease(self.store.root / f"task-{job}.lock") as leased:
+                    with inspection(self.store.root, job, locked=leased) as (view, _, snapshot):
+                        state = snapshot.values
+                        if not snapshot.next or not state:
+                            return None
+                        key = state.get("pending") or f"{job}:{state['seq']}:{state['revision']}"
+                        request = view.maybe("request", key)
+                        if (request and request["kind"] == "compaction" and request["status"] == "unknown"
+                                and not request.get("accepted_ref") and not view.maybe("blob", f"accepted:{key}")
+                                and not view.maybe("blob", f"continuation:{key}")):
+                            return {"request": key}
+            except (OSError, ValueError, sqlite3.Error):
                 return None
-            finally:
-                if runtime:
-                    runtime.close()
+            return None
+
+    def diagnose_conflict(self, job: str):
+        from .recovery import diagnose, unavailable
+        with self.guard:
+            if job in self.futures and not self.futures[job].done():
+                return unavailable("busy", "Stop the task before inspecting a stable recovery view.")
+            return diagnose(self.store.root, job)
+
+    def resolve_conflict(self, job: str, body: dict):
+        from .recovery import resolve
+        with self.guard:
+            if job in self.futures and not self.futures[job].done():
+                raise Conflict("Stop the task before local recovery.")
+            return resolve(self.store, job, body["request"], body["basis"], choice=body.get("choice", "preserve_and_replan"))
 
     def receive_observation(self, job: str, request: dict) -> dict | None:
         """Expose bounded receive facts, never native fragments or raw headers."""
@@ -238,6 +258,14 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
     def start(job: str, body: dict):
         return engine.start(job, body.get("key", ""), body.get("route"), body.get("limits"), body.get("amendment", ""), body.get("scripts", False),
                             recover_compaction_request=body.get("recover_compaction_request"))
+
+    @app.get("/jobs/{job}/accepted-evidence-diagnosis")
+    def accepted_evidence_diagnosis(job: str):
+        return engine.diagnose_conflict(job)
+
+    @app.post("/jobs/{job}/accepted-evidence-resolution")
+    def accepted_evidence_resolution(job: str, body: ConflictResolutionSelection):
+        return engine.resolve_conflict(job, body.model_dump())
 
     @app.post("/jobs/{job}/settings")
     def task_settings(job: str, body: dict):

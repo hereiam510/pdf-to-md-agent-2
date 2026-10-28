@@ -1,7 +1,7 @@
 """Short SQLite metadata transactions and immutable, content-addressed bytes."""
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from hashlib import sha256
 import json
 import os
@@ -31,7 +31,7 @@ class Store:
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         (self.root / "objects").mkdir(exist_ok=True)
-        with self.connect() as db:
+        with closing(self.connect()) as db:
             db.executescript("""
                 PRAGMA journal_mode=WAL;
                 CREATE TABLE IF NOT EXISTS records (
@@ -165,12 +165,25 @@ class Store:
     def bytes(self, ref: str, job: str) -> bytes:
         record = self.get("blob", ref, job=job)
         data = (self.root / "objects" / record["sha256"]).read_bytes()
-        if sha256(data).hexdigest() != record["sha256"]:
+        if len(data) != record["bytes"] or sha256(data).hexdigest() != record["sha256"]:
             raise ValueError("Saved object failed its integrity check.")
         return data
 
     def json(self, ref: str, job: str) -> Any:
         return json.loads(self.bytes(ref, job))
+
+    @contextmanager
+    def read_snapshot(self):
+        """Reuse a caller's pinned read; otherwise end this read on every exit."""
+        with self._db() as db:
+            own_snapshot = not db.in_transaction
+            if own_snapshot:
+                db.execute("BEGIN")
+            try:
+                yield db
+            finally:
+                if own_snapshot:
+                    db.rollback()
 
     def read_stream(self, job: str, request: str, attempt: str) -> dict:
         """Read verified durable evidence, never infer acceptance or send a request.
@@ -180,9 +193,7 @@ class Store:
         observation/protocol facts. Legacy list checkpoints remain readable.
         """
         prefix = f"stream:{attempt}:"
-        db = self.connect()
-        try:
-            db.execute("BEGIN")
+        with self.read_snapshot() as db:
             def owned(kind, key):
                 row = db.execute("SELECT job,data FROM records WHERE kind=? AND id=?", (kind, key)).fetchone()
                 if row is not None and row["job"] != job:
@@ -194,9 +205,6 @@ class Store:
             aggregate = owned("blob", f"raw-stream:{attempt}")
             rows = db.execute("SELECT id,job,data FROM records WHERE kind='blob' AND id>=? AND id<?",
                               (prefix, prefix + "\uffff")).fetchall()
-        finally:
-            db.rollback()
-            db.close()
         if (owner is None or owner.get("job") != job or attempt not in owner.get("attempts", [])
                 or sending is None or sending.get("request") != request):
             raise ValueError("Stream request/attempt ownership is inconsistent.")
@@ -269,7 +277,7 @@ class Store:
         return data
 
     def event(self, job: str, kind: str, data: dict) -> None:
-        with self.connect() as db:
+        with self.transaction() as db:
             db.execute("INSERT INTO events(job,type,data,created) VALUES(?,?,?,?)",
                        (job, kind, encode(data).decode(), time.time()))
 
@@ -287,7 +295,7 @@ class Store:
             self.put_tx(db, "event_receipt", identity, job, data)
 
     def events(self, job: str, after: int = 0, limit: int = 200) -> list[dict]:
-        with self.connect() as db:
+        with self._db() as db:
             rows = db.execute("SELECT * FROM events WHERE job=? AND seq>? ORDER BY seq LIMIT ?",
                               (job, after, limit)).fetchall()
         return [{**dict(row), "data": json.loads(row["data"])} for row in rows]

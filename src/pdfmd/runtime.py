@@ -39,6 +39,21 @@ class State(TypedDict, total=False):
     context_check: str | None
     context_latest: str | None
     report: dict | None
+    resolutions: dict[str, str]
+
+
+def build_graph(owner, checkpointer):
+    """Compile the same topology for execution and read-only checkpoint inspection."""
+    builder = StateGraph(State)
+    for name in ("coordinate", "prepare", "model", "tools", "compact"):
+        builder.add_node(name, getattr(owner, name))
+    builder.add_edge(START, "coordinate")
+    builder.add_conditional_edges("coordinate", lambda state: END if state.get("terminal") else "prepare", {END: END, "prepare": "prepare"})
+    builder.add_conditional_edges("prepare", lambda state: state["next"], {"model": "model", "compact": "compact"})
+    builder.add_conditional_edges("model", lambda state: state["next"], {"prepare": "coordinate", "tools": "tools"})
+    builder.add_edge("tools", "coordinate")
+    builder.add_edge("compact", "coordinate")
+    return builder.compile(checkpointer=checkpointer)
 
 
 class Runtime:
@@ -54,19 +69,7 @@ class Runtime:
         self.connection = sqlite3.connect(store.root / "graph.sqlite", check_same_thread=False)
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.connection.execute("PRAGMA synchronous=FULL")
-        builder = StateGraph(State)
-        builder.add_node("coordinate", self.coordinate)
-        builder.add_node("prepare", self.prepare)
-        builder.add_node("model", self.model)
-        builder.add_node("tools", self.tools)
-        builder.add_node("compact", self.compact)
-        builder.add_edge(START, "coordinate")
-        builder.add_conditional_edges("coordinate", lambda state: END if state.get("terminal") else "prepare", {END: END, "prepare": "prepare"})
-        builder.add_conditional_edges("prepare", lambda state: state["next"], {"model": "model", "compact": "compact"})
-        builder.add_conditional_edges("model", lambda state: state["next"], {"prepare": "coordinate", "tools": "tools"})
-        builder.add_edge("tools", "coordinate")
-        builder.add_edge("compact", "coordinate")
-        self.graph = builder.compile(checkpointer=SqliteSaver(self.connection))
+        self.graph = build_graph(self, SqliteSaver(self.connection))
 
     def coordinate(self, state: State):
         """Commit outcomes before request preparation or a valid terminal report."""
@@ -322,6 +325,9 @@ class Runtime:
                 raise
         config = {"configurable": {"thread_id": job}, "recursion_limit": 1_000_000}
         try:
+            # A committed local choice owns its projection before any reconcile(K).
+            from .recovery import project_committed
+            project_committed(self, job)
             self.active_time.start(job)
             snapshot = self.graph.get_state(config)
             if snapshot.next:
