@@ -40,9 +40,17 @@ def ro_connect(path):
 
 class ReadView(Store):
     """Store's pure readers on a pinned RO transaction, without Store setup."""
-    def __init__(self, root, connection):
-        self.root, self.connection = Path(root), connection
+    def __init__(self, root, connection, job=None):
+        self.root, self.connection, self.job = Path(root), connection, job
         connection.row_factory = sqlite3.Row
+
+    def get(self, kind, key, *, job=None):
+        if self.job is not None and job not in (None, self.job):
+            raise ValueError("Evidence view cannot cross task ownership.")
+        return super().get(kind, key, job=self.job or job)
+
+    def maybe(self, kind, key):
+        return self.get_tx(self.connection, kind, key, job=self.job)
 
     @contextmanager
     def _db(self):
@@ -263,6 +271,14 @@ def context_transition(view, job, state, request, ops):
     from .context_revisions import POLICY
     changes, writes = {}, []
     waiting = state.get("context_waiting")
+    if waiting:
+        pending_blob = view.get("blob", waiting, job=job["id"])
+        pending_body = view.json(waiting, job["id"])
+        pending = pending_body.get("context_proposal") if isinstance(pending_body, dict) else None
+        if (pending_blob["kind"] not in {"context_proposal", "tool_result"} or not isinstance(pending, dict)
+                or not isinstance(pending.get("policy"), dict) or "instruction_basis" not in pending):
+            raise ValueError("The pending context relationship cannot be confirmed.")
+        view.maybe("context_disposition", waiting)  # Enforce catalog ownership, even for unrelated pending intent.
     # Current coordinator's committed decision may precede its checkpoint.
     settlement_ref = ContextUpdates.ref(request["id"])
     commit = view.maybe("context_commit", settlement_ref)
@@ -334,6 +350,10 @@ def context_transition(view, job, state, request, ops):
 def successor(view, job, snapshot, checked, ops):
     state, request = dict(snapshot.values), checked["request"]
     key = request["id"]
+    if (request["kind"] not in {"normal", "compaction"}
+            or (snapshot.next in {("model",), ("tools",)} and request["kind"] != "normal")
+            or (snapshot.next == ("compact",) and request["kind"] != "compaction")):
+        raise ValueError("Request kind contradicts the resumable graph phase.")
     if (not snapshot.next or state.get("job") != job["id"]
             or key != (state.get("pending") or f"{job['id']}:{state['seq']}:{state['revision']}")
             or snapshot.next not in {("model",), ("tools",), ("compact",), ("prepare",), ("coordinate",)}):
@@ -414,7 +434,7 @@ def inspection(root, job, *, locked=False):
         with closing(ro_connect(scratch / "catalog.sqlite")) as catalog, closing(ro_connect(scratch / "graph.sqlite")) as graph_db:
             catalog.execute("BEGIN")
             graph_db.execute("BEGIN")
-            view = ReadView(root, catalog)
+            view = ReadView(root, catalog, job)
             graph = readonly_graph(graph_db)
             snapshot = graph.get_state({"configurable": {"thread_id": job}})
             yield view, graph, snapshot
@@ -472,7 +492,8 @@ def inspect_current(view, graph, snapshot, job):
         ops = operations(view, job, key, checked["accepted"])
         transition = successor(view, current, snapshot, checked, ops)
     except (ValueError, OSError, KeyError, TypeError) as exc:
-        return {**unavailable("evidence_unconfirmed", str(exc)), **base, **facts}, None
+        return {**unavailable("evidence_unconfirmed", str(exc)), **base, **facts,
+                "provenance": {"status": "unknown", "scope": "operation/context/handoff association"}}, None
     basis_records = catalog_basis(view, job)
     basis = digest({"catalog": basis_records, "graph": checkpoint_basis(snapshot)})
     eligible = checked["boundary"]["status"] == "finish_conflict" and all(op["certainty"] != "unknown" for op in ops)
@@ -500,7 +521,8 @@ def diagnose(root, job):
                 pending = state.get("pending") or (f"{job}:{state['seq']}:{state['revision']}" if state else None)
                 if committed and (view.maybe("conflict_resolution", pending) or not view.maybe("blob", f"accepted:{pending}")):
                     latest = view.maybe("conflict_resolution", pending) or committed[-1]
-                    receipt = view.json(latest["ref"], job)
+                    from .history import resolution_receipt
+                    receipt = resolution_receipt(view, job, latest["request"])
                     try:
                         projection = projection_status(graph, job, receipt)
                         reasons = []
@@ -548,7 +570,8 @@ def projection_status(graph, job, receipt):
 
 
 def project(runtime, job, authority):
-    receipt = runtime.store.json(authority["ref"], job)
+    from .history import resolution_receipt
+    receipt = resolution_receipt(runtime.store, job, authority["request"])
     if projection_status(runtime.graph, job, receipt) == "pending":
         runtime.graph.update_state(receipt["graph_basis"]["config"], receipt["successor"], as_node="tools")
     return {"request": authority["request"], "resolution_ref": authority["ref"], "projection": "ready"}
@@ -572,6 +595,7 @@ def resolve(store, job, key, basis, *, choice=CHOICE):
         with lock.acquire(timeout=0):
             existing = store.maybe("conflict_resolution", key)
             if existing:
+                existing = store.get("conflict_resolution", key, job=job)
                 if existing.get("job") != job or existing.get("choice") != choice:
                     raise Conflict("This request already has a different resolution.")
                 return finish_projection(store, job, existing)
@@ -645,14 +669,30 @@ def resolve(store, job, key, basis, *, choice=CHOICE):
             return finish_projection(store, job, authority)
     except Timeout as exc:
         raise Conflict("Task has an active executor. Stop it before local recovery.") from exc
+    except (OSError, sqlite3.Error) as exc:
+        raise Conflict("Local recovery storage view is temporarily unavailable. Any committed decision is retained; refresh and finish that same local recovery.") from exc
 
 
 def finish_projection(store, job, authority):
     from .runtime import Runtime
     from .nexus import Nexus
-    # Do not initialize a missing/unsupported graph while completing a decision.
-    with inspection(store.root, job, locked=True) as (view, graph, _):
-        projection_status(graph, job, view.json(authority["ref"], job))
+    from .history import resolution_receipt
+    # After B, current mutable catalog/head/settings are not a new selection
+    # basis. Read canonical authority in one SQLite snapshot; do not copy a
+    # polling catalog/WAL or revoke the choice for harmless housekeeping.
+    with store.read_snapshot() as db:
+        receipt = resolution_receipt(ReadView(store.root, db, job), job, authority["request"])
+    if not (store.root / "graph.sqlite").is_file():
+        raise Conflict("The committed recovery has no saved graph; no graph was created.")
+    # This is the explicit mutation path, so SQLite's sidecar bookkeeping is
+    # permitted. SELECT-only saver setup still rejects unsupported schema
+    # before any Runtime can initialize it. Task lock protects graph lineage.
+    with closing(ro_connect(store.root / "graph.sqlite")) as connection:
+        connection.execute("BEGIN")
+        status = projection_status(readonly_graph(connection), job, receipt)
+    if status == "ready":
+        projected(store, authority)
+        return {"request": authority["request"], "resolution_ref": authority["ref"], "projection": "ready"}
     runtime = Runtime(store, Nexus(store, no_execution))
     try:
         result = project(runtime, job, authority)

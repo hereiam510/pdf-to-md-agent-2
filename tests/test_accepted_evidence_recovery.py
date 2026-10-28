@@ -152,6 +152,9 @@ def test_unsupported_evidence_is_not_force_accepted(setup, monkeypatch, case):
     if case == "feed_error":
         assert result["receive_boundary"]["status"] == "feed_error"
         assert result["reconstruction"]["status"] == "unknown"
+    if case == "bad_usage":
+        assert result["storage"]["status"] == "verified"
+        assert result["receive_boundary"]["status"] == "finish_conflict"
     assert preserved(store, job["id"]) == before
 
 
@@ -626,7 +629,8 @@ def test_readonly_authenticated_api_busy_missing_and_stale_views(setup, monkeypa
 
 
 @pytest.mark.parametrize("status", ["applied", "superseded", "needs_agent_revision"])
-def test_committed_context_settlement_recovers_exact_basis(setup, monkeypatch, status):
+@pytest.mark.parametrize("foreign_commit", [False, True])
+def test_committed_context_settlement_recovers_exact_basis(setup, monkeypatch, status, foreign_commit):
     from pdfmd.recovery import diagnose, resolve
     from pdfmd.context_outcomes import policy_ref
     store, job, key, _, _ = historical(setup, monkeypatch, "chat_completions")
@@ -645,7 +649,14 @@ def test_committed_context_settlement_recovers_exact_basis(setup, monkeypatch, s
     settlement = store.bytes(f"context-settlement:{key}", job["id"])
     disposition = store.get("context_disposition", proposal)
     runtime.close()
+    if foreign_commit:
+        with store.transaction() as db:
+            db.execute("UPDATE records SET job='foreign-task' WHERE kind='context_commit' AND id=?", (f"context-settlement:{key}",))
     diagnosis = diagnose(store.root, job["id"])
+    if foreign_commit:
+        assert not diagnosis["eligible"], diagnosis
+        assert diagnosis["provenance"]["status"] != "verified"
+        return
     assert diagnosis["eligible"], diagnosis
     resolve(store, job["id"], key, diagnosis["basis"])
     runtime = Runtime(store, Nexus(store, forbidden))
@@ -711,6 +722,47 @@ def test_projection_divergence_cannot_overwrite_graph(setup, monkeypatch):
         assert runtime.graph.get_state(config).values == graph_before.values
     finally:
         runtime.close()
+
+
+@pytest.mark.parametrize("tamper", ["authority_owner", "receipt_owner", "receipt_kind", "authority_link"])
+def test_resolution_authority_and_receipt_membership_are_required(setup, monkeypatch, tamper):
+    from pdfmd.recovery import diagnose, resolve
+    from pdfmd.history import batch_reply
+    from pdfmd.storage import Conflict
+    store, job, key, _, _ = historical(setup, monkeypatch, "responses")
+    diagnosis = diagnose(store.root, job["id"])
+    resolve(store, job["id"], key, diagnosis["basis"])
+    ref = f"conflict-resolution:{key}"
+    if tamper == "authority_owner":
+        with store.transaction() as db:
+            db.execute("UPDATE records SET job='foreign-task' WHERE kind='conflict_resolution' AND id=?", (key,))
+    elif tamper == "authority_link":
+        authority = store.get("conflict_resolution", key)
+        store.put("conflict_resolution", key, job["id"], {**authority, "basis": "contradictory-basis"})
+    else:
+        blob = store.get("blob", ref)
+        store.put("blob", ref, job["id"], {**blob, **({"job": "foreign-task"} if tamper == "receipt_owner" else {"kind": "evidence"})})
+    before = (store.root / "graph.sqlite").read_bytes()
+    with pytest.raises((ValueError, Conflict)):
+        resolve(store, job["id"], key, "old-click")
+    with pytest.raises((ValueError, Conflict)):
+        batch_reply(store, job["id"], key)
+    assert (store.root / "graph.sqlite").read_bytes() == before
+
+
+@pytest.mark.parametrize("case", ["missing_context", "wrong_graph_phase"])
+def test_unconfirmed_context_or_graph_relationship_cannot_offer_recovery(setup, monkeypatch, case):
+    from pdfmd.recovery import diagnose
+    store, job, _, _, _ = historical(setup, monkeypatch, "responses")
+    runtime = Runtime(store, Nexus(store, forbidden))
+    config = {"configurable": {"thread_id": job["id"]}}
+    if case == "missing_context":
+        runtime.graph.update_state(config, {"context_waiting": "missing-pending-proposal", "next": "model"}, as_node="prepare")
+    else:
+        runtime.graph.update_state(config, {"next": "compact"}, as_node="prepare")
+    runtime.close()
+    result = diagnose(store.root, job["id"])
+    assert not result["eligible"], result
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)

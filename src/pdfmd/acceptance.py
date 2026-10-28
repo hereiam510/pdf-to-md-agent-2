@@ -26,6 +26,7 @@ def inspect_acceptance(store, job, key, *, verified_stream=None):
         message = ("Saved native structure is unsupported by the parser; this is not proof of disk corruption."
                    if isinstance(exc, (AttributeError, IndexError)) else str(exc))
         if isinstance(exc, Conflict):
+            exc.observations = observations
             raise  # Settlement concurrency callers retain the Conflict type.
         raise EvidenceCheckError(message, observations) from exc
 
@@ -121,6 +122,8 @@ def _inspect_acceptance(store, job, key, *, verified_stream, observations):
         raise ValueError("Accepted native evidence has inconsistent provenance.")
     if accepted != expected:
         raise ValueError("Accepted staging contradicts its complete native response.")
+    observations.update(reconstruction={"status": "matches" if reconstructed else "unknown"},
+                        receive_boundary=boundary)
 
     # Unpublished diagnostic pointers can still name an earlier failed
     # attempt of this request. Validate their ownership before superseding.

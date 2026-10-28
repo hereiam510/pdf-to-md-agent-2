@@ -4,13 +4,33 @@ from __future__ import annotations
 from .storage import Conflict
 
 
+def resolution_receipt(store, job, key):
+    """One authority/receipt membership check for diagnosis, history and projection."""
+    authority = store.get("conflict_resolution", key, job=job)
+    ref = f"conflict-resolution:{key}"
+    if (authority.get("job") != job or authority.get("request") != key or authority.get("ref") != ref
+            or authority.get("choice") != "preserve_and_replan"):
+        raise Conflict("Historical resolution authority has inconsistent identity.")
+    descriptor = store.get("blob", ref, job=job)
+    if descriptor.get("job") != job or descriptor.get("ref") != ref or descriptor.get("kind") != "conflict_resolution":
+        raise Conflict("Historical resolution receipt has inconsistent provenance.")
+    receipt = store.json(ref, job)
+    if (not isinstance(receipt, dict) or type(receipt.get("version")) is not int or receipt["version"] != 1
+            or receipt.get("job") != job or receipt.get("request") != key or receipt.get("ref") != ref
+            or receipt.get("basis") != authority.get("basis") or receipt.get("choice") != authority["choice"]
+            or receipt.get("original_request") != store.get("request", key, job=job)
+            or receipt.get("original_attempt") != store.get("attempt", receipt["attempt"], job=job)):
+        raise Conflict("Historical resolution contradicts its authority or original request/attempt facts.")
+    return receipt
+
+
 def batch_identity(store, job, key):
     request = store.get("request", key, job=job)
     authority = store.maybe("conflict_resolution", key)
     if authority:
         if authority.get("job") != job or authority.get("request") != key:
             raise Conflict("Historical resolution ownership is inconsistent.")
-        receipt = store.json(authority["ref"], job)
+        receipt = resolution_receipt(store, job, key)
         if (receipt.get("ref") != authority["ref"] or receipt.get("basis") != authority.get("basis")
                 or receipt.get("original_request") != request):
             raise Conflict("Resolved history contradicts the retained request facts.")
