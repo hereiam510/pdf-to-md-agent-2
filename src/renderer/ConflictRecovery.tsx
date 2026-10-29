@@ -9,6 +9,9 @@ type Diagnosis = {
   resolution_head?: string | null;
   verification?: { original?: string; saved?: string; raw?: string; operations?: string };
   evidence_availability?: Record<string, { status: string; reason?: string }>;
+  evidence_provenance?: Record<string, { ref: string; status: string; request?: string; attempt?: string; relation?: string; kind?: string; completeness?: string; reason?: string }>;
+  current_attempt_evidence?: Record<string, string>;
+  attempt_observation?: { status: string; received_body_bytes?: number; settled?: boolean | null };
   historical_resolutions?: { request: string; resolution_ref?: string; projection?: string; verification?: string; reason?: string }[];
   storage?: { status: string }; provenance?: { status: string }; reconstruction?: { status: string };
   receive_boundary?: { status: string; reason?: string }; publication?: { status: string; accepted_ref?: string | null };
@@ -99,6 +102,18 @@ export function ConflictRecovery({ job, running, observation = '', refresh, view
     return <><button className="text-button" aria-label={label} disabled={available?.status === 'unavailable' || available?.status === 'inconsistent'} onClick={() => viewEvidence(ref, raw)}>{ref}</button>
       {available && available.status !== 'available' && <span> — {text(available.status)}{available.reason && `: ${available.reason}`}</span>}</>
   }
+  const attributedEvidence = (field: 'native_ref' | 'stream_ref', label: string, raw = false) => {
+    const ref = diagnosis?.[field]
+    if (!ref) return null
+    const origin = diagnosis?.evidence_provenance?.[field]
+    const verified = origin?.status === 'verified' && origin.ref === ref
+    return <p>{field === 'native_ref' ? 'Native' : 'Raw stream'}: {evidenceLink(ref, label, raw,
+      verified ? undefined : { status: 'unavailable', reason: origin?.reason ?? 'Evidence origin is unconfirmed.' })}
+      {verified && <> — Request: <code>{origin.request}</code> · Attempt: <code>{origin.attempt}</code> ({origin.relation === 'selected_attempt' ? 'selected attempt evidence'
+        : origin.relation === 'earlier_attempt' ? 'earlier attempt evidence' : 'other retained attempt evidence'}; {origin.completeness === 'partial' ? 'partial evidence'
+          : origin.completeness === 'complete' ? 'completion recorded' : 'completeness not established'})</>}
+    </p>
+  }
   return <section className="conflict-recovery" aria-label="Saved acceptance recovery">
     <button disabled={running || busy} onClick={() => void inspect()}>Inspect saved acceptance</button>
     {diagnosis && <div aria-live="polite">
@@ -122,9 +137,16 @@ export function ConflictRecovery({ job, running, observation = '', refresh, view
       {diagnosis.head_verification && <p className="hint">Current head verification: {text(diagnosis.head_verification)}.</p>}
       {Object.hasOwn(diagnosis, 'resolution_head') && <p>Head observed at resolution: <code>{diagnosis.resolution_head ?? 'empty'}</code> (historical).</p>}
       {(diagnosis.request || diagnosis.accepted_staging_ref) && <details><summary>Evidence references and usage</summary>
+        {diagnosis.attempt && <>
+          <p>Selected attempt receive observation: {diagnosis.attempt_observation?.status === 'recorded'
+            ? `${diagnosis.attempt_observation.received_body_bytes} success-body bytes observed${diagnosis.attempt_observation.settled === true ? ' (settled observation)' : ' (observation may be incomplete)'}.`
+            : diagnosis.attempt_observation?.status === 'unavailable' ? 'Unavailable or inconsistent.' : 'Missing; received byte count is not established.'} Remote execution and cost cannot be inferred from this observation.</p>
+          {(['native_ref', 'stream_ref'] as const).map(field => <p key={field}>Selected attempt {field === 'native_ref' ? 'native' : 'raw stream'} evidence: {diagnosis.current_attempt_evidence?.[field] === 'established'
+            ? 'Corresponding retained evidence established.' : 'No corresponding retained evidence established.'}</p>)}
+        </>}
         {diagnosis.accepted_staging_ref && <p>Staging: {evidenceLink(diagnosis.accepted_staging_ref, 'Open acceptance staging')}</p>}
-        {diagnosis.native_ref && <p>Native: {evidenceLink(diagnosis.native_ref, 'Open native response')}</p>}
-        {diagnosis.stream_ref && <p>Raw stream: {evidenceLink(diagnosis.stream_ref, 'Open complete raw bytes', true)}</p>}
+        {attributedEvidence('native_ref', 'Open native response')}
+        {attributedEvidence('stream_ref', 'Open complete raw bytes', true)}
         <p>Original recorded usage: {usage(diagnosis.original_usage, diagnosis.original_usage_state)}. Saved reply usage: {usage(diagnosis.saved_usage, diagnosis.saved_usage_state)}.</p>
         {diagnosis.verification && <div className="hint">
           <p>Original facts verification: {text(diagnosis.verification.original)}. Saved reply verification: {text(diagnosis.verification.saved)}.</p>

@@ -462,7 +462,9 @@ def diagnostic_facts(view, job, key=None, *, checked=None, receipt=None):
     facts = {"job": job, "request": key, "head": current.get("head"),
              "versions": [v["id"] for v in view.records("version", job)],
              "verification": {name: "unknown" for name in ("original", "saved", "raw", "operations")},
-             "evidence_availability": {}, "fact_errors": []}
+             "evidence_availability": {}, "evidence_provenance": {},
+             "current_attempt_evidence": {field: "not_established" for field in ("native_ref", "stream_ref")},
+             "attempt_observation": {"status": "missing"}, "fact_errors": []}
     try:
         if current.get("head"):
             verify_version(view, job, current["head"])
@@ -492,6 +494,15 @@ def diagnostic_facts(view, job, key=None, *, checked=None, receipt=None):
     facts["verification"]["original"] = "checked_now"
     if attempt:
         facts["attempt"] = attempt["id"]
+        transport = attempt.get("transport")
+        if isinstance(transport, dict) and "received_body_bytes" in transport:
+            count = transport["received_body_bytes"]
+            if type(count) is int and count >= 0:
+                facts["attempt_observation"] = {"status": "recorded", "received_body_bytes": count,
+                                                "settled": transport.get("settled")}
+            else:
+                facts["attempt_observation"] = {"status": "unavailable"}
+                facts["fact_errors"].append("Selected attempt byte observation is inconsistent.")
     stage_ref = receipt["accepted_staging_ref"] if receipt else f"accepted:{key}"
     if receipt or view.maybe("blob", stage_ref):
         facts["accepted_staging_ref"] = stage_ref
@@ -513,22 +524,51 @@ def diagnostic_facts(view, job, key=None, *, checked=None, receipt=None):
             if request.get(field):
                 facts[target] = request[field]
 
-    def available(ref):
+    def available(ref, field=None):
         try:
             descriptor = view.get("blob", ref, job=job)
-            if descriptor.get("ref") != ref or descriptor.get("job") != job:
+            if not isinstance(descriptor, dict) or descriptor.get("ref") != ref or descriptor.get("job") != job:
                 raise Conflict("Evidence ownership is inconsistent.")
             if receipt and ref in receipt["evidence"] and descriptor != receipt["evidence"][ref]:
                 raise Conflict("Evidence descriptor changed since resolution.")
+            if field:
+                # A pointer's container is not its owner (even an attempt can
+                # inherit an earlier request pointer). Validate each reference.
+                meta = descriptor.get("meta")
+                kinds = {"native_ref": {"native_response", "partial_native_response", "assembled_response"},
+                         "stream_ref": {"raw_stream"}, "accepted_staging_ref": {"accepted_response"}}
+                owner = meta.get("attempt") if isinstance(meta, dict) else None
+                if (descriptor.get("kind") not in kinds[field] or not isinstance(owner, str)
+                        or meta.get("request") != key or request["attempts"].count(owner) != 1):
+                    raise Conflict("Evidence request/attempt/kind is unconfirmed.")
+                retained = view.get("attempt", owner, job=job)
+                if not isinstance(retained, dict) or retained.get("id") != owner or retained.get("request") != key:
+                    raise Conflict("Evidence retained-attempt membership is inconsistent.")
+                if field == "accepted_staging_ref" and (not attempt or owner != attempt["id"]):
+                    raise Conflict("Acceptance staging does not match the selected attempt.")
+                relation = ("selected_attempt" if attempt and owner == attempt["id"] else
+                            "earlier_attempt" if attempt and request["attempts"].index(owner) < request["attempts"].index(attempt["id"])
+                            else "other_retained_attempt")
+                complete = meta.get("complete_transport") if descriptor["kind"] in {"native_response", "partial_native_response"} else meta.get("complete_protocol")
+                if descriptor["kind"] == "partial_native_response" and complete is True:
+                    raise Conflict("Partial native kind contradicts its completion descriptor.")
             view.bytes(ref, job)
             facts["evidence_availability"][ref] = {"status": "available"}
+            if field:
+                facts["evidence_provenance"][field] = {"ref": ref, "status": "verified", "request": key,
+                    "attempt": owner, "relation": relation, "kind": descriptor["kind"],
+                    "completeness": "complete" if complete is True else "partial" if complete is False or descriptor["kind"] == "partial_native_response" else "unknown"}
+                if field in facts["current_attempt_evidence"] and relation == "selected_attempt":
+                    facts["current_attempt_evidence"][field] = "established"
             return True
         except (ValueError, OSError, KeyError, TypeError) as exc:
             facts["evidence_availability"][ref] = {"status": "unavailable", "reason": str(exc)}
+            if field:
+                facts["evidence_provenance"][field] = {"ref": ref, "status": "unconfirmed", "reason": str(exc)}
             facts["fact_errors"].append(f"Evidence {ref} is unavailable/inconsistent: {exc}")
             return False
 
-    if facts.get("accepted_staging_ref") and available(stage_ref):
+    if facts.get("accepted_staging_ref") and available(stage_ref, "accepted_staging_ref"):
         try:
             descriptor = view.get("blob", stage_ref, job=job)
             if descriptor["kind"] != "accepted_response" or descriptor["meta"].get("request") != key:
@@ -545,7 +585,7 @@ def diagnostic_facts(view, job, key=None, *, checked=None, receipt=None):
         facts["verification"]["saved"] = "unavailable"
     for field in ("native_ref", "stream_ref", "resolution_ref"):
         if facts.get(field):
-            available(facts[field])
+            available(facts[field], field if field != "resolution_ref" else None)
     facts["verification"]["raw"] = ("unavailable" if facts.get("stream_ref") and
         facts["evidence_availability"][facts["stream_ref"]]["status"] != "available" else
         "verified_at_resolution" if receipt else "checked_now" if checked else "unknown")
@@ -609,9 +649,14 @@ def inspect_current(view, graph, snapshot, job):
     basis_records = catalog_basis(view, job)
     basis = digest({"catalog": basis_records, "graph": checkpoint_basis(snapshot)})
     eligible = checked["boundary"]["status"] == "finish_conflict" and all(op["certainty"] != "unknown" for op in ops) and not base["fact_errors"]
-    reasons = [] if eligible else ["Unknown tool effect prevents local resolution." if any(op["certainty"] == "unknown" for op in ops)
-                                 else "Receive evidence is compatible; use ordinary validated continuation." if checked["boundary"]["status"] == "compatible"
-                                 else "Receive failure is outside the supported finish-boundary class."]
+    reasons = []
+    if checked["boundary"]["status"] != "finish_conflict":
+        reasons.append("Receive evidence is compatible; local conflict recovery does not apply. Ordinary continuation requires its own validation."
+                       if checked["boundary"]["status"] == "compatible" else
+                       "Receive failure is outside the supported finish-boundary class.")
+    if any(op["certainty"] == "unknown" for op in ops):
+        reasons.append("Unknown tool effect prevents local resolution.")
+    reasons.extend(dict.fromkeys(base["fact_errors"]))
     display = {**base, **facts, "status": "eligible" if eligible else "unsupported", "eligible": eligible, "basis": basis, "reasons": reasons,
         "attempt": checked["attempt_id"], "accepted_staging_ref": checked["ref"], "native_ref": checked["native"]["ref"], "stream_ref": checked["stream_ref"],
         "storage": {"status": "verified"}, "provenance": {"status": "verified"},
@@ -623,7 +668,6 @@ def inspect_current(view, graph, snapshot, job):
         "original_usage": checked["attempt"].get("usage"), "saved_usage": checked["accepted"].get("usage"),
         "finished": checked["attempt"].get("finished"), "transition": transition["case"]}
     display["verification"]["operations"] = "checked_now"
-    display["reasons"].extend(base["fact_errors"])
     return display, {"checked": checked, "operations": ops, "transition": transition,
                      "catalog": basis_records, "graph": checkpoint_basis(snapshot), "job": current}
 

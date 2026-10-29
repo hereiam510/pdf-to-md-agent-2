@@ -45,6 +45,8 @@ test.beforeAll(async () => {
 const eligible = { status: 'eligible', eligible: true, reasons: [], job: 'job', request: 'job:0:0', attempt: 'attempt', basis: 'basis',
   accepted_staging_ref: 'accepted:job:0:0', native_ref: 'native:attempt', stream_ref: 'stream:attempt',
   original_usage: { prompt_tokens: 10 }, saved_usage: { prompt_tokens: 12 },
+  evidence_provenance: { native_ref: { ref: 'native:attempt', status: 'verified', request: 'job:0:0', attempt: 'attempt', relation: 'selected_attempt', completeness: 'complete' },
+    stream_ref: { ref: 'stream:attempt', status: 'verified', request: 'job:0:0', attempt: 'attempt', relation: 'selected_attempt', completeness: 'complete' } },
   verification: { original: 'checked_now', saved: 'checked_now', raw: 'checked_now', operations: 'checked_now' } }
 const ready = { ...eligible, status: 'resolved', eligible: false, projection: 'ready', resolution_ref: 'conflict-resolution:job:0:0',
   original_usage: 0, saved_usage: { prompt_tokens: 25 },
@@ -159,5 +161,36 @@ test('unavailable current head is explicitly labeled', async () => {
     await page.getByRole('button', { name: 'Inspect saved acceptance' }).click()
     await expect(page.getByText(/Current head verification:/)).toContainText('Unavailable')
     await expect(page.getByText(/Current head:/)).toContainText('missing-head')
+  })
+})
+
+test('each link displays its own attempt and partial evidence; missing observation stays missing', async () => {
+  await withRenderer('attribution', async page => {
+    await page.evaluate(values => { (window as any).fixture.responses = values }, [{ ...eligible,
+      eligible: false, status: 'missing_staging', attempt: 'B', current_attempt_evidence: { native_ref: 'established', stream_ref: 'not_established' },
+      attempt_observation: { status: 'missing' }, evidence_provenance: {
+        native_ref: { ref: 'native:attempt', status: 'verified', request: 'job:0:0', attempt: 'B', relation: 'selected_attempt', completeness: 'partial' },
+        stream_ref: { ref: 'stream:attempt', status: 'verified', request: 'job:0:0', attempt: 'A', relation: 'earlier_attempt', completeness: 'partial' } } }])
+    await page.getByRole('button', { name: 'Inspect saved acceptance' }).click()
+    await page.getByText('Evidence references and usage').click()
+    await expect(page.locator('p').filter({ hasText: /^Native:/ })).toContainText('Attempt: B (selected attempt evidence; partial evidence)')
+    await expect(page.locator('p').filter({ hasText: /^Raw stream:/ })).toContainText('Attempt: A (earlier attempt evidence; partial evidence)')
+    await expect(page.getByText(/Selected attempt receive observation:/)).toContainText('Missing; received byte count is not established.')
+    await expect(page.getByText(/Selected attempt raw stream evidence:/)).toContainText('No corresponding retained evidence established.')
+    await page.getByRole('button', { name: 'Open complete raw bytes', exact: true }).click()
+    expect(await page.evaluate(() => (window as any).fixture.evidence)).toEqual([{ ref: 'stream:attempt', raw: true }])
+  })
+})
+
+test('an unconfirmed evidence owner disables only its own link without guessing', async () => {
+  await withRenderer('unconfirmed-owner', async page => {
+    await page.evaluate(values => { (window as any).fixture.responses = values }, [{ ...eligible, eligible: false,
+      evidence_provenance: { ...eligible.evidence_provenance, stream_ref: { ref: 'stream:attempt', status: 'unconfirmed', reason: 'Wrong request membership.' } } }])
+    await page.getByRole('button', { name: 'Inspect saved acceptance' }).click()
+    await page.getByText('Evidence references and usage').click()
+    await expect(page.getByRole('button', { name: 'Open complete raw bytes', exact: true })).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Open native response', exact: true })).toBeEnabled()
+    await expect(page.locator('p').filter({ hasText: /^Raw stream:/ })).toContainText('Wrong request membership.')
+    await expect(page.locator('p').filter({ hasText: /^Raw stream:/ })).not.toContainText('Attempt:')
   })
 })

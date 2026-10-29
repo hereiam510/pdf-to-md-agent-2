@@ -395,6 +395,9 @@ def test_resolved_links_remain_bound_to_selected_attempt_with_earlier_diagnostic
     assert result["request"] == key and result["attempt"] == selected_attempt
     assert result["native_ref"] == reply["native_ref"]
     assert result["stream_ref"] == reply["stream_ref"]
+    assert result["evidence_provenance"]["stream_ref"]["attempt"] == selected_attempt
+    assert result["evidence_provenance"]["native_ref"]["attempt"] == selected_attempt
+    assert result["current_attempt_evidence"] == {"native_ref": "established", "stream_ref": "established"}
     assert store.bytes(result["stream_ref"], job["id"]) == raw
     if missing_staging:
         assert result.get("projection") != "ready"
