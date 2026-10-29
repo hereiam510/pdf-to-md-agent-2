@@ -1,5 +1,9 @@
 # Product delivery phase plan
 
+## Recovery diagnostic correction selected (2026-10-29)
+
+The human selected one bounded repair for the [R13-D01/D02 findings](reviews/RUNTIME_REVIEW_2026-10.md#r13-diagnostic-follow-up-review-2026-10-29). [The target correction](design/ACCEPTED_EVIDENCE_RECOVERY.md#selected-d01-and-d02-diagnostic-correction-2026-10-29) owns current-request precedence, retained historical summaries, consistent usage/evidence/operation/version projection and the finite API/UI acceptance matrix. Complete local implementation and new-request/reopen verification in a new human-instructed conversation, then return to the selected complete-fourteen-page Nursing planning step. This synthesis turn updates records only; the repair remains unimplemented and no live-call authority follows. Preserve the validated acceptance/catalog/graph core; do not turn these presentation gaps into a general recovery rewrite or attach every deferred finding. Whole-database snapshot cost on the inherited compaction-poll path remains an unmeasured method tradeoff, revisited on material responsiveness/contention evidence.
+
 ## Selected sequence: conflict diagnosis and recovery, then Nursing
 
 Selected 2026-10-28 after review of `b36ad63`; [DECISIONS](DECISIONS.md#recovery-experience-before-nursing-validation--selected-2026-10-28) records the human's ordering and the later local implementation authority. Recovery is selected ahead of real Nursing validation. It does not reopen the completed R13 fix or turn every other finding into a delivery prerequisite.

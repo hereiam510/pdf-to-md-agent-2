@@ -8,6 +8,71 @@ The original synthesis turn authorized documentation only. The subsequent human 
 
 Source baseline at synthesis: `master`, `b36ad63736cb6b0e85b1a9718cc65539328d692e`, plus uncommitted discussion documents. Reconfirm the actual working tree at implementation start. Existing `review-code.txt`, `review-docs.txt`, `review-src.txt`, ignored evidence and real workspaces are not implementation inputs to overwrite. No old chat or external attachment is required to implement this document.
 
+## Selected D01 and D02 diagnostic correction (2026-10-29)
+
+**Selected target, not yet implemented.** After the review at `bdafe0f` (product/test source `4ed3d5b`), the human agreed to correct [R13-D01 and R13-D02](../reviews/RUNTIME_REVIEW_2026-10.md#r13-diagnostic-follow-up-review-2026-10-29) together and requested a new-conversation implementation prompt. This section owns the bounded correction semantics and acceptance. It qualifies the earlier local-acceptance statement: the core implementation and its historical evidence remain, but the two newly reproduced diagnostic gaps are open. The current synthesis turn changes documents only; it does not run code experiments, modify product code or start Nursing.
+
+### Purpose and implementation approach
+
+The diagnostic must explain the task's current request or local recovery boundary, retain access to prior resolutions, and show the same factual information after fresh inspection/reopen as immediately after resolution. Historical readiness must not replace a newer request's problem. Known usage must not become unknown because one API response shape omitted it.
+
+Separate **subject selection**, **fact projection** and **rendering**. Reuse the current read-only inspection, receipt validation and lineage proof. Select the current subject once from a consistent snapshot; assemble the common factual response for ordinary/conflicted/committed states with explicit verification scope; render that response without depending on facts retained in React from a previous inspection. A shared projection can have mode-specific fields and need not force every diagnostic into a single success shape. Exact helper/module/schema spelling is delegated. Do not duplicate the full evidence checker, hide the gap with UI-only defaults, or add special branches that leave competing fact sources.
+
+### D01 subject and readiness rules
+
+1. Determine the actual resumable graph position and its pending or derived request identity, including whether a request has actually been frozen there. Use committed resolution identity and graph lineage, not timestamps or catalog insertion order, to establish a relevant local recovery boundary.
+2. If the current request K has its own committed resolution, report that resolution's pending/ready/blocked projection with its exact identity. An unresolved/divergent projection remains visible and cannot be bypassed by presenting another request or a different ready resolution.
+3. If the current request K is newer than a prior resolved request R and has no resolution of its own, diagnose K. Missing `accepted:<K>` is a result about K, never a reason to substitute R. Unknown, rejected, prepared, compatible or incompatible K retain their actual status and supported diagnostic reason; neither this API nor its renderer authorizes recovery/retry outside existing rules.
+4. Immediately after R's proven projection, before any newer request exists, retain a useful local-ready view for R through fresh inspection/reopen. A graph-derived next identity without a frozen request is not itself a new request. Identify this boundary using the committed successor/lineage and absence of subsequent request progress, not merely absence of staging. Preserve the useful finish-this-local-recovery action for a pending committed projection.
+5. After later progress, task completion, or when no relevant current recovery boundary can be established, any prior resolution is explicitly historical. Do not claim the task is ready for Continue simply because R was once projected. Report missing graph, unavailable view or divergence honestly. Do not change existing Continue/replay/Stop behavior.
+6. Historical resolution information may appear as a clearly separated secondary summary/link, preserving discovery of previous work. It must not change the primary request/status/reasons/eligible action. A task with multiple resolutions must select by current identity and proven relationship, not `committed[-1]` alone. No new history dashboard or cross-task explorer is required.
+
+### D02 factual response and verification semantics
+
+Initial inspection and committed-resolution views must expose consistent applicable facts:
+
+| Fact | Source and meaning |
+| --- | --- |
+| Subject/job/request/attempt | The selected subject and its validated ownership; current and historical identities are explicit |
+| Original publication/status/usage/finish | Current-subject verified request/attempt facts, or the committed resolution's retained original request/attempt for its historical subject; missing known fields must not be invented |
+| Saved reply usage and staging/native/raw refs | The subject's verified saved acceptance projection and receipt-linked evidence; original unknown usage may coexist with known saved reply usage |
+| Operation details | Actual verified completed/not-started/unknown classification, original skip intent and candidate/result references, with historical-at-resolution qualification where applicable |
+| Current head and retained versions | Current task facts in the read-only snapshot, separately labeled from any head observed when the resolution was committed |
+| Resolution identity and projection | Validated committed receipt and current lineage result; ready/pending/blocked is not a new native acceptance or task-completion claim |
+| Verification scope | Distinguish checked now, verified at resolution, unknown and unavailable/inconsistent evidence; do not claim a fresh raw-stream audit when only historical verification was reused |
+
+Use existing receipt/evidence readers and full/raw access. Preserve separate original recorded usage and saved reply usage; do not copy one into the other's ledger. Zero is a known value. An absent/unavailable field because projection or evidence failed is not silently the same as an originally unknown fact. Missing/contradictory evidence produces an explicit partial/unavailable explanation and no unsafe action. Do not republish original acceptance or settle metadata while filling display fields.
+
+Native/raw/staging/resolution links must survive fresh inspect and reopen wherever the corresponding verified references exist. A known reference that cannot be read is reported as unavailable, not concealed by substituting another task's evidence. Raw byte access must still support the incomplete UTF-8 suffix. Current head/version display can reflect later manual edits without rewriting the historical receipt. Retained operation facts are not dispatch authorization.
+
+The UI must not rely on `{...oldDiagnosis, ...resolveResult}` to supply permanently missing facts. It may request a fresh authoritative diagnosis after resolution or consume a complete response from the mutation result. Preserve timeout-after-commit handling, duplicate resolution identity and pending-projection completion; a refresh failure must not masquerade as newly verified readiness. Any displayed stale facts need an explicit stale qualification, with action guards intact. Existing authenticated local endpoints and provider-credential-free inspection/resolution remain.
+
+### Acceptance matrix and evidence
+
+Use new isolated file-backed stores and scripted transport. Preserve all prior evidence. The review reproduction at `.local/recovery-review-2026-10-29-run1/reproduce.py` and `result.json` supplies the D01 trigger and one known-usage omission, not an exhaustive regression suite. Establish failing assertions on the pre-fix source, then verify the selected behavior. Cover both protocols and both published/staging-only states across meaningful rows rather than an unbounded Cartesian matrix.
+
+| Case | Required observation |
+| --- | --- |
+| R resolved, new K freezes and times out without staging | Primary request is K; actual unknown/missing-staging reason is visible; R appears only as history; no old-ready claim or new automatic request |
+| R resolved, new K has incompatible saved evidence | K remains primary, with the correct unsupported/eligible class under existing rules; no fallback to R |
+| Exact R immediately after projection and after process reopen, no newer request | Consistent useful ready view, stable resolution identity and working evidence links; no phantom new request from a derived key |
+| Committed R before graph projection, duplicate click, blocked lineage | Pending/finish-same-choice and blocked explanations remain correct; diagnosis writes nothing and cannot repair projection |
+| Later progress/completion and more than one historical resolution | Current subject remains current, historical summaries are labeled; repeated inspection neither rewinds state nor selects by insertion order alone |
+| Known original usage, originally unknown usage, known zero, saved usage distinct from original | Fresh API/UI results preserve those distinctions; no omission is silently rendered as original unknown |
+| Fresh inspection/reopen of resolved subject | Staging/native/raw/resolution links and applicable operation details remain; opening links returns the correct saved content/bytes |
+| Later manual head change and retained versions | Current head/versions reflect the present task; original resolution facts remain unchanged |
+| Missing evidence, busy/stale/read-only view failure | Truthful unavailable/partial result, no unsafe action, no false fresh-verification or ready claim |
+
+At least one real renderer/API reopen flow must assert displayed known/unknown usage and operate the native/raw links, and a renderer/API newer-request flow must assert the primary request/reason rather than only a ready label. Source-led preservation checks reuse isolated synthetic documents/images: saved/reopened explicit-version content and exported package remain consistent with their source/version; neither diagnostic inspection nor a locally completed resolution silently sends inference. A scripted separate Continue remains a control, not a claim of fresh autonomous conversion.
+
+Before/after checks cover original source/raw/native/staging/request/attempt/usage/time, operation effects, resolution receipts and graph state for read-only diagnosis. New diagnostics cannot mutate originals, create a recovery decision, project graph, reset counters or introduce writes through Store/Runtime initialization. Run focused API/UI and relevant complete recovery regressions, then broaden once for actual shared-code changes; do not repeat unchanged full suites for reassurance. Record actual source identities, pre-fix failures, new successes, limitations and any inherited evidence separately. Historical 849/81 passes do not close these cases.
+
+### Scope and completion
+
+Complete D01 and D02 as one diagnostic selection/projection correction. Refactor the bounded diagnostic presentation responsibility if helpful; do not redesign acceptance, A/B/C publication, model history, context policy, graph recovery, storage, tokenizer or route settings unless a demonstrated dependency requires a separately explained decision. The snapshot-copy/polling cost remains an unmeasured method concern, not a required performance project. R03 unknown effects, R07 general parser work, broader R02 changes and future Langfuse remain deferred under their existing triggers.
+
+Stop after the corrected user-facing diagnostics, local tests and source-led preservation checks are documented. Update effective API/execution guidance only with actual implemented behavior, then mark the two findings fixed with evidence. Proceed afterward only to a separately selected Nursing planning/execution step. This target does not authorize a real request, Nursing mutation or new supported recovery class.
+
 ## Outcome and bounded scope
 
 The user can understand a historical accepted-evidence conflict, preserve all useful work and complete an explicit local resolution when the evidence supports it. The task then supports inspection, explicit-version export, amendments and a separate Continue. The agent chooses the subsequent conversion methods and evidence autonomously. A diagnostic-only screen is a useful intermediate result, not completion of this increment.

@@ -18,6 +18,10 @@ The human agreed with the second review corrections and requested a complete tar
 
 ## Established rebuild decisions
 
+### D01 and D02 diagnostic correction selected (2026-10-29)
+
+The human agreed to repair the two reproduced diagnostic gaps together and requested documentation plus a self-contained implementation prompt for a new conversation. [The selected correction](design/ACCEPTED_EVIDENCE_RECOVERY.md#selected-d01-and-d02-diagnostic-correction-2026-10-29) owns current-versus-historical subject selection, a common factual projection, truthful known/unknown/unavailable and historical/current verification semantics, and the discriminating API/UI acceptance matrix. Preserve the immediate post-resolution ready view and pending-projection action while never substituting an older ready resolution for a newer request. Preserve usage/evidence/operation access after fresh inspection/reopen. This is a bounded diagnostic repair, not a new recovery class or acceptance/storage redesign. Current product remains unfixed; this turn only records the selected plan. Implementation starts only in the new human-instructed task; no live model or Nursing work follows local success.
+
 ### Local recovery implementation authority (2026-10-29)
 
 The human started implementation of the selected target in this repository, with isolated local scripted verification and scoped local Git checkpoints. No subagents, live provider calls, real-task changes, dependency installation/upgrades, original-repository changes, push, release, installation or Nursing continuation are authorized. A later steering instruction preserves that work and limits the diagnostic UI to understanding the current conflict, confirming retained work and choosing local recovery. Future Langfuse integration is under consideration only: no tracing dashboard, cross-task analysis, evaluation platform, telemetry framework or external data transmission is selected. Task/request/attempt/operation/resolution identities remain explicit domain facts for possible later integration.
