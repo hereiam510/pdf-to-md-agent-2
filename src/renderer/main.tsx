@@ -128,6 +128,8 @@ function App() {
   const choose = () => act(async () => { const file = await api('choosePdf'); if (file) setImportName(file.name) })
   const select = (id: string) => { if (id !== active) setActive(id) }
   const running = Boolean(job?.running)
+  const recoveryObservation = JSON.stringify([job?.status, running, job?.head, job?.cancel_requested, job?.attempts,
+    job?.requests?.map(request => [request.id, request.status, request.attempts])])
   const recoveryRequest = !running ? job?.compaction_recovery?.request : undefined
   const latestCapacity = job?.requests?.at(-1)?.capacity
   const latestRequest = job?.requests?.at(-1)
@@ -196,7 +198,7 @@ function App() {
             {running ? <button className="stop-button" disabled={job?.cancel_requested || busy} onClick={() => act(() => api('cancel', { job: active }))}><Icon name="stop" size={16} />{job?.cancel_requested ? 'Stopping…' : 'Stop'}</button> : <button className="primary" disabled={busy || !ready || Boolean(editing)} onClick={() => continueTask()}>{job?.attempts ? 'Continue' : 'Start conversion'}<Icon name="arrow" size={16} /></button>}
           </div>
           {recoveryRequest && <div className="agent-meta"><p className="hint">The interrupted context organization has no accepted reply. Resume permits one replacement for that request, then continues the task. It may repeat upstream work. Saved content and recorded usage stay intact.</p><button className="text-button accent" disabled={busy || !ready || Boolean(editing)} onClick={() => continueTask(recoveryRequest)}>Resume context organization</button></div>}
-          {job && <ConflictRecovery key={job.id} job={job.id} running={running} refresh={() => refresh.current()}
+          {job && <ConflictRecovery key={job.id} job={job.id} running={running} observation={recoveryObservation} refresh={() => refresh.current()}
             viewEvidence={(ref, raw) => { void act(async () => { setEvidence(await api('evidence', { job: active, ref, view: raw ? 'raw' : 'full' })); setTab('evidence') }) }} />}
           <div className="agent-meta"><span>{job?.attempts || 0} / {job?.limits.max_requests || defaultLimits.max_requests} model requests{latestCapacity ? ` · Estimated input ${latestCapacity.input_estimate.toLocaleString()} / ${(latestCapacity.capacity - latestCapacity.output_reserve).toLocaleString()}` : ''}</span><label className="check"><input type="checkbox" checked={scripts} onChange={e => setScripts(e.target.checked)} disabled={running} />Enable trusted task scripts</label></div>
           {job?.route && <div className="agent-meta"><span data-testid="effective-task-limits">Recorded active time {job.active_seconds.toFixed(1)} / {job.limits.max_active_seconds} s · New-request context {job.route.context_tokens.toLocaleString()} · Output reserve {job.route.output_tokens.toLocaleString()}</span><button className="text-button" disabled={running || busy} onClick={() => setSettingsJob(job)}>Task limits</button></div>}

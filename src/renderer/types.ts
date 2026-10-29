@@ -20,7 +20,7 @@ export type Job = {
   cancel_requested: boolean; stop_reason: string | null; content_claim: string;
   compaction_recovery?: { request: string } | null;
   versions?: { id: string; title: string; claim: string }[];
-  requests?: { id: string; kind: string; status: string; receive?: ReceiveObservation | null; capacity?: { input_estimate: number; capacity: number; output_reserve: number } }[];
+  requests?: { id: string; kind: string; status: string; attempts?: number; receive?: ReceiveObservation | null; capacity?: { input_estimate: number; capacity: number; output_reserve: number } }[];
   events?: { seq: number; type: string; data: Record<string, unknown>; created: number }[];
   evidence?: { ref: string; kind: string; bytes: number; meta: Record<string, unknown> }[]
 }
