@@ -1,5 +1,9 @@
 # Product delivery phase plan
 
+## Diagnostic attribution and reason follow-up selected (2026-10-29)
+
+Complete the [bounded follow-up](design/ACCEPTED_EVIDENCE_RECOVERY.md#selected-diagnostic-attribution-and-reason-follow-up-2026-10-29) for the [remaining R13-D02 attribution gap and P3 reason error](reviews/RUNTIME_REVIEW_2026-10.md#diagnostic-attribution-and-reason-review-at-de71cc1) before closing diagnostic work. Preserve D01 and the acceptance/catalog/graph core. The next human-started task should add explicit per-reference attempt provenance, predicate-specific reasons and discriminating mocked file-backed/API/UI checks; present synthesis is documentation only. Earlier local acceptance below retains its tested scope but does not close these new branches. Then return to separate full-fourteen-page Nursing planning, with no automatic live authority. This is a small diagnostic completion batch, not evidence of Nursing causation or a requirement to resolve every review item. Snapshot/polling cost, R03, broader R07/R02 and Langfuse retain their existing deferrals and revisit conditions.
+
 ## Recovery diagnostic correction locally complete (2026-10-29)
 
 The selected [R13-D01/D02 correction](design/ACCEPTED_EVIDENCE_RECOVERY.md#selected-d01-and-d02-diagnostic-correction-2026-10-29) is implemented and locally accepted at product/test checkpoint `4edca343fa8702a38c6710f975fd95a3d533627d`. Current-request precedence, exact immediate recovery boundary, complete factual projection, selected-attempt links and stale UI guards now pass the bounded matrix. CURRENT_STATE owns exact manifests, **110 focused Python**, **8 component** and **4 final actual Electron/API** passes, source/image/explicit-version/ZIP verification and limitations. New evidence is `.local/recovery-diagnostics-2026-10-29-run1/`; the prior synthesis and 849-case acceptance remain historical. The accepted evidence/catalog/graph core and recovery classes are preserved.
