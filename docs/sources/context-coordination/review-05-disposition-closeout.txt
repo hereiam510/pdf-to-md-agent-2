@@ -1,0 +1,98 @@
+### 1. 對最新評論的獨立核對與收斂結論
+
+我已逐點核對這份最新評論。它指出的**最後三處邊界漏洞完全成立**，且不需擴充任何框架或新資料表，只需把「候選本身的處置狀態（Candidate Disposition）」與「下一步的執行／投遞計畫（Continuation Plan）」徹底解耦即可完全收斂：
+
+| 評論指出的問題 | 原碼依據與為甚麼這項修正必要 | 納入草案後的精確規則 |
+| --- | --- | --- |
+| **1. 候選處置狀態必須先確定，不能由下一步是否可執行反過來決定（區分兩種 `capacity_blocked` 重開行為）** | 現行 `src/pdfmd/context_updates.py:83-94` 在發現 `not core["fits"]`（候選 `Q` 本身必要內容超過容量上限）時，會先測試舊政策 `A` 能否組裝正常或壓縮請求：若 `A` 也因容量不足拋出 `StopRun("capacity_blocked")`，程式直接跳進 `except StopRun: return self.wait(...)`，**沒有記錄「`Q` 已被判定為需要修改、失去自動准入資格」**！結果一旦使用者調高容量（例如調到連原本過大的 `Q` 都放得下）並按 Continue，系統重入 `resolve()` 時會誤把 `Q` 當成仍有自動准入資格的提案而**偷偷自動套用**（或者把「等待歷史整理」與「等待投遞拒絕／修改診斷」混為同一個 `capacity_blocked`）。 | **先定處置，再排執行**：<br>
+
+<br>• 當候選 `Q` 因結構錯誤、必要內容超限或最終 handoff 修正額度用盡而需要 agent 介入時，**立即在持久紀錄（settlement 或候選狀態）中固定其處置為「未准入／需修改（`auto_admit=False`）」**。<br>
+
+<br>• 隨後規劃投遞與續工：若此時連舊有效政策 `A` 都因容量或設定不足無法組裝請求，記錄等待觀察（標明 `pending_action="deliver_feedback_under_active_policy"`）。<br>
+
+<br>• **重開與容量修復後的分流**：當使用者調高容量按 Continue 時：<br>
+
+<br>  - 若當時是**「候選有效（`auto_admit=True`）、等待歷史整理或容量」：可重新評估候選 `Q` 的自動准入。<br>
+
+<br>  - 若當時是「候選已判定未准入／需修改（`auto_admit=False`）、僅回饋投遞受阻」**：容量修復後**絕不自動套用 `Q`**，而是以舊政策 `A` 發出包含該診斷回饋的正常請求（或先以 `A` 壓縮再發出正常請求），交由 agent 明確修改或以 `base="active"` 重建。 |
+| **2. 移除「多次整理仍未容納」的模糊字眼，並嚴格區分任務總預算與回應修正額度** | 核對 `src/pdfmd/context.py:618-640` 與 `src/pdfmd/runtime.py:74-81, 118-139, 167-175`：滾動壓縮本來就允許分多輪逐步縮減歷史（`test_context_retry.py:232` 即測試多輪漸進壓縮），只要每輪滿足 `after < before`（正向進展）且還有未涵蓋歷史，絕不能新增任意的「壓縮次數上限」。同時，總請求／時間配額（`max_requests`, `max_active_seconds`）與單一回合的自動回應修正上限（`max_response_repairs`）在原碼中是兩套不同帳本。 | **明確的滾動進展與預算規則**：<br>
+
+<br>• **繼續整理條件**：只要仍有可整理內容（未涵蓋歷史或可縮減 handoff）、每輪取得正向容量進展（`after < before`）且任務總預算允許，即繼續整理路徑，**不設任意壓縮次數門檻**。<br>
+
+<br>• **轉入需 agent 修改的明確條件**：僅當 ① 候選本身必要內容超出正常容量上限（`not core["fits"]`）、或 ② 本批修訂含結構無效操作、或 ③ 最後一段 handoff 因無法容納候選而觸發 `HandoffRejected` 且已耗盡該回合的 `compaction` 回應修正額度（`max_response_repairs`，而舊政策 `A` 本身無需該候選即可正常續工）時，才將候選轉為需 agent 修改。<br>
+
+<br>• **嚴格記帳**：走「舊政策 `A` ＋ 診斷回饋」發出的任何請求，均照常計入任務的 `attempts` 與 `active_seconds`，絕不重設已消耗預算或變相繞過 `max_response_repairs`。 |
+| **3. 四個分支對有效 `report`（`terminal=True`）必須一致允許結束任務** | 核對 `src/pdfmd/runtime.py:200-206` 與 `docs/CONTRACTS.md:194`：當同批次已有合法的 `report(state="complete" | "partial" |
+
+---
+
+### 2. 收斂後的《Context 協調與准入實作草案》（供最終拍板用）
+
+結合前序所有核對與上述三項補強，這項能力的主要責任與接續路徑已收斂為以下可直接作為實作與測試依據的草案（**目前仍為待您拍板的建議草案，未獲授權前不進行實作**）：
+
+#### 2.1 四項正交責任與單一權威邊界
+
+1. **工具批次內組合與結構驗證（`Runtime.tools`）**：
+* 依序對帳或執行已接受回應中的所有呼叫；半批取消（Stop）時保留已完成工具回條，未完成批次不視為完整 context 候選提交。
+* 支援明確指定基底 `base: Literal["pending", "active"] = "pending"`（預設疊加於當前待准入候選 `Q`，無 `Q` 則為有效政策 `A`；指定 `"active"` 則明確放棄未生效 `Q`、以有效政策 `A` 為基底重建）。
+* 同一完成批次內的所有 `context_update` 組合成單一候選修訂 `Q_batch`（1A，不對中間狀態 `X+Y` 檢查容量）。
+* 若同批任一 `context_update` 結構驗證失敗（2A）：整組本批 `context_update` 標記為 `invalid_revision`（不部分套用，亦不回滾同批 `edit_document` 等其他工具成果）。若先前存在跨回合待處理提案 `Q_prev`（或本批曾指定 `base="active"`），**保留 `Q_prev` 原始內容供查閱重用，但取消其自動准入資格（`auto_admit=False`）**。
+* `tools` 節點結束後統一路由至 `coordinate`。
+
+
+2. **候選處置先行、續工計畫分流的單一協調入口（`Runtime.coordinate` ＆ `ContextUpdates.resolve`）**：
+* **步驟一（重入恢復與新指示檢查）**：先由 `ContextUpdates.recover` 檢查槽位 `key = <job>:<seq>:<revision>` 是否已有已提交的 `context-settlement:<key>`；若有則直接還原其狀態變更，不重新計算。若未凍結且遇新指示（3B），將未提交候選記錄為 `superseded`（`auto_admit=False`，絕不偽造 `instruction_basis`）。
+* **步驟二（獨立確定候選處置狀態）**：對尚未結算的候選 `Q`，先依以下互斥條件確定其處置狀態（Disposition）並持久化：
+* **D1（`applied`）**：`Q` 具備自動准入資格（`auto_admit=True`），且在當前狀態與實際結果投影下通過完整正常請求准入（`fits` 且無額外非選取證據延後）→ 提交 `applied` settlement，`Q` 成為新有效政策 `A'`。
+* **D2（`eligible_waiting_compaction`）**：`Q` 具備自動准入資格（`auto_admit=True`），完整正常輸入暫放不下，但 `Q` 的不含歷史必要核心合規（`core["fits"] == True`）→ `Q` 保持有效與自動准入資格（`auto_admit=True`）。
+* **D3（`requires_agent_revision` / `rejected`）**：`Q` 因結構無效、自身必要核心超出當前正常容量上限（`core["fits"] == False`），或已失去自動准入資格 → **持久記錄 `Q` 為未准入／需修改（`auto_admit=False`），有效政策維持 `A` 不變**（即使稍後下一步投遞受阻，此 `auto_admit=False` 處置也已確立並保存，日後調高容量亦不會偷偷自動套用 `Q`）。
+
+
+* **步驟三（規劃下一步執行與投遞路徑，全部四分支一致尊重 `terminal`）**：
+
+
+
+| 候選處置狀態 | 同批有合法 `report`（`terminal=True`） | 同批無 `report`（`terminal=False`）時的下一步執行計畫 |
+| --- | --- | --- |
+| **D1：已提交 `applied`（新政策 `A'`）** | 保持 `agent_report` 狀態，直接轉 `END` | 轉 `prepare`，以新政策 `A'` 組裝並凍結正常請求。 |
+| **D2：保持 `auto_admit=True`（需整理歷史）** | 保存未生效 `Q` 與等待觀察，保持 `agent_report` 狀態，直接轉 `END`（不拋出容量錯誤、不發起壓縮） | 檢查實際 `compact_request`（保留舊政策 `A` 與契約允許的明確 `release` 投影）：<br>
+
+<br>• **若實際壓縮請求可組裝、有可壓縮內容且總預算允許**：記錄 `waiting("compaction")`，轉 `prepare` 執行壓縮（允許多輪正向進展 `after < before`，不設任意次數門檻）。<br>
+
+<br>• **若實際壓縮請求放不下、無進展或設定／預算不足**：記錄 `waiting("capacity_blocked" | "capacity_configuration" | "budget_exhausted", auto_admit=True)` 並停止；待外部條件修復後，因 `auto_admit=True` 可重新評估准入或壓縮。 |
+| **D3：已確立 `auto_admit=False`（未准入／需 agent 修改，有效政策仍為 `A`）** | 保存未准入處置與診斷，保持 `agent_report` 狀態，直接轉 `END`（不把已完成的 `report` 改判為容量失敗） | 嘗試以**有效政策 `A` ＋ 候選診斷回饋**繼續（照常計入任務總請求／時間預算，不重設修正額度）：<br>
+
+<br>• **若 `A`＋診斷可直接組裝正常請求**：轉 `prepare` 發送正常請求，讓 agent 讀取診斷並修改／以 `base="active"` 重建。<br>
+
+<br>• **若 `A`＋診斷因歷史過長放不下，但 `A` 的實際 `compact_request` 可執行**：先以 `A` 執行壓縮，壓縮後再發送 `A`＋診斷的正常請求。<br>
+
+<br>• **若連 `A` 的正常與壓縮請求皆無法執行**：記錄 `waiting("capacity_blocked" | ..., auto_admit=False)` 並停止；**待使用者調高容量按 Continue 後，因已記錄 `auto_admit=False`，系統不會自動套用 `Q`，而是走回「`A`＋診斷」請求交由 agent 修改**。 |
+
+3. **統一請求計畫與 R1 / R2 / R3 修復（`Context`）**：
+* **R1**：移除 `compact_request:517` 拿舊政策加正常輸入 `outcome_reserve` 的錯誤前置守衛，直接檢查實際組裝出的 `COMPACT` 請求本身是否 `fits`；不加入一般化暫態 `pin`/`notes` 縮減。
+* **R2**：`apply_handoff`、`resolve` 與 `prepare` 共用同一個目標狀態預覽建構器；在相同目標狀態快照與相同結果投影方式下，產出完全一致的估算。
+* **R3**：`compact_request:571` 的 `has_body_savings` 與 `admit_group:430` 共用正收益引用過濾（僅比較替換後實際縮小的引用，排除短參數負收益膨脹）。
+* **互斥結果投影**：組裝正常請求時，檢查**本次實際組裝出的訊息序列中，是否已在活躍歷史批次的 tool output 投影裡包含指定 settlement 的完整必要結果**（標明「此操作納入的候選修訂已提交」及 `settlement_ref`）。已包含則不重複附加尾端 outcome 訊息；未包含則附加；已凍結請求永不改寫。
+
+
+
+---
+
+### 3. 補充後的完整驗收條件（待您授權實作時採用）
+
+除原有的 R1/R2/R3、X→Y 中間超量、結構錯誤不部分套用、中斷重開與真實 Runtime 交付檢查外，明確納入以下三條關鍵狀態序列驗收：
+
+1. **`auto_admit=False` 跨越容量阻塞與修復的持久性驗證**：
+* 當候選 `Q` 因必要內容超限或結構問題被判定為需修改（`auto_admit=False`），且此時舊政策 `A` 也因容量下調而進入 `capacity_blocked`；驗證在使用者將 `context_tokens` 調高（甚至調高到足以容納 `Q`）並按 Continue 後，系統**不會自動套用 `Q**`，而是以舊政策 `A` 將未准入診斷送達 agent，由 agent 明確發出新更新後才生效。
+
+
+2. **多輪滾動壓縮正向進展 vs. 無進展／修正額度耗盡驗證**：
+* 驗證只要每輪壓縮維持 `after < before` 且預算充足，系統可連續完成多輪壓縮直至候選 `Q` 准入（無任意次數限制）；反之，當壓縮無進展或 `max_response_repairs` 耗盡時，正確停止或轉入對應處置，且走「`A`＋診斷」續工時嚴格累計 `attempts` 與 `active_seconds`，不重置任何額度。
+
+
+3. **同批次有效 `report` 在全部四個分支下的終止保護驗證**：
+* 驗證當同一批次包含 `[edit_document(成功), context_update(候選 Q), report(complete/partial/waiting)]` 時：若 `Q` 可本地准入（D1）則生效後以 `agent_report` 結束；若 `Q` 需壓縮（D2）、需修改（D3）或遇容量／設定不足（第④分支），均保留清楚的候選／等待紀錄並**正常以 `agent_report` 結束任務**，絕不因準備下一筆不會執行的請求而將任務改判為 `capacity_blocked`。
+
+
+
+目前所有主要責任與接續邊界均已收斂完畢。我會在此停下，等待您決定是否採納這份草案或指示下一步工作。

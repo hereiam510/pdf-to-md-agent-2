@@ -4,6 +4,6 @@
 .gitignore text eol=lf
 .gitattributes text eol=lf
 # Preserve copied event/attachment bytes and local source hashes on every OS.
-docs/reference/sources/** -text
-docs/reference/context-coordination-sources/** -text whitespace=cr-at-eol
-docs/reference/context-coordination-sources/*.txt -whitespace
+docs/sources/rebuild/** -text
+docs/sources/context-coordination/** -text whitespace=cr-at-eol
+docs/sources/context-coordination/*.txt -whitespace

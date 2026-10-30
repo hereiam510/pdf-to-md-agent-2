@@ -1,6 +1,6 @@
 # Product requirements
 
-Status: rebuild requirements, not implemented behavior. Recorded 2026-10-22, Asia/Hong_Kong. Sources: inherited product intent in EVT-0001, context agreements beginning EVT-0130, the final scope consolidation EVT-1148/1166, and the later repository-scoping decisions in [the source index](reference/SOURCE_INDEX.md).
+Status: rebuild requirements, not implemented behavior. Recorded 2026-10-22, Asia/Hong_Kong. Sources: inherited product intent in EVT-0001, context agreements beginning EVT-0130, the final scope consolidation EVT-1148/1166, and the later repository-scoping decisions in [the source index](sources/INDEX.md).
 
 ## Outcome and product surface
 
@@ -44,7 +44,7 @@ Use English HTML comments for Markdown page markers. Account for every physical 
 
 Grouped ranges/lists must not imply that unused intervening pages contributed. Hidden Markdown comments and structured page metadata must agree. Free-text notes remain source-supported.
 
-These retained [syntax examples](reference/sources/support/SUP-01.txt) illustrate English page comments. They do not define an exclusive grammar or finalize the Q1 serializer contract.
+These retained [syntax examples](sources/rebuild/support/SUP-01.txt) illustrate English page comments. They do not define an exclusive grammar or finalize the Q1 serializer contract.
 
 ```html
 <!-- PDF page: 1 | printed page: none | note: cover spread -->
@@ -80,7 +80,7 @@ Check the complete declared scope against the source, including relationships, p
 
 Examples and AI-produced reference Markdown are useful reading examples, not certified answers, a quality ceiling or a prescribed workflow. Source PDFs govern. A formal converter must not receive the matching-range answer, developer transcription or another comparison arm's output. Reviewers may use examples. Previously OCR-processed source files do not establish that the app performed the preprocessing.
 
-The [historical reference-input notes](reference/REFERENCE_INPUTS.md) identify the five packages and their known limits. They explain lossy or edited example images, prior OCR, source-spelling corrections and unverified coverage claims. These records create no mandatory benchmark set.
+The [historical reference-input notes](sources/REFERENCE_INPUTS.md) identify the five packages and their known limits. They explain lossy or edited example images, prior OCR, source-spelling corrections and unverified coverage claims. These records create no mandatory benchmark set.
 
 Availability, invocation, execution, actual model input consumption, natural adoption, source quality and net benefit are distinct. Prescribed mechanism exercises do not establish natural adoption. Non-use alone establishes neither no need nor misunderstanding.
 

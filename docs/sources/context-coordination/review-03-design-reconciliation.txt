@@ -1,0 +1,257 @@
+### 1. 本輪審查範圍、主要問題與判斷依據
+
+本輪遵循 `source/AGENTS.md`，從 `README.md`、`docs/CURRENT_STATE.md`、`docs/PHASE_PLAN.md`、`docs/CONTRACTS.md`、`docs/ARCHITECTURE.md` 與 `a484b9b2abf147d63d8bdecd2143430409fe9a53` 的實際原碼及保留證據出發，對目前應用程式進行 **review-only** 審查，並同時針對您提供的最新綜合審查評論（下稱「最新 reviewer 評論」）進行獨立核對與評析。
+
+* **審查範圍與方法**：
+* 核對 `src/pdfmd/context.py`、`src/pdfmd/context_updates.py`、`src/pdfmd/context_outcomes.py`、`src/pdfmd/runtime.py`、`src/pdfmd/nexus.py`、`src/pdfmd/tools.py`、`src/pdfmd/documents.py`、`src/pdfmd/evidence.py`、`src/pdfmd/storage.py` 及 `tests/` 與 `evidence/` 內的實測產物。
+* 在隔離暫存環境中針對最新 reviewer 評論所質疑的每個邊界（暫態縮減視圖的必要性、投影訊息大小計算、結算中斷恢復、基底重置語義）與原碼逐行比對。
+* 未修改任何受維護程式、文件或設定，未建立 commit，亦未進行任何外部或 Nexus 呼叫。
+
+
+
+### 2. 對「最新 reviewer 評論」的逐項獨立核對與評析
+
+這份最新 reviewer 評論非常敏銳且切中要害。它指出了我上一輪報告中的**四處過度簡化或不嚴謹之處**（我完全接受並修正），但它在否定「暫態採用較短 pin／notes」時，也**漏掉了一個可由原碼數學公式直接證明的死鎖邊界**。逐項核對如下：
+
+| 最新 reviewer 主張 | 獨立核對結論 | 原碼依據與技術分析 |
+| --- | --- | --- |
+| **1. R1 / R2 / R3 描述成立，但需區分既有保留證據與新執行聲明** | **完全同意** | `evidence/capacity-rereview/findings.json`、`guard-control.json`、`savings.json` 與 `evidence/capability-review/adjacent-results.json` 本身已足以獨立證明 R1、R2、R3 與 8 個鄰近情境。不需依賴額外口頭宣稱即可確立這三項缺陷。 |
+| **2. 反對在 `compaction_state` 加入一般化的「暫態採用較短 pin／notes」，認為只修 `compact_request:517` 即可** | **部分同意（固定容量下成立；但容量下調時存在真實盲點，見下方詳析）** | **Reviewer 說對的一半**：1) 在容量未變動時，`guard-control.json` 已證明保留完整舊政策即可完成壓縮；2) 若提案是 `[Call A: 縮短 notes 並引用圖 Y, Call B: pin 圖 Y]`，若壓縮時只偷用較短的 `notes` 卻沒給圖 `Y`，確實會拆散語義依賴！<br>
+
+<br>**Reviewer 漏掉的盲點**：若使用者在任務暫停時調低了 `context_tokens`（或舊 `full` pin / `notes` 加上壓縮最小歷史 chunk 剛好超過壓縮容量上限），而 agent 提出無新增依賴的純縮減提案（例如單純把 10.5KB `full` pin 降級為 `index`，或把 `notes` 清空 `""`），此時若堅持連 `index` 都不准在壓縮視圖中替換舊 `full` pin，則：1) `resolve()` 因 `core["fits"]`（提案核心）為 `True` 而拒絕走第 84 行的 `reject` 分支；2) 第 98 行呼叫 `compact_request()` 卻因舊 10.5KB `full` pin 塞爆壓縮請求而拋出 `StopRun("capacity_blocked")`；3) **任務永久卡死在 `capacity_blocked`，既不能壓縮，也不會拒絕提案讓 agent 重選**！這證明：可以禁止一般化的「偷換較短 `notes`」，但必須處理「舊政策連壓縮都放不下、而純縮減提案等待壓縮」的死鎖邊界。 |
+| **3. 「無壓力已生效、有壓力未生效」不是邏輯矛盾，且絕不應把舊提案的 `instruction_basis` 改寫成新指示** | **完全同意（修正我前輪的「雙軌矛盾」用詞與 3A 建議）** | Reviewer 此處非常精確：1) `operation.status="done"` 代表工具已執行並保存提案，與「政策已正式提交生效」是兩個層次，承受不同新指示規則在邏輯上自洽，真正的問題是「由當下容量壓力決定工具完成了哪一種承諾」會增加理解與恢復成本；2) **嚴禁改寫舊提案的 `instruction_basis**`——若將未提交提案偽造為符合新指示，等於繞過模型在新指示下的重新決策。因此**選項 3B（未提交提案遇新指示一律 `superseded`）是唯一正確的設計**。 |
+| **4. 同批直接投影最終結果可行，但必須滿足三個條件：(a) 標明是整組修訂已提交而非中間步驟獨立生效；(b) 依實際請求是否已包含該 tool output 決定是否省掉尾端通知；(c) 省掉尾端訊息不等於零開銷，且 R2 預覽必須估算實際投影方式** | **完全同意（這是極關鍵的工程修正）** | 核對 `src/pdfmd/context.py:390-391, 469-471` 與 `549-584`：1) 若同批 `Call 0` 寫 `notes="A"`、`Call 1` 寫 `notes="B"`，`Call 0` 的投影絕不能寫成「`notes="A"` 已生效」，而應呈現「已併入候選修訂 `<rev_ref>` 並以最終修訂結算（`settlement_ref`）」；2) 若某批次剛結算完，但緊接著因為歷史仍然過大（或使用者調低容量）先進入了 `compact_request` 並把該批次壓縮進 `handoff` 歸檔，則下一次正常請求中**已不再包含該批次的 `ToolMessage` / `function_call_output**`！若提前清除了待投遞標記，模型將永遠收不到結算結果。因此必須在 `normal()` 組裝時檢查「該結算對應的原始工具回條是否仍在本次活躍 `history` 的投影中」，在其中才免除尾端 user 訊息，否則仍須附加尾端 outcome 訊息；3) `ContextUpdates.resolve` 與 `Context.apply_handoff` 的准入預覽，必須與 `normal()` 的實際投遞判定共用同一個建構器，不能硬編碼 251-byte 模板。 |
+| **5. 在 `tools` 尾端准入只是呼叫位置，不等於完整恢復設計；仍傾向 `tools` 保存完整批次結果與候選 → `coordinate` 唯一協調服務 → `END` 或 `prepare**` | **完全同意** | 核對 `src/pdfmd/runtime.py:58-64, 66-89, 154-207`：在 LangGraph 中，`tools` 與 `coordinate` 是兩個獨立 checkpoint 邊界。若把寫入 `context_settlement` 塞進 `tools` 函式末尾，一旦寫完 `context_settlement` 但 `tools` 尚未返回寫入 graph checkpoint 就崩潰，重入時 `tools` 會重跑，必須額外在 `tools` 內實作 settlement 恢復。反之，讓 `tools` 只負責「完成所有已接受呼叫（含 `skip`）、產生確定性的批次候選引用 `context_waiting`」，再由 `tools` 統一路由至 `coordinate`（`coordinate` 結算完後，若 `state["terminal"]` 為真則直接轉 `END`，否則轉 `prepare`），就能**100% 複用 `coordinate` 單一節點的 checkpoint 邊界與 `ContextUpdates` 唯一協調服務**！ |
+| **6. `reset` / `base` 選擇有價值，但應避免 `base="current"` 模糊命名，且必須釐清同批重設、新修訂失敗後舊 `Q` 不自動復活、以及容量超限的三種分類** | **完全同意** | 1) 命名應明確用 `base="active"`（以目前有效政策 `A` 為起點）與 `base="pending"`（預設，以目前待處理候選 `Q` 為起點，若無 `Q` 則為 `A`），不採用模糊的 `"current"`；2) 若新修訂因結構錯誤失敗，或 agent 已明確指定 `base="active"` 放棄舊 `Q`，舊 `Q` 的不可變 blob 雖保留供 `read_evidence` 查閱，但**不能自動當作後備方案提交生效**；3) 最終候選容量超限必須明確區分為三類：**① 歷史可整理**（候選核心 `core["fits"]` 為真，轉 `compaction`）、**② 候選本身過大需 agent 修改**（`core["fits"]` 為假，拒絕或要求修改，保留 `A`）、**③ 外部設定／路由不足**（如未設定 `image_tokens` 或連 `A` 都無法組裝任何請求，進入 `capacity_configuration` / `capacity_blocked` 等待）。 |
+
+### 3. 按優先順序排列的審查發現（依產品影響與證據強度排序）
+
+#### 第一優先：現有缺陷與造成缺陷的架構／狀態問題
+
+##### 發現 1 
+
+$$P1・已重現缺陷$$
+
+：`Context.compact_request` 入口誤用含 `outcome_reserve` 的正常輸入門檻，阻斷歷史壓力下的縮減型更新（R1）
+
+* **具體依據**：`src/pdfmd/context.py:477-481`、`517-520`；`src/pdfmd/context_updates.py:83-100`；證據：`evidence/capacity-rereview/reproduce.py`、`guard-control.py`、`findings.json`、`guard-control.json`。
+* **觸發條件與失敗機制**：
+* 當活動政策 `A` 的正常核心估算 `old_core` 落在 `[allowance - 312, allowance]` 區間時，原本正常請求合規（`fits=True`）。
+* 同批讀入新證據並呼叫 `context_update` 將 10.5KB `full` pin 降級為 `index`/`range` 或縮短 10.5KB `notes` 時，`preflight` 因歷史超量將其存為 `context_waiting`。
+* 進入 `coordinate` -> `resolve()` -> `compact_request()` 時，第 517 行呼叫 `self.normal(job, {**state, "history": [], "handoff": None})`。由於 `state["context_waiting"]` 非空，`normal()` 自動加上 312 units 的未來正常續工預留 `outcome_reserve`，導致 `old_core + 312 > allowance`，在壓縮請求還沒開始組裝前就拋出 `StopRun("capacity_blocked")`。
+
+
+* **使用者影響**：Agent 主動縮小 pin 視圖或精簡筆記以緩解容量壓力時，任務反而直接卡死停機，要求人工介入調整容量。
+* **根因判斷與未知部分**：
+* **根因**：將「未來正常續工輸入的核心檢查（含 `SYSTEM`、工具 schema、圖片像素與 `outcome_reserve`）」錯誤放在「組裝 `COMPACT` 壓縮請求」的入口，且疊加了不屬於壓縮請求的 `outcome_reserve`。
+* **邊界風險（原碼推導支持）**：在固定容量下，移除第 517 行的錯誤 `outcome_reserve` 守衛、保留完整舊政策即可完成壓縮（已由 `guard-control.json` 證實）。但若使用者在暫停時調低了 `context_tokens`，使舊政策的 10.5KB `full` pin 連實際 `COMPACT` 請求都放不下，而待處理提案已將該 `full` pin 改為 `index`，此時不借用暫態縮減視圖就會停在 `capacity_blocked`。
+
+
+* **建議改善方向與驗證方式**：
+* **改善方向**：`compact_request` 只檢查實際組裝出的 `COMPACT` 請求本身是否 `fits`（以及是否有可壓縮的區塊與進度），不再於第 517 行用舊政策加 `outcome_reserve` 跑 `normal()` 空殼守衛；候選政策能否進入正常請求，由 `resolve()` 針對**候選政策 `Q**` 檢查。不加入一般化的「暫態採用較短 `notes`／`pin`」，以避免拆散語義依賴；若舊政策因使用者調低容量而連 `COMPACT` 都放不下，則誠實回報 `capacity_blocked` 等待設定調整。
+* **驗證方式**：雙協定測試驗證 `full`→`index`、`full`→`range`、縮短 `notes` 在固定容量下保留完整舊政策完成壓縮並正式生效；以及當實際 `COMPACT` 請求真的放不下時明確停在 `capacity_blocked`。
+
+
+
+##### 發現 2 
+
+$$P2・已重現缺陷$$
+
+：`Context.apply_handoff` 驗收最後一段 handoff 時使用未知 `reserved_outcome` 而非實際結算投影，造成 60-byte 誤拒（R2）
+
+* **具體依據**：`src/pdfmd/context.py:625-640`、`src/pdfmd/context_outcomes.py:10-14`、`src/pdfmd/context_updates.py:74-82`；證據：`evidence/capacity-rereview/findings.json`（finding `2a`）。
+* **觸發條件與失敗機制**：最後一段歷史壓縮完成時，`apply_handoff` 第 631 行在未清除 `context_waiting` 且未指定實際結算回饋下呼叫 `admission()`，觸發 311 bytes 的 `reserved_outcome("superseded", ..., "x"*64)`，比下一步 `resolve()` 的實際 `applied` 結果（251 bytes）多出 60 bytes，導致落在該 60-byte 區間內的合法 handoff 被拋出 `HandoffRejected`。
+* **使用者影響**：觸發無謂的壓縮重試並消耗 `max_response_repairs` 與請求配額。
+* **根因判斷**：各決策點未共用同一個「目標狀態續工計畫」建構器。
+* **建議改善方向與驗證方式**：
+* **改善方向**：建立共用的目標續工預覽方法——當評估候選 `Q` 在某個 `handoff` 下能否准入生效時，`apply_handoff` 與 `resolve` 必須建構完全相同的目標狀態（包含該次結算實際會採用的結果呈現方式：若原始批次仍在活躍歷史中則投影於 tool output，若已被壓縮涵蓋則附加尾端 outcome 訊息）。
+* **驗證方式**：雙協定單元測試驗證最後一段 handoff 在 `apply_handoff` 中的估算值與下一步 `resolve` 及 `prepare` 的正常輸入估算值完全相等（0-byte 誤差）。
+
+
+
+##### 發現 3 
+
+$$P2・已重現缺陷$$
+
+：`Context.compact_request` 的 `has_body_savings` 未排除負收益短參數替換，導致過度涵蓋與不必要延後（R3）
+
+* **具體依據**：`src/pdfmd/context.py:570-572`（對照第 430 行 `admit_group`）；證據：`evidence/capacity-rereview/savings.py`、`savings.json`。
+* **觸發條件與失敗機制**：第 571 行 `receipts = self.group(job, request_id, state, deferred=self.batch_refs(job, request_id))` 將短參數（約 25–45B）也換成約 124B 的歸檔引用（膨脹 +176B），掩蓋了延後 600B 結果的 113B 正空間節省，使 `has_body_savings` 誤判為 `False`，進而把下一個可獨立保留的批次也拉進壓縮並延後其中一筆 22KB 證據。
+* **使用者影響**：不必要地隱藏模型剛讀入的證據，增加後續重讀請求。
+* **建議改善方向與驗證方式**：
+* **改善方向**：`compact_request` 計算某批次在正常輸入中是否仍有可壓縮本體空間時，僅將「替換為引用後確實降低該批次編碼長度」的引用納入比較，與 `admit_group` 的正收益原則統一。
+* **驗證方式**：重跑 `savings.py` 場景，確認前綴正確識別 113 units 正收益、僅涵蓋 `mixed` 批次，且 `tail` 批次的兩筆 22KB 證據保持完整未延後。
+
+
+
+##### 發現 4 
+
+$$P2・原碼支持的架構／契約風險$$
+
+：逐筆 `preflight` 准入與雙軌生效路徑造成中間超量誤拒、語義依賴撕裂及權威分散
+
+* **具體依據**：`src/pdfmd/context.py:149-203`、`src/pdfmd/runtime.py:62, 154-207`、`src/pdfmd/context_updates.py:28-103`。
+* **觸發條件與機制**：
+1. **中間超量誤拒**：同批次分兩筆呼叫 `[pin(Y), release(X)]` 時，第一筆在 `preflight` 因中間狀態 `X+Y` 超量而被 `context_rejected` 拒絕。
+2. **語義依賴撕裂**：同批次 `[Call A: 改 notes 指向圖 Y, Call B: pin 圖 Y 失敗（結構錯誤或超量）]` 時，現行程式自動保留 `Call A`、跳過 `Call B`，導致筆記與實際綁定脫節。
+3. **雙重正式生效權威與 placeholder 猜測**：`preflight` 在本批後續工具尚未執行時用 `unsettled_operations` placeholder 決定是否給出具有持久效力的 `context_intent`（由 `Runtime.tools:191` 恢復），而延後提案又由 `coordinate` 的 `context-settlement` 恢復，形成兩套提交與恢復機制。
+
+
+* **建議改善方向與驗證方式**：
+* **改善方向**：採納「以完整批次候選修訂為原子提交單位 ＋ `tools -> coordinate -> END / prepare` 單一結算入口」（詳見第 4 節具體架構設計）。
+* **驗證方式**：雙協定測試覆蓋 `[pin(Y), release(X)]` 中間超量最終合規、`[notes(Y), pin(Y)無效]` 整組不生效、同批含 `report` 結算後終止、以及 `tools` 與 `coordinate` 間隙中斷重開。
+
+
+
+#### 第二優先：可靠自主轉換所需的能力缺口
+
+##### 缺口 1 
+
+$$P2・原碼支持的續工缺口$$
+
+：Agent 缺乏明確放棄／重置待處理候選（從有效政策 `A` 重新開始）的工具契約與修改閉環
+
+* **具體依據**：`src/pdfmd/tools.py:42-45`、`src/pdfmd/context.py:150-151`、`src/pdfmd/context_updates.py:83-103`。
+* **問題與影響**：
+1. 當 `context_waiting` 存在時，`context.py:151` 強制將新呼叫疊加在 `waiting["policy"]` 上。若待處理候選 `Q` 因包含過多項目而無法通過准入，或 agent 想放棄 `Q` 直接基於目前有效政策 `A` 重建，目前工具沒有明確的 `base` 選擇。
+2. 若 `Q` 的核心 `core["fits"]` 已經不合規（例如 `Q` 本身要求的 pins 超過正常容量上限，無法靠壓縮歷史解決），系統在 `A` 可行的前提下將 `Q` 標為 `rejected`（或需要修改），必須確保下一輪請求能以有效政策 `A` 加上清楚的拒絕／待修改診斷送達 agent（若 `A` 當時因歷史過長放不下，則先以 `A` 執行壓縮，壓縮後再將拒絕診斷送達 agent），形成完整的自主修正閉環。
+
+
+* **建議改善方向與驗證方式**：
+* **改善方向**：在 `context_update` 工具 schema 中新增明確的 `base: Literal["pending", "active"] = "pending"` 參數（避免模糊的 `"current"`）：
+* `base="pending"`（預設）：在目前待處理候選 `Q`（若無 `Q` 則為有效政策 `A`）之上順序組合。
+* `base="active"`：明確放棄尚未生效的待處理候選 `Q`，直接以目前有效政策 `A` 為基底建構新候選。若同批次後續呼叫再次指定 `base="active"`，則重新以 `A` 重置本批工作候選。
+* **失敗不復活規則**：若某次新修訂因結構無效或容量超限失敗，且 agent 在該修訂中已明確指定 `base="active"` 放棄舊 `Q`，舊 `Q` 應標記為已被撤回／取代，不得因新修訂失敗而偷偷復活自動生效（若未指定 `base="active"` 而是跨回合新增修訂失敗，也應明確告知 `Q_prev` 的狀態，不暗中提交未預期組合）。
+
+
+* **驗證方式**：腳本化 Runtime 測試驗證：當 `Q` 無法准入時，系統透過正常或壓縮路徑將回饋送達 agent，agent 使用 `context_update(base="active", ...)` 成功放棄舊 `Q` 並提交新政策生效。
+
+
+
+##### 缺口 2 
+
+$$P2・原碼支持的跨階段缺口，記錄供 Stage B/C 決策$$
+
+：受控唯讀子程序（`ocr_page`、`preview_document`）中斷後陷入 `local_outcome_unknown`
+
+* **具體依據**：`src/pdfmd/tools.py:94-97, 114-115, 204-211`、`docs/PHASE_PLAN.md:88-98`。
+* **說明**：此項屬於 Stage C 範疇，不納入本輪 Stage A context 批次擴張；但因 `ocr_page` 與 `preview_document` 僅寫入隔離的 `processes/<sha256(op)>/` 目錄，無外部未知副作用，在進入 Stage B 測試掃描版 PDF 前，需留意若 OCR 逾時或按 Stop 會觸發 `local_outcome_unknown`。
+
+#### 第三優先：有實際價值的新功能與改善機會
+
+##### 改善機會 1：在 `Context.group` 與 `ContextUpdates` 實作「感知歷史覆蓋的結算結果投影（Coverage-Aware Settlement Projection）」
+
+* **解決甚麼具體問題**：同時滿足「單一 `coordinate` 結算權威」「原始工具回條 `result:<op>` 永不改寫」以及「常規無壓力更新不必多塞一則尾端 `Deferred context update outcome` user 訊息」，並修正我上一輪報告忽略的「批次已被壓縮覆蓋時 tool output 不在請求中」的漏洞。
+* **現有能力為何不足**：現行 `Context.normal`（`context.py:469-471`）只要 `state.get("context_feedback")` 非空，就無條件附加尾端 user 訊息；而 `control_result`（`context_outcomes.py:17-34`）只看靜態 `result:<op>` 內容，不知道該提案後來在 `coordinate` 已經結算。
+* **具體機制設計**：
+1. **原始回條保存驗證事實**：在 `Runtime.tools` 中，每筆 `context_update` 的 `result:<op>` 不可變 blob 記錄該筆驗證結果與所屬批次候選 ID（例如 `candidate_revision: "<batch_key>"`），不宣稱已生效。
+2. **單一結算紀錄**：在 `coordinate` 中，`ContextUpdates` 對批次候選寫入唯一的 `context-settlement:<key>` blob（記錄 `proposal_ref`、`source_request: "<batch_key>"`、`status: "applied" | "rejected" | "superseded"`、`changes`）。
+3. **感知覆蓋的投影（Coverage-Aware Projection）**：
+* 當 `Context.normal()` 組裝請求時，檢查目前的 `context_feedback`（指向最新的 `context-settlement:<key>`）：
+* **情況 A（`source_request` 仍在當前活躍 `state["history"]` 中，尚未被壓縮進 `handoff`）**：`Context.group()` 在渲染該批次的 `context_update` tool output 時，透過 `control_result` 直接將該 `context-settlement:<key>` 的最終狀態投影進 tool output 中，並明確標示：
+`{"admission": {"status": "applied", "applied": True, "scope": "batch_candidate_revision", "settlement_ref": "context-settlement:..."}, "full_result_ref": "result:<op>"}`（清楚表達是**該操作所納入的整組批次修訂已提交**，而非單筆中間政策曾獨立生效）。同時，因為結果已包含在本次請求的活躍 tool output 中，`normal()` **不再重複於尾端附加 `"Deferred context update outcome"` user 訊息**！
+* **情況 B（`source_request` 已被壓縮進 `handoff`，不再位於 `state["history"]` 中，或該結算是在跨越壓縮／等待後才發生）**：此時原 tool output 已不在正常請求訊息列中，`normal()` 便在尾端附加 `"Deferred context update outcome"` user 訊息，確保結算結果 100% 送達模型！
+* **清除時機**：不因「預計會投影」就提前清除 `context_feedback` 指針；與現行規則一致，保留至下一個工具批次實際結算時才更新，確保任何重試或壓縮都不會遺失通知依據。
+
+
+
+
+* **如何驗證改善是否成立**：
+1. 測試同批兩筆 `context_update`（先寫 `notes="A"` 再改 `notes="B"`）在無壓力下通過 `coordinate` 結算後，下一輪正常請求的 tool output 投影明確顯示整組修訂已提交（指向同一 `settlement_ref`），且尾端無重複的 `"Deferred context update outcome"` user 訊息。
+2. 測試當包含 `context_update` 的批次在壓縮後才完成結算（該批次已不在 `state["history"]` 中）時，下一輪正常請求尾端確實包含 `"Deferred context update outcome"` user 訊息，且 `apply_handoff` 與 `resolve` 的容量預覽均精確估算該實際呈現方式。
+
+
+
+### 4. 架構實質檢視：修正後的「批次候選修訂 ＋ 單一 `coordinate` 結算」設計
+
+綜合最新 reviewer 的指正，將架構責任與恢復邊界修正如下：
+
+| 階段／節點 | 修正後的精確職責與持久邊界 | 解決的爭點與缺陷 |
+| --- | --- | --- |
+| **1. `Runtime.tools`（工具執行與候選組裝）** | • 依序對帳或執行已接受回應中的每個 tool call（處理已完成恢復、未開始 `skip`、新執行）。<br>
+
+<br>• 對每筆 `context_update` 執行語法／引用／範圍驗證（`Context.policy` + `pin_view`）並寫入不可變 `result:<op>`。<br>
+
+<br>• **完整批次候選修訂（1A + 2A + 3B）**：<br>
+
+<br>  - 只有當整個 accepted tool batch 全部處理完畢（無中途 Stop 未完成呼叫）且沒有被新指示取代時，才構成完整批次。<br>
+
+<br>  - 若本批任一筆 `context_update` 結構驗證失敗，**本批所有 `context_update` 整組標記為修訂無效（2A）**，不改變既有有效政策 `A` 或上一輪合法待處理提案 `Q_prev`（若本批曾指定 `base="active"` 則舊 `Q_prev` 一併撤回，不復活）。<br>
+
+<br>  - 若本批所有 `context_update` 結構合法，合成單一批次候選 `Q_batch`（不對中間狀態 `X+Y` 檢查容量），將 `context_waiting` 指向最後一筆代表整組候選的回條，返回 graph state。<br>
+
+<br>• **路由統一**：`tools` 結束後**一律路由至 `coordinate**`（移除 `tools -> END` 的直接旁路）。 | • 解決 `[pin(Y), release(X)]` 中間超量誤拒。<br>
+
+<br>• 解決 `[notes(Y), pin(Y)無效]` 自動部分套用。<br>
+
+<br>• 避免半批 Stop 把未完成批次當成完整候選提交。<br>
+
+<br>• 移除 `unsettled_operations` placeholder 猜測。 |
+| **2. `Runtime.coordinate` ＆ `ContextUpdates.resolve`（唯一結算與恢復權威）** | • **重入恢復優先**：先執行 `ContextUpdates.recover(job, state, key)`。以槽位鍵 `key = <job>:<seq>:<revision>` 及 `basis` 檢查是否已有提交的 `context-settlement:<key>`；若有則直接恢復其 `changes` 與單一事件，絕不重新准入。<br>
+
+<br>• **新指示檢查（3B）**：若未凍結且 `proposal["instruction_basis"] != instruction_basis(job)`，提交 `status="superseded"` 的 settlement。<br>
+
+<br>• **完整輸入准入**：以共用請求計畫建構器（反映實際呈現方式：活躍批次內 tool output 投影 vs. 壓縮後尾端訊息）檢查 `admission(job, state, policy)`：<br>
+
+<br>  - 若 `fits` 且無額外非選取延後：提交 `status="applied"` 的 `context-settlement:<key>`，正式更新政策 `A`。<br>
+
+<br>  - 若完整輸入不 fit，檢查候選核心 `core["fits"]`：<br>
+
+<br>    * 若 `core["fits"]` 為真：歷史壓力所致，記錄 `waiting("compaction")`。<br>
+
+<br>    * 若 `core["fits"]` 為假（候選本身過大）：檢查舊有效政策 `A` 能否組裝正常或壓縮請求以投遞拒絕回饋；若可則提交 `status="rejected"`（保留 `A`，讓 agent 修改）；若連 `A` 都無法組裝則記錄 `waiting("capacity_blocked")`。<br>
+
+<br>• **終止分流**：`coordinate` checkpoint 完成後，若 `state["terminal"]` 為真（本批有合法的 `report`），**直接路由至 `END**`（不因為還有 `context_waiting` 需要壓縮而強迫多發模型請求）；否則路由至 `prepare`。 | • 確立 `context-settlement:<key>` 為正式政策轉換的**唯一持久權威**（移除 `Runtime.tools:191` 的第二條恢復路徑）。<br>
+
+<br>• 完美處理同批 `[context_update, report]`：能本地准入的先在 `coordinate` 結算生效再進 `END`；需壓縮的保留 `context_waiting` 後停在 `END`。<br>
+
+<br>• 解決 `tools` 尾端准入的 checkpoint 間隙恢復問題。 |
+| **3. `Context.compact_request` ＆ `apply_handoff`（整理與終段驗收）** | • **修復 R1**：移除 `compact_request:517` 拿舊政策加正常輸入 `outcome_reserve` 的錯誤守衛；保留完整舊政策（及已記錄契約的明確 `release` 投影）組裝實際 `COMPACT` 請求，不加入未經證實的一般化 `pin_views`/`notes` 暫態縮減。<br>
+
+<br>• **修復 R2**：`apply_handoff:629` 使用與 `resolve` 完全一致的目標續工預覽建構器（0-byte 落差）。<br>
+
+<br>• **修復 R3**：`compact_request:571` 的 `has_body_savings` 僅替換具正空間收益的引用，排除短參數膨脹。 | • 徹底修復 R1、R2、R3，且不引入拆散待處理提案語義的新風險。 |
+
+### 5. 總結與下一個小批次工作建議
+
+* **最重要的發現及其產品影響**：
+1. **三項已重現缺陷（R1、R2、R3）均源於各決策入口的估算與狀態拼接不一致**：其中 R1（`compact_request:517` 在舊政策上疊加未來正常輸入的 312-byte `outcome_reserve` 做前置守衛）直接阻斷了 agent 在歷史壓力下將 `full` pin 降級為 `index`/`range` 或縮短 `notes` 的自救路徑；R2（60-byte 預留落差）與 R3（短參數膨脹掩蓋 113-byte 正收益）則造成最後一段 handoff 誤拒與不必要的證據延後。
+2. **最新 reviewer 評論的修正意見成立，收斂了最終規格的五個關鍵細節**：
+* 不加入一般化的「暫態採用較短 `pin`/`notes` 壓縮視圖」，僅移除 `compact_request:517` 的錯誤守衛即可在保留完整舊政策下解決 R1，避免拆散待處理提案的語義依賴。
+* 採納 **1A（完整批次組合後准入）＋ 2A（同批結構錯誤時整組新修訂不生效）＋ 3B（未提交提案遇新指示被 `superseded`，不改寫 `instruction_basis`）**。
+* 將正式准入與結算統一放在 `coordinate` 節點（路由改為 `tools -> coordinate -> END | prepare`），以 `context-settlement:<key>` 為唯一政策提交權威，確保 checkpoint 間隙可完整恢復。
+* 結算結果投影必須標明「整組候選修訂已提交」，且須依「原始批次是否仍在本次請求的活躍 `history` 中」動態決定是直接投影於 tool output 還是附加尾端 outcome 訊息，並讓 R2 預覽與之完全對齊。
+* 工具參數採用明確的 `base="active" | "pending"`，且當 agent 明確放棄舊候選或新修訂失敗時，不讓已放棄的舊候選自動復活生效。
+
+
+
+
+* **已完成的驗證與結論限制**：
+* 已完成：套件與歷史壓縮檔雜湊核對、文件連結與映射檢查、R1/R2/R3 與 `guard-control` 及 8 個鄰近情境的本機隔離驗證，以及對最新 reviewer 全部 6 點主張的原碼逐行查核。
+* 結論限制：遵循本輪授權，未修改受維護檔案、未執行 live Nexus 呼叫，亦未進行真實模型自主轉換驗證（Stage B）。
+
+
+* **尚未解決或未深入檢查的相關問題**：
+* 受控唯讀子程序（`ocr_page`、`preview_document`）在 `status="started"` 中斷後觸發 `local_outcome_unknown` 的恢復機制（Stage C）。
+* `Documents.export()` 在不支援硬連結（`os.link`）的外部檔案系統（如 exFAT/FAT32）上的獨佔寫入回退（Stage D）。
+* 真實模型在多頁複雜 PDF 上的工具選擇、版面理解與摘要品質（Stage B）。
+
+
+* **最值得進行的下一個小批次工作建議（僅供決策，未獲授權前不實作）**：
+* **目的與優先理由**：以一個邊界清晰的有界修正批次，一次落實上述收斂後的 **「1A + 2A + 3B 完整批次候選准入 ＋ 單一 `coordinate` 結算路由 ＋ R1/R2/R3 修復 ＋ `base="active"|"pending"` 修改閉環」**，完成 Stage A 收尾並為 Stage B 真實轉換掃除上下文管理障礙。
+* **建議範圍**：
+1. `src/pdfmd/context.py`：移除 `compact_request:517` 的錯誤正常輸入守衛（保留完整舊政策與既有明確 `release` 投影）；統一 `has_body_savings` 的正收益引用過濾；實作感知歷史覆蓋的結算投影與共用目標續工預覽（對齊 `apply_handoff` 與 `resolve`）；支援 `base="active" | "pending"`。
+2. `src/pdfmd/runtime.py` 與 `src/pdfmd/context_updates.py`：在 `Runtime.tools` 驗證並保存本批 `context_update` 候選（支援 1A 組合與 2A 同批結構錯誤整組不生效，保留其他工具成果）；將圖路由統一為 `tools -> coordinate -> (END if terminal else prepare)`；由 `ContextUpdates.resolve` 作為唯一正式政策結算入口並完善 `recover`。
+3. `src/pdfmd/tools.py`、`docs/CONTRACTS.md`、`docs/CURRENT_STATE.md`：更新 `context_update` 參數定義與 Q2 契約說明，並補齊對應雙協定測試。
+
+
+* **完成條件**：
+1. 雙協定下 R1（固定容量下保留完整舊政策完成 `full`→`index`、`full`→`range`、縮短 `notes` 壓縮與准入）、R2（終段 handoff 與 `resolve` 0-byte 誤差）、R3（短參數不掩蓋 113-byte 正收益）全數通過。
+2. 同批 `[pin(Y), release(X)]` 中間超量最終合規通過；同批 `[notes(Y), pin(Y)失敗]` 整組不部分套用；半批 Stop＋新指示遵守 3B（未提交候選 `superseded`、已提交效果保留）；同批 `[context_update, report]` 經 `coordinate` 結算後正常終止於 `END`。
+3. 驗證 `tools` 與 `coordinate` 各持久間隙重開不重複提交、不改寫原始回條、不復活已放棄或已拒絕候選，且 agent 能以 `base="active"` 在舊有效政策下完成候選重修與完整保存／重開／匯出交付。
+
+
+
+
+
+本輪審查與對最新 reviewer 評論的核對至此完成，我會在此停下，等待您的討論與指示。

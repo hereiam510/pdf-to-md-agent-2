@@ -52,9 +52,9 @@ def main():
         for match in re.finditer(r'\[[^\]\n]+\]\((<[^>]+>|[^\s)]+)(?:\s+"[^"]*")?\)', text):
             check_target(path, match.group(1))
 
-    inventory_path = ROOT/'docs/reference/source-inventory.json'
-    point_path = ROOT/'docs/reference/POINT_COVERAGE.json'
-    coverage_path = ROOT/'docs/reference/SOURCE_COVERAGE.json'
+    inventory_path = ROOT/'docs/sources/source-inventory.json'
+    point_path = ROOT/'docs/sources/POINT_COVERAGE.json'
+    coverage_path = ROOT/'docs/sources/SOURCE_COVERAGE.json'
     if not all(p.is_file() for p in (inventory_path, point_path, coverage_path)):
         errors.append('Source inventory / point coverage / source coverage not all present')
         inventory, points, coverage = {}, [], []
@@ -112,7 +112,7 @@ def main():
                 check_target(ROOT/'_root.md', record['path'] + '#' + record['anchor'])
         elif not record.get('local'):
             errors.append(f'{source}: cited development source has no repo-local copy/excerpt')
-    manifest_path = ROOT/'docs/reference/sources/bundle-manifest.json'
+    manifest_path = ROOT/'docs/sources/rebuild/bundle-manifest.json'
     bundle_files = []
     if not manifest_path.is_file():
         errors.append('Missing repo-local source bundle manifest')
@@ -146,7 +146,7 @@ def main():
                 registered = bundled.get(item['path'], {})
                 if any(item.get(k) != registered.get(k) for k in ('path', 'bytes', 'sha256')):
                     errors.append(f'{record["id"]}: local inventory disagrees with bundle manifest')
-    detail_path = ROOT/'docs/reference/DEVELOPMENT_COVERAGE.json'
+    detail_path = ROOT/'docs/sources/DEVELOPMENT_COVERAGE.json'
     details = []
     if detail_path.is_file():
         details = json.loads(detail_path.read_text(encoding='utf-8'))

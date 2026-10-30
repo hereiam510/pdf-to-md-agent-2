@@ -1,8 +1,31 @@
+> Revision basis: the adopted design and recorded corrections below retain their original identities; this filing is not new adoption. [Decisions](../decisions/CONTEXT_MANAGEMENT.md#context-coordination-design-recording-boundary), [discussion](../discussions/CONTEXT_COORDINATION.md#d20-human-adopts-the-integrated-design-and-authorizes-recording), [captured shared contract](../history/contracts/20261031_0157_CONTRACTS.md#q2-context-transitions), [captured requirements](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md) and [captured architecture](../history/contracts/20261031_0157_ARCHITECTURE.md) identify the applicable basis. Exact prior design identities not recorded remain unknown; current readiness is separate in [CURRENT_STATE](../CURRENT_STATE.md).
+
 # Context update coordination: consolidated target design
 
-Updated 2026-10-26, Asia/Hong_Kong (UTC+08:00). Application baseline `a484b9b` and design checkpoint `c1e6fcc` precede the complete coordination implementation. This document retains the adopted design and rationale; [CONTRACTS Q2/Q3](../CONTRACTS.md#q2-context-transitions) owns effective behavior and [CURRENT_STATE](../CURRENT_STATE.md#complete-context-update-coordination) owns actual checks and limits.
+Updated 2026-10-26, Asia/Hong_Kong (UTC+08:00). Application baseline `a484b9b` and design checkpoint `c1e6fcc` precede the complete coordination implementation. This document retains the adopted design and rationale; [CONTRACTS Q2/Q3](CONTEXT_MANAGEMENT.md#q2-context-transitions) owns effective behavior and [recorded implementation result](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) owns actual checks and limits.
 
 **Status: the four human-selected policies and integrated design are implemented under the subsequent explicit implementation instruction.** D15/D18/D20 retain the adoption sequence in the [discussion record](../discussions/CONTEXT_COORDINATION.md). Implementation does not turn scripted validation into proof of autonomous PDF quality; Stage B remains separately authorized.
+
+## Guide navigation
+
+Read the relevant mechanism below with [current contracts](../CONTRACTS.md#reading-this-contract) and [current verification](../CURRENT_STATE.md#verification-basis). Historical alternatives and original implementation-order proposals retain their stated status.
+
+<details>
+<summary>Sections in this guide</summary>
+
+- [Purpose, scope and policy choices](#purpose-scope-and-policy-choices)
+- [Preserved requirements](#preserved-requirements)
+- [State and authority](#state-and-authority)
+- [Four decision responsibilities](#four-decision-responsibilities)
+- [Batch composition and tool contract](#batch-composition-and-tool-contract)
+- [End-to-end flow and decision conditions](#end-to-end-flow-and-decision-conditions)
+- [Request plans, projections and estimation](#request-plans-projections-and-estimation)
+- [Result presentation and original receipts](#result-presentation-and-original-receipts)
+- [Persistence, interruption and recovery](#persistence-interruption-and-recovery)
+- [Implementation route, if authorized](#implementation-route-if-authorized)
+- [Observable acceptance and limits](#observable-acceptance-and-limits)
+
+</details>
 
 ## Purpose, scope and policy choices
 
@@ -85,7 +108,7 @@ Settings changes do not themselves reclassify a candidate. If capacity falls and
 
 Unknown settings cannot be invented by the agent. Where a usable A request exists, the app can return the choice during normal agent work: durably transfer Q out of automatic admission before presenting it for revision. The reason is unresolved feasibility/agent choice, not measured excess. Otherwise preserve an explicit configuration wait. Do not leave automatic Q admission racing with an agent revising the same intent.
 
-**Current-code distinction:** at `a484b9b`, `ContextUpdates.resolve()` checks the active-policy fallback before committing a capacity rejection; if that check stops, it saves a waiting observation. Later admission on that path is not revival of a committed rejection. B intentionally changes that policy responsibility and the related capacity-wait tests. Existing committed settlements still recover before new decisions. [CONTRACTS Q2](../CONTRACTS.md#q2-context-transitions) now describes B and complete-batch commitment; the previous paragraph explains the intentional change from the baseline.
+**Current-code distinction:** at `a484b9b`, `ContextUpdates.resolve()` checks the active-policy fallback before committing a capacity rejection; if that check stops, it saves a waiting observation. Later admission on that path is not revival of a committed rejection. B intentionally changes that policy responsibility and the related capacity-wait tests. Existing committed settlements still recover before new decisions. [CONTRACTS Q2](CONTEXT_MANAGEMENT.md#q2-context-transitions) now describes B and complete-batch commitment; the previous paragraph explains the intentional change from the baseline.
 
 ## Four decision responsibilities
 
@@ -187,7 +210,7 @@ A plan identifies purpose, the exact evaluated snapshot, policy/handoff/history 
 | Post-handoff continuation | Candidate handoff plus remaining history, target `Q` or `A`, corresponding specific outcome | Does this handoff permit the intended next decision, or provide acceptable incremental progress? |
 | Diagnostic continuation | Active `A`, current `H/S` and specific non-admission/terminal outcome | Can the agent receive the result and make a new choice? |
 
-All plans use the selected protocol's actual assembly and common positive-savings principles, including tool descriptions, native pairing/envelopes, image/base64 treatment and output reservation. The shared request proxy and its explicit fallback are described in [complete-request capacity accounting](CONTEXT_AND_EVIDENCE.md#capacity-accounting). They are admission reservations, not provider-token bounds. Missing image/modality/protocol configuration remains visible.
+All plans use the selected protocol's actual assembly and common positive-savings principles, including tool descriptions, native pairing/envelopes, image/base64 treatment and output reservation. The shared request proxy and its explicit fallback are described in [complete-request capacity accounting](../guides/CONTEXT_AND_EVIDENCE.md#capacity-accounting). They are admission reservations, not provider-token bounds. Missing image/modality/protocol configuration remains visible.
 
 ### Necessary-content proof and complete-input admission
 
@@ -271,17 +294,17 @@ The heading is retained as a stable discussion link. The following route was sub
 
 These were ordered milestones inside the authorized context-update capability:
 
-1. **Request and decision foundations.** Separate actual normal, compaction, diagnostic and post-handoff plans; implement supported necessary-cost proof, exact specific-outcome preview and common positive-savings principles. Keep their snapshot and purpose explicit. Use CC-R1/2/3 as regressions, not the whole scope.
+1. **Request and decision foundations.** Separate actual normal, compaction, diagnostic and post-handoff plans; retain exact specific-outcome preview and common positive-savings principles. The original milestone included a supported necessary-cost proof; the later R01 correction established that the implemented local profiles supply estimates, not such a proof. Keep snapshot, purpose and uncertainty explicit, as specified under [request plans and estimation](#request-plans-projections-and-estimation). CC-R1/2/3 remain regressions, not the whole scope.
 2. **Whole-batch disposition and commitment.** Context tools capture/validate/compose without intermediate capacity commitment. A single coordinator handles complete-candidate validity, B, admission, waiting and terminal-report routing. Persist decisions before graph projection; preserve other tool effects, raw receipts and frozen boundaries.
 3. **Agent correction and recovery through delivery.** Implement selected-content reuse, diagnostic continuation, settings/amendment interactions and effect recovery. Exercise the complete Runtime and saved/reopened/exported paths below, then update effective CONTRACTS/ARCHITECTURE and affected tests in the authorized implementation batch.
 
 Keep the small StateGraph, Nexus service, immutable objects, SQLite catalog and document/evidence engine as a useful baseline: they already supply identities, execution boundaries and saved artifacts. Replace scattered application decisions and inconsistent request construction. A framework replacement, new table count or extensive transient shrink manager is not required by the evidence. Change internal boundaries if needed to implement these responsibilities correctly. Consult installed-version official guidance for an uncertain API without automatically upgrading.
 
-The concrete implementation uses `ContextRevisions`, `Context`, `ContextUpdates` and Runtime coordination. The catalog records `context_disposition`, `context_commit` and `context_policy` are metadata within the existing store, not separate databases. `required()` returns a supported lower bound with named exclusions and `proves_full_admission=false`; only actual native input admits a policy. These choices implement the adopted semantics. Effective contracts and evidence remain in their primary owners.
+The concrete implementation uses `ContextRevisions`, `Context`, `ContextUpdates` and Runtime coordination. The catalog records `context_disposition`, `context_commit` and `context_policy` are metadata within the existing store, not separate databases. `required()` returns the mandatory projection, unreserved proxy and reservation with named exclusions, `proof_available=false`, `necessary_cost_lower_bound=null`, `proved_excess=false` and `proves_full_admission=false`; only complete native-request admission can apply a policy. This is the R01-corrected implementation, superseding the earlier lower-bound characterization without removing policy B's conditional independently-proved-excess rule. These choices implement the adopted semantics. Effective contracts and evidence remain in their primary owners.
 
 ## Observable acceptance and limits
 
-The matrix below defines acceptance. [CURRENT_STATE](../CURRENT_STATE.md#complete-context-update-coordination) and the [review handoff](../REVIEW_HANDOFF.md) identify executed checks; a row here alone is not a passing result. Use both Chat Completions and Responses with local scripted replies/mock transport before proposing live work. Preserve unchanged capacity in shrinking-update cases.
+The matrix below defines acceptance. [recorded implementation result](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) and the [review handoff](../REVIEW_HANDOFF.md) identify executed checks; a row here alone is not a passing result. Use both Chat Completions and Responses with local scripted replies/mock transport before proposing live work. Preserve unchanged capacity in shrinking-update cases.
 
 | Capability | Observable acceptance |
 | --- | --- |

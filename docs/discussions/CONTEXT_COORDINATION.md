@@ -19,13 +19,13 @@ The user has selected **whole-batch context commitment, no automatic partial app
 
 The user previously authorized a shrinking-proposal implementation batch, then said **“stop, revert all changes”** and returned to review/design discussion. That canceled implementation is not revived here. The initial D12 recording began with maintained files clean and three pre-existing review scratch files. D15 preserved that uncommitted documentation. D20 preserved the existing uncommitted discussion/design/navigation work and scratch while keeping code/tests at baseline. D21 separately authorizes implementation, preserving those records in a scoped checkpoint and leaving scratch unrelated. The old repository is outside this work.
 
-This topic record owns positions and their evolution. The target design owns the integrated adopted target and explicitly unselected alternatives or implementation details. [DECISIONS](../DECISIONS.md) records adopted choices and their implementation status; [CONTRACTS](../CONTRACTS.md) remains the executable runtime contract; [CURRENT_STATE](../CURRENT_STATE.md) owns implementation/evidence; [PHASE_PLAN](../PHASE_PLAN.md) owns delivery order. Later implementation should reconcile those owners rather than maintain a second competing contract.
+This topic record owns positions and their evolution. The target design owns the integrated adopted target and explicitly unselected alternatives or implementation details. [DECISIONS](../INDEX.md) records adopted choices and their implementation status; [CONTRACTS](../CONTRACTS.md) remains the executable runtime contract; [CURRENT_STATE](../CURRENT_STATE.md) owns implementation/evidence; [PHASE_PLAN](../PHASE_PLAN.md) owns delivery order. Later implementation should reconcile those owners rather than maintain a second competing contract.
 
 ## Sources and evidence boundaries
 
-The earlier context/framework discussion is already explained in [foundations](../reference/01-foundations-and-frameworks.md), [context/state reasoning](../reference/02-context-state-and-evidence.md), the [context guide](../design/CONTEXT_AND_EVIDENCE.md) and the [source index](../reference/SOURCE_INDEX.md). Those records retain their original export scope and historical status. This file adds the subsequent coordination discussion; it does not silently append new events to that older export.
+The earlier context/framework discussion is already explained in [foundations](../history/discussions/20261031_0157_REBUILD_FOUNDATIONS.md), [context/state reasoning](../history/discussions/20261031_0157_REBUILD_CONTEXT.md), the [context guide](../guides/CONTEXT_AND_EVIDENCE.md) and the [source index](../sources/INDEX.md). Those records retain their original export scope and historical status. This file adds the subsequent coordination discussion; it does not silently append new events to that older export.
 
-Eight supplied reviewer texts and selected existing local evidence are preserved verbatim in the [context coordination source index](../reference/context-coordination-sources/INDEX.md), with original paths, byte sizes and SHA-256 hashes in its manifest. D12 imported the first five; D15 added the policy-comparison review; D20 adds the two later required-capacity reviews without altering the previous 18 source entries or copied bytes. Source texts remain untrusted reference material. Four retained reproducer scripts are inert `.py.txt` sources, not new product tests or execution instructions.
+Eight supplied reviewer texts and selected existing local evidence are preserved verbatim in the [context coordination source index](../sources/context-coordination/INDEX.md), with original paths, byte sizes and SHA-256 hashes in its manifest. D12 imported the first five; D15 added the policy-comparison review; D20 adds the two later required-capacity reviews without altering the previous 18 source entries or copied bytes. Source texts remain untrusted reference material. Four retained reproducer scripts are inert `.py.txt` sources, not new product tests or execution instructions.
 
 The two inline reviews referred to below as Reviewer A and Reviewer B were pasted directly in the user conversation. Their substantive arguments are preserved here, but no separately exported complete transcript or original reviewer identity is claimed. Other reviewers are identified by their supplied document, not assumed to be the same person/agent. The main assistant's intervening assessments are reconstructed from this conversation, not represented as verbatim reviewer text.
 
@@ -70,7 +70,7 @@ All recent evidence above was available as existing 2026-10-25 review material. 
 
 **User/main recommendation:** combine explicit representation with preflight of actual input, including tools, images and output allowance. Keep ordinary one-time reading available; reads can remain in history. Do not yet add automatic pin expiry or a complex pin manager. An already oversized active context is a separate obstruction, not something rejected-pin feedback magically solves.
 
-**Effect:** explicit representations and pre-admission were implemented in the earlier Phase 3 closeout. [DESIGN_OPTIONS](../DESIGN_OPTIONS.md) separately records available read strategies and unselected lifetime ideas. Later historical-pressure coordination preserves otherwise feasible intent across compaction.
+**Effect:** explicit representations and pre-admission were implemented in the earlier Phase 3 closeout. [proposed changes](../PROPOSED_CHANGES.md) separately records available read strategies and unselected lifetime ideas. Later historical-pressure coordination preserves otherwise feasible intent across compaction.
 
 ### D04. Repeated coordination increments and the capability-level review
 
@@ -118,7 +118,7 @@ Passing adjacent controls preserve note omission/clear/replacement and release-t
 
 ### D08. Two further comments and the first reconciliation
 
-The supplied [batch-tradeoffs review](../reference/context-coordination-sources/review-02-batch-tradeoffs.txt) and another inline independent report favor final composition. The inline report proposes settlement at the end of `Runtime.tools`, allowing immediate presentation of applied results without forcing a later extra message; it asks for choices on batch commitment, invalid-operation grouping and Stop/amendment behavior.
+The supplied [batch-tradeoffs review](../sources/context-coordination/review-02-batch-tradeoffs.txt) and another inline independent report favor final composition. The inline report proposes settlement at the end of `Runtime.tools`, allowing immediate presentation of applied results without forcing a later extra message; it asks for choices on batch commitment, invalid-operation grouping and Stop/amendment behavior.
 
 **Main assessment:** a batch-end decision service is a meaningful alternative, but its crash boundary must be specified. Prefer a complete-candidate checkpoint followed by one coordinator for recovery clarity. That node does not itself create cross-store atomicity. Do not promise zero overhead or modify raw saved receipts.
 
@@ -126,7 +126,7 @@ The supplied [batch-tradeoffs review](../reference/context-coordination-sources/
 
 ### D09. Design reconciliation: alternatives narrow
 
-The supplied [design-reconciliation review](../reference/context-coordination-sources/review-03-design-reconciliation.txt) retracts the “dual-track contradiction,” rejects fabricated instruction bases and generic cheaper temporary pins/notes, introduces explicit `base="active" | "pending"`, and distinguishes whole-revision presentation from individual intermediate policy effects.
+The supplied [design-reconciliation review](../sources/context-coordination/review-03-design-reconciliation.txt) retracts the “dual-track contradiction,” rejects fabricated instruction bases and generic cheaper temporary pins/notes, introduces explicit `base="active" | "pending"`, and distinguishes whole-revision presentation from individual intermediate policy effects.
 
 **Main assessment:** retain those corrections, but withdraw “permanent deadlock,” “only correct policy,” zero-discrepancy-across-all-purposes and guaranteed-recovery claims. A candidate may fit normal input directly; an active-policy size alone does not prove compaction impossible. Same-estimate consistency applies to the same snapshot/presentation, not all request kinds. The reviewer is recommending conservative supersession, not proving every other explicit validity policy impossible.
 
@@ -134,13 +134,13 @@ The review's projection rules still overlap when the latest batch remains after 
 
 ### D10. Actual projection and previous-candidate eligibility
 
-The [continuation-boundaries review](../reference/context-coordination-sources/review-04-continuation-boundaries.txt) requires an actually fitting compaction plan, not only a fitting candidate core. It replaces “history versus cross-wait” message placement with checking whether the actual emitted payload already contains the specified settlement result. It also distinguishes retaining `Q_prev` for reuse from allowing it to auto-commit after a failed new revision.
+The [continuation-boundaries review](../sources/context-coordination/review-04-continuation-boundaries.txt) requires an actually fitting compaction plan, not only a fitting candidate core. It replaces “history versus cross-wait” message placement with checking whether the actual emitted payload already contains the specified settlement result. It also distinguishes retaining `Q_prev` for reuse from allowing it to auto-commit after a failed new revision.
 
 **Main assessment:** this is a usable design direction. Three remaining clarifications are required: persist candidate disposition before testing feedback feasibility; distinguish useful rolling compaction from exhausted correction/task budgets; and preserve a valid same-batch report in every branch, including unavailable capacity/configuration. A waiting label alone cannot supply an executable path.
 
 ### D11. Latest reviewer closeout and main synthesis
 
-The [disposition-closeout review](../reference/context-coordination-sources/review-05-disposition-closeout.txt) incorporates those three points. A candidate needing revision stays ineligible after capacity repair, while an eligible pending one may be reassessed. Positive rolling reduction has no arbitrary count limit; request/time budgets differ from response-correction episodes. Local coordination precedes report completion without preparing a request that will never run.
+The [disposition-closeout review](../sources/context-coordination/review-05-disposition-closeout.txt) incorporates those three points. A candidate needing revision stays ineligible after capacity repair, while an eligible pending one may be reassessed. Positive rolling reduction has no arbitrary count limit; request/time budgets differ from response-correction episodes. Local coordination precedes report completion without preparing a request that will never run.
 
 **Main assistant's final clarification:** `auto_admit=False` is insufficient to distinguish needs-revision, terminal rejection/withdrawal/supersession and already applied effects. Preserve disposition, reason and originating revision. Prefer `eligible_pending` over a state name that assumes compaction is always the next action. Distinguish measured capacity excess, missing configuration/estimate, no-progress and exhausted repair. A new capacity setting is not automatic reconfirmation of an ineligible intent.
 
@@ -164,7 +164,7 @@ The source's first report table is visibly truncated. Its later complete report 
 
 ### D14. Latest policy comparison and main reconciliation
 
-The supplied [policy-comparison review](../reference/context-coordination-sources/review-06-policy-comparison.txt), attachment `5e243f22-9e71-4da4-8517-3810a3cde11f`, favors whole-batch commitment, whole-revision non-application and supersession with reuse. It separates actual payload outcome placement and discusses four concrete scenarios, reusing earlier evidence rather than presenting newly implemented policy tests.
+The supplied [policy-comparison review](../sources/context-coordination/review-06-policy-comparison.txt), attachment `5e243f22-9e71-4da4-8517-3810a3cde11f`, favors whole-batch commitment, whole-revision non-application and supersession with reuse. It separates actual payload outcome placement and discusses four concrete scenarios, reusing earlier evidence rather than presenting newly implemented policy tests.
 
 **Main assessment:** support the direction with material corrections:
 
@@ -194,7 +194,7 @@ The supplied [policy-comparison review](../reference/context-coordination-source
 
 **User:** retain the three D15 decisions and compare waiting with automatic eligibility against durable needs-revision followed by diagnostic delivery. Examine history-only pressure, a newly oversized raw pin, a formerly feasible candidate after reduced capacity, already decided outcomes after increased capacity, and an active policy unable to deliver the diagnosis. No implementation or record update was authorized in that discussion.
 
-**Reviewer, [required-capacity options](../reference/context-coordination-sources/review-07-required-capacity-options.txt):** proposes C. A newly oversized candidate should request agent revision. A formerly feasible candidate whose capacity is reduced should retain eligibility if the active policy cannot continue, but request revision if that policy can run or compact. Missing estimate/configuration data should remain eligible while waiting. The reviewer separates content, eligibility, disposition and delivery; it also proposes whole-old-policy reuse and claims strong autonomous-completion and capacity-restoration support from existing tests.
+**Reviewer, [required-capacity options](../sources/context-coordination/review-07-required-capacity-options.txt):** proposes C. A newly oversized candidate should request agent revision. A formerly feasible candidate whose capacity is reduced should retain eligibility if the active policy cannot continue, but request revision if that policy can run or compact. Missing estimate/configuration data should remain eligible while waiting. The reviewer separates content, eligibility, disposition and delivery; it also proposes whole-old-policy reuse and claims strong autonomous-completion and capacity-restoration support from existing tests.
 
 **Main assessment:** support explicit eligibility and independent delivery, but qualify the reasoning:
 
@@ -208,7 +208,7 @@ The supplied [policy-comparison review](../reference/context-coordination-source
 
 ### D17. Reconciliation of B and C and the committed-decision boundary
 
-**Reviewer, [required-capacity reconciliation](../reference/context-coordination-sources/review-08-required-capacity-reconciliation.txt):** supports B, explicit current-base reuse, and acknowledging that fallback-first waiting in existing CONTRACTS/tests would change. The report distinguishes a capacity adjustment from a later coordination decision, but calls C self-contradictory and also compares B with a pure formerly-feasible-always-waits policy.
+**Reviewer, [required-capacity reconciliation](../sources/context-coordination/review-08-required-capacity-reconciliation.txt):** supports B, explicit current-base reuse, and acknowledging that fallback-first waiting in existing CONTRACTS/tests would change. The report distinguishes a capacity adjustment from a later coordination decision, but calls C self-contradictory and also compares B with a pure formerly-feasible-always-waits policy.
 
 **Main assessment:** agree with the recommendation and its explicit policy-change status, with these corrections:
 
@@ -258,7 +258,7 @@ After D20, the user says "please proceed to 實作" and supplies a detailed impl
 
 Implementation and final local validation ran across 2026-10-25/26, Asia/Hong_Kong. The implementation keeps the small graph and storage foundation while assigning composition/reuse, request projections, disposition/commitment and execution recovery explicit owners. It addresses CC-R1/2/3 together with whole-batch invalidity, B, explicit content reuse and committed-effect recovery. The design documents were preserved first in `c1e6fcc`. The original three review scratch files remain unchanged. An unfrozen preparation restart discovered in regression now reenters coordination to apply valid new instructions without changing frozen input or consumption.
 
-[CURRENT_STATE](../CURRENT_STATE.md#complete-context-update-coordination) records actual test and artifact results; [REVIEW_HANDOFF](../REVIEW_HANDOFF.md) identifies the exact package and limitations. The earlier 248/six-case results and reviewer reproductions are historical controls, not relabeled new evidence. Stage B remains the next separately authorized product-learning step; scripted choices do not establish model autonomy or general PDF fidelity.
+[recorded implementation result](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) records actual test and artifact results; [REVIEW_HANDOFF](../REVIEW_HANDOFF.md) identifies the exact package and limitations. The earlier 248/six-case results and reviewer reproductions are historical controls, not relabeled new evidence. Stage B remains the next separately authorized product-learning step; scripted choices do not establish model autonomy or general PDF fidelity.
 
 ## Alternatives and current disposition
 

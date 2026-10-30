@@ -1,0 +1,45 @@
+import sys,json
+from pathlib import Path
+ROOT=Path(r'C:/Users/laichungling/Documents/ChatGPT/pdf-to-md-agent-2')
+sys.path[:0]=[str(ROOT/'src'),str(ROOT/'tests')]
+import pymupdf
+from pdfmd.context import Context
+from pdfmd.storage import Store,encode
+from pdfmd.evidence import Evidence
+from pdfmd.tools import Dispatcher
+from test_context_admission import protocol_job,state_for
+from test_context_progress import read_batch
+T=Path(__file__).parent
+records=[]
+for protocol in ('chat_completions','responses'):
+ p=T/(protocol+'-savings');p.mkdir()
+ with pymupdf.open() as pdf:
+  pdf.new_page().insert_text((72,72),'Source 25 mg.');pdf.save(p/'source.pdf')
+ store=Store(p/'workspace')
+ job=Evidence(store).create_job(str(p/'source.pdf'),'Convert whole section.',{'endpoint':'http://127.0.0.1:8317/v1/chat/completions','model':'offline-fixture','context_tokens':65536,'output_tokens':2048})
+ job=protocol_job(store,job,protocol)
+ refs,envs=read_batch(store,job,'mixed',['H'*200000,'S'*600])
+ read_batch(store,job,'tail',['A'*22000,'B'*22000])
+ context=Context(store,Dispatcher(store));state=state_for(job,['mixed','tail'])
+ roomy={**job,'route':{**job['route'],'context_tokens':1000000}}
+ single=context.compact_request(roomy,{**state,'history':['tail']})[1]['capacity']['input_estimate']
+ job=store.update_job(job['id'],route={**job['route'],'context_tokens':single+256+2048})
+ cap=context.normal(job,state)[1]
+ deferred={i['request']:set(i['refs']) for i in cap['projection']['deferred']}
+ normal=context.group(job,'mixed',state,deferred=deferred.get('mixed'))
+ receipts=context.group(job,'mixed',state,deferred=context.batch_refs(job,'mixed'))
+ feasible=context.group(job,'mixed',state,deferred=set(deferred.get('mixed',set()))|{envs[1]['result_ref']})
+ payload,meta=context.compact_request(job,state)
+ # Independent control: remove short candidates from all-reference comparison.
+ # These substitutions are already excluded by current admit_group.
+ control=Context(store,Dispatcher(store));original=control.batch_refs
+ control.batch_refs=lambda job,key: {r for r in original(job,key) if not r.startswith('candidate:')}
+ alt_payload,alt_meta=control.compact_request(job,state)
+ record={'protocol':protocol,'first_normal_size':len(encode(normal)),'all_refs_size':len(encode(receipts)),
+ 'only_result_refs_size':len(encode(feasible)),'reported_body_savings':len(encode(normal))>len(encode(receipts)),
+ 'actual_available_saving':len(encode(normal))-len(encode(feasible)),
+ 'covered':meta['covered'],'projection':meta['projection'],'control_covered':alt_meta['covered'],
+ 'control_projection':alt_meta['projection'],'tail_A_full':'A'*22000 in json.dumps(payload),'tail_B_full':'B'*22000 in json.dumps(payload)}
+ records.append(record)
+print(json.dumps(records,indent=2))
+(T/'savings.json').write_text(json.dumps(records,indent=2),encoding='utf-8')

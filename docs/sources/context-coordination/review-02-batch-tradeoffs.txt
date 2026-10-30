@@ -1,0 +1,90 @@
+我已逐點審閱這份貼入的回應（對應 `discussion/05-main-response-b.md`）。這份回應對 **Reviewer B** 的反駁非常精準，但將它放在整個系統邊界下獨立檢視時，我認為其中**有五項核心判斷完全成立，也有三處隱藏的架構張力與未閉合缺口需要進一步點破**：
+
+### 1. 這份回應中最有力、經原碼核實完全成立的五個論點
+
+| 回應論點 | 原碼與實測核對結果 | 為何這項判斷正確 |
+| --- | --- | --- |
+| **1. 「提交時點」與「訊息呈現」必須解耦** | `src/pdfmd/context.py:390-391` (`control_result`)、`469-471` (`Deferred context update outcome`) | Reviewer B 把「批次末准入」等同於「每筆普通更新都必須先回報 `applied=False`，下一輪再塞一則 ~280B（實測為 **251 bytes**）的 outcome user 訊息」。這份回應指出：內部先持久保存意圖、在批次末統一完成准入，**完全可以在組裝下一次請求時直接向模型投影最終已准入狀態**（不改寫原始回條 blob，而是投影已結算事實），從根源消除多餘的控制訊息開銷。 |
+| **2. 揭穿 Reviewer B「`unsettled_operations` 非空才存提案」的自相矛盾** | `tests/test_continuation.py:83-85`、`src/pdfmd/context.py:160-170` | 這是最關鍵的一擊。在 `test_continuation.py:83` 中，批次是 `[Call 0: context_update, Call 1: edit_document]`。當 `Call 0` 執行 `preflight` 時，`Call 1` 尚未執行，因此 `unsettled_operations` 為 `["<req>:1"]`（非空）！若照 Reviewer B 的補充建議「`unsettled_operations` 非空就存為 pending」，`Call 0` 一樣會變成 `context_waiting`，並在 Stop + 新指示後被 `context_updates.py:67` 判定為 `superseded`。Reviewer B 的折衷方案根本保不住它自己最重視的半批測試。 |
+| **3. 釐清測試引用錯誤與測試定位** | `tests/test_context_lifecycle.py:155`、`tests/test_context_retry.py:198` | 核對原碼確認：`test_context_lifecycle.py:155` 測的是 `[read_evidence, context_update(notes), context_update(release)]`，根本沒有中間無效 B；而 `test_context_retry.py:198` 測的是 `[read, valid_1, valid_2, invalid_huge_raw]`（無效更新在最後）。既有測試只證明「目前程式碼怎麼跑」，不能用來迴避「`notes` 與 `pin` 語義依賴時不應拆開套用」的產品問題。 |
+| **4. `report -> END` 可以走單一協調路徑，不必造兩套結算** | `src/pdfmd/runtime.py:62, 198-207`、`docs/CONTRACTS.md:194` | 只要將批次末的本地協調／准入放在 `tools` 節點結束前（或讓 `tools` 統一經過本地 `coordinate`，在 `coordinate` 結算後若 `state["terminal"]` 為真則直接轉 `END` 而不進 `prepare`），就能用**唯一一套結算邏輯**處理所有情況：能本地准入的先正式生效，不能准入的保留明確 `context_waiting` 狀態後正常停在 `END`，完全不強迫多跑一次模型呼叫。 |
+| **5. `Runtime.prepare` 的最後把關不等於「具備自主續工能力」** | `src/pdfmd/runtime.py:104-110` | `prepare` 攔下超額正常請求並轉往 `compact_request`，只能保證「不送出超限請求」，不能保證壓縮請求一定組裝得出來（例如 R1 就死在 `compact_request` 入口），也不能保證政策被拒後 agent 一定有路修改。 |
+
+### 2. 這份回應尚未完全閉合、需要您特別留意的三個深層問題
+
+雖然這份回應成功反駁了 Reviewer B，但在走向最終決策時，它本身留下了三個需要進一步釐清的盲點：
+
+#### 盲點 A：「半批取消（Stop）＋新指示」其實暴露了現行系統的雙軌分裂，而不只是新舊設計的取捨
+
+* **這份回應認為**：「保留每筆獨立提交」就能保留目前半批完成效果，而「改採整體候選提交」則在半批取消＋新指示時會讓 `Call 0` 被新指示 `superseded`。
+* **但原碼的真實狀況是**：即便在**現行 `a484b9b` 的雙軌設計**下，如果 `Call 0 (context_update)` 執行時剛好因為歷史較長而走入 `context_waiting`（`applied=False`），此時使用者在 `Call 1` 開始前按 Stop 並輸入新指示 Continue，`Call 0` **在現行程式碼下也一樣會被 `context_updates.py:67` 判定為 `superseded` 而作廢**！
+* **深層問題**：為什麼同一個已經執行完畢（`status="done"`）的 `Call 0`，在歷史短時不受半批新指示影響，在歷史長時卻被半批新指示作廢？
+* 因為 `Runtime.tools` 用 `request["instruction_basis"] != instruction_basis(current)` 來跳過**未開始**的 `Call 1`（`runtime.py:170`），而 `ContextUpdates.resolve` 卻用 `proposal["instruction_basis"] != instruction_basis(job)` 來作廢**整個批次的待處理提案**（`context_updates.py:67`）。
+* 如果我們定義清楚：**「完整候選修訂」的邊界是「本批次內所有實際執行完成的 `context_update`」**，那麼就有兩種完全自洽的設計：
+1. **嚴格批次原子性（回應傾向的立場）**：只要整個 tool batch 還沒全部結算完畢就被 Stop 打斷並插入新指示，本批次尚未完成提交的 context 候選修訂即被新指示取代（`superseded`），但上一回合已提交的政策 `A` 絕對保留。
+2. **已完成呼叫保護**：若已在 Stop 前執行完畢的 `context_update` 構成合法候選，半批 Stop 時先將這批已完成的更新封裝為對應新指示基準（或僅當新指示發生在整批結束後的等待期才 `superseded`）。
+
+
+* 我贊同回應的核心結論：**選擇「严格納入整批候選修訂（半批未完成即取消時尚未正式生效）」在語義上更乾淨**，因為若模型原本規劃 `[Call 0: context_update(pin=[Y]), Call 1: context_update(release=[X])]`，在 `Call 0` 與 `Call 1` 之間被 Stop 打斷，只讓 `Call 0` 生效反而違背「整體替換」的承諾！這一點反過來證明了：**連「半批取消」都支持以「完整批次候選」作為原子提交單位**。
+
+
+
+#### 盲點 B：「原始保存回條維持原樣，模型取得最終狀態投影」需要明確定義投影機制，避免雙重通知
+
+* 這份回應第 3 點提出：*「內部先持久保存意圖，不代表模型一定要先收到 pending 回條。如果批次末已完成准入、尚未凍結任何後續請求，模型可取得清楚標示來源的最終狀態投影。原始保存回條仍維持原樣，settlement 另存。」*
+* **實作上的具體設計關鍵**：
+* 在 `Dispatcher.execute` 時，`result:<op>` 不可變 blob 儲存的是 `{ "context_candidate": intent, "status": "validated" }`（原始驗證與保存回條，永不改寫）。
+* 在批次末（`coordinate` 或 `tools` 結尾）完成完整輸入准入並寫入唯一的 `context-settlement:<key>` blob 後：
+* 當 `Context.group()`（`context.py:390`）組裝這個剛剛結算完畢的批次時，`control_result()` 讀取對應的 `context-settlement:<key>`，直接在該 tool call 的輸出投影中呈現 `{"admission": {"applied": True, "status": "applied", "settlement_ref": "context-settlement:..."}, "full_result_ref": "result:<op>"}`。
+* **同時，因為該批次的結果已經直接投射在 tool output 中，此時不應再把 `state["context_feedback"]` 設為需要額外附加尾端 `"Deferred context update outcome"` user 訊息**（只有當提案因為進入壓縮或等待，跨越了原本的 tool batch 才在後續結算時，才需要附加獨立的 `"Deferred context update outcome"` user 訊息）。
+
+
+* 這樣設計能同時做到：
+1. **100% 原始回條不可變**（`result:<op>` 永遠是當時保存的驗證紀錄）。
+2. **100% 單一正式效果權威**（只有 `context-settlement:<key>` 決定政策是否生效，移除 `Runtime.tools` 的第二套恢復路徑）。
+3. **0 額外 user 訊息開銷**（無壓力批次直接在 tool output 投影中看到 `applied=True`，完全消除 Reviewer B 擔心的 251B 尾端訊息）。
+
+
+
+
+
+#### 盲點 C：決定「完整候選修訂」為提交單位後，仍需明確回答「Agent 如何重置或修改失敗的候選」
+
+* 這份回應在結論強調：*「目前最值得先決定的是：context 的原子提交單位究竟是一筆 call，還是一個完整候選修訂。」*
+* 若選定「一個完整候選修訂（Candidate Revision）」為原子提交單位，當該修訂 `Q` 出現以下兩種情況時，基底規則必須明確：
+1. **同批次內有一筆結構錯誤或最終容量超限（立即拒絕）**：整組本批修訂被標記為 `rejected`，`A`（或上一回合已存在的合法待處理提案 `Q_prev`）維持不變。下一輪模型收到的仍是 `A`（或 `Q_prev`），模型直接重新發出正確的 `context_update` 即可。
+2. **修訂 `Q` 在批次末存為 `context_waiting`（等待壓縮），但在壓縮後發現 `Q` 仍過大、或模型在後續回合想修改 `Q**`：若後續 `context_update` 預設疊加在 `Q` 上（`waiting["policy"]`），模型一旦想「放棄 `Q`，退回目前有效政策 `A` 重新指定」，就需要工具提供一個明確開關（例如 `reset_pending: true` 或 `base: "active"`），否則模型必須自己記得 `Q` 裡加過甚麼並逐一 `release`。
+
+
+
+### 3. 總結評估與收斂建議
+
+這份回應的推理非常嚴謹，它正確地將爭論收斂到「原子提交單位是單筆 call 還是完整候選修訂」，並點出了「提交時點與訊息呈現分離」以及「單一 `tools -> coordinate -> END/prepare` 結算路由」的解法。
+
+結合這份回應與我們的原碼實測，將架構收斂為以下**單一、無矛盾的目標規格**，即可一次解決所有討論爭點與三項重現缺陷（R1/R2/R3）：
+
+1. **原子提交單位（採納完整候選修訂）**：
+* 同一工具批次內的所有 `context_update` 按呼叫順序組合成**一個完整候選修訂（Candidate Revision）**。
+* 逐筆驗證語法、引用與表示方式；若同批內任一筆 `context_update` 結構無效，**整組本批修訂不生效**（保留所有 `candidate_ref` 與錯誤診斷，維持本批前的有效政策 `A` 或先前合法提案 `Q_prev` 不變）。
+* 不對單筆中間狀態（如先加 `Y`、同批下一筆才放 `X`）做容量拒絕；容量准入僅針對本批合成後的**最終候選政策**執行。
+* 若本批次在全部工具完成前因 Stop + 新指示中斷，本批未完成提交的 context 修訂視為未提交（被新指示 `superseded`），不將半批當作完整候選生效。
+
+
+2. **單一結算入口與路由（`tools -> coordinate -> END / prepare`）**：
+* 移除 `Context.preflight` 中的未完成工具 placeholder 容量准入，以及 `Runtime.tools` 中從個別回條直接改寫政策的路徑。
+* `tools` 完成本批執行後統一進入 `coordinate`：由 `ContextUpdates` 作為**唯一的政策結算權威**，寫入 `context-settlement:<key>`。若本批包含有效 `report`（`terminal=True`），在 `coordinate` 完成必要的本地准入結算（或記錄 `waiting`）後直接路由至 `END`，不強制發起壓縮或模型呼叫。
+
+
+3. **投影與訊息呈現分離（消除日常額外開銷）**：
+* 原始工具回條 `result:<op>` 僅保存不可變的驗證與組合事實。
+* 若候選修訂在緊接該批次的 `coordinate` 即通過正常准入（未經歷壓縮或跨輪等待），`control_result` 在投影該批次的 tool output 時直接顯示最終已准入狀態（並附上 `settlement_ref`），**不額外在請求尾端附加 `"Deferred context update outcome"` user 訊息**；唯有跨過壓縮或等待才在後續結算時投遞獨立 outcome 訊息。
+
+
+4. **統一請求計畫與修復 R1 / R2 / R3**：
+* **R1**：`compact_request` 移除「拿舊政策加正常輸入 `outcome_reserve` 做 `normal()` 空殼檢查」的錯誤守衛，直接檢查實際 `COMPACT` 請求能否放下及目標候選核心能否進入正常請求；並在 `compaction_state` 中允許暫態壓縮視圖反映待處理提案中明確降低成本的 `pin_views` 縮減（如 `full`→`index`/`range`）與 `notes` 縮短。
+* **R2**：`apply_handoff` 檢查最後一段歷史 handoff 是否容納待處理提案時，使用與 `resolve` 完全一致的實際 `applied` 結算預覽，消除 60-byte 落差。
+* **R3**：`compact_request` 的 `has_body_savings` 僅替換具正空間收益的引用（排除短參數膨脹），與 `admit_group` 對齊。
+
+
+
+如果您同意以這套「完整候選修訂為提交單位 ＋ 單一 `coordinate` 結算路由 ＋ 同批直接准入投影不發冗餘 user 訊息 ＋ R1/R2/R3 統一請求計畫」作為最終選定方案，我們就可以將此定為明確的實作與驗收基準。請問您是否確認採納這個方向，或者對其中「同批結構錯誤整組不生效」與「半批 Stop＋新指示取代未完成批次候選」這兩條邊界有其他調整想法？

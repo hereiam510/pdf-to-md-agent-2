@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--verify-only', action='store_true')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    inventory = json.loads((root/'docs/reference/source-inventory.json').read_text(encoding='utf-8'))
+    inventory = json.loads((root/'docs/sources/source-inventory.json').read_text(encoding='utf-8'))
     source_id = args.source_id.upper()
     if source_id.startswith('LIVE-'):
         record = next((r for r in inventory['live_sources'] if r['id'] == source_id), None)

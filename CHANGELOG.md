@@ -1,6 +1,6 @@
 # Changelog
 
-This file records application changes and important validation limits. The entries below describe development snapshots, not published releases. [CURRENT_STATE](docs/CURRENT_STATE.md) owns detailed evidence and [CONTRACTS](docs/CONTRACTS.md) owns the implemented behavior.
+This file records application changes and important validation limits. The dated entries below currently cover development snapshots through 2026-10-25, not all later accumulated work and not published releases. For subsequent A/SC02, diagnostics, recovery, estimator/storage and Nursing records, start with [current verification](docs/CURRENT_STATE.md#verification-basis) and [implementation history](docs/history/IMPLEMENTATION_HISTORY.md). Updating documentation does not rebuild or publish an application. [CURRENT_STATE](docs/CURRENT_STATE.md) routes current status, [implementation history](docs/history/IMPLEMENTATION_HISTORY.md) retains detailed dated evidence, and [CONTRACTS](docs/CONTRACTS.md) owns implemented behavior.
 
 ## Unreleased
 

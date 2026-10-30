@@ -1,0 +1,159 @@
+### 1. 審查範圍、核心結論與判斷依據
+
+本輪對目前實作（審查套件 `review-2026-10-25-context-capacity-wait.zip`，基於 `e7e30c0` 整合 `docs/PHASE_PLAN.md` 與 `context-capacity-wait-increment.patch` 後的 615 個來源檔）進行 **review-only** 審查。判斷依據為 `AGENTS.md`、`README.md`、`docs/CURRENT_STATE.md`、`docs/PHASE_PLAN.md`、`docs/PRODUCT_REQUIREMENTS.md`、`docs/ARCHITECTURE.md`、`docs/CONTRACTS.md` 與實際原碼及交付產物；歷史方案、已關閉實驗與 `prior-review/reviewer.txt` 僅作為參考線索並逐一核對原碼，不直接視為事實或必須實作的需求。審查過程未修改受維護檔案，亦未發起任何 Nexus／外部模型呼叫。
+
+* **本輪增量（Capacity waiting and projection estimates）與既有成果查核**：
+* **套件與交付證據驗證通過**：全數 1,003 個壓縮檔項目 SHA-256、615 個目前來源檔、613 個 `before-source.zip` 檔案、兩組 patch（`context-capacity-wait-increment.patch` 與 `changes.patch`）重建、28 份 Markdown 文件的 1,946 個連結與 356 個細節映射（`tools/check_docs.py`），以及 12 組雙協定（Chat Completions / Responses）後端與桌面端交付產物（`history`、`release`、`handoff` 三種情境之 SQLite 結算紀錄、原始 PDF、影像串流、匯出 ZIP 位元組與 Electron / Edge 渲染截圖像素）均在獨立暫存環境核對吻合。
+* **前輪回報問題已確實修復**：
+1. `ContextUpdates.resolve()`（`src/pdfmd/context_updates.py:83-94`）在因容量不足（`not core["fits"]`）永久拒絕待處理提案前，已改用不借用待處理 `release` 的純活動狀態 `fallback = {**state, "context_waiting": None}` 搭配拒絕回條信封預先檢查 `rejected.normal()` 與 `rejected.compact_request()`；當退回後的活動政策亦無法推進或既有大 `handoff` 使壓縮無法組裝時，會捕捉 `StopRun` 並回傳 `wait("capacity_blocked")` 保留待處理提案。
+2. `Context.admit_group()`（`src/pdfmd/context.py:430`）已改為僅將替換後實際降低 `measure(projected({ref}))["input_estimate"]` 的引用納入延後候選集合 `refs`，消除了極短參數（如 42 bytes）被替換為 115+ bytes 歸檔引用而擠掉同批次 1KB 正常結果的問題。
+
+
+
+
+* **本輪審查的主要發現總覽**：
+1. **[P2・已重現缺陷]** 當 agent 為緩解容量壓力而在 `context_update` 中**將既有大型 `full` pin 降級為 `index`／局部範圍**（即使同時傳入 `release=[ref], pin=[{"ref": ref, "view": "index"}]`）或**縮短既有大型 `notes**`，且因歷史訊息壓力進入 `context_waiting` 時，`Context.compaction_state()`（`src/pdfmd/context.py:502-510`）僅套用「完全解除綁定」的 `released` 清單，忽略了「降級 pin 視圖」與「縮短 notes」的空間節省；同時 `state["context_waiting"]` 會在 `compact_request()`（`src/pdfmd/context.py:517`）為舊活動政策額外加上約 286 bytes 的 `outcome_reserve`，導致任務在**未調低 `context_tokens` 的緊湊狀態下**或**容量下調至新政策合規但舊政策超額的區間時**，於 `coordinate` 直接拋出 `StopRun("capacity_blocked")` 停機。
+2. **[P3・已重現邊界缺陷]** `ContextUpdates.resolve()`（`src/pdfmd/context_updates.py:74-83`）與 `Context.preflight()`／`Context.apply_handoff()`（`src/pdfmd/context.py:189, 629-631`）使用的預留結算回條大小不一致（`outcome("applied", ..., "admitted")` 比 `reserved_outcome(state)` 小 60 bytes），且 `Context.compact_request()`（`src/pdfmd/context.py:571`）計算 `has_body_savings` 時仍使用未過濾短參數的 `self.batch_refs()`，可能掩蓋小結果的正空間節省。
+3. **[P2・原碼支持的能力與交付缺口]** 受控唯讀本地工具（`ocr_page`、`preview_document`）與任意腳本（`run_script`）共用無退路的 `UnknownEffect`（`local_outcome_unknown`）封鎖機制（`src/pdfmd/tools.py:95, 114, 204-211`）；`Documents.export()`（`src/pdfmd/documents.py:270`）在不支援硬連結的目標檔案系統（如 exFAT/FAT32 隨身碟、部分 SMB/雲端掛載）上缺乏獨佔寫入回退；且目前尚無針對 Phase 1–3 與 Stage A 完成後程式碼的真實 PDF 自主轉換驗證（Stage B）與最新 Windows 打包。
+
+
+
+### 2. 優先順序一：現有缺陷與造成缺陷的機制分析
+
+#### 發現 1（P2・已重現缺陷）：`Context.compaction_state()` 忽略待處理提案中的「Pin 視圖降級」與「Notes 縮減」，且 `outcome_reserve` 疊加於舊活動政策，導致壓縮啟動前誤觸 `capacity_blocked`
+
+* **問題、優先程度與證據類別**：P2・已重現缺陷（已在獨立暫存環境透過專案 `Store`、`Dispatcher`、`Context`、`ContextUpdates` 實測重現）。
+* **具體依據**：
+* `src/pdfmd/context.py:143-145`（`Context.policy` 中 `pinned.add(ref); released.discard(ref)`）
+* `src/pdfmd/context.py:477-481`（`Context.normal` 在 `state.get("context_waiting")` 時無條件加上 `outcome_reserve`）
+* `src/pdfmd/context.py:502-510`（`Context.compaction_state`）與 `515-520`（`Context.compact_request`）
+* `src/pdfmd/context_updates.py:83-100`（`ContextUpdates.resolve`）
+
+
+* **觸發條件、失敗機制及使用者影響**：
+1. **場景 A（Pin 視圖降級，例如 `view="full"` 改為 `view="index"` 或小範圍 `start`/`end`）**：
+* 假設活動狀態持有一個 10.5KB 的 `big_ref`（`view="full"`），不含歷史時必需輸入為 `27,032` bytes，路由可用輸入上限為 `27,132` bytes（`context_tokens=29,180, output_tokens=2,048`），此時活動政策完全合規（`fits=True`）。
+* 在下一輪工具批次中，agent 讀取了兩筆 6KB 證據，並遵循系統提示（`src/pdfmd/context.py:202`：「Choose index, a precise field/range... or explicitly release other pins」）呼叫 `context_update(release=[big_ref], pin=[{"ref": big_ref, "view": "index"}])`（或直接 `context_update(pin=[{"ref": big_ref, "view": "index"}])`），將 `big_ref` 從 10.5KB 全文降級為約 200B 的 `index` 視圖（使必需內容大幅降至約 `16,700` bytes）。
+* 在 `Context.preflight()` 中，因該批次剛讀入 12KB 歷史證據，完整正常輸入（`30,111` bytes）超過 `27,132` bytes，故提案被存為 `context_waiting`（`status="awaiting_admission"`）。
+* 進入 `coordinate` 節點執行 `ContextUpdates.resolve()` 時：
+* 第 83 行檢查提案必需內容 `core["fits"]` 為 `True`（約 `16.7KB <= 27.1KB`），不會進入 `if not core["fits"]:` 分支。
+* 第 98 行呼叫 `self.context.compact_request(job, state)` 準備啟動歷史壓縮。
+* 然而，在 `Context.policy()`（`src/pdfmd/context.py:144`）中，同一次呼叫先 `release` 再 `pin` 同一 `ref` 會執行 `released.discard(big_ref)`，因此 `proposal["policy"]["released"]` 為空集合 `[]`。
+* 接著 `compaction_state()`（`src/pdfmd/context.py:507-510`）只檢查 `set(proposal["policy"]["released"]) - set(state.get("released", []))`，**完全忽略 `proposal["policy"]["pin_views"]` 已將 `big_ref` 從 10.5KB 的 `full` 降級為 200B 的 `index**`，導致 `compaction_state` 原封不動保留了舊的 10.5KB `full` 視圖！
+* 更糟的是，此時 `state["context_waiting"]` 已非 `None`，`compact_request()` 第 517 行呼叫 `self.normal(job, {**state, "history": [], "handoff": None})` 時，會在**未降級的舊 10.5KB `full` pin（`27,032` bytes）之上，額外加上 286 bytes 的 `outcome_reserve**`（變成 `27,318 > 27,132`），當場拋出 `StopRun("capacity_blocked", "Required task instructions and pinned objects exceed the configured normal input capacity. Originals and pins are preserved; adjust capacity or explicitly revise the pinned selection.")`！
+
+
+
+
+2. **場景 B（縮減大型 `notes`）**：
+* 同理，當活動狀態持有 10.5KB 的 `notes`，而 agent 在歷史壓力下呼叫 `context_update(notes="Compact notes.")` 將筆記縮減為 14 bytes 時，`compaction_state()` 同樣忽略 `proposal["policy"]["notes"]` 的縮減，並在舊的 10.5KB `notes` 上疊加 `outcome_reserve`，導致 `compact_request()` 在未改動任何路由設定的情況下直接因 `capacity_blocked` 停機（或在使用者將 `context_tokens` 調至 `19,000 ~ 29,000` 區間時無法啟動壓縮）。
+
+
+3. **使用者影響**：Agent 已經主動採取正確的自救行動（將 `full` pin 降級為 `index` 或縮短 `notes`），應用程式卻因壓縮視圖未反映該降級、且把待處理回條預留空間疊加在舊政策上，直接卡進 `capacity_blocked` 並要求人工介入調整容量。
+
+
+* **根因判斷**：
+* `Context.compaction_state()` 的設計初衷是「允許待處理提案中明確釋放空間的操作協助組裝壓縮請求，但不提前激活會增加空間的新增內容」。然而實作時僅考慮了 `released` 陣列，遺漏了同樣屬於「明確釋放空間」的**既有 pin 視圖縮減**（例如 `full`/`raw` 改為 `index` 或更小的區間）與`notes` 長度縮減；同時在檢查活動政策基底時未排除因 `context_waiting` 本身引入的額外預留負擔。
+
+
+* **建議改善方向与驗證方式**：
+* **改善方向**：在 `Context.compaction_state(job, state)`（`src/pdfmd/context.py:502-510`）中，除套用 `proposal["policy"]["released"]` 外，對於仍在 `pinned` 中的每個 `ref`，若 `proposal["policy"]["pin_views"][ref]` 在單獨渲染時的位元組／影像成本小於 `state["pin_views"][ref]`，以及當 `len(encode(proposal["policy"]["notes"])) < len(encode(state.get("notes", "")))` 時，一併納入暫態壓縮視圖（並在 `pending_context_update` 標記中註明此為暫態縮減視圖）。
+* **驗證方式**：新增雙協定單元測試，驗證當活動狀態持有 10.5KB `full` pin 或 10.5KB `notes`、且 agent 在歷史壓力下提交 `pin=[{"ref": big_ref, "view": "index"}]` 或縮短 `notes` 時，無需調高 `context_tokens`（或在調低至 22,000 時）皆能順利組裝 `compact_request`、完成壓縮並套用提案。
+
+
+
+#### 發現 2（P3・已重現邊界缺陷）：預留結算回條（`reserved_outcome`）與實際套用回條的 60-byte 落差，以及 `compact_request()` 中 `has_body_savings` 的短參數膨脹
+
+| 子項與優先序 | 具體依據（檔案與行號） | 觸發條件與失敗機制 | 根因與建議修正 |
+| --- | --- | --- | --- |
+| **2a（P3）：`reserved_outcome` 與 `outcome("applied", ...)` 存在 60 bytes 估算落差** | • `src/pdfmd/context_outcomes.py:10-14`<br>
+
+<br>• `src/pdfmd/context.py:189, 477-481, 629-632`<br>
+
+<br>• `src/pdfmd/context_updates.py:74-83` | `Context.normal()` 在 `context_waiting` 存在且無 `update_feedback` 時，使用 `reserved_outcome(state)`（`status="superseded"`, `reason="x"*64`）預留空間；而 `ContextUpdates.resolve()` 建立 `preview` 時傳入 `outcome("applied", ..., "admitted")`，兩者相差 **60 bytes**（實測 `16,356` vs `16,296` bytes）。這導致：(1) `apply_handoff()`（第 631 行，使用 `reserved_outcome`）在最後一批歷史壓縮後可能因這 60 bytes 拒絕一個在下一步 `resolve()` 中其實完全合規（`16,296 <= allowance`）的 handoff；(2) `resolve()` 第 83 行 `core["fits"]` 用較小的 `16,296` 判定合規後，第 98 行 `compact_request()` 第 517 行卻用較大的 `16,356` 檢查 `required["fits"]`。 | 在檢查待處理提案是否可套用時（`apply_handoff` 第 629–632 行），應與 `ContextUpdates.resolve()` 一致使用 `outcome("applied", state["context_waiting"], ..., "admitted")` 進行預覽，或統一預留信封常數。 |
+| **2b（P3）：`compact_request()` 的 `has_body_savings` 仍使用未過濾短參數的 `batch_refs()**` | • `src/pdfmd/context.py:570-572`<br>
+
+<br>• 對照已修復的 `src/pdfmd/context.py:430` | 本輪雖在 `admit_group()`（第 430 行）排除了替換後反而變大的短參數引用，但 `compact_request()` 第 571 行 `receipts = self.group(job, request_id, state, deferred=self.batch_refs(job, request_id))` 仍強制將該批次所有短參數（如兩個 25 bytes 參數）替換為約 124 bytes 的 `archived_arguments_ref`（膨脹約 +198 bytes）。若該批次有一筆 200KB 已延後結果與一筆未延後的 600 bytes 結果（延後可省 ~80 bytes），`len(encode(receipts))` 反而比 `len(encode(normal_group))` 大約 118 bytes，使 `has_body_savings` 誤判為 `False`。 | 將 `compact_request()` 第 571 行的 `receipts` 改為僅延後能使群組體積縮小的引用（或直接使用 `admit_group` 過濾後的 `refs` 集合），確保 `has_body_savings` 與 `admit_group` 的度量基準一致。 |
+
+### 3. 優先順序二：可靠自主轉換所需的能力缺口
+
+對照產品目標（「使用者提供 PDF 與轉換範圍後，透過 Nexus 自主完成轉換、取得證據、編輯文件、管理 context、自行修正、恢復續工及完成交付，盡量減少日常人工介入」），目前從單一工具到完整工作流程存在以下三項關鍵能力缺口：
+
+| 缺口項目與優先序 | 具體依據（檔案與行號） | 對自主轉換與完整交付的影響 | 根因分析與既有設計限制 |
+| --- | --- | --- | --- |
+| **缺口 1（P2・原碼支持）：受控唯讀工具（`ocr_page`、`preview_document`）中斷後陷入不可恢復的 `local_outcome_unknown**` | • `src/pdfmd/tools.py:94-97`（`Dispatcher.skip`）<br>
+
+<br>• `src/pdfmd/tools.py:114-115`（`Dispatcher.execute`）<br>
+
+<br>• `src/pdfmd/tools.py:204-211`（`Dispatcher.process`）<br>
+
+<br>• `docs/PHASE_PLAN.md:88-98`（Stage C） | 在轉換掃描版或混合版 PDF 時，一旦 `ocr_page`（600s 逾時）或 `preview_document`（90s 逾時）因單頁耗時過長、active-time 預算到達、使用者按 Stop 或程式關閉重開而停留在 `status="started"`，後續無論直接按 **Continue** 或附帶新指示（amendment）按 **Continue**，`execute()` 與 `skip()` 皆無條件拋出 `UnknownEffect`，使任務永久卡在 `local_outcome_unknown`，唯有手動修改 SQLite 或重建任務才能繼續。 | `tools.py` 將「應用程式完全受控、僅寫入 `processes/<sha256(op)>/` 隔離目錄與共享快取的唯讀子程序（`ocr_page`、`preview_document`）」與「具任意 host 權限的 `run_script`」綁定在同一套禁止重試／禁止跳過的規則上，且未實作 Stage C 的受控程序對帳機制。 |
+| **缺口 2（P2・原碼支持）：`Documents.export()` 缺少對非硬連結目標檔案系統的回退機制** | • `src/pdfmd/documents.py:262-273`（`Documents.export`）<br>
+
+<br>• `docs/CONTRACTS.md:270` | `export()` 在目標目錄建立 `.tmp` 後呼叫 `os.link(temp, target)`（注：因 `temp` 位於 `target.parent`，本機 NTFS 跨磁碟分割區不會觸發 `EXDEV`，先前評論稱「跨磁碟機必失敗」並不精確；但當目標路徑位於 **exFAT/FAT32 隨身碟、部分 SMB 網路芳鄰、WebDAV 或雲端掛載資料夾**等不支援 hard link 的檔案系統時，`os.link` 會拋出 `OSError(ENOTSUP/EPERM/EINVAL)`）。此時 `export()` 僅捕捉 `FileExistsError`，導致匯出直接失敗且殘留 `.tmp` 檔。 | 為保證「絕不覆蓋既有檔案（Exclusive publication）」而單獨依賴 `os.link`，未在 `os.link` 因檔案系統不支援而失敗時回退至同樣具備獨佔建立語義的 `open(target, "xb")` + `os.fsync`。 |
+| **缺口 3（P2・產品驗證與交付缺口）：缺乏現有架構下的真實 PDF 自主轉換驗證（Stage B）與最新 Windows 打包（Stage D）** | • `docs/PHASE_PLAN.md:45, 68-86, 100-108`<br>
+
+<br>• `docs/CURRENT_STATE.md:19, 89, 250-291` | 目前 248 個 Python 測試與桌面測試皆使用腳本化（scripted）模型回覆與合成 PDF；唯一一次真實 Nexus 轉換（Nursing 單節，19 次請求）發生在初版，當時尚未實作候選區塊重用、續工控制、PDF 旋轉／CMYK／Stencil 處理及目前的 Context 提案協調，且從未在真實模型下驗證跨頁長節或滾動壓縮（compaction）。同時 `release/` 下的 Windows 套件仍停留在早期 `response-correction` 版本。 | 開發過程為先收斂 Stage A（Context 協調與基礎契約）而推遲了真實轉換與重新打包；目前 Stage A 已高度穩定，若繼續在合成狀態機邊界上無限擴張而不進入 Stage B 實測，將無法發現真實模型在工具選擇、版面理解與摘要品質上的實際瓶頸。 |
+
+### 4. 優先順序三：有實際價值的新功能與改善機會
+
+以下建議按對「自主完成轉換與可靠交付」的實際價值排序：
+
+1. **解耦受控子程序（`ocr_page`、`preview_document`）的中斷恢復，並為 `run_script` 設計明確的使用者確認對帳選項**
+* **解決甚麼具體問題**：消除掃描／混合 PDF 在 OCR 或預覽截圖中斷後永久卡死在 `local_outcome_unknown` 的問題。
+* **現有能力為何不足**：`Dispatcher.execute()`（`src/pdfmd/tools.py:114`）禁止 `ocr_page` 重跑，而 `Dispatcher.skip()`（`src/pdfmd/tools.py:95`）禁止任何 `status == "started"` 的工具在有新指示時被標記為已中止並跳過。
+* **對自主性、可靠性或交付品質的改善**：因 `Runtime.run()` 持有跨程序 `FileLock(task-<job>.lock)`，重入時舊子程序必然已結束。對無外部副作用的 `ocr_page` 與 `preview_document`：(a) 無新指示時，可安全封存舊日誌並重新執行該次操作；(b) 有新指示（amendment）時，`skip()` 可封存既有 `stdout.txt`/`stderr.txt` 並回傳 `skipped=true, execution="interrupted_before_completion"` 的配對回條，讓 agent 依新指示自主調整策略（例如改用較低 DPI 或縮小 `region`）。對 `run_script` 則維持預設阻擋，並可選擇性提供明確的 UI/API 使用者確認放行選項（此項屬 `CONTRACTS.md` Q3 契約擴充，需使用者決策是否納入）。
+* **如何驗證改善是否成立**：離線故障注入測試模擬 `ocr_page`、`preview_document` 在 `status="started"` 中斷後，直接 Continue 能完成轉換並匯出，帶 amendment 按 Continue 能產生配對跳過回條並由 agent 改選參數完成交付。
+
+
+2. **在 `Documents.export()` 加入跨檔案系統獨佔寫入回退（`open(target, "xb")` + `fsync` + `verify`）**
+* **解決甚麼具體問題**：讓使用者能將轉換完成的 ZIP 直接匯出至 exFAT/FAT32 外接隨身碟、網路共用資料夾或雲端同步掛載區。
+* **現有能力為何不足**：`src/pdfmd/documents.py:270-273` 僅處理 `os.link(temp, target)` 的 `FileExistsError`，遇到檔案系統不支援硬連結的 `OSError` 會直接拋錯並留下暫存檔。
+* **對自主性、可靠性或交付品質的改善**：在 `except OSError`（非 `FileExistsError`）時，改以 `with target.open("xb") as out:` 獨佔寫入 `temp.read_bytes()` 並執行 `os.fsync(out.fileno())`，並在 `finally` 中確保清理 `temp`，之後同樣執行 `verify(target)`。既保留 100% 的防覆蓋（Exclusive publication）與位元組完整性保證，又消除檔案系統限制。
+* **如何驗證改善是否成立**：單元測試模擬 `os.link` 拋出 `OSError(errno.ENOTSUP, ...)` 與 `OSError(errno.EXDEV, ...)`，驗證匯出成功且 `verify(target)` 為 `True`、無 `.tmp` 殘留，且當目標檔已存在時仍拋出 `Conflict`。
+
+
+3. **在大型證據被容量延後（`omitted_result`）時提供輕量級頁數／容器尺寸導航資訊**
+* **解決甚麼具體問題**：當真實模型對多頁呼叫 `inspect_pdf`（如 `mode="blocks"` 或 `"dict"`）或 `ocr_page` 而因結果過大被延後（`body_in_message=false`）時，協助模型精準定位下一步 `read_evidence` 的 `json_pointer` 與範圍。
+* **現有能力為何不足**：目前 `Context.omitted_result()`（`src/pdfmd/context.py:325-350`）僅列出頂層鍵名 `result_keys`（如 `["pages", "mode", "warnings", "coverage"]`），模型無法從回條直接得知 `pages` 陣列共有幾項或各頁內容的大致字元／項目數。
+* **對自主性、可靠性或交付品質的改善**：在不截斷原始資料、不限制 agent 讀取順序的前提下，於 `omitted_result` 中補充頂層陣列／字串長度（例如 `pages` 長度與各元素的基礎大小概況），減少真實模型在 Stage B 長文件轉換中的盲目試探與額外請求耗用。
+* **如何驗證改善是否成立**：單元測試確認 `omitted_result` 的導航資訊準確且不影響完整原文讀取；於獲授權之 Stage B 實測觀察模型讀取行為。
+
+
+
+### 5. 架構實質評估
+
+經全面檢視 13 個後端 Python 模組（共約 2,600 行）與 6 個前端／Electron 模組，目前採用的 **「單寫入者小型 LangGraph StateGraph（`coordinate -> prepare -> model -> tools -> compact`）+ `catalog.sqlite` 短交易中繼資料 + 內容定址不可變外部檔案（`objects/`、`versions/`）」** 架構**健全且切合產品目標，不建議更換框架或進行大規模重建**：
+
+* **責任邊界清晰且已解決跨儲存體一致性問題**：拆出獨立的 `coordinate` 節點後，「提案結算／等待觀察（寫入 `catalog.sqlite` 與 `graph.sqlite` checkpoint）」與「組裝並凍結下一筆請求（`prepare`）」已完全解耦；`nexus.py` 的凍結請求與單一發送閘門、`documents.py` 的不可變版本與候選區塊重用、`evidence.py` 的統一未旋轉座標系與原始／顯示影像分離，均運作良好。
+* **局部修補對比模組重構**：本輪發現的缺陷 1（`compaction_state` 未納入待處理 pin 視圖降級與 notes 縮減）、缺陷 2（`reserved_outcome` 60-byte 落差與 `has_body_savings` 短參數過濾）、缺口 1（`ocr_page`/`preview_document` 重試／跳過）與缺口 2（`export` 獨佔寫入回退），根因皆位於單一函式的局部判斷條件（合計約 25–40 行修改），完全不需要改變模組邊界、資料表結構或引入新的狀態機層級。
+
+### 6. 總結與下一個小批次工作建議
+
+* **最重要的發現及其產品影響**：
+* 本輪 `review-2026-10-25-context-capacity-wait.zip` 已妥善修復前輪發現的兩條容量誤拒絕路徑與短參數測試骨架膨脹問題。
+* 目前唯一新發現且已重現的 P2 缺陷位於 `Context.compaction_state()`（`src/pdfmd/context.py:502-510`）：當 agent 在歷史壓力下主動將大型 `full` pin 降級為 `index`（或縮短大型 `notes`）時，`compaction_state()` 未反映該縮減，且 `state["context_waiting"]` 在 `compact_request()` 中對舊政策疊加了 286 bytes 的 `outcome_reserve`，會導致壓縮無法啟動而誤觸 `capacity_blocked`。此外，受控工具（`ocr_page`、`preview_document`）的中斷恢復與 `export()` 的非硬連結檔案系統回退，是進入實際使用前最直接的可靠性缺口。
+
+
+* **已完成的驗證與結論限制**：
+* 已完成：1,003 個壓縮檔項目 SHA-256 核對、兩組 patch 重建、12 組後端與桌面交付產物（含 SQLite 結算紀錄、原始影像串流、ZIP 位元組與渲染截圖像素）驗證、`tools/check_docs.py` 檢查（零錯誤），以及在獨立暫存環境針對發現 1、發現 2a、發現 2b 的最小重現測試。
+* 結論限制：遵循本輪授權限制，未執行真實 Nexus／模型呼叫，亦未在 Windows 環境重建安裝包；真實模型在複雜多頁 PDF 上的自主工具選擇、跨頁排版品質、摘要語義完整性與實際成本，必須透過後續獲授權的 Stage B 實測確認。
+
+
+* **尚未解決或未深入檢查的相關問題**：
+* 高位元深度（>8-bit）與特殊 ICC 色彩空間 PDF 影像在轉為 8-bit PNG 顯示資產時的視覺色差（目前已有明確 warning 與原始串流保留）。
+* Windows NSIS 安裝包在乾淨環境的首次安裝與離線／首次 OCR 語系快取行為。
+
+
+* **最值得進行的下一個小批次工作建議（僅供決策，未獲授權前不進行實作）**：
+* **建議方案**：以一個極精簡的收尾修補批次（完成 Stage A 尾端邊界並打通 Stage C/D 的兩處局部阻礙），隨即轉入 **Stage B（真實 PDF 自主轉換驗證）**，避免在無真實模型回饋下繼續擴張合成狀態機。
+* **目的與優先理由**：一次修復 `compaction_state()` 對 pin 視圖降級／notes 縮減的忽略（發現 1）、對齊預留回條大小與 `has_body_savings` 短參數過濾（發現 2），並補上 `ocr_page`/`preview_document` 中斷續工（缺口 1）與 `export()` 檔案系統回退（缺口 2），讓緊接著的 Stage B 真實 PDF 轉換測試不會因 OCR 逾時或壓縮前降級 pin 而意外卡死。
+* **建議範圍**：
+1. `src/pdfmd/context.py`（`compaction_state`、`compact_request`、`apply_handoff`）：在 `compaction_state()` 中納入待處理提案裡實際降低空間的 pin 視圖替換與 `notes` 縮減；對齊 `apply_handoff()` 與 `resolve()` 的預期結算回條大小；修正 `compact_request()` 第 571 行 `has_body_savings` 的短參數過濾。
+2. `src/pdfmd/tools.py`（`Dispatcher.execute`、`Dispatcher.skip`）：允許受控且無外部副作用的 `ocr_page` 與 `preview_document` 在 `status="started"` 中斷後於 Continue 時安全重跑，或在有新指示（amendment）時封存日誌並配對跳過。
+3. `src/pdfmd/documents.py`（`Documents.export`）：當 `os.link(temp, target)` 拋出非 `FileExistsError` 的 `OSError` 時，回退至 `target.open("xb")` + `os.fsync` 獨佔寫入並確保清除 `temp`。
+
+
+* **完成條件**：
+* 新增回歸測試驗證：(1) 歷史壓力下將 10.5KB `full` pin 降級為 `index` 或縮短 10.5KB `notes` 能順利啟動壓縮並完成套用；(2) `ocr_page`／`preview_document` 中斷後可透過 Continue 重試或配合新指示跳過；(3) `os.link` 拋出 `ENOTSUP`/`EXDEV` 時 `export()` 仍能安全獨佔匯出並通過位元組驗證。
+* 完整 Python 測試套件、Playwright 桌面測試、TypeScript 建置與 `tools/check_docs.py` 全數通過，之後即可由使用者選定實際 PDF、範圍與有限請求配額，啟動 Stage B 實測。
