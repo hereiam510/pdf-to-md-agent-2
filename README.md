@@ -9,8 +9,8 @@ PDF Markdown Workbench is a local Electron app with a Python agent engine. The a
 Install Python 3.12 through `uv`, Node.js 24 and `pnpm`. From this repository:
 
 ```powershell
-.\tools\setup.ps1
-.\tools\start.ps1
+.\tools\dev\setup.ps1
+.\tools\dev\start.ps1
 ```
 
 The setup script uses the committed Python and JavaScript lockfiles. `-Uv` and `-Pnpm` accept executable paths. The launcher uses ignored `workspaces/default`; `-Workspace` selects a separate task store. Direct `pnpm dev` uses Electron's user-data directory instead.
@@ -26,8 +26,8 @@ Source tools use a common unrotated page-coordinate frame for extraction, render
 To build and run the Windows folder app:
 
 ```powershell
-.\tools\build-windows.ps1
-.\tools\start.ps1 -Packaged
+.\tools\build\build-windows.ps1
+.\tools\dev\start.ps1 -Packaged
 ```
 
 The folder app includes its Python engine. The build script's `-Installer` option creates an NSIS installer. Building an installer does not install it. The Windows build is unsigned. Local Tesseract OCR downloads requested language data on first use and caches it in the workspace.
@@ -48,10 +48,14 @@ Latest application work: streaming contract A and SC02 have bounded local accept
 
 ## Repository map
 
+[Project layout](docs/guides/PROJECT_LAYOUT.md) maps engine modules, renderer features, test groups and utility entry points. [Artifact storage](docs/ARTIFACT_STORAGE.md) defines authoritative/private copies, per-run results, packaging boundaries and retention.
+
 | Path | Role and handling |
 | --- | --- |
 | `src/pdfmd/`, `src/desktop/`, `src/renderer/` | Python engine, Electron host and renderer. [Architecture](docs/ARCHITECTURE.md#implementation-map-and-selected-dependencies) maps responsibilities. |
-| `tests/`, `tools/`, root manifests/lockfiles | Verification fixtures and supported setup/build/document utilities. Preserve version identity; changing directory layout can affect imports, tests and builds. |
+| `src/renderer/features/` | Document sessions, settings, receive progress, recovery and diagnostics, grouped by UI responsibility. |
+| `tests/engine/`, `tests/desktop/`, `tests/fixtures/` | Engine tests by concern; separate desktop specs, Python fixtures, support harnesses and type checks; exact synthetic source PDFs. |
+| `tools/dev/`, `tools/build/`, `tools/docs/`, `tools/runtime/` | Development launch/setup, Windows builds, documentation/source checks and the runtime OCR worker. Root manifests/lockfiles keep their tool-discovery locations. |
 | `docs/` | Central INDEX, requirements, architecture, current state, phase plan and contract/development routes. |
 | `docs/design/`, `docs/guides/` | Adopted topic rules/mechanisms and deeper engineering explanations. The guides label retained historical alternatives. |
 | `docs/discussions/`, `docs/decisions/`, `docs/PROPOSED_CHANGES.md` | Attributed evolving positions, consequential choices/reasons, and unselected options with revisit conditions. |
@@ -63,7 +67,7 @@ Latest application work: streaming contract A and SC02 have bounded local accept
 | `workspaces/`, `outputs/` | Ignored task stores and user outputs. Preserve original inputs, drafts, images, consumption and task history. |
 | `build/`, `out/`, `release/`, `test-results/` | Ignored generated artifacts/results. Inspect actual contents and provenance before any separately scoped cleanup; directory names do not prove disposability or current readiness. |
 | `.venv/`, `node_modules/`, caches | Local environment/build dependencies; not source documentation and not moved by the documentation batch. |
-| `review-code.txt`, `review-docs.txt`, `review-src.txt` | Existing untracked local review scratch, retained in place and excluded from the documentation deliverable; do not stage indiscriminately. |
+| `.local/test-runs/<run>/` | New desktop-test evidence, profiles and screenshots; a separate `results/` child is owned by Playwright. Choose a new `PDFMD_TEST_RUN_ROOT` for a named run. |
 
 The [documentation decision](docs/decisions/DOCUMENTATION.md#topic-ownership-and-version-correspondence-2026-10-31) explains ownership and maintenance. Keep current entries concise, place detailed checks once with their owner, and preserve links/status when facts change. No fixed file count or per-conversation document is required.
 
@@ -75,8 +79,8 @@ The detailed [workbench behavior and implementation overview](docs/DEVELOPMENT_G
 
 With a working Python 3.9+ interpreter, run the following from this repository (or use that interpreter's full path):
 
-    python tools/check_docs.py
-    python tools/source_lookup.py EVT-1166
+    python tools/docs/check_docs.py
+    python tools/docs/source_lookup.py EVT-1166
 
 The first command checks documentation/image links, local source hashes and point/detail coverage. The second reads a bundled source without accessing an external export. They do not test an agent implementation or certify semantic completeness. [Current state](docs/CURRENT_STATE.md) records the actual review and its limits.
 
@@ -88,6 +92,6 @@ pnpm build
 pnpm test:desktop
 ```
 
-Desktop tests use local model or IPC fixtures and make no provider calls. The continuation workflow uses a test-only scheduling hook to pause at a settled tool boundary before UI Stop. The ordinary workbench test accepts `PDFMD_PACKAGED_EXE` to test a built executable; the renderer-session and scheduling-hook tests target development code. Live Nexus calls require an explicit task and credential; they are not part of automated tests.
+Desktop tests use local model or IPC fixtures and make no provider calls. Playwright gives each run a unique local result/evidence directory; [the storage policy](docs/ARTIFACT_STORAGE.md#test-executions) explains overrides and cleanup behavior. The continuation workflow uses a test-only scheduling hook to pause at a settled tool boundary before UI Stop. The ordinary workbench test accepts `PDFMD_PACKAGED_EXE` to test a built executable; the renderer-session and scheduling-hook tests target development code. Live Nexus calls require an explicit task and credential; they are not part of automated tests.
 
 The public repository is [hereiam510/pdf-to-md-agent-2](https://github.com/hereiam510/pdf-to-md-agent-2). Local build artifacts and private configuration are excluded from Git. No GitHub application release has been published.

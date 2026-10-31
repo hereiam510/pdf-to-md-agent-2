@@ -10,6 +10,8 @@ Before planning related work, follow CURRENT_STATE to applicable unresolved revi
 
 Use [DEVELOPMENT_GUIDE](docs/DEVELOPMENT_GUIDE.md) and the relevant technical guide for complete local explanations. Development knowledge must remain understandable from this repository alone. Preserve mechanisms, rationale, examples, constraints and unresolved choices in maintained prose. A source ID or bundled quote alone is not a sufficient technical explanation.
 
+Use [project layout](docs/guides/PROJECT_LAYOUT.md) to select code/test/tool locations and [artifact storage](docs/ARTIFACT_STORAGE.md) for private/runtime data, generated results and retention. Test fixtures use canonical module imports; desktop results default to a unique local run. Historical commands retain their original paths and are not current launch instructions.
+
 Preserve useful exact technical names as well as their meaning. [TECHNICAL_TERMS](docs/TECHNICAL_TERMS.md) is a lookup aid. The module guides own the explanations.
 
 When auditing preservation, derive candidate details from original messages/attachments as well as existing point ledgers. Check ordering, field meaning and counterexamples. Term counts, word matches and broad topic destinations do not prove semantic coverage. Historical APIs, example names and rejected mechanisms must retain their status.

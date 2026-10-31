@@ -36,7 +36,7 @@
     "files": ["out/**", "package.json"],
     "extraResources": [
       {"from": "build/engine", "to": "engine"},
-      {"from": "tools/ocr-worker.cjs", "to": "ocr-worker.cjs"}
+      {"from": "tools/runtime/ocr-worker.cjs", "to": "ocr-worker.cjs"}
     ],
     "win": {"target": "nsis", "signAndEditExecutable": false},
     "nsis": {"oneClick": false, "allowToChangeInstallationDirectory": true}

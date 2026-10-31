@@ -18,6 +18,8 @@ For [F02-D03](verification/20261031_0157_LOCAL_DIAGNOSTICS.md#f02-d03-implementa
 
 ## Reading by implementation concern
 
+For maintained file locations, focused test commands, desktop fixture module launch and tool entry points, use [project layout](guides/PROJECT_LAYOUT.md). [Artifact storage](ARTIFACT_STORAGE.md) defines private/runtime data, generated results, package inputs and retention. These owners complement the technical explanations below; they do not replace domain contracts.
+
 The owner documents state effective requirements and boundaries. The technical guides explain mechanisms, state/data distinctions, sequences, examples, failure handling and alternatives by development concern rather than conversation order.
 
 | Work area | Detailed explanation | Governing owner |
@@ -126,8 +128,8 @@ Optional [bundled sources](sources/rebuild/INDEX.md) provide readable messages, 
 
 With a working Python 3.9+ interpreter, run:
 
-    python tools/check_docs.py
-    python tools/source_lookup.py EVT-1166
+    python tools/docs/check_docs.py
+    python tools/docs/source_lookup.py EVT-1166
 
 Checks use repository files only. Counts/hashes do not prove semantic completeness or runtime correctness. Source-aware review and independent repository-only reading supplement them. [CURRENT_STATE](CURRENT_STATE.md) records documentation checks separately from application checks.
 

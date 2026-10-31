@@ -103,6 +103,8 @@ No backward compatibility or old-run migration is required. Useful old code can 
 
 ## Implementation map and selected dependencies
 
+[Project layout](guides/PROJECT_LAYOUT.md) gives the current engine-module, renderer-feature, test and utility locations. [Artifact storage](ARTIFACT_STORAGE.md) defines their source/build/runtime inclusion boundaries. The organization keeps the component responsibilities and lifecycle above.
+
 | Source | Effective responsibility |
 | --- | --- |
 | `src/desktop/main.ts`, `preload.ts` | Sandboxed renderer, explicit IPC actions, native file dialogs, encrypted connection settings, authenticated loopback engine, isolated preview worker |
@@ -113,7 +115,7 @@ No backward compatibility or old-run migration is required. Useful old code can 
 | `nexus.py`, `context.py`, `request_estimation.py`, `context_outcomes.py` | Complete native replies, frozen attempts, shared limits, actual native request plans, explicit proxy/reservation/mandatory-proof distinctions, exact outcome presentation, profitable object projections, independent pins and bounded rolling handoffs |
 | `context_revisions.py`, `context_updates.py` | Ordered whole-batch capture/reuse, eligibility and disposition, atomic catalog policy commitment, committed-effect recovery and executable continuation selection |
 | `storage.py`, `schema.py`, `documents.py` | Immutable objects, metadata transactions, typed document edits, candidates, version integrity and export |
-| `evidence.py`, `tools.py`, `tools/ocr-worker.cjs` | PDF text/layout/raw/pixel access, shared dispatch, local Tesseract OCR, saved-output screenshots and opt-in host scripts |
+| `evidence.py`, `tools.py`, `tools/runtime/ocr-worker.cjs` | PDF text/layout/raw/pixel access, shared dispatch, local Tesseract OCR, saved-output screenshots and opt-in host scripts |
 
 The engine prints a bounded startup announcement and serves only an ephemeral loopback port with a random per-launch bearer token. Electron's renderer has no Node or generic filesystem/network IPC access. Its main process holds the credential and sends it only to the local engine for the configured model request. Important results survive in storage rather than relying on UI event delivery. Closing the app terminates the local child; reopening reads saved state and requires an explicit continuation.
 

@@ -6,6 +6,8 @@ Read [CURRENT_STATE](CURRENT_STATE.md#find-current-work) for present scope and [
 
 ## Current source and latest application evidence
 
+The current [project organization round](decisions/PROJECT_ORGANIZATION.md) starts from `15393228205bca350f51decc16eddc9842ac49b1` plus the inherited implementation changes. [Its verification](verification/20261031_1646_PROJECT_ORGANIZATION.md) identifies relocation, discovery/regression evidence and preservation limits. Use [project layout](guides/PROJECT_LAYOUT.md) for current paths; old manifests and commands retain their original paths. A scoped organization commit does not include or certify all inherited changes by itself.
+
 The application verification baseline was HEAD `ba8bad3867c82373da008bccf716be7df413a417` on `master` plus substantial accumulated modified/untracked files; a later documentation checkpoint does not replace that source identity. Use a manifest or recoverable worktree snapshot as well as HEAD. The latest code closeout is SC02 item-state/role correction within adopted streaming contract A; [its original handoff](history/REVIEW_HISTORY.md#sc02-item-state-and-role-implementation-handoff-2026-10-30) identifies the 148-file final source manifest, actual tests, failures/reruns and limitations. [The preceding A handoff](history/REVIEW_HISTORY.md#streaming-contract-continuation-handoff-2026-10-30) identifies parser/accounting, build/type, actual desktop and original-raw controls.
 
 | Review question | Detailed owner |
@@ -14,7 +16,8 @@ The application verification baseline was HEAD `ba8bad3867c82373da008bccf716be7d
 | How do current rules distinguish metadata, identity, content, completion and usage? | [Streaming execution design](design/STREAMING_RECEIVE.md#streaming-contract-a-and-sc02-adopted-rules-and-implementation), including the SC02 correction; original assessment labels remain historical |
 | What protects acceptance, effects and recovery? | [Recovery contract](design/ACCEPTED_EVIDENCE_RECOVERY.md#historical-accepted-evidence-local-recovery), [R13 owner](reviews/RUNTIME_FINDINGS.md#r13--accepted-result-settlement-consistency-selected-2026-10-28) |
 | What actually happened during Nursing? | [Actual single-dispatch result](verification/20261031_0157_NURSING_BASELINE_AND_DISPATCH.md#actual-single-dispatch-result-2026-10-30), not an earlier preparation plan |
-| What was changed in this documentation batch? | [Documentation findings](reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md), [checks](verification/20261031_0157_DOCUMENTATION_STRUCTURE.md), [selected method](decisions/DOCUMENTATION.md#topic-ownership-and-version-correspondence-2026-10-31) |
+| What changed in project organization? | [Layout](guides/PROJECT_LAYOUT.md), [storage](ARTIFACT_STORAGE.md), [decision](decisions/PROJECT_ORGANIZATION.md), [checks and limits](verification/20261031_1646_PROJECT_ORGANIZATION.md) |
+| What changed in the earlier documentation batch? | [Documentation findings](reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md), [checks](verification/20261031_0157_DOCUMENTATION_STRUCTURE.md), [selected method](decisions/DOCUMENTATION.md#topic-ownership-and-version-correspondence-2026-10-31) |
 
 ## Recovery, execution and evidence boundaries
 

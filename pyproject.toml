@@ -33,4 +33,4 @@ packages = ["src/pdfmd"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q --import-mode=importlib"

@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Job, Limits, Route, Settings } from './types'
-import { useDocumentSession } from './useDocumentSession'
-import { TaskSettings } from './TaskSettings'
-import { initialWaitPolicy, WaitingSettings } from './WaitingSettings'
-import { ReceiveProgress } from './ReceiveProgress'
-import { ConflictRecovery } from './ConflictRecovery'
+import { useDocumentSession } from './features/documents/useDocumentSession'
+import { TaskSettings } from './features/settings/TaskSettings'
+import { initialWaitPolicy, WaitingSettings } from './features/settings/WaitingSettings'
+import { ReceiveProgress } from './features/receive/ReceiveProgress'
+import { ConflictRecovery } from './features/recovery/ConflictRecovery'
 import './style.css'
 
 const api = window.workbench.invoke

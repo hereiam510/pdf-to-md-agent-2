@@ -61,7 +61,7 @@ async function launchBackend() {
   const packaged = app.isPackaged
   const python = process.env.PDFMD_PYTHON || join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python')
   const executable = packaged ? join(process.resourcesPath, 'engine', 'pdf-md-engine', process.platform === 'win32' ? 'pdf-md-engine.exe' : 'pdf-md-engine') : python
-  if (!existsSync(executable)) throw new Error('The Python engine is missing. Run tools/setup.ps1, then restart the app.')
+  if (!existsSync(executable)) throw new Error('The Python engine is missing. Run tools/dev/setup.ps1, then restart the app.')
   const args = packaged ? ['--workspace', dataRoot] : ['-m', 'pdfmd.server', '--workspace', dataRoot]
   const previewLaunch = packaged ? [process.execPath] : [process.execPath, join(root, 'out/main/index.js')]
   child = spawn(executable, args, {
@@ -69,7 +69,7 @@ async function launchBackend() {
     env: { ...process.env, PYTHONIOENCODING: 'utf-8', PDFMD_LOCAL_TOKEN: token,
       LANGSMITH_TRACING: 'false', LANGCHAIN_TRACING_V2: 'false',
       PDFMD_NODE: process.execPath, PDFMD_PREVIEW_LAUNCH: JSON.stringify(previewLaunch),
-      PDFMD_OCR_WORKER: packaged ? join(process.resourcesPath, 'ocr-worker.cjs') : join(root, 'tools/ocr-worker.cjs'),
+      PDFMD_OCR_WORKER: packaged ? join(process.resourcesPath, 'ocr-worker.cjs') : join(root, 'tools/runtime/ocr-worker.cjs'),
       NODE_PATH: packaged ? join(app.getAppPath(), 'node_modules') : join(root, 'node_modules') }
   })
   let buffer = ''

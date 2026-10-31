@@ -6,6 +6,8 @@ This plan owns product-stage outcomes, adopted scope, dependencies and completio
 
 The 2026-10-31 topic reorganization is completed documentation maintenance alongside Stage B, with [its own decision and acceptance](decisions/DOCUMENTATION.md#topic-ownership-and-version-correspondence-2026-10-31). It changes navigation and record placement, not the product scope. A new live Nursing interval is not selected by that approval.
 
+The later [whole-project organization](decisions/PROJECT_ORGANIZATION.md) groups renderer features, tests and tools and establishes artifact ownership. Its local regression outcome is recorded separately; it does not close Stage B, select interruption remedies or certify an installed distribution.
+
 ## Delivery route
 
 | Stage | Intended outcome | Effective disposition |
@@ -59,6 +61,8 @@ The exact automatic-retry policy, supported local operations and interruption ca
 **Outcome and rationale:** a user can use the current app and reuse its outputs without developer tools or manual package assembly. The existing Windows distribution predates recent fixes. Destination filesystems without the current hard-link publication behavior are unverified, not already proven broken in every case.
 
 **Provisional scope:** first verify and, where necessary, repair explicit-version export to the declared everyday destination; then build the current Windows runtime/app and check it outside the development environment. Keep credentials and private source/workspaces out of distribution. Reuse existing build/export mechanisms if they satisfy the outcome; change publication strategy if the target environment disproves it. Broader platforms and signing/distribution choices need a separate selected scope.
+
+[R14's file-URL image observation](reviews/RUNTIME_FINDINGS.md#r14--deep-windows-file-url-assets-can-fail-to-display) adds a concrete destination/viewer boundary: valid identical assets can fail to display after extraction to a deep Windows location. The organization round shortens its generated test paths. Broader support is not implemented by that test-storage correction; assess the actual declared destination when Stage D is selected.
 
 **Completion conditions:** exported content opens after relocation with its relative image links and required original/provenance files; selected-version consistency and exact source assets survive. A failed or interrupted export preserves the previous usable package and can be retried without inference. A clean-environment Windows check can launch, configure Nexus without bundled secrets, import a source, use the selected conversion path, reopen saved work and export. Local scripted checks and any authorized live check are labeled separately. Release artifacts are tied to source/lockfile/build identities; installing, publishing and source synchronization are distinct actions. An old installer or a successful frontend build cannot stand in for this acceptance.
 

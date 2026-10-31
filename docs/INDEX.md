@@ -17,6 +17,7 @@ Start with the question or capability below. [CURRENT_STATE](CURRENT_STATE.md) o
 | Langfuse, control APIs, retention and other unselected changes | [PROPOSED_CHANGES](PROPOSED_CHANGES.md#find-an-option) | [Observability alternatives](discussions/OBSERVABILITY.md), relevant topic decisions | Inclusion is not adoption or a prerequisite; use each recorded reconsideration condition. |
 | Framework, architecture and integration | [ARCHITECTURE](ARCHITECTURE.md), [requirements](PRODUCT_REQUIREMENTS.md) | [Rebuild decisions](decisions/REBUILD.md), [original foundation discussion](history/discussions/20261031_0157_REBUILD_FOUNDATIONS.md) | [Integration guide](guides/INTEGRATION_AND_MODEL_BOUNDARY.md), [source inventory](sources/INDEX.md) |
 | Documentation organization and historical correspondence | [Filing rules below](#maintaining-this-catalogue) | [Decision](decisions/DOCUMENTATION.md#topic-ownership-and-version-correspondence-2026-10-31) | [DOC-09–13](reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md), [batch verification](verification/20261031_0157_DOCUMENTATION_STRUCTURE.md) |
+| Repository layout, tests, utilities and artifact ownership | [Project layout](guides/PROJECT_LAYOUT.md), [artifact storage](ARTIFACT_STORAGE.md) | [Organization decision](decisions/PROJECT_ORGANIZATION.md) | [Organization checks](verification/20261031_1646_PROJECT_ORGANIZATION.md); product phase/readiness remain with their existing owners. |
 
 ## Decisions
 
@@ -41,6 +42,7 @@ The following lists maintained documents, root guidance, fixture documentation a
 | [AGENTS.md](../AGENTS.md) | Rebuild working agreement |
 | [CHANGELOG.md](../CHANGELOG.md) | Changelog |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | Rebuild architecture |
+| [docs/ARTIFACT_STORAGE.md](ARTIFACT_STORAGE.md) | Maintained, private, runtime, test and build storage; retention and packaging boundaries. |
 | [docs/CONTRACTS.md](CONTRACTS.md) | Routes each shared contract to its detailed topic owner. |
 | [docs/CURRENT_STATE.md](CURRENT_STATE.md) | Actual readiness, limits and next decision. |
 | [docs/DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) | Development handoff |
@@ -73,6 +75,7 @@ The following lists maintained documents, root guidance, fixture documentation a
 | [docs/guides/DOCUMENT_ENGINE.md](guides/DOCUMENT_ENGINE.md) | Document, evidence, and candidate engineering handoff |
 | [docs/guides/EXECUTION_AND_DELIVERY.md](guides/EXECUTION_AND_DELIVERY.md) | Execution, recovery, and delivery engineering handoff |
 | [docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md](guides/INTEGRATION_AND_MODEL_BOUNDARY.md) | Integration and model-boundary engineering guide |
+| [docs/guides/PROJECT_LAYOUT.md](guides/PROJECT_LAYOUT.md) | Code/test/tool ownership, development routes and earlier-location lookup. |
 
 ### Discussions
 
@@ -95,6 +98,7 @@ The following lists maintained documents, root guidance, fixture documentation a
 | [docs/decisions/INITIAL_CONTRACTS.md](decisions/INITIAL_CONTRACTS.md) | Closed first-version contract choices and their original questions |
 | [docs/decisions/LOCAL_DIAGNOSTICS.md](decisions/LOCAL_DIAGNOSTICS.md) | Local Diagnostics: decisions and rationale |
 | [docs/decisions/NURSING.md](decisions/NURSING.md) | Nursing: decisions and rationale |
+| [docs/decisions/PROJECT_ORGANIZATION.md](decisions/PROJECT_ORGANIZATION.md) | Repository organization, preserved guarantees, findings and acceptance. |
 | [docs/decisions/REBUILD.md](decisions/REBUILD.md) | Rebuild: decisions and rationale |
 | [docs/decisions/STREAMING_RECEIVE.md](decisions/STREAMING_RECEIVE.md) | Streaming Receive: decisions and rationale |
 
@@ -111,6 +115,8 @@ The following lists maintained documents, root guidance, fixture documentation a
 | [docs/verification/20261031_0157_DOCUMENTATION_STRUCTURE.md](verification/20261031_0157_DOCUMENTATION_STRUCTURE.md) | Documentation reorganization verification |
 | [docs/verification/20261031_0157_LOCAL_DIAGNOSTICS.md](verification/20261031_0157_LOCAL_DIAGNOSTICS.md) | Local diagnostic implementation and verification record |
 | [docs/verification/20261031_0157_NURSING_BASELINE_AND_DISPATCH.md](verification/20261031_0157_NURSING_BASELINE_AND_DISPATCH.md) | Nursing baseline and single-dispatch evidence |
+| [docs/verification/20261031_0342_TEST_ARTIFACT_RETENTION.md](verification/20261031_0342_TEST_ARTIFACT_RETENTION.md) | Authorized test-product cleanup, exact retained exceptions and historical evidence availability |
+| [docs/verification/20261031_1646_PROJECT_ORGANIZATION.md](verification/20261031_1646_PROJECT_ORGANIZATION.md) | Repository relocation, test discovery, preservation and execution checks, with [path map](verification/20261031_1646_PROJECT_RELOCATIONS.json) and [implementation identity](verification/20261031_1646_PROJECT_SOURCE.json). |
 
 ### Findings and reviews
 
