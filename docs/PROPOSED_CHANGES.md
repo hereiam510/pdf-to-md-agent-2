@@ -6,6 +6,7 @@ This is a retained-options record, not an execution queue. Inclusion establishes
 
 | Unselected direction | Location / trigger |
 | --- | --- |
+| Whole-request estimator component calibration | [Concrete text/fixed/image selection and validation proposal](discussions/REQUEST_CAPACITY.md#recommendation-correction-and-component-calibration-proposal-2026-11-01); current calibration is materially inaccurate, but no parameters, acceptance targets, implementation or provider sampling are adopted. |
 | Langfuse, external export, F03/F04 work | [Observability discussion](discussions/OBSERVABILITY.md); select for a demonstrated missing diagnostic need and settle privacy, deployment and reliability choices first. |
 | Diagnostic detail cost and bounds | [Read cost](#diagnostic-detail-read-cost-and-bounds); revisit on measured responsiveness/scale impact. |
 | Prepare-only, before-tools gate or multi-dispatch fail-stop controls | [Execution controls](#explicit-request-preparation-and-execution-stop-controls); select only the needed boundary. |
