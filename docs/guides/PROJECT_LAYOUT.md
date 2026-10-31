@@ -47,7 +47,7 @@ The engine remains a small flat package so its existing imports, lifecycle and p
 | `tests/desktop/types/` | Compile-only diagnostic client/type checks; included by the root TypeScript configuration. |
 | `tests/fixtures/pdf/` | Seven versioned synthetic color/mask/JPX PDFs; [fixture provenance](../../tests/fixtures/pdf/README.md). |
 
-Tests use canonical `tests.engine.<concern>.test_<name>` imports where they share an existing builder. Root `tests/__init__.py` and the group package files make those identities explicit. Pytest uses `--import-mode=importlib`; a flat test directory is no longer inserted as an implicit import root. Desktop fixture builders use those same identities through module launch. They do not modify `sys.path`. The selected wheel packages only `src/pdfmd`, so the test packages are not application modules.
+Tests use canonical `tests.engine.<concern>.test_<name>` imports where they share an existing builder. Shared desktop fixture modules use `tests.desktop.fixtures.<name>` imports, including when consumed by engine tests. Do not reload these modules under ad hoc names through file-path loaders: that creates a second module identity and bypasses the package layout. Root `tests/__init__.py` and the group package files make those identities explicit. Pytest uses `--import-mode=importlib`; a flat test directory is no longer inserted as an implicit import root. Desktop fixture builders use those same identities through module launch. They do not modify `sys.path`. The selected wheel packages only `src/pdfmd`, so the test packages are not application modules.
 
 From the repository root:
 

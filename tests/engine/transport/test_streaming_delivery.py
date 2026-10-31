@@ -1,7 +1,6 @@
 """Scripted streamed recovery and exact product preservation, not model autonomy."""
 from copy import deepcopy
 from hashlib import sha256
-import importlib.util
 import json
 from pathlib import Path
 import zipfile
@@ -17,13 +16,10 @@ from pdfmd.server import Engine
 from pdfmd.storage import Store
 from tests.engine.transport.test_response_repairs import native
 from tests.engine.execution.test_runtime import tool
+from tests.desktop.fixtures import compaction_recovery as legacy
 
 
 WAIT = {"first_progress_seconds": 600, "idle_progress_seconds": 300, "total_seconds": None}
-_spec = importlib.util.spec_from_file_location("stream_delivery_legacy_fixture",
-    Path(__file__).parents[2] / "desktop" / "fixtures" / "compaction_recovery.py")
-legacy = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(legacy)
 
 
 def prepare_stream_delivery(directory, protocol, endpoint):

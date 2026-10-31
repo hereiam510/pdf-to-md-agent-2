@@ -9,6 +9,7 @@ This file records selected application changes, repository maintenance and impor
 - Group renderer features, engine tests, desktop specs/fixtures/support/type checks and development/build/documentation/runtime tools by responsibility. [Project layout](docs/guides/PROJECT_LAYOUT.md) provides current commands and module lookup.
 - Give new desktop checks a unique local run root, with runner-cleared results separate from retained case evidence. [Artifact storage](docs/ARTIFACT_STORAGE.md) explains private/runtime data, packaging and retention.
 - Preserve inherited implementation work and existing user data. [Organization verification](docs/verification/20261031_1646_PROJECT_ORGANIZATION.md) distinguishes path/build/regression checks from live-source acceptance and installed-product readiness.
+- Follow-up [organization review](docs/reviews/20261031_1907_PROJECT_ORGANIZATION.md) verifies preservation/navigation and replaces two remaining ad hoc fixture loaders with canonical imports; focused delivery and diagnostic/reopen checks pass.
 
 ### 2026-10-25 — Capacity waiting and projection estimates
 

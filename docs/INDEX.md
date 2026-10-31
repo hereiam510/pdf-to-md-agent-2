@@ -17,7 +17,7 @@ Start with the question or capability below. [CURRENT_STATE](CURRENT_STATE.md) o
 | Langfuse, control APIs, retention and other unselected changes | [PROPOSED_CHANGES](PROPOSED_CHANGES.md#find-an-option) | [Observability alternatives](discussions/OBSERVABILITY.md), relevant topic decisions | Inclusion is not adoption or a prerequisite; use each recorded reconsideration condition. |
 | Framework, architecture and integration | [ARCHITECTURE](ARCHITECTURE.md), [requirements](PRODUCT_REQUIREMENTS.md) | [Rebuild decisions](decisions/REBUILD.md), [original foundation discussion](history/discussions/20261031_0157_REBUILD_FOUNDATIONS.md) | [Integration guide](guides/INTEGRATION_AND_MODEL_BOUNDARY.md), [source inventory](sources/INDEX.md) |
 | Documentation organization and historical correspondence | [Filing rules below](#maintaining-this-catalogue) | [Decision](decisions/DOCUMENTATION.md#topic-ownership-and-version-correspondence-2026-10-31) | [DOC-09–13](reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md), [batch verification](verification/20261031_0157_DOCUMENTATION_STRUCTURE.md) |
-| Repository layout, tests, utilities and artifact ownership | [Project layout](guides/PROJECT_LAYOUT.md), [artifact storage](ARTIFACT_STORAGE.md) | [Organization decision](decisions/PROJECT_ORGANIZATION.md) | [Organization checks](verification/20261031_1646_PROJECT_ORGANIZATION.md); product phase/readiness remain with their existing owners. |
+| Repository layout, tests, utilities and artifact ownership | [Project layout](guides/PROJECT_LAYOUT.md), [artifact storage](ARTIFACT_STORAGE.md) | [Organization decision](decisions/PROJECT_ORGANIZATION.md) | [Organization checks](verification/20261031_1646_PROJECT_ORGANIZATION.md), [follow-up review and ORG-01](reviews/20261031_1907_PROJECT_ORGANIZATION.md); product phase/readiness remain with their existing owners. |
 
 ## Decisions
 
@@ -123,6 +123,7 @@ The following lists maintained documents, root guidance, fixture documentation a
 | Document | Purpose / role |
 | --- | --- |
 | [docs/reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md](reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md) | Documentation structure review and disposition |
+| [docs/reviews/20261031_1907_PROJECT_ORGANIZATION.md](reviews/20261031_1907_PROJECT_ORGANIZATION.md) | Whole-project organization review, canonical fixture-import correction and scoped verification. |
 | [docs/reviews/20261031_0157_REBUILD_PRESERVATION.md](reviews/20261031_0157_REBUILD_PRESERVATION.md) | Preservation and self-containment audit |
 | [docs/reviews/20261031_0157_REBUILD_TECHNICAL_DETAILS.md](reviews/20261031_0157_REBUILD_TECHNICAL_DETAILS.md) | Source-first technical-detail review |
 | [docs/reviews/DOCUMENTATION_REORGANIZATION_2026-10.md](reviews/DOCUMENTATION_REORGANIZATION_2026-10.md) | Documentation reorganization review — October 2026 |
