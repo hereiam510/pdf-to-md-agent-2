@@ -97,7 +97,7 @@ The topic designs connect these requirements to implementation and discriminatin
 | Requirement concern | Detailed acceptance / evidence route |
 | --- | --- |
 | Exact content, candidate reuse, edit conflicts and explicit saved-version delivery | [Document model](design/DOCUMENT_MODEL.md#acceptance-and-evidence-correspondence) |
-| Complete independent figures and adjacent source-grounded searchable text | [FD-01 requirements and planned acceptance](design/FIGURE_DELIVERY.md#verification-and-acceptance-plan); actual agent behavior remains unverified |
+| Complete independent figures and adjacent source-grounded searchable text | [FD-01 requirements and acceptance matrix](design/FIGURE_DELIVERY.md#verification-and-acceptance-plan); actual agent behavior remains unverified |
 | Full/raw/field/range/native-pixel access and honest original/display coordinates | [PDF evidence](design/PDF_EVIDENCE.md#acceptance-and-evidence-correspondence), [document access](design/DOCUMENT_MODEL.md#exact-saved-document-and-evidence-access) |
 | Autonomous context choices, whole-batch commitment and useful continuation | [Context contract](design/CONTEXT_MANAGEMENT.md#acceptance-and-evidence-correspondence), [coordination matrix](design/CONTEXT_UPDATE_COORDINATION.md#observable-acceptance-and-limits) |
 | Complete reply acceptance, preserved raw evidence and first/reopen consistency | [Streaming matrix](design/STREAMING_RECEIVE.md#finite-acceptance-and-stopping-conditions), [SC02 correspondence](design/STREAMING_RECEIVE.md#first-acceptance-reopened-evidence-and-resolved-history) |

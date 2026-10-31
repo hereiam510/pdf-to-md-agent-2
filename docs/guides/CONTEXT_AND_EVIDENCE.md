@@ -25,6 +25,12 @@ The response-correction increment adds bounded repair of model-authored handoffs
 
 This guide owns detailed evidence/context mechanisms; [Q2](../design/CONTEXT_MANAGEMENT.md#q2-context-transitions) governs the implemented transitions. [The coordination design](../design/CONTEXT_UPDATE_COORDINATION.md) owns the later integrated policy selection. Earlier framework examples and rejected automatic rules keep their stated status.
 
+### Figure obligations in effective input
+
+For [FD-01](../design/FIGURE_DELIVERY.md), `Context.normal` sends SYSTEM with the current user anchor, optional handoff, chosen pins/history and tools through the existing native request composer. SYSTEM defines complete figure units and adjacent source-grounded text, including captionless cases and explicit gaps. The tool descriptions clarify why an embedded xref may omit vector labels or related material and why rendered pixels do not create searchable Markdown. These instructions are included in actual payload estimation; they add input cost rather than establishing a whole-task saving.
+
+`compact_request` uses COMPACT instead of SYSTEM. COMPACT therefore explicitly preserves figure obligations, unfinished associations, uncertainty and exact source/asset/version references. User scope/amendments remain in the independent anchor; the next normal request restores SYSTEM and the accepted handoff. `apply_handoff` checks structure, coverage and capacity, not semantic preservation of every figure detail. Saved originals remain retrievable even when a representation leaves context. [The local evidence](../verification/20261101_0033_FD01_LOCAL.md) checks transmission and fixture continuation; actual model understanding and natural captionless behavior require separately authorized source-led validation. No automatic figure schema, pinning, reading order or exporter assembly follows.
+
 - Exact acquisition and agent choice: [precise reads](#5-precise-read-and-result-envelope-semantics), [pins/releases](#8-pins-links-and-release-intent), [implemented admission](#implemented-capacity-admission-and-independent-pins).
 - Capacity: [complete-request accounting](#14-complete-request-capacity-accounting), including the implemented BPE proxy/reserves and uncertainty; route calibration remains distinct.
 - Acceptance/history: [resolved historical batches](#resolved-historical-batches), [tool intents/settlement](#11-tool-intents-and-one-settlement-boundary), [frozen requests](#13-input-view-frozen-request-and-causal-linkage).

@@ -11,7 +11,7 @@ The agreed document, context and execution boundaries and their implemented Q1â€
 | Q3 persistence, Continue, Stop, budgets, settings and export | [Runtime and delivery](design/RUNTIME_AND_DELIVERY.md) |
 | Historical accepted-evidence recovery | [Recovery design](design/ACCEPTED_EVIDENCE_RECOVERY.md#historical-accepted-evidence-local-recovery) |
 | PDF coordinates, image display and preserved originals | [PDF evidence](design/PDF_EVIDENCE.md) |
-| Complete figure crops and adjacent source-grounded text (adopted target; implementation planned) | [Figure delivery](design/FIGURE_DELIVERY.md) |
+| Complete figure crops and adjacent source-grounded text (local guidance implemented; autonomous acceptance open) | [Figure delivery](design/FIGURE_DELIVERY.md) |
 | Streaming waits, response completion, storage and acceptance | [Streaming receive](design/STREAMING_RECEIVE.md) |
 | Read-only activity/diagnostics and raw versus validated facts | [Local diagnostics](design/LOCAL_DIAGNOSTICS.md) |
 
