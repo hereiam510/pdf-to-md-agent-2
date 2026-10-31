@@ -35,7 +35,9 @@ def delivery(tmp_path, route):
         {'id': f'p{i+1}', 'pages': [i+1], 'markdown': value} for i, value in enumerate(text)] + [
         {'id': 'figure', 'pages': [2], 'markdown': f"![Source]({image['asset_path']})"}],
         'page_updates': {str(i): {'printed': 'none', 'disposition': 'included'} for i in [1, 2]}, 'claim': 'complete'}
-    version = dispatcher.execute(job['id'], 'seed', 'edit_document', json.dumps(args))['data']['version_id']
+    saved = dispatcher.execute(job['id'], 'seed', 'edit_document', json.dumps(args))
+    assert saved['ok'], saved
+    version = saved['data']['version_id']
     return store, job, version, image, source
 
 

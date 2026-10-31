@@ -49,6 +49,22 @@ for (const protocol of ['chat_completions', 'responses']) {
       expect((await getJob()).attempts).toBe(before.attempts)
       await panel.screenshot({ path: join(directory, 'diagnosis.png') })
       await panel.getByRole('button', { name: 'Preserve work and prepare to re-plan' }).click()
+      // A stopped-task snapshot can become stale while polling is active.
+      // Honor the explicit refusal: inspect again and make a
+      // separate user selection on the new basis, with no automatic API retry.
+      await expect.poll(async () => await panel.getByRole('status').count() + await panel.getByRole('alert').count()).toBeGreaterThan(0)
+      if (await panel.getByRole('alert').count()) {
+        await expect(panel.getByRole('alert')).toContainText('stale_view: Task changed during diagnosis')
+        expect(payloads).toHaveLength(0)
+        const refused = await getJob()
+        expect(refused.attempts).toBe(before.attempts)
+        expect(refused.head).toBe(before.head)
+        await panel.screenshot({ path: join(directory, 'stale-selection.png') })
+        await panel.getByRole('button', { name: 'Inspect saved acceptance' }).click()
+        await expect(panel.getByText('Local recovery is available', { exact: true })).toBeVisible()
+        await expect(panel.getByRole('alert')).toBeHidden()
+        await panel.getByRole('button', { name: 'Preserve work and prepare to re-plan' }).click()
+      }
       await expect(panel.getByRole('status')).toContainText('Local recovery is ready')
       await expect(panel.getByText(/no recovery decision was committed/)).toBeHidden()
       const resolved = await getJob()
