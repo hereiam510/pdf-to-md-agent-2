@@ -4,10 +4,16 @@ This file records selected application changes, repository maintenance and impor
 
 ## Unreleased
 
+### 2026-11-01 — Figure delivery requirements and acceptance correction
+
+- Reopen Nursing content-delivery acceptance after user review of whole-page images; preserve the original agent report, source observations, package/pixel/usage checks and consumed allowance. [Correction](docs/verification/20261031_2242_NURSING_LIVE.md#acceptance-correction-2026-11-01).
+- Adopt complete independent crops with adjacent original captions, labels and necessary source-supported information. Permit explicitly attributed descriptions for captionless sources. [FD-01](docs/design/FIGURE_DELIVERY.md) owns the concrete proposed implementation and verification plan. This is documentation only: no manual output repair, code change or live run.
+
+
 ### 2026-10-31 — Version publication and complete Nursing delivery
 
 - Remove the unnecessary Windows prepared-directory rename from new-version saving; retain exclusive immutable preparation and the existing conditional catalog registration/head/receipt transaction. Failed unregistered work remains preserved and invisible. [Mechanism and checks](docs/verification/20261031_2220_VERSION_PUBLICATION.md) distinguish the controlled failure from unknown historical OS causes.
-- Accept the app agent's complete fourteen-page Nursing conversion at one saved/reopened/exported version, including fourteen faithful source-page images, source-led content review and a zero-send exhausted-budget copy check. The [27-send actual interval](docs/verification/20261031_2242_NURSING_LIVE.md) records own-agent repair, natural context continuation, consumption, initial helper correction and limits. Other source/OCR classes and the current installed distribution remain unverified.
+- Historical acceptance, superseded by the 2026-11-01 figure-delivery correction: accept the app agent's complete fourteen-page Nursing conversion at one saved/reopened/exported version, including fourteen faithful source-page images, source-led content review and a zero-send exhausted-budget copy check. The [27-send actual interval](docs/verification/20261031_2242_NURSING_LIVE.md) records own-agent repair, natural context continuation, consumption, initial helper correction and limits. Other source/OCR classes and the current installed distribution remain unverified.
 
 ### 2026-10-31 — Repository organization
 

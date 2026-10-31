@@ -2,7 +2,7 @@
 
 Recorded 2026-10-31 22:20, Asia/Singapore (UTC+08:00); timestamp identifies this increment's preparation, not all execution times.
 
-**Subsequent outcome:** the human later authorized the concrete interval and supplied the credential securely. [Actual execution and source-led acceptance](20261031_2242_NURSING_LIVE.md) complete all fourteen pages in 27 sends / 1665.906 active seconds, with exact saved/reopened/exported delivery. Proposal and credential-unavailable statements below retain their preparation-time status; they are not the current execution result or authority for another run.
+**Subsequent historical outcome:** the human later authorized the concrete interval and supplied the credential securely. [Actual execution and the then-recorded acceptance](20261031_2242_NURSING_LIVE.md) cover a fourteen-page completion claim in 27 sends / 1665.906 active seconds, with exact saved/reopened/exported delivery. Proposal and credential-unavailable statements below retain their preparation-time status; they are not the current execution result or authority for another run. **Later qualification (2026-11-01):** [figure-delivery acceptance is reopened](20261031_2242_NURSING_LIVE.md#acceptance-correction-2026-11-01); historical execution/package checks and this publication repair remain valid. No new run is authorized.
 
 ## Selected outcome and prior basis
 

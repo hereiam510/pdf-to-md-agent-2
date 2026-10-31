@@ -20,6 +20,8 @@ Earlier identities not recorded remain unknown. For later material changes, pres
 
 ### PDF coordinates and image delivery
 
+This section owns the source/image mechanisms. The [figure-delivery target](FIGURE_DELIVERY.md) separately defines complete independent crops and adjacent source-grounded text selected on 2026-11-01; those agent outcomes are not established merely by the mechanism checks below.
+
 `inspect_pdf` uses PyMuPDF **unrotated page points, top-left origin** for `rect`, text/image bounding boxes and extraction content. `rotated_rect`, `rotation`, `rotation_matrix` and `derotation_matrix` separately describe the displayed page. A CropBox offset does not change the contract to absolute PDF coordinates. Native extraction fields and complete originals are retained; coordinates are not rounded or rewritten inside extracted content.
 
 `render_page(region=...)` and `ocr_page(region=...)` accept that same unrotated frame. Omit the region for the complete visible page. Rendering converts the region to the rotated page rectangle internally and keeps the source page orientation. The result records both `region` and `rotated_region`, actual integer `pixel_origin`, dimensions, DPI, `page_to_pixel` and `pixel_to_page`. Each mapping is a six-number affine matrix `[a,b,c,d,e,f]`: `x'=a*x+c*y+e`, `y'=b*x+d*y+f`. Pixel coordinates refer to the saved image's top-left origin; pixel centers are at half-integer positions. The transform uses MuPDF's actual raster origin, including fractional-clip rounding. OCR output boxes remain image pixels and can be mapped back with `pixel_to_page`. OCR recognition quality is not established by a correct crop.
