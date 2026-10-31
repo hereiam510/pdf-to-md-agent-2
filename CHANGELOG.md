@@ -4,6 +4,11 @@ This file records selected application changes, repository maintenance and impor
 
 ## Unreleased
 
+### 2026-10-31 — Version publication and complete Nursing delivery
+
+- Remove the unnecessary Windows prepared-directory rename from new-version saving; retain exclusive immutable preparation and the existing conditional catalog registration/head/receipt transaction. Failed unregistered work remains preserved and invisible. [Mechanism and checks](docs/verification/20261031_2220_VERSION_PUBLICATION.md) distinguish the controlled failure from unknown historical OS causes.
+- Accept the app agent's complete fourteen-page Nursing conversion at one saved/reopened/exported version, including fourteen faithful source-page images, source-led content review and a zero-send exhausted-budget copy check. The [27-send actual interval](docs/verification/20261031_2242_NURSING_LIVE.md) records own-agent repair, natural context continuation, consumption, initial helper correction and limits. Other source/OCR classes and the current installed distribution remain unverified.
+
 ### 2026-10-31 — Repository organization
 
 - Group renderer features, engine tests, desktop specs/fixtures/support/type checks and development/build/documentation/runtime tools by responsibility. [Project layout](docs/guides/PROJECT_LAYOUT.md) provides current commands and module lookup.
