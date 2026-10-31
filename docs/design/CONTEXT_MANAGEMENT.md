@@ -9,9 +9,15 @@
 - **Discussion:** [CONTEXT_COORDINATION](../discussions/CONTEXT_COORDINATION.md); the relevant original stages and reviewer disagreements are linked from it.
 - **Verification:** adoption and local mechanism checks do not establish real-route compatibility, full fourteen-page fidelity or installed-product readiness. Follow the specific evidence entries below and [current verification](../CURRENT_STATE.md#verification-basis).
 
-## Preserved source edition
+<a id="preserved-source-edition"></a>
+## Design versions
 
-The [entry source edition](../../docs/history/contracts/20261031_0157_CONTRACTS.md) preserves the preceding combined owner, its original statements and links to captured shared rules. Capture time `20261031_0157` is not a reconstructed older adoption time. Earlier version identities/snapshots unavailable in the records remain unclaimed. Later substantive changes must retain a version list and exact basis; unrelated cosmetic edits need no new version.
+| Design identity / status | Meaning and saved basis |
+| --- | --- |
+| Current carried-forward design | The adoption identity and consequential corrections are stated in the basis above. This documentation edit does not change their meaning or create a new behavioral revision. |
+| Pre-filing source edition, captured 2026-10-31 01:57 UTC+08:00 | [Complete preceding owner](../../docs/history/contracts/20261031_0157_CONTRACTS.md). It retains the rule body and its captured shared requirements/architecture. Capture time is not original adoption time. |
+
+Earlier identities not recorded remain unknown. For later material changes, preserve the preceding rule and its dependencies before replacement and extend this table; routine editorial changes retain the adopted identity.
 
 ## 2. Context capacity and handoff
 
@@ -117,3 +123,16 @@ The summary request uses the same frozen-request service, budgets and cancellati
 A handoff applies only to the matching prefix/revision and only if it reduces the entire normal input, including its own references. Without a declared retained normal target, a partial reduction can apply while uncovered history remains, even if another compaction is needed. When a retained target is declared, the actual handoff must fit that complete continuation without new evidence deferrals. A handoff covering the last history batch must also produce fitting normal input; otherwise it is archived but rejected, preserving the previous active history/handoff for bounded correction. This prevents the demonstrated oversized-input/empty-history dead end without demanding that every partial pass reach the final target. A schema, revision, reduction or request failure leaves the previous context active. Model-authored schema/reduction/final-capacity failures and unexpected compaction tool calls receive bounded correction feedback; state conflicts and storage faults are not treated as model mistakes. A new fitting compaction request includes the diagnostic and original covered history. Rejected candidate text is considered only after selecting that history and is included only if the complete payload still fits; it cannot displace selected evidence. Otherwise its exact reference and omission status remain explicit. Compaction tools are never dispatched. Original handoffs and their archive links remain retrievable. Schema validity, net reduction and fitting capacity do not prove semantic completeness.
 
 An application receipt, not the existence of a handoff archive, establishes that a handoff was applied. If that receipt committed before the graph checkpoint, re-entry first checks the same prefix/revision and immutable archive. It then recovers the original transition using the receipt's historical before/after estimates; it does not recalculate those historical facts from a changed amendment or document head. The receipt must still match the covered requests and archive reference. Rejected or merely archived candidates have no successful application receipt and must undergo normal validation. After recovery, `prepare` assembles and checks current input with the latest amendments/head. A previously accepted transition neither grants capacity for new input nor authorizes another model send. Pins, uncovered history, original bytes and task consumption remain intact.
+
+## Acceptance and evidence correspondence
+
+The [integrated coordination design](CONTEXT_UPDATE_COORDINATION.md#observable-acceptance-and-limits) owns the detailed cross-boundary matrix. [Context](../../src/pdfmd/context.py), [request estimation](../../src/pdfmd/request_estimation.py), [working evidence](../../src/pdfmd/working_context.py) and [context updates](../../src/pdfmd/context_updates.py) implement the distinct decisions; [context engineering](../guides/CONTEXT_AND_EVIDENCE.md) explains their mechanisms and costs.
+
+| Condition / guarantee | Discriminating check and expected result |
+| --- | --- |
+| Complete candidate fits only after reducible history is compacted | [Capacity-wait](../../tests/engine/context/test_context_capacity_wait.py) and [coordination delivery](../../tests/engine/context/test_context_coordination_delivery.py) controls: retain eligible intent, compact under the permitted policy, then admit only a complete actual fitting input. |
+| Necessary content is confirmed excessive, or estimate is only uncertain | [Coordination](../../tests/engine/context/test_context_coordination.py) and [capacity](../../tests/engine/context/test_context.py) controls: B persists after later settings restoration; unknown estimates/history pressure do not become false proofs or revive a committed disposition. |
+| A large result/pin is projected or a precise read follows a full read | [Admission tests](../../tests/engine/context/test_context_admission.py) and [working-evidence delivery](../../tests/engine/documents/test_working_evidence_delivery.py): retain exact originals, warnings, coverage, retrieval and honest delivered-pixel facts; a small later read does not silently erase history. |
+| A handoff applies before its graph checkpoint, or its actual replacement does not fit | [Handoff replay](../../tests/engine/context/test_handoff_replay.py) and [fresh-evidence compaction](../../tests/engine/context/test_fresh_evidence_compaction.py): recover the recorded transition once; reject an invalid final target while preserving prior history and correction evidence. |
+
+Recorded basis: [coordination closeout](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination), [R01/R02 evidence](../reviews/RUNTIME_FINDINGS.md#finding-index) and [organization regression](../verification/20261031_1646_PROJECT_ORGANIZATION.md). The documentation edit adds no execution evidence. Configured capacity, BPE proxy and reserve are not measured Nexus limits; semantic handoff usefulness, natural evidence choices and whole-task price-weighted benefit need their separately selected product observations.

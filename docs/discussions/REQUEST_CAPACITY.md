@@ -1,6 +1,10 @@
 # Request capacity and usable context: discussion
 
+## Current question and discussion status
+
 R01's selected estimator/fallback work is implemented at its recorded scope. Route capacity and calibration remain unproved; unknown magnitude does not weaken supported context restrictions. [Context management](../design/CONTEXT_MANAGEMENT.md), the [engineering explanation](../guides/CONTEXT_AND_EVIDENCE.md#implemented-r01-request-proxy) and [R01/R02 findings](../reviews/RUNTIME_FINDINGS.md) distinguish rules, observations and revisit conditions.
+
+**Discussion status:** R01's local repair and R02's selected receive-storage work are complete at their recorded scope. CTX-01/03 route provenance and operational goals, semantic handoff/evidence usefulness and whole-task benefit remain open under their [complete agenda](#complete-agenda). The next useful question is which missing route or actual-conversion evidence would change those choices; this is not a standing profiling or live-run instruction. Earliest retained diagnostic stages are dated 2026-10-26; the prior top-summary recording time was not stated. Status/navigation synthesis: 2026-10-31 19:17, Asia/Singapore (UTC+08:00), with no new product observation.
 
 The following stages preserve attributed positions, the complete CTX agenda and original authority. They are history of the decision, not new execution instructions. Earlier progress/wait discussion is under [Streaming receive](STREAMING_RECEIVE.md); full Nursing progression is preserved in [the preceding discussion](../history/discussions/20261031_0157_STAGE_B_CONVERSION.md).
 

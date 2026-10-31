@@ -1,6 +1,8 @@
 # Context management: discussion and design convergence
 
-Last synthesis: 2026-10-26, Asia/Hong_Kong (UTC+08:00), including the four selected policies, integrated-design adoption through D20 and subsequent authorized implementation in D21. Exact timestamps for the earlier inline exchanges and supplied reviewer texts are unavailable; the sequence below preserves their relative order. Recording them today does not date their original statements or rerun their evidence.
+Original policy synthesis: 2026-10-26, Asia/Hong_Kong (UTC+08:00), including the four selected policies, integrated-design adoption through D20 and subsequent authorized implementation in D21. Exact timestamps for the earlier inline exchanges and supplied reviewer texts are unavailable; the sequence below preserves their relative order. Recording them today does not date their original statements or rerun their evidence.
+
+Last substantive status synthesis: 2026-10-31 19:17, Asia/Singapore (UTC+08:00). The summary now reflects the recorded implementation closeout; original exchange dates below remain unchanged.
 
 ## Current view and authority
 
@@ -12,10 +14,10 @@ The user has selected **whole-batch context commitment, no automatic partial app
 | --- | --- |
 | Explicit user requirements | Fidelity, full original access, agent autonomy, admission before policy effect, preservation on failure, immutable receipts, consumption and frozen-request boundaries; no need for backward compatibility. |
 | Implementation | Baseline `a484b9b` is preserved; design checkpoint `c1e6fcc` precedes the complete coordination implementation. CURRENT_STATE owns final checks and source identity. |
-| Confirmed remaining findings | CC-R1/2/3 below, supported by retained local reproductions and controls. They do not establish original-data damage or general conversion-quality failure. |
+| Original findings and disposition | CC-R1/2/3 below are retained pre-fix findings. Their selected projection/coordination corrections are locally closed in the [implementation record](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination). Reopen for a counterexample to those guarantees; autonomous fidelity and route calibration remain separately unverified. |
 | Selected target policies | D15 selected whole-batch admission, no automatic partial context revision or older pending fallback after structural failure, and explicit reselection after new instructions. D18 selects B for confirmed necessary-content excess. D20 adopts the integrated design; content retention is distinct from continued execution eligibility. |
 | Adopted target and remaining authority | One coordinator, purpose-specific plans, a one-sided necessary-cost proof distinct from complete request admission, durable disposition independent of delivery, current-base explicit reuse, and restoration before reevaluation. Unknown estimates and history-only pressure are not B. No known unresolved policy choice directly blocks a bounded implementation, and implementation was subsequently authorized and completed within that scope. |
-| Current authorization | Implement the adopted complete context capability with local mocks, preservation/rendering verification, documentation and scoped local checkpoints. No provider calls, push, release or independent feature expansion. |
+| Execution boundary | D21 authorized the completed implementation increment; it is historical authority, not a standing task. Current work and any new execution permission are identified in [CURRENT_STATE](../CURRENT_STATE.md#current-product-status). |
 
 The user previously authorized a shrinking-proposal implementation batch, then said **“stop, revert all changes”** and returned to review/design discussion. That canceled implementation is not revived here. The initial D12 recording began with maintained files clean and three pre-existing review scratch files. D15 preserved that uncommitted documentation. D20 preserved the existing uncommitted discussion/design/navigation work and scratch while keeping code/tests at baseline. D21 separately authorizes implementation, preserving those records in a scoped checkpoint and leaving scratch unrelated. The old repository is outside this work.
 

@@ -8,9 +8,15 @@
 - **Choices and reasons:** [applicable decision entry](../decisions/REBUILD.md#established-rebuild-decisions) and [supporting discussion / contract closure](../history/discussions/20261031_0157_REBUILD_DELIVERY.md). The detailed rule sections retain additional supporting entries; carried-forward choices remain applicable.
 - **Verification:** adoption and local mechanism checks do not establish real-route compatibility, full fourteen-page fidelity or installed-product readiness. Follow the specific evidence entries below and [current verification](../CURRENT_STATE.md#verification-basis).
 
-## Preserved source edition
+<a id="preserved-source-edition"></a>
+## Design versions
 
-The [entry source edition](../../docs/history/contracts/20261031_0157_CONTRACTS.md) preserves the preceding combined owner, its original statements and links to captured shared rules. Capture time `20261031_0157` is not a reconstructed older adoption time. Earlier version identities/snapshots unavailable in the records remain unclaimed. Later substantive changes must retain a version list and exact basis; unrelated cosmetic edits need no new version.
+| Design identity / status | Meaning and saved basis |
+| --- | --- |
+| Current carried-forward design | The adoption identity and consequential corrections are stated in the basis above. This documentation edit does not change their meaning or create a new behavioral revision. |
+| Pre-filing source edition, captured 2026-10-31 01:57 UTC+08:00 | [Complete preceding owner](../../docs/history/contracts/20261031_0157_CONTRACTS.md). It retains the rule body and its captured shared requirements/architecture. Capture time is not original adoption time. |
+
+Earlier identities not recorded remain unknown. For later material changes, preserve the preceding rule and its dependencies before replacement and extend this table; routine editorial changes retain the adopted identity.
 
 ### PDF coordinates and image delivery
 
@@ -29,3 +35,17 @@ The agent may select `extract_image(page, xref, occurrence, dpi)`, call `render_
 Images support native display-pixel reads and exact `view='raw'` byte ranges. Encoded stream `full`/`raw` reads return Base64 bytes with half-open byte ranges, while `index` exposes metadata. JSON Pointer remains available for structured evidence; a pointer on a binary stream is rejected explicitly. No summary gate, compulsory extraction method, resampling rule or agent tool quota is added.
 
 Saving a document includes only its referenced display assets and their associated original image/mask streams. The version's `originals` map records their provenance and portable paths, `originals/<xref>-<hash>.<extension>`. Xref preserves source-object identity even when distinct streams have identical bytes. The manifest covers these files, and reopening and ZIP export verify them with the same immutable-version machinery as Markdown and images. Original streams are not inserted as broken preview images. The complete source PDF remains in the task store; it is not automatically copied into the delivery ZIP.
+
+## Acceptance and evidence correspondence
+
+The [evidence core](../../src/pdfmd/evidence.py) owns extraction, coordinates and display derivation; the [document core](../../src/pdfmd/documents.py) owns immutable asset/original membership and export. [The engineering explanation](../guides/CONTEXT_AND_EVIDENCE.md#implemented-pdf-coordinates-and-image-delivery) retains the source/display distinction and rationale.
+
+| Condition / guarantee | Discriminating check and expected result |
+| --- | --- |
+| A rotated/CropBox-offset page or fractional clip is extracted then rendered | `test_extracted_boxes_crop_actual_rotated_source` and `test_fractional_region_has_invertible_actual_pixel_mapping` in [PDF delivery tests](../../tests/engine/documents/test_pdf_delivery.py): the same visible region and invertible actual raster-origin transform, without altering original extraction fields. |
+| Image encoding/color/mask requires a display derivative | `test_image_originals_display_and_portable_delivery`: compare the retained original streams/PDF, display dimensions/samples, provenance and every saved/reopened/ZIP member across the seven [synthetic PDF fixtures](../../tests/fixtures/pdf/README.md). Lossless PNG storage must not be described as lossless prior color conversion. |
+| A stencil has several differently painted occurrences | [Stencil tests](../../tests/engine/context/test_stencil_pins.py): the unselected component has coverage-only warnings and no deliverable asset; an explicit occurrence preserves its page appearance, rotation and retained originals. |
+| OCR consumes a region or a model reads native image pixels | `test_ocr_uses_same_extracted_region_and_pixel_mapping` and `test_jpx_display_pixels_remain_available_to_both_protocols`: shared region/mapping and actual image payloads; mocked OCR recognition is not a recognition-quality result. |
+| Saved images are viewed after desktop restart and export | [PDF desktop spec](../../tests/desktop/specs/pdf-delivery.spec.ts): chosen-version images/originals survive preview, reopen and portable export. The separate [R14 finding](../reviews/RUNTIME_FINDINGS.md#r14--deep-windows-file-url-assets-can-fail-to-display) retains long-destination viewer failure. |
+
+Recorded evidence: [Phase 3](../history/IMPLEMENTATION_HISTORY.md#phase-3-pdf-coordinates-and-image-delivery), [stencil closeout](../history/IMPLEMENTATION_HISTORY.md#phase-3-closeout-stencil-appearance-and-pin-admission) and [organization checks](../verification/20261031_1646_PROJECT_ORGANIZATION.md). This documentation round reruns none of those product checks. High-depth display precision, arbitrary color/image semantics, OCR quality and complete real-source fidelity remain outside their demonstrated scope; encoded originals and explicit uncertainty remain required.

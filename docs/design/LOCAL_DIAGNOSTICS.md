@@ -11,9 +11,15 @@
 
 - **Subsequent corrections:** [F02-D01/D02](../decisions/LOCAL_DIAGNOSTICS.md#f02-diagnostic-consistency-correction-selected-2026-10-29), [F02-D03](../decisions/LOCAL_DIAGNOSTICS.md#f02-d03-failed-result-contract-correction-selected-2026-10-30) and [DT01](../decisions/LOCAL_DIAGNOSTICS.md#dt01-follow-up-selection-2026-10-30); [finite verification](../verification/20261031_0157_LOCAL_DIAGNOSTICS.md). Raw observations never become validated facts merely because they are readable; static typing is not runtime JSON validation. Langfuse remains unselected.
 
-## Preserved source edition
+<a id="preserved-source-edition"></a>
+## Design versions
 
-The [entry source edition](../../docs/history/design/20261031_0157_INTEGRATION_AND_MODEL_BOUNDARY.md) preserves the preceding combined owner, its original statements and links to captured shared rules. Capture time `20261031_0157` is not a reconstructed older adoption time. Earlier version identities/snapshots unavailable in the records remain unclaimed. Later substantive changes must retain a version list and exact basis; unrelated cosmetic edits need no new version.
+| Design identity / status | Meaning and saved basis |
+| --- | --- |
+| Current carried-forward design | The adoption identity and consequential corrections are stated in the basis above. This documentation edit does not change their meaning or create a new behavioral revision. |
+| Pre-filing source edition, captured 2026-10-31 01:57 UTC+08:00 | [Complete preceding owner](../../docs/history/design/20261031_0157_INTEGRATION_AND_MODEL_BOUNDARY.md). It retains the rule body and its captured shared requirements/architecture. Capture time is not original adoption time. |
+
+Earlier identities not recorded remain unknown. For later material changes, preserve the preceding rule and its dependencies before replacement and extend this table; routine editorial changes retain the adopted identity.
 
 ## Task activity and local diagnostic API
 
@@ -66,3 +72,15 @@ For this correction, React 19.3's [stable list identity](https://react.dev/learn
 For D03, React 19.3.1 conditional rendering and TypeScript 7.0.2's supported [discriminated-union narrowing](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions) were checked against current official guidance on 2026-10-30. The status discriminator controls structured field access. No framework lifecycle, topology or dependency changed.
 
 <a id="product-and-runtime-boundary"></a>
+
+## Acceptance and evidence correspondence
+
+The [diagnostic service](../../src/pdfmd/diagnostics.py), [receive projections](../../src/pdfmd/receive_diagnostics.py), [typed client](../../src/renderer/features/diagnostics/diagnosticClient.ts) and [panel](../../src/renderer/features/diagnostics/TaskDiagnostics.tsx) implement this contract. The [verification owner](../verification/20261031_0157_LOCAL_DIAGNOSTICS.md) distinguishes F01/F02, D01–D03, typing and DT01 checks and their actual source identities.
+
+| Condition / guarantee | Discriminating check and expected result |
+| --- | --- |
+| Events change after a view is captured, or a cursor crosses task/view boundaries | [Task diagnostic tests](../../tests/engine/diagnostics/test_task_diagnostics.py): stable captured navigation and honest stale/unavailable states; no graph inspection or new write authority. |
+| A descriptor/result/association has a malformed or unsupported shape | [Failed-result tests](../../tests/engine/diagnostics/test_diagnostic_failed_results.py) and [Electron diagnostic spec](../../tests/desktop/specs/diagnostic-failed-results.spec.ts): raw observation remains separate from facts, invalid links are disabled, independent valid facts stay usable, and fresh/reopened inspection preserves source/task maps. |
+| Renderer requests detail through the typed entry | [Client specs](../../tests/desktop/specs/diagnostic-client.spec.ts) and [compile-only checks](../../tests/desktop/types/): identical payload/promise/result/error without retry; compile-time constraints are not runtime JSON validation. |
+
+The [organization review](../reviews/20261031_1907_PROJECT_ORGANIZATION.md#correction-checks-and-closeout) reran the failed-descriptor Electron/reopen case after canonical fixture imports. Other results remain inherited at the verification owner's recorded scope. This documentation edit runs no product test. Large-catalog latency, F03/F04 and Langfuse remain unselected; [read-cost evidence](../PROPOSED_CHANGES.md#diagnostic-detail-read-cost-and-bounds) supplies the reconsideration condition rather than a claimed performance guarantee.

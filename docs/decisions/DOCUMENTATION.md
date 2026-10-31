@@ -1,5 +1,13 @@
 # Documentation organization decisions
 
+## Complete documentation conformance (2026-10-31)
+
+Recorded 2026-10-31 at 19:17, Asia/Singapore (UTC+08:00). The human explicitly requests that the documentation completely adhere to vibe-coding, following authorization to change the project directly. The selected increment is documentation correction and verification against the applicable skill rules. Preserve the adopted product contracts and the existing topic/category layout; no product redesign, framework change, new live run, data cleanup or remote publication is selected.
+
+The [review](../reviews/20261031_1917_DOCUMENTATION_CONFORMANCE.md) owns DOC-14–19; the [verification record](../verification/20261031_1917_DOCUMENTATION_CONFORMANCE.md) owns conformance evidence. Work in order: preserve entry identities; reconcile revision basis and current/historical authority; relocate selected-option detail to its decision owner; connect topic guarantees to implementation and discriminating acceptance; simplify current continuation and discussion routes; verify meaning, local navigation, source/prose preservation and Git scope. Existing topic designs own technical acceptance; this work does not invent new requirements to fill historical evidence gaps.
+
+Completion means a repository-only reader can locate each maintained document, interpret every current design with its applicable preserved basis, distinguish selected/current/historical/proposed states, trace key guarantees to checks and evidence limits, and continue from the actual worktree state. All discovered documentary gaps must have a recorded disposition; unavailable historical IDs or private raw evidence must remain explicitly unavailable. A successful link check alone is insufficient. Use one detailed owner per concern, retain exact original collections/captured editions, and save a scoped local documentation checkpoint. Original quoted instructions and closed-job permissions remain data. Current human instructions govern later work.
+
 ## Topic ownership and version correspondence (2026-10-31)
 
 The human authorized reorganizing this project using vibe-coding at `c0307ef`, including editing, renaming, splitting and combining files. Earlier conversations may be consulted for missing information. This authority covers documentation, navigation, provenance mappings and necessary documentation-tool and Git source-preservation path adjustments. It does not change application behavior, product acceptance, original evidence, task data or live Nursing authority.

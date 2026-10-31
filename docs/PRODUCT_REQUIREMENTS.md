@@ -87,3 +87,19 @@ Availability, invocation, execution, actual model input consumption, natural ado
 Optimize whole-task price-weighted cost while preserving fidelity, autonomy and complete access. Include normal input, cache reads/writes, output, context management, retrieval, re-generation, checking and recovery. Preserve unknown usage and fees. Do not double-count reasoning already included in output or cache categories with overlapping definitions. Only subtract cache reads/writes from input after verifying category semantics. Separate conversion cost from setup/development/review cost and successful-response subtotals from total job cost.
 
 Characters, wire bytes, cumulative job input and per-request context are different quantities. Upstream identity, cache pricing and actual Nexus billing cannot be inferred from a model alias or direct-provider price sheet. Conditional sensitivity analysis is acceptable when assumptions are explicit. No guaranteed savings percentage, universal context waterline, whole-book/provider matrix or indefinite optimization program is an acceptance prerequisite.
+
+## Requirement and acceptance owners
+
+The topic designs connect these requirements to implementation and discriminating checks. Their recorded local results remain separate from the complete source-led product acceptance above; a test definition is not a passing execution. Use [current readiness](CURRENT_STATE.md#verification-basis) for the actual source/evidence boundary.
+
+| Requirement concern | Detailed acceptance / evidence route |
+| --- | --- |
+| Exact content, candidate reuse, edit conflicts and explicit saved-version delivery | [Document model](design/DOCUMENT_MODEL.md#acceptance-and-evidence-correspondence) |
+| Full/raw/field/range/native-pixel access and honest original/display coordinates | [PDF evidence](design/PDF_EVIDENCE.md#acceptance-and-evidence-correspondence), [document access](design/DOCUMENT_MODEL.md#exact-saved-document-and-evidence-access) |
+| Autonomous context choices, whole-batch commitment and useful continuation | [Context contract](design/CONTEXT_MANAGEMENT.md#acceptance-and-evidence-correspondence), [coordination matrix](design/CONTEXT_UPDATE_COORDINATION.md#observable-acceptance-and-limits) |
+| Complete reply acceptance, preserved raw evidence and first/reopen consistency | [Streaming matrix](design/STREAMING_RECEIVE.md#finite-acceptance-and-stopping-conditions), [SC02 correspondence](design/STREAMING_RECEIVE.md#first-acceptance-reopened-evidence-and-resolved-history) |
+| Stop/Continue, uncertainty, consumption and independent export | [Runtime acceptance](design/RUNTIME_AND_DELIVERY.md#acceptance-and-evidence-correspondence), [bounded accepted-evidence recovery](design/ACCEPTED_EVIDENCE_RECOVERY.md#acceptance-and-stopping-conditions) |
+| Truthful read-only diagnostics and no inferred execution authority | [Diagnostic acceptance](design/LOCAL_DIAGNOSTICS.md#acceptance-and-evidence-correspondence) |
+| Actual full-scope fidelity, intervention, route suitability and cost | [Stage B completion](PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources), [conditional efficiency stage](PHASE_PLAN.md#e-improve-provider-choice-and-whole-task-efficiency) |
+
+These routes add no fixed tool sequence, quality threshold, mandatory mechanism use or execution permission. Unverified high-depth/OCR/source classes, unknown usage/fees and independent interruption/portability concerns remain visible in their owners.

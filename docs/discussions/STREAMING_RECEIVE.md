@@ -1,6 +1,10 @@
 # Streaming receive: discussion and evolution
 
+## Current position and discussion status
+
 The adopted method is contract A plus the finite SC02 item-state/role correction, locally verified within recorded scope. [The current design](../design/STREAMING_RECEIVE.md) brings rules, mechanisms, reasons and acceptance together. [Decisions](../decisions/STREAMING_RECEIVE.md) preserve adoption and rejected alternatives; current live readiness remains separate.
+
+**Discussion status:** A/SC02 is decided and locally implemented; no further decoder method choice is pending in this discussion. A new semantic counterexample or incompatible reopened evidence can reopen the finding; real-route validation remains the separate [Nursing decision](NURSING.md#current-question-and-boundary). Retained deadline/progress exchanges start on 2026-10-27; the last behavioral selection is the 2026-10-30 SC02 follow-up. The 2026-10-31 filing/status summary adds no later implementation evidence.
 
 The entries below are retained discussion stages with their original dates and task-specific authority. They explain the shift from fixed deadlines to progress waiting and then from transport-metadata invariance to bounded protocol semantics. Earlier recommendations or implementation permissions are not new work authorization. Missing upstream terminal evidence remains missing.
 

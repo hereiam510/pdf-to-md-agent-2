@@ -8,9 +8,15 @@
 - **Choices and reasons:** [applicable decision entry](../decisions/REBUILD.md#reopening-policy) and [supporting discussion / contract closure](../decisions/INITIAL_CONTRACTS.md#q3-persistence-recovery-and-stop-contract). The detailed rule sections retain additional supporting entries; carried-forward choices remain applicable.
 - **Verification:** adoption and local mechanism checks do not establish real-route compatibility, full fourteen-page fidelity or installed-product readiness. Follow the specific evidence entries below and [current verification](../CURRENT_STATE.md#verification-basis).
 
-## Preserved source edition
+<a id="preserved-source-edition"></a>
+## Design versions
 
-The [entry source edition](../../docs/history/contracts/20261031_0157_CONTRACTS.md) preserves the preceding combined owner, its original statements and links to captured shared rules. Capture time `20261031_0157` is not a reconstructed older adoption time. Earlier version identities/snapshots unavailable in the records remain unclaimed. Later substantive changes must retain a version list and exact basis; unrelated cosmetic edits need no new version.
+| Design identity / status | Meaning and saved basis |
+| --- | --- |
+| Current carried-forward design | The adoption identity and consequential corrections are stated in the basis above. This documentation edit does not change their meaning or create a new behavioral revision. |
+| Pre-filing source edition, captured 2026-10-31 01:57 UTC+08:00 | [Complete preceding owner](../../docs/history/contracts/20261031_0157_CONTRACTS.md). It retains the rule body and its captured shared requirements/architecture. Capture time is not original adoption time. |
+
+Earlier identities not recorded remain unknown. For later material changes, preserve the preceding rule and its dependencies before replacement and extend this table; routine editorial changes retain the adopted identity.
 
 ## 3. Persistence, recovery and stop behavior
 
@@ -133,3 +139,18 @@ Legacy receive observations settle when the exchange exits and are saved with th
 `active_seconds` is known monotonic elapsed time within active invocations, including model/tool waits, not CPU time or a provider bill. `ActiveTime` checkpoints at preparation, tool boundaries and request entry, and approximately once per second while polling network/child-process waits. Each short transaction adds the measured delta and advances `active_since`, the last durable wall-clock observation. In-process budget checks include the not-yet-checkpointed monotonic delta. Normal shutdown settles the remainder and clears the active marker. User waiting between invocations is not active execution.
 
 After hard termination, restart atomically preserves any stale marker as an `active_time_gap` record and starts a new interval. The record retains both wall observations, their signed difference, `active_seconds=null` and `budget_policy=known_active_only`. The wall span is not an active-duration measurement; clock changes can affect it. All previously recorded consumption remains charged. The uncertain tail is neither charged as all downtime nor recorded as zero work. The budget uses known active seconds, and the UI/API disclose the unmeasured intervals. A crash during a long uncheckpointed in-process operation can leave a substantial unknown tail; this policy is not a strict lifetime-work or cost bound. Gap creation and marker replacement commit together, preventing duplicate settlement on re-entry.
+
+## Acceptance and evidence correspondence
+
+[Runtime](../../src/pdfmd/runtime.py) coordinates; [Nexus](../../src/pdfmd/nexus.py) owns frozen requests/attempts; [storage](../../src/pdfmd/storage.py) and the document core own committed facts; [active time](../../src/pdfmd/active_time.py) owns measured consumption. [Execution guidance](../guides/EXECUTION_AND_DELIVERY.md) explains the boundaries and reasons.
+
+| Condition / guarantee | Discriminating check and expected result |
+| --- | --- |
+| Stop interrupts an accepted tool batch and the user later amends instructions | [Continuation tests](../../tests/engine/execution/test_continuation.py): reconcile committed effects once, retain receipts and candidates, skip obsolete unstarted calls, and do not let an old report complete new work. |
+| A request is unknown or a local process has started without a known outcome | `test_unknown_outcome_cannot_acquire_a_new_id_or_reset_replay_limits` and `test_started_local_process_is_not_replayed_or_mislabeled_skipped`: preserve uncertainty and frozen policy; refuse unsafe replay. This refusal does not supply R03's still-missing general recovery capability. |
+| A failed-response Continue receipt commits before its graph checkpoint | `test_continue_receipt_survives_checkpoint_gap_without_new_authorization`: reopen the same committed successor without minting another transition or resetting consumption. |
+| Task limits change while a request is already frozen | [Settings tests](../../tests/engine/execution/test_task_settings.py): new requests use the new settings, frozen bytes/replay policy remain exact, invalid changes are atomic, and exhausted correction/replay episodes stay exhausted. |
+| Restart finds an unfinished active-time interval | The settings stale-interval control and [active-time tests](../../tests/engine/execution/test_active_time.py): preserve known consumption and label an unmeasured tail; neither charge all downtime nor invent zero work. |
+| Model budget is exhausted or work is partial | Existing continuation/settings delivery controls and [desktop continuation](../../tests/desktop/specs/continuation-workflow.spec.ts): reopen/edit/export the explicit saved version independently of inference, retaining scope and source/image bytes. |
+
+Evidence is recorded in [continuation](../history/IMPLEMENTATION_HISTORY.md#continuation-and-integration-increment), [settings/time](../history/IMPLEMENTATION_HISTORY.md#phase-2-existing-task-settings-and-active-time), [organization regression](../verification/20261031_1646_PROJECT_ORGANIZATION.md) and [accepted-result settlement](STREAMING_RECEIVE.md#accepted-result-settlement). These local/synthetic results do not establish arbitrary power-loss safety, remote cancellation or general unknown-process recovery. R03 and broader R07 retain their [finding dispositions](../reviews/RUNTIME_FINDINGS.md#issue-navigation); no new execution is authorized by this correspondence.

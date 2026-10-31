@@ -1,6 +1,17 @@
-> Revision basis: the adopted design and recorded corrections below retain their original identities; this filing is not new adoption. [Decisions](../decisions/CONTEXT_MANAGEMENT.md#context-coordination-design-recording-boundary), [discussion](../discussions/CONTEXT_COORDINATION.md#d20-human-adopts-the-integrated-design-and-authorizes-recording), [captured shared contract](../history/contracts/20261031_0157_CONTRACTS.md#q2-context-transitions), [captured requirements](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md) and [captured architecture](../history/contracts/20261031_0157_ARCHITECTURE.md) identify the applicable basis. Exact prior design identities not recorded remain unknown; current readiness is separate in [CURRENT_STATE](../CURRENT_STATE.md).
-
 # Context update coordination: consolidated target design
+
+## Basis for this revision
+
+The adopted design and recorded corrections below retain their original identities; this filing is not new adoption. [Decisions](../decisions/CONTEXT_MANAGEMENT.md#context-coordination-design-recording-boundary), [discussion](../discussions/CONTEXT_COORDINATION.md#d20-human-adopts-the-integrated-design-and-authorizes-recording), [captured shared contract](../history/contracts/20261031_0157_CONTRACTS.md#q2-context-transitions), [captured requirements](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md) and [captured architecture](../history/contracts/20261031_0157_ARCHITECTURE.md) identify the applicable basis. Exact prior design identities not recorded remain unknown; current readiness is separate in [CURRENT_STATE](../CURRENT_STATE.md).
+
+## Design versions
+
+| Design identity / status | Meaning and saved basis |
+| --- | --- |
+| Current adopted meaning | D15/D18/D20 policy choices, followed by D21 implementation; design checkpoint `c1e6fcc`. This edit changes retrieval and status clarification, not policy. |
+| Pre-edit source edition, captured 2026-10-31 19:17 UTC+08:00 | [Complete dedicated owner](../history/design/20261031_1917_CONTEXT_UPDATE_COORDINATION.md), including its shared-rule/decision/discussion basis. This is a capture identity, not an invented earlier adoption timestamp. |
+
+Older separate design identities not preserved in the supplied records remain unclaimed. Applicable original decision entries retain their own dates and scopes; current readiness is in [CURRENT_STATE](../CURRENT_STATE.md).
 
 Updated 2026-10-26, Asia/Hong_Kong (UTC+08:00). Application baseline `a484b9b` and design checkpoint `c1e6fcc` precede the complete coordination implementation. This document retains the adopted design and rationale; [CONTRACTS Q2/Q3](CONTEXT_MANAGEMENT.md#q2-context-transitions) owns effective behavior and [recorded implementation result](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) owns actual checks and limits.
 
@@ -288,9 +299,10 @@ Existing immediate admitted tool receipts are historical completed effects and m
 
 Recovering a committed pin does not require it to remain selected forever: the agent may change A through a new admitted revision. A wait is honest preservation, not evidence of autonomous continuation. Reopen alone never starts inference; normal Continue respects existing execution authorization, remaining budget and frozen-request rules. Other tools' successful edits or evidence artifacts are not rolled back by any context disposition.
 
-## Implementation route, if authorized
+<a id="implementation-route-if-authorized"></a>
+## Implementation responsibilities and integration order
 
-The heading is retained as a stable discussion link. The following route was subsequently authorized and implemented; this section explains its responsibility boundaries.
+The original implementation-route anchor remains available. This route was authorized and implemented; the section explains its responsibility boundaries.
 
 These were ordered milestones inside the authorized context-update capability:
 
@@ -332,3 +344,7 @@ The implementation synchronizes CONTRACTS Q2/Q3, ARCHITECTURE, callable-tool gui
 The bounded exit is a complete supported context-update route with these representative neighboring operations, or a precise remaining direct blocker. Do not add unrelated hypothetical mechanisms to delay completion. A materially reproduced blocker cannot be dismissed just because the three original controls pass.
 
 After authorized implementation meets that exit, recommend [Stage B](../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources): a selected real source/range, Nexus route and finite call allowance, separately authorized. Observe autonomous completion, interventions and source-led saved/reopened/exported quality. Let context management occur naturally; non-use does not verify it and does not prove it unnecessary. Stage A implementation closeout is recorded in CURRENT_STATE; this design document does not authorize Stage B.
+
+## Acceptance implementation and recorded evidence
+
+The [matrix above](#observable-acceptance-and-limits) is implemented across [context revisions](../../src/pdfmd/context_revisions.py), [planning](../../src/pdfmd/context.py), [commit/disposition](../../src/pdfmd/context_updates.py), [outcome projection](../../src/pdfmd/context_outcomes.py) and [Runtime](../../src/pdfmd/runtime.py). [Coordination tests](../../tests/engine/context/test_context_coordination.py), [commit-boundary tests](../../tests/engine/context/test_context_commit_boundaries.py) and [delivery controls](../../tests/engine/context/test_context_coordination_delivery.py) distinguish valid/invalid whole batches, B before/after durable disposition, current-base reuse and save/reopen/export behavior. The [complete coordination record](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) binds those guarantees to the actual local implementation result; [R01](../reviews/RUNTIME_FINDINGS.md#finding-index) subsequently qualifies proxy certainty without reviving historical confirmed-excess dispositions. No new product test is performed by this document edit.

@@ -8,9 +8,15 @@
 - **Choices and reasons:** [applicable decision entry](../decisions/REBUILD.md#established-rebuild-decisions) and [supporting discussion / contract closure](../decisions/INITIAL_CONTRACTS.md#q1-document-update-and-candidate-reference-contract). The detailed rule sections retain additional supporting entries; carried-forward choices remain applicable.
 - **Verification:** adoption and local mechanism checks do not establish real-route compatibility, full fourteen-page fidelity or installed-product readiness. Follow the specific evidence entries below and [current verification](../CURRENT_STATE.md#verification-basis).
 
-## Preserved source edition
+<a id="preserved-source-edition"></a>
+## Design versions
 
-The [entry source edition](../../docs/history/contracts/20261031_0157_CONTRACTS.md) preserves the preceding combined owner, its original statements and links to captured shared rules. Capture time `20261031_0157` is not a reconstructed older adoption time. Earlier version identities/snapshots unavailable in the records remain unclaimed. Later substantive changes must retain a version list and exact basis; unrelated cosmetic edits need no new version.
+| Design identity / status | Meaning and saved basis |
+| --- | --- |
+| Current carried-forward design | The adoption identity and consequential corrections are stated in the basis above. This documentation edit does not change their meaning or create a new behavioral revision. |
+| Pre-filing source edition, captured 2026-10-31 01:57 UTC+08:00 | [Complete preceding owner](../../docs/history/contracts/20261031_0157_CONTRACTS.md). It retains the rule body and its captured shared requirements/architecture. Capture time is not original adoption time. |
+
+Earlier identities not recorded remain unknown. For later material changes, preserve the preceding rule and its dependencies before replacement and extend this table; routine editorial changes retain the adopted identity.
 
 ## 1. Document updates and candidate references
 
@@ -107,3 +113,18 @@ Every newly assembled normal input contains one compact `Working context feedbac
 The tool deliberately excludes **all results of its current response batch**, including preceding reads or edits. It reports both the snapshot head and current head, input request/payload identities and active-policy identity. Optional `changes` accepts agent-selected `pin`, `release`, and `notes` against that snapshot active policy. It uses the production normal assembler and estimates the resulting hypothetical input; it does not import pending intent, apply a policy, consume a model request, or guarantee the later batch's admission. New results, outcomes, settings and head changes can alter that later input. This is information for ordinary agent work, not a mandatory preview or confirmation-only turn.
 
 New frozen normal requests retain a compact context/anchor snapshot outside graph hydration. An exact preview is available only when the current assembler reproduces the recorded payload; older requests without that snapshot or changed assembly recipes cannot claim an exact reconstruction. Read-only inventory remains available from the actual frozen payload. Tool capture and immutable receipts still persist normally; their replay returns the same observation. No original receipt/frozen input, policy eligibility, head or consumed budget is changed by inspection. Normal whole-batch coordination remains the only policy activation path.
+
+## Acceptance and evidence correspondence
+
+These checks make the existing guarantees observable; they do not add a required conversion workflow. Implementation is in [documents.py](../../src/pdfmd/documents.py), [schema.py](../../src/pdfmd/schema.py), [evidence.py](../../src/pdfmd/evidence.py) and the [edit-session hook](../../src/renderer/features/documents/useDocumentSession.ts). The [document guide](../guides/DOCUMENT_ENGINE.md#implemented-editing-and-reuse-behavior) explains the mechanism and repair example.
+
+| Condition / guarantee | Discriminating check and expected result |
+| --- | --- |
+| A rejected candidate is reused after another version advances the head | `test_local_candidate_repair_preserves_newer_work_source_and_export` in [document tests](../../tests/engine/documents/test_documents.py): copy only the selected blocks, preserve newer unrelated content and source/image/export bytes; never replay the old operation. |
+| An ordinary edit names another base, or rebuild has a stale expected head | `test_ordinary_edit_rejects_other_base_but_explicit_rebuild_keeps_head_guard`: ordinary mismatch rejects; deliberate rebuild remains available but cannot overwrite an unexpected head. |
+| Receipt publication is interrupted and later work has advanced | `test_result_blob_reconciles_before_operation_pointer_commit` and `test_rejected_candidate_reused_exactly_and_replayed_after_new_head`: recover the original operation/version once without rewinding the current head. |
+| A pointer/range returns only part of a saved envelope | [Access tests](../../tests/engine/documents/test_document_access.py): independently assert root, target and selection completeness; index stays bound to its exact version, invalid selectors fail explicitly, and full/raw/native access remains available. |
+| A UI selection is delayed, fails or completes out of order | [Document-session specs](../../tests/desktop/specs/document-session.spec.ts): no edit/export from mismatched content; keep captured draft/base and reject stale asynchronous results. |
+| A saved or partial version is reopened and exported | [Document tests](../../tests/engine/documents/test_documents.py) and [workbench spec](../../tests/desktop/specs/workbench.spec.ts): selected version, exact Unicode/HTML, source assets and ZIP members agree; a structural complete claim is not source-quality acceptance. |
+
+Recorded results: [document-editing increment](../history/IMPLEMENTATION_HISTORY.md#document-editing-increment), [precise-access implementation](../guides/DOCUMENT_ENGINE.md) and the [organization regression source/results](../verification/20261031_1646_PROJECT_ORGANIZATION.md). These are historical local checks, not reruns by this documentation edit. [Stage B](../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources) still requires actual complete source-led output; tests cannot certify unseen PDF fidelity or natural agent use.
