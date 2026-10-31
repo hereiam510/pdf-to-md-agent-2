@@ -8,6 +8,8 @@ The selected application-baseline integration and bounded R07 settlement/reopen 
 
 ## Find current work
 
+Current work selection follows the [product-outcome clarification](decisions/NURSING.md#product-outcome-direction-2026-10-31): enable the agent to complete the requested PDF, with no backward-compatibility requirement. Necessary reruns and code reconstruction are permitted methods, not predetermined objectives. The current documentation/handoff work records this direction; it runs no conversion and changes no product code. [Stage B](PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources) and the [current discussion](discussions/NURSING.md#product-direction-correction-and-review-basis-2026-10-31) own the next increment and its evidence basis.
+
 [INDEX](INDEX.md) is the single complete document catalogue and topic/basis navigator. Use these routes for continuation:
 
 | Question | Owner |
@@ -42,7 +44,9 @@ The **last recorded real run**, not a fresh query, ended with rejected request `
 
 The original raw still lacks `[DONE]`. Decoder changes or a synthetic terminator cannot accept it retrospectively. Preserve frozen requests, raw evidence, consumption, uncertainty and completed effects; do not combine arguments across attempts. A later eligible failed Continue would create its own receipt/successor; the old `:45:61` unknown-compaction recovery selector does not describe this state.
 
-The next product decision is whether to authorize a bounded autonomous fourteen-page interval. Fresh task/request/settings/allowance preflight, selected future-only settings, cumulative budgets and exit conditions must precede it. Closed allowances and old 600/300/no-total waits are not renewed authority or proven cancellation bounds. Evaluate full-scope completion, intervention and actual saved/reopened/exported fidelity under [Stage B](PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources); routine per-request approval is not the target workflow.
+The next increment must address what prevents the agent from completing and delivering the full PDF. [The reviewed preflight and human correction](discussions/NURSING.md#product-direction-correction-and-review-basis-2026-10-31) support choosing methods by that outcome, rather than requiring continuation of this old task or a fresh run for its own sake. The 58 historical usage-representation mismatches are not a compatibility-repair prerequisite. Repeated new-version publication failures remain relevant; old-version export does not exercise that save path. Current-version acceptance/reopen consistency remains required.
+
+Select the concrete implementation/validation scope from supported obstacles and existing evidence, then return to full-source acceptance. Before any live interval, establish fresh relevant task/source/settings facts and explicit finite allowances/exits. Neither the old limits nor the later proposed 40/5400 or 80/7200 allowances are current execution authority. Retain historical consumption even if a fresh task starts at zero. Evaluate complete scope, intervention and actual saved/reopened/exported fidelity under [Stage B](PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources); routine per-request approval is not the target workflow.
 
 ## Unresolved work and selection boundaries
 
