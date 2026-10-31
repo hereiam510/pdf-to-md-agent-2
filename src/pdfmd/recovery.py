@@ -695,7 +695,7 @@ def select_subject(view, graph, snapshot, job):
     for authority in view.records("conflict_resolution", job):
         # Unrelated bad historical receipts must not replace a current request.
         try:
-            receipt = resolution_receipt(view, job, authority["request"])
+            receipt = resolution_receipt(view, job, authority["request"], verify_stream=False)
             if recovery_boundary(snapshot, receipt) and projection_status(graph, job, receipt) == "ready":
                 boundaries.append(receipt["request"])
         except (ValueError, OSError, KeyError, TypeError):
@@ -725,7 +725,7 @@ def historical_resolutions(view, job, primary):
 def resolved_diagnosis(view, graph, snapshot, job, key):
     from .history import resolution_receipt
     try:
-        receipt = resolution_receipt(view, job, key)
+        receipt = resolution_receipt(view, job, key, verify_stream=False)
     except (ValueError, OSError, KeyError, TypeError) as exc:
         # Keep the selected identity and independently readable recorded facts.
         # A corrupt/missing receipt cannot turn K into another ready resolution.
@@ -735,12 +735,15 @@ def resolved_diagnosis(view, graph, snapshot, job, key):
                 "reasons": ["Committed resolution is unavailable/inconsistent: " + str(exc), *facts["fact_errors"]]}
     facts = diagnostic_facts(view, job, key, receipt=receipt)
     try:
+        # Keep the structurally owned subject/refs above, but never present
+        # incompatible or unavailable stream evidence as ready for reuse.
+        resolution_receipt(view, job, key)
         projection = projection_status(graph, job, receipt)
         reasons = []
         if projection == "ready" and not recovery_boundary(snapshot, receipt):
             projection = "historical"
             reasons.append("This resolution was projected before later graph progress; it does not establish current readiness.")
-    except Conflict as exc:
+    except (ValueError, OSError, KeyError, TypeError) as exc:
         projection, reasons = "blocked", [str(exc)]
     lineage = projection
     if facts["fact_errors"]:

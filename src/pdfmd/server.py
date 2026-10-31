@@ -13,13 +13,14 @@ import socket
 import sqlite3
 import threading
 
-from fastapi import FastAPI, Header, HTTPException, Depends
+from fastapi import FastAPI, Header, HTTPException, Depends, Query
 from fastapi.responses import JSONResponse
 from filelock import FileLock, Timeout
 import uvicorn
 
 from . import __version__
 from .documents import Documents
+from .diagnostics import Diagnostics, Unavailable, record_summary
 from .evidence import Evidence
 from .nexus import Nexus
 from .runtime import Runtime
@@ -35,6 +36,7 @@ class Engine:
         self.evidence = Evidence(self.store)
         self.keys: dict[str, str] = {}
         self.transport = transport
+        self.diagnostics = Diagnostics(self.store.root)
         self.pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="pdfmd-task")
         self.futures = {}
         self.guard = threading.Lock()
@@ -182,17 +184,15 @@ class Engine:
         retained = self.store.maybe("stream_receive", attempt["id"])
         observed = (retained["transport"] if attempt["status"] == "in_flight" and retained
                     else attempt.get("transport", {}))
-        allowed = {"mode", "settled", "stop_cause", "headers_elapsed_seconds", "first_body_elapsed_seconds",
-                   "last_body_elapsed_seconds", "received_body_bytes", "first_progress_elapsed_seconds",
-                   "last_progress_elapsed_seconds", "event_count", "progress_count", "protocol_complete", "terminal_event"}
-        return {**{name: observed[name] for name in allowed if name in observed},
-                "http_status": observed.get("http_status", attempt.get("http_status"))}
+        from .receive_diagnostics import safe_receive
+        return safe_receive({"http_status": attempt.get("http_status"), **observed})
 
     def close(self):
         for job, future in self.futures.items():
             if not future.done():
                 self.store.update_job(job, cancel_requested=True)
         self.pool.shutdown(wait=True, cancel_futures=True)
+        self.diagnostics.close()
 
 
 def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
@@ -236,23 +236,81 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
     def get_job(job: str):
         value = engine.store.get("job", job)
         value["versions"] = list(reversed(engine.store.records("version", job)))
-        value["requests"] = [{"id": r["id"], "kind": r["kind"], "status": r["status"], "capacity": r["meta"].get("capacity"),
-                              "attempts": len(r["attempts"]), "route": r["route"],
-                              "receive": engine.receive_observation(job, r),
-                              "replay_policy": r.get("replay_policy", {k: value["limits"][k] for k in ("replay_unknown", "max_attempts_per_request")})}
-                             for r in engine.store.records("request", job)]
+        # This display projection must not prevent opening the diagnostic UI.
+        # Keep strict domain readers and all execution/recovery checks unchanged.
+        value["requests"] = []
+        with engine.store._db() as db:
+            rows = db.execute("SELECT id,data FROM records WHERE kind='request' AND job=? ORDER BY created", (job,)).fetchall()
+        for row in rows:
+            try:
+                r = json.loads(row["data"])
+                summary = record_summary(r, "request")
+                if r.get("id", row["id"]) != row["id"] or r.get("job", job) != job:
+                    raise ValueError("Request identity/task is inconsistent.")
+                meta = r.get("meta", {})
+                if not isinstance(meta, dict) or not isinstance(r.get("route", {}), (dict, type(None))):
+                    raise ValueError("Request display metadata/route has an unsupported shape.")
+                capacity = meta.get("capacity")
+                if capacity is not None and (not isinstance(capacity, dict) or any(
+                        type(capacity.get(field)) not in (int, float) for field in ("input_estimate", "capacity", "output_reserve"))):
+                    raise ValueError("Request display capacity has an unsupported shape.")
+                value["requests"].append({"id": row["id"], "kind": r.get("kind") or "unknown", "status": r.get("status") or "unknown",
+                                          "capacity": capacity, "attempts": summary["attempts"], "route": r.get("route"),
+                                          "receive": engine.receive_observation(job, r),
+                                          "replay_policy": r.get("replay_policy", {k: value["limits"][k] for k in ("replay_unknown", "max_attempts_per_request")})})
+            except (ValueError, TypeError, KeyError, AttributeError, OSError) as exc:
+                value["requests"].append({"id": row["id"], "kind": "unknown", "status": "unavailable",
+                                          "diagnostic_status": "unavailable", "reason": "Malformed record JSON." if isinstance(exc, json.JSONDecodeError) else str(exc)})
+        unavailable_requests = sum(r.get("diagnostic_status") == "unavailable" for r in value["requests"])
+        value["diagnostic_limitations"] = ([f"{unavailable_requests} request display summaries unavailable. Inspect diagnostic rows for identities and reasons."]
+                                           if unavailable_requests else [])
         value["active_time_gaps"] = engine.store.records("active_time_gap", job)
         value["active_time_budget_policy"] = "known_active_only"
         value["exports"] = engine.store.records("export", job)
-        value["events"] = engine.store.events(job, limit=1000)
+        value["event_summary"] = engine.store.event_summary(job)
         value["evidence"] = [{"ref": b["ref"], "kind": b["kind"], "bytes": b["bytes"], "meta": b["meta"]}
                              for b in engine.store.records("blob", job) if b["kind"] in {"evidence", "image", "candidate", "handoff"}]
         running = job in engine.futures and not engine.futures[job].done()
         if value["status"] == "running" and not running:
             value["status"] = "interrupted"
         value["running"] = running
-        value["compaction_recovery"] = engine.compaction_recovery(job)
+        try:
+            value["compaction_recovery"] = engine.compaction_recovery(job)
+        except (OSError, ValueError, sqlite3.Error, KeyError, TypeError, AttributeError) as exc:
+            value["compaction_recovery"] = None
+            value["diagnostic_limitations"].append("Compaction recovery display unavailable; no eligibility conclusion: " + str(exc))
         return value
+
+    def diagnostic_read(fn, **kwargs):
+        try:
+            return fn(**kwargs)
+        except Unavailable as exc:
+            return {"status": exc.status, "job": kwargs.get("job"), "reason": str(exc), "refreshable": True}
+        except (OSError, sqlite3.Error, KeyError, TypeError, ValueError, AttributeError, IndexError) as exc:
+            return {"status": "unavailable", "job": kwargs.get("job"), "reason": str(exc), "refreshable": True}
+
+    @app.get("/jobs/{job}/activity")
+    def activity(job: str, cursor: str | None = Query(None, max_length=1024), limit: int = Query(100, ge=1, le=200)):
+        return diagnostic_read(engine.diagnostics.events, job=job, cursor=cursor, limit=limit)
+
+    @app.get("/jobs/{job}/diagnostics")
+    def diagnostics(job: str, kind: str = "request", view: str | None = Query(None, max_length=128),
+                    cursor: str | None = Query(None, max_length=1024), limit: int = Query(50, ge=1, le=100)):
+        return diagnostic_read(engine.diagnostics.records, job=job, kind=kind, token=view, cursor=cursor, limit=limit)
+
+    @app.get("/jobs/{job}/diagnostics/record")
+    def diagnostic_record(job: str, view: str = Query(max_length=128), kind: str = Query(max_length=64), key: str = Query(max_length=1024)):
+        return diagnostic_read(engine.diagnostics.detail, job=job, token=view, kind=kind, key=key)
+
+    @app.get("/jobs/{job}/diagnostics/evidence")
+    def diagnostic_evidence(job: str, view: str = Query(max_length=128), ref: str = Query(max_length=1024),
+                            mode: str = "full", pointer: str = "", start: int | None = Query(None, ge=0), end: int | None = Query(None, ge=0)):
+        return diagnostic_read(engine.diagnostics.evidence, job=job, token=view, ref=ref, mode=mode, pointer=pointer, start=start, end=end)
+
+    @app.delete("/jobs/{job}/diagnostics/{view}")
+    def close_diagnostics(job: str, view: str):
+        engine.diagnostics.close(job, view)
+        return {"closed": True}
 
     @app.post("/jobs/{job}/start")
     def start(job: str, body: dict):

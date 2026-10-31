@@ -6,7 +6,7 @@ import pytest
 
 from pdfmd.nexus import Nexus, StopRun, make_payload
 from pdfmd.schema import Route
-from pdfmd.storage import Store
+from pdfmd.storage import Conflict, Store
 from tests.engine.context.test_context_admission import protocol_job
 from tests.engine.transport.test_response_repairs import native
 from tests.engine.transport.test_streaming_delivery import WAIT, stream_frames
@@ -38,7 +38,8 @@ def prepare(setup, protocol, streaming, monkeypatch, *, usage=True, kind="normal
 
     monkeypatch.setattr(store, "put_tx", capture)
     value = native(protocol, text="Preserve the complete reply: 25 mg. 完整保留。")
-    value["usage"] = {"input_tokens": 123, "output_tokens": 17} if usage else None
+    value["usage"] = (({"prompt_tokens": 123, "completion_tokens": 17} if protocol == "chat_completions"
+                       else {"input_tokens": 123, "output_tokens": 17}) if usage else None)
 
     def respond(request):
         sends.append(request.content)
@@ -240,8 +241,11 @@ def test_contradictory_acceptance_is_rejected_without_metadata_mutation(setup, m
             db.execute("UPDATE records SET job='another-job' WHERE kind='attempt' AND id=?", (attempt["id"],))
     before = {kind: store.records(kind) for kind in ("request", "attempt", "blob", "job", "operation", "stream_receive")}
     reopened = Store(store.root)
-    with pytest.raises(ValueError):
+    expected = Conflict if contradiction in {"attempt_usage", "attempt_stream"} else StopRun
+    with pytest.raises(expected) as conflict:
         Nexus(reopened, forbidden).send(job["id"], request["id"])
+    if expected is StopRun:
+        assert conflict.value.reason == "accepted_evidence_conflict"
     assert {kind: reopened.records(kind) for kind in before} == before
     assert len(sends) == 1 and not reopened.records("operation", job["id"])
 

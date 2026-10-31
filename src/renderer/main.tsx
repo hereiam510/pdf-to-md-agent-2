@@ -6,6 +6,7 @@ import { TaskSettings } from './features/settings/TaskSettings'
 import { initialWaitPolicy, WaitingSettings } from './features/settings/WaitingSettings'
 import { ReceiveProgress } from './features/receive/ReceiveProgress'
 import { ConflictRecovery } from './features/recovery/ConflictRecovery'
+import { TaskDiagnostics } from './features/diagnostics/TaskDiagnostics'
 import './style.css'
 
 const api = window.workbench.invoke
@@ -190,10 +191,11 @@ function App() {
             })}>Save new version</button></> : version && (saved && saved.version !== job?.head ? <button className="text-button" disabled={busy || running} title="Create a new version from this older version. Content added in later versions will not be included." onClick={() => beginEdit('rebuild')}>Rebuild from this version</button> : <button className="text-button" disabled={!saved || busy || running} onClick={() => beginEdit('edit')}>Edit content</button>)}</div>}</div>
           </section>
         </div>
-        <section className="agent-panel"><div className="agent-header"><div><span className={`agent-indicator ${running ? 'working' : ''}`} /><strong>Conversion agent</strong><span className="muted small">{job?.route?.model || settings.route?.model || 'Connect Nexus to begin'}</span></div><button className="text-button" onClick={() => setActivityOpen(!activityOpen)}>{activityOpen ? 'Hide activity' : 'View activity'} <span className="event-count">{job?.events?.length || 0}</span></button></div>
+        <section className="agent-panel"><div className="agent-header"><div><span className={`agent-indicator ${running ? 'working' : ''}`} /><strong>Conversion agent</strong><span className="muted small">{job?.route?.model || settings.route?.model || 'Connect Nexus to begin'}</span></div><button className="text-button" onClick={() => setActivityOpen(!activityOpen)}>{activityOpen ? 'Hide activity and diagnostics' : 'View activity and diagnostics'} <span className="event-count">{job?.event_summary?.count || 0}</span></button></div>
           {job?.last_message && <div className="agent-message">{job.last_message}</div>}
+          {job?.diagnostic_limitations?.map(text => <p className="hint" key={text}>{text}</p>)}
           {latestRequest?.receive && <ReceiveProgress receive={latestRequest.receive} status={latestRequest.status} running={running} />}
-          {activityOpen && <div className="activity-log">{job?.events?.map(event => <div key={event.seq}><time>{new Date(event.created * 1000).toLocaleTimeString()}</time><span>{event.type.replaceAll('_', ' ')}</span><code>{String(event.data.tool || event.data.reason || event.data.kind || event.data.version_id || '')}</code></div>)}</div>}
+          {activityOpen && job?.id === active && <TaskDiagnostics key={`diagnostics:${job.id}`} job={job.id} latest={job.event_summary?.latest_seq ?? null} observation={recoveryObservation} />}
           <div className="agent-controls"><textarea aria-label="Instructions or reply" rows={2} placeholder={job?.status === 'waiting' ? 'Reply to the agent…' : 'Add an instruction or correction for the next step…'} value={amendment} onChange={e => setAmendment(e.target.value)} disabled={running} />
             {running ? <button className="stop-button" disabled={job?.cancel_requested || busy} onClick={() => act(() => api('cancel', { job: active }))}><Icon name="stop" size={16} />{job?.cancel_requested ? 'Stopping…' : 'Stop'}</button> : <button className="primary" disabled={busy || !ready || Boolean(editing)} onClick={() => continueTask()}>{job?.attempts ? 'Continue' : 'Start conversion'}<Icon name="arrow" size={16} /></button>}
           </div>

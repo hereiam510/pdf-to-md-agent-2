@@ -108,7 +108,8 @@ def snapshot(store, job):
 @pytest.mark.parametrize("suffix,acceptable", SUFFIXES)
 @pytest.mark.parametrize("cut", ["same-chunk", "terminal-split"])
 def test_file_store_fresh_saved_reopen_uses_one_rule(setup, protocol, suffix, acceptable, cut):
-    usage = {"input_tokens": 19, "output_tokens": 7}
+    usage = ({"prompt_tokens": 19, "completion_tokens": 7} if protocol == "chat_completions"
+             else {"input_tokens": 19, "output_tokens": 7})
     raw = terminal(protocol, usage=usage)
     # Split inside JSON/UTF-8 and the terminal delimiter, while delivering the
     # same final received bytes. The suffix is already in the terminal chunk.
@@ -265,7 +266,8 @@ def old_send(monkeypatch, service, job, request):
 @pytest.mark.parametrize("state", ["staged", "pointer-inflight", "settled"])
 def test_historical_acceptance_reuse_or_explicit_conflict_preserves_all_evidence(
         setup, monkeypatch, protocol, suffix, acceptable, state):
-    usage = None if state == "staged" else {"input_tokens": 19, "output_tokens": 7}
+    usage = None if state == "staged" else ({"prompt_tokens": 19, "completion_tokens": 7}
+        if protocol == "chat_completions" else {"input_tokens": 19, "output_tokens": 7})
     store, job, service, request, body, sends = prepare(setup, protocol, [terminal(protocol, usage=usage) + suffix],
                                                        kind="compaction" if state == "staged" else "normal")
     inflight, put = [], store.put_tx

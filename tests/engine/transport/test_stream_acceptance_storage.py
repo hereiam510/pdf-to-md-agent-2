@@ -78,8 +78,9 @@ def test_corrupt_acceptance_stage_cannot_publish_or_rewrite_unknown_attempt(setu
     def forbidden(_):
         pytest.fail("Evidence rejection must not request credentials or resend")
     # Deterministic stage lookup now validates the self-reference directly.
-    with pytest.raises(ValueError, match="inconsistent provenance"):
+    with pytest.raises(StopRun) as conflict:
         Nexus(reopened, forbidden).send(job["id"], request["id"])
+    assert conflict.value.reason == "accepted_evidence_conflict"
     assert reopened.get("request", request["id"]) == before_request
     assert reopened.records("attempt", job["id"]) == before_attempts
     assert reopened.get("attempt", first_id) == first

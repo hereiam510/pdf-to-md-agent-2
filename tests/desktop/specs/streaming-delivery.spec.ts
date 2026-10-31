@@ -100,7 +100,11 @@ for (const protocol of ['chat_completions', 'responses']) {
     const runFixture = (mode: string) => JSON.parse(execFileSync(resolve('.venv/Scripts/python.exe'),
       ['-X', 'utf8', '-m', 'tests.desktop.fixtures.streaming_delivery', mode, directory, protocol, endpoint],
       { windowsHide: true, encoding: 'utf-8' }))
-    const launch = () => electron.launch({ args: [resolve('out/main/index.js')], env: { ...process.env,
+    const build = resolve(process.env.PDFMD_STREAM_BUILD || 'out')
+    const launcher = join(directory, 'isolated-launch.cjs')
+    await fs.writeFile(launcher, `const {app}=require('electron');app.setPath('userData',${JSON.stringify(join(directory, 'electron-profile'))});require(${JSON.stringify(join(build, 'main/index.js'))});`)
+    const launch = () => electron.launch({ args: [launcher], env: { ...process.env,
+      PYTHONDONTWRITEBYTECODE: '1', PYTHONPATH: resolve('src'),
       PDFMD_DATA: join(directory, 'workspace'), PDFMD_PYTHON: resolve('.venv/Scripts/python.exe') } })
     let app: Awaited<ReturnType<typeof launch>> | undefined
     try {
@@ -130,7 +134,15 @@ for (const protocol of ['chat_completions', 'responses']) {
       expect(configured.requests.find((r: any) => r.id === fixture.unknown_request.id).route).toEqual(fixture.route)
       expect(payloads).toHaveLength(0)
       await page.getByRole('button', { name: 'Continue', exact: true }).click()
-      await expect.poll(async () => (await getJob()).events.filter((e: any) => e.type === 'stopped').length,
+      await expect.poll(async () => {
+        const activity = await page.evaluate(async job => globalThis.window.workbench.invoke('activity', { job }), fixture.job)
+        // A writer can invalidate the on-demand catalog capture. Keep polling
+        // for an actual successful read; an unavailable view is not zero events.
+        if (activity.status !== 'ok' || !Array.isArray(activity.events)) return -1
+        const count = activity.events.filter((e: any) => e.type === 'stopped').length
+        await page.evaluate(async ({ job, view }) => globalThis.window.workbench.invoke('closeDiagnostics', { job, view }), { job: fixture.job, view: activity.view })
+        return count
+      },
         { timeout: 15000 }).toBe(fixture.unknown_stop_events_before + 1)
       expect(payloads).toHaveLength(0)
       await page.getByRole('button', { name: 'Resume context organization', exact: true }).click()

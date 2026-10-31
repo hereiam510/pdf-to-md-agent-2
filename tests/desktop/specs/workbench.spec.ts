@@ -87,7 +87,9 @@ test('desktop imports, converts through a local fixture, previews, edits, export
     expect(saved.content.blocks[0].markdown).toBe('# A small, complete section\n\n' + sourcePages[0].content)
     expect(saved.content.blocks[2].markdown).toBe('## The section continues\n\n' + sourcePages[1].content)
     expect(saved.content.claim).toBe('complete')
-    const previewOperation = job.events.find((e: any) => e.type === 'tool_settled' && e.data.tool === 'preview_document')
+    const activity = await window.evaluate(async job => globalThis.window.workbench.invoke('activity', { job }), job.id)
+    const previewOperation = activity.events.find((e: any) => e.type === 'tool_settled' && e.data.tool === 'preview_document')
+    await window.evaluate(async ({ job, view }) => globalThis.window.workbench.invoke('closeDiagnostics', { job, view }), { job: job.id, view: activity.view })
     expect(previewOperation?.data.ok).toBe(true)
     const previewResult = await window.evaluate(async ({ job, ref }) => globalThis.window.workbench.invoke('evidence', { job, ref }),
       { job: job.id, ref: previewOperation.data.result_ref })

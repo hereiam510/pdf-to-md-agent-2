@@ -12,8 +12,9 @@ import httpx
 
 from .schema import Route
 from .storage import Conflict, Store, encode, uid
-from .streaming import StreamDecoder, StreamError
+from .streaming import StreamDecoder, StreamError, validate_response_item_state
 from .waiting import RequestWait
+from .usage import interpret_usage
 
 
 class StopRun(RuntimeError):
@@ -37,7 +38,20 @@ def unique_object(pairs):
 
 
 def parse_reply(protocol: str, raw: bytes) -> dict:
-    value = json.loads(raw, object_pairs_hook=unique_object)
+    try:
+        return _parse_reply(protocol, raw)
+    except (KeyError, TypeError, AttributeError, IndexError) as exc:
+        raise ValueError("The native response contains an unsupported container or missing field. The original is retained.") from exc
+
+
+def _parse_reply(protocol: str, raw: bytes) -> dict:
+    if protocol not in {"chat_completions", "responses"}:
+        raise ValueError("Unsupported native protocol.")
+    def finite(_):
+        raise ValueError("Non-finite JSON numbers are not supported.")
+    value = json.loads(raw, object_pairs_hook=unique_object, parse_constant=finite)
+    if not isinstance(value, dict):
+        raise ValueError("The native response must be an object.")
     calls = []
     texts = []
     if protocol == "chat_completions":
@@ -47,6 +61,8 @@ def parse_reply(protocol: str, raw: bytes) -> dict:
         message = choices[0]["message"]
         if message.get("refusal") or message.get("role") != "assistant":
             raise ValueError("The model refused or returned an unexpected message role.")
+        if any(message.get(key) not in (None, "", [], {}) for key in ("audio", "function_call")):
+            raise ValueError("Unsupported native assistant content. The original is retained.")
         content = message.get("content")
         if isinstance(content, str):
             texts.append(content)
@@ -68,19 +84,42 @@ def parse_reply(protocol: str, raw: bytes) -> dict:
         native = value.get("output", [])
         if not isinstance(native, list):
             raise ValueError("The response output must be a list of native items.")
+        item_ids = set()
         for item in native:
+            if not isinstance(item, dict):
+                raise ValueError("Native output items must be objects.")
+            if "id" in item:
+                if not isinstance(item["id"], str) or not item["id"] or item["id"] in item_ids:
+                    raise ValueError("Native output item IDs must be nonempty and unique when present.")
+                item_ids.add(item["id"])
+            validate_response_item_state(item, final=True, stage="native")
             if item.get("type") == "function_call":
-                if item.get("status", "completed") != "completed":
-                    raise ValueError("The function call is incomplete.")
                 calls.append({"id": item["call_id"], "name": item["name"], "arguments": item["arguments"]})
             elif item.get("type") == "message":
-                if item.get("status", "completed") != "completed":
-                    raise ValueError("The assistant message is incomplete.")
-                for part in item.get("content", []):
+                parts = item.get("content", [])
+                if not isinstance(parts, list):
+                    raise ValueError("Native message content must be a list.")
+                for part in parts:
                     if part.get("type") == "refusal":
                         raise ValueError("The model refused the request.")
                     if part.get("type") == "output_text":
+                        if not isinstance(part.get("text"), str):
+                            raise ValueError("Native output text must be a string.")
                         texts.append(part["text"])
+                    else:
+                        raise ValueError("Unsupported native message content. The original is retained.")
+            elif item.get("type") == "reasoning":
+                content, summary = item.get("content"), item.get("summary")
+                if (content is not None and not isinstance(content, list)) or (summary is not None and not isinstance(summary, list)):
+                    raise ValueError("Native reasoning content and summary must be lists or null.")
+                for part in content or []:
+                    if not isinstance(part, dict) or part.get("type") != "reasoning_text" or not isinstance(part.get("text"), str):
+                        raise ValueError("Unsupported native reasoning content. The original is retained.")
+                for part in summary or []:
+                    if not isinstance(part, dict) or part.get("type") != "summary_text" or not isinstance(part.get("text"), str):
+                        raise ValueError("Unsupported native reasoning summary. The original is retained.")
+                if item.get("encrypted_content") is not None and not isinstance(item["encrypted_content"], str):
+                    raise ValueError("Opaque reasoning must retain its native string representation.")
             elif item.get("type") != "reasoning":
                 raise ValueError("Unsupported native output item. The original is retained; no tools were executed.")
     ids = set()
@@ -88,14 +127,15 @@ def parse_reply(protocol: str, raw: bytes) -> dict:
         if not isinstance(call["id"], str) or not call["id"] or call["id"] in ids:
             raise ValueError("Tool call IDs must be nonempty and unique in the accepted batch.")
         ids.add(call["id"])
-        if not isinstance(call["arguments"], str) or not isinstance(call["name"], str):
+        if not isinstance(call["arguments"], str) or not isinstance(call["name"], str) or not call["name"]:
             raise ValueError("Tool names and complete argument strings are required.")
-        arguments = json.loads(call["arguments"], object_pairs_hook=unique_object)
+        arguments = json.loads(call["arguments"], object_pairs_hook=unique_object, parse_constant=finite)
         if not isinstance(arguments, dict):
             raise ValueError("Tool arguments must be a complete JSON object.")
     if not calls and not any(text.strip() for text in texts):
         raise ValueError("The accepted response contains neither executable calls nor text.")
-    return {"native": native, "calls": calls, "text": "\n".join(texts), "usage": value.get("usage"), "provider_id": value.get("id")}
+    return {"native": native, "calls": calls, "text": "\n".join(texts),
+            "usage": interpret_usage(protocol, value.get("usage")).value, "provider_id": value.get("id")}
 
 
 def make_payload(route: Route, instructions: str, messages: list[dict], tools: list[dict]) -> dict:
@@ -155,8 +195,13 @@ class Nexus:
         disk reconstruction and receive-boundary check. Reopen repeats both.
         No file reads/decoder work occurs while holding the write transaction.
         """
-        from .acceptance import inspect_acceptance, validate_metadata
-        checked = inspect_acceptance(self.store, job, key, verified_stream=verified_stream)
+        from .acceptance import EvidenceCheckError, inspect_acceptance, validate_metadata
+        try:
+            checked = inspect_acceptance(self.store, job, key, verified_stream=verified_stream)
+        except EvidenceCheckError as exc:
+            raise StopRun("accepted_evidence_conflict",
+                          "Saved acceptance is incompatible or inconsistent with retained native evidence. "
+                          "Original records, consumption and tool facts are retained; no request was sent.") from exc
         request, ref, evidence = checked["request"], checked["ref"], checked["evidence"]
         accepted, native = checked["accepted"], checked["native"]
         attempt_id, received_at = checked["attempt_id"], checked["received_at"]
@@ -301,6 +346,8 @@ class Nexus:
                     accepted = parse_reply(route.protocol, native_bytes)
                 except (ValueError, KeyError, TypeError) as exc:
                     request["status"] = "rejected"
+                    observed["diagnostic"] = {"category": "invalid_stream", "field": "response", "stage": "native",
+                                              "ordinal": decoder.event_ordinal if streaming else None}
                     failure = StopRun("response_rejected", str(exc))
                 else:
                     accepted["native_ref"] = raw["ref"]
@@ -310,7 +357,8 @@ class Nexus:
                                           {"request": key, "attempt": attempt_id, "received_at": time.time(),
                                            "transport": deepcopy(observed)}, key=f"accepted:{key}")
                     request.update(status="accepted", accepted_ref=ref["ref"])
-        except StreamError:
+        except StreamError as exc:
+            observed["diagnostic"] = exc.diagnostic
             # Do not echo provider error events, which can contain arbitrary secrets.
             incomplete = observed["stop_cause"] == "stream_incomplete"
             request["status"] = "unknown" if incomplete else "rejected"
@@ -499,7 +547,8 @@ class Nexus:
                 remaining = wait.boundary()[0] - elapsed()
                 await asyncio.wait({task}, timeout=min(0.1, remaining))
             return await task
-        except StreamError:
+        except StreamError as exc:
+            observed["diagnostic"] = exc.diagnostic
             observed.update(terminal_event=decoder.terminal, protocol_complete=decoder.complete)
             if observed["stop_cause"] != "stream_incomplete":
                 observed["stop_cause"] = "stream_error"

@@ -5,3 +5,19 @@
 .conflict-recovery dl { display: grid; grid-template-columns: 150px 1fr; gap: 5px 12px; }
 .conflict-recovery dt { color: #5c666c; }
 .conflict-recovery dd { margin: 0; }
+/* Bounded task diagnostics; long identities and original records remain readable. */
+.task-diagnostics { margin: 12px 0; padding: 14px; border: 1px solid var(--border, #ddd); border-radius: 8px; }
+.diagnostic-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.task-diagnostics button { padding: 6px 9px; overflow-wrap: anywhere; }
+.task-diagnostics table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+.task-diagnostics th, .task-diagnostics td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; overflow-wrap: anywhere; }
+.task-diagnostics code { overflow-wrap: anywhere; }
+.task-diagnostics pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 400px; overflow: auto; font-size: 12px; }
+.task-diagnostics .activity-log { max-height: 350px; overflow: auto; }
+.task-diagnostics .activity-log > div { align-items: start; flex-wrap: wrap; }
+.diagnostic-detail, .diagnostic-evidence { padding-top: 12px; margin-top: 12px; border-top: 1px solid #ddd; }
+.diagnostic-link { padding: 8px 0; }
+.diagnostic-selectors { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.diagnostic-selectors p { width: 100%; }
+.diagnostic-selectors label { flex: 1 1 100px; }
+.diagnostic-evidence img { max-width: 100%; }

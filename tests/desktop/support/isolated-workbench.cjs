@@ -6,4 +6,4 @@ const profile = process.env.PDFMD_UI_PROFILE
 if (!profile) throw new Error('A private test profile is required.')
 mkdirSync(profile, { recursive: true })
 app.setPath('userData', resolve(profile))
-require(resolve('out/main/index.js'))
+require(resolve(process.env.PDFMD_DIAGNOSTIC_BUILD || 'out', 'main/index.js'))

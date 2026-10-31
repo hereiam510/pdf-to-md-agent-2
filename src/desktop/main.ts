@@ -163,6 +163,12 @@ app.whenReady().then(async () => {
       }
       case 'jobs': return call('/jobs')
       case 'job': return call(`/jobs/${id(args.job)}`)
+      case 'activity': return call(`/jobs/${id(args.job)}/activity?` + new URLSearchParams({ limit: String(args.limit || 100), ...(args.cursor ? { cursor: String(args.cursor) } : {}) }))
+      case 'diagnostics': return call(`/jobs/${id(args.job)}/diagnostics?` + new URLSearchParams({ kind: args.kind || 'request', ...(args.view ? { view: args.view } : {}), ...(args.cursor ? { cursor: args.cursor } : {}) }))
+      case 'diagnosticRecord': return call(`/jobs/${id(args.job)}/diagnostics/record?` + new URLSearchParams({ view: args.view, kind: args.kind, key: args.key }))
+      case 'diagnosticEvidence': return call(`/jobs/${id(args.job)}/diagnostics/evidence?` + new URLSearchParams(Object.fromEntries(
+        Object.entries({ view: args.view, ref: args.ref, mode: args.mode || 'full', pointer: args.pointer || '', start: args.start, end: args.end }).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]))))
+      case 'closeDiagnostics': return call(`/jobs/${id(args.job)}/diagnostics/${id(args.view)}`, 'DELETE')
       case 'page': return call(`/jobs/${id(args.job)}/page/${Number(args.page)}`)
       case 'version': return call(`/jobs/${id(args.job)}/versions/${id(args.version)}`)
       case 'evidence': return call(`/jobs/${id(args.job)}/evidence/${id(args.ref)}${args.view === 'raw' ? '?view=raw' : ''}`)

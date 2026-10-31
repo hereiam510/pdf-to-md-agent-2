@@ -151,8 +151,10 @@ def test_reopen_accepted_stream_rejects_missing_constituent_before_any_send(setu
     attempt = store.records("attempt", job["id"])[0]["id"]
     chunk = store.get("blob", f"stream:{attempt}:0", job=job["id"])
     (store.root / "objects" / chunk["sha256"]).unlink()
-    with pytest.raises(ValueError, match="missing"):
+    with pytest.raises(StopRun) as conflict:
         Nexus(Store(store.root), lambda _: pytest.fail("Saved evidence cannot authorize a new send")).send(job["id"], request["id"])
+    assert conflict.value.reason == "accepted_evidence_conflict"
+    assert "missing" in str(conflict.value.__cause__)
     assert len(store.records("attempt", job["id"])) == 1
     assert store.get("request", request["id"])["accepted_ref"] == saved_acceptance
     assert not store.records("operation", job["id"])

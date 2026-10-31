@@ -294,6 +294,12 @@ class Store:
                        (job, kind, encode(data).decode(), time.time()))
             self.put_tx(db, "event_receipt", identity, job, data)
 
+    def event_summary(self, job: str) -> dict:
+        """Small poll indicator, not a change cursor or a task snapshot."""
+        with self._db() as db:
+            count, latest = db.execute("SELECT count(*),max(seq) FROM events WHERE job=?", (job,)).fetchone()
+        return {"count": count, "latest_seq": latest}
+
     def events(self, job: str, after: int = 0, limit: int = 200) -> list[dict]:
         with self._db() as db:
             rows = db.execute("SELECT * FROM events WHERE job=? AND seq>? ORDER BY seq LIMIT ?",

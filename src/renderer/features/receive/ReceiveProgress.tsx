@@ -24,5 +24,7 @@ export function ReceiveProgress({ receive, status, running }: { receive: Receive
       {receive.mode === 'streaming_progress' ? ` · ${receive.progress_count || 0} progress updates` : ''}
       {receive.http_status != null ? ` · HTTP ${receive.http_status}` : ''}</span>
     <span className="hint">Receive activity is not a saved conversion result. Tools wait for a complete validated response.</span>
+    {receive.diagnostic && <span className="hint">Local validation: {receive.diagnostic.category} · {receive.diagnostic.field} · {receive.diagnostic.stage}
+      {receive.diagnostic.ordinal != null ? ` · event ${receive.diagnostic.ordinal}` : ''}</span>}
   </div>
 }
