@@ -2,9 +2,9 @@
 
 ## Current question and discussion status
 
-R01's selected estimator/fallback work is implemented at its recorded scope. Route capacity and calibration remain unproved; unknown magnitude does not weaken supported context restrictions. [Context management](../design/CONTEXT_MANAGEMENT.md), the [engineering explanation](../guides/CONTEXT_AND_EVIDENCE.md#implemented-r01-request-proxy) and [R01/R02 findings](../reviews/RUNTIME_FINDINGS.md) distinguish rules, observations and revisit conditions.
+R01's selected estimator/fallback work is implemented. The [latest 34-send offline assessment](#current-estimator-offline-calibration-2026-11-01) is complete; the user retains the current BPE estimator and all settings. Route-wide calibration and configured route capacity remain unproved, and the supported artificial-restriction concern remains consequential. [Context management](../design/CONTEXT_MANAGEMENT.md), the [engineering explanation](../guides/CONTEXT_AND_EVIDENCE.md#implemented-r01-request-proxy) and [R01](../reviews/RUNTIME_FINDINGS.md#r01-current-estimator-calibration-update-2026-11-01) distinguish effective rules, scoped observations and remaining evidence.
 
-**Discussion status:** R01's local repair and R02's selected receive-storage work are complete at their recorded scope. CTX-01/03 route provenance and operational goals, semantic handoff/evidence usefulness and whole-task benefit remain open under their [complete agenda](#complete-agenda). The next useful question is which missing route or actual-conversion evidence would change those choices; this is not a standing profiling or live-run instruction. Earliest retained diagnostic stages are dated 2026-10-26; the prior top-summary recording time was not stated. Status/navigation synthesis: 2026-10-31 19:17, Asia/Singapore (UTC+08:00), with no new product observation.
+**Discussion status (2026-11-01, Asia/Singapore):** offline calibration/option assessment is complete; the subsequent human instruction authorizes recording its results and [Nursing task closeout](../decisions/NURSING.md#historical-fourteen-page-task-closeout-2026-11-01) only. Full fourteen-page FD-01 and captionless validation are deferred. CTX-01 route provenance, CTX-03 operational policy, CTX-06 semantic handoff quality and whole-task benefit remain open under the [complete agenda](#complete-agenda). No numeric profile, implementation, compaction-policy change, provider call, task continuation or next phase is selected.
 
 The following stages preserve attributed positions, the complete CTX agenda and original authority. They are history of the decision, not new execution instructions. Earlier progress/wait discussion is under [Streaming receive](STREAMING_RECEIVE.md); full Nursing progression is preserved in [the preceding discussion](../history/discussions/20261031_0157_STAGE_B_CONVERSION.md).
 
@@ -463,3 +463,219 @@ The user subsequently selected estimator-first correction and delegated concrete
 **CTX-07:** separate conservative reservation, mandatory projection and actual necessary-cost proof. Current proxies supply no supported provider-token lower bound, so mandatory reservation failure is uncertainty. A real fitting active diagnostic transfers choice durably; otherwise eligible intent remains in a named wait. Historical confirmed-excess dispositions retain policy B and never revive. Whole-batch order, structural-invalid nonapplication, supersession, original receipts, frozen requests, accepted-handoff settlement and consumption are protected. A local review found the new route field could incorrectly block an old task's ordinary settings save; preserve absent legacy fields and apply explicit profile changes only to future decisions. No second policy writer, replay shortcut or waiting-policy change is introduced.
 
 The local repair is complete: CURRENT_STATE records 508 unique Python cases in verified segments and final dual-protocol Runtime/renderer/save/reopen/export preservation, with old evidence and Git identity unchanged. The shared prospective/outcome fix also requires exact native bytes at admission rather than relying on equal-length identifiers or JSON field values. Detailed results remain in R01, not a separate discussion ledger. R02/R07 remain serious separate work with their previous revisit conditions; they are not repaired or made prerequisites by this batch. CTX-05/06/08 still require autonomous evidence choices, useful faithful handoffs and complete fourteen-page new output with source-led save/reopen/export acceptance. Nursing remains stopped with its original fourteen-page scope, two drafts through page 8, 62 attempts, 2,677.204 recorded active seconds, head `4111f86431234edf87b68c568849fb1f` and legacy 180-second requests. Future real validation requires separate settings, exact unknown-request recovery and failure/invalid-handoff stop authority.
+
+## Current estimator offline calibration (2026-11-01)
+
+**Selection, result and later retained choice.** The user first selected offline analysis of the current estimator using the latest fourteen-page Nursing and two-page FD-01 runs. Scope was calibration evidence and option assessment; implementation, configuration/compaction-policy changes, provider calls and task continuation were excluded. That selection alone established no new result. The completed analysis produced the private report and explicitly unsaved drafts under .local/estimator-calibration-20261101-015221/. The user then authorized this maintained-record update and **retained the current estimator and every setting**. The 12.5% text-reserve comparison remains a validation candidate, not an adopted profile or implementation. No further execution increment is selected.
+
+The following results belong to that completed offline analysis at HEAD eb8b3a6cc1e05619f8fb02bd15a44462f8a88669. Detailed evidence is retained here so a repository reader can understand the method, comparisons, options and limits without private artifacts. The older 59-known/3-unknown non-streaming workload remains separate; no universal correction factor is fitted. [R01's disposition](../reviews/RUNTIME_FINDINGS.md#r01-current-estimator-calibration-update-2026-11-01) and [Nursing closeout](../decisions/NURSING.md#historical-fourteen-page-task-closeout-2026-11-01) retain the related findings/decision.
+
+### Exact population and provenance
+
+Entry branch: codex/project-organization. HEAD: eb8b3a6cc1e05619f8fb02bd15a44462f8a88669. Staging and substantive staged/unstaged diffs were empty. Only docs/DEVELOPMENT_GUIDE.md displayed .M; its working-tree Git blob and HEAD blob both equal 857c045b37e3c105ec0a508e15bf1fc7afed0b67. Its bytes and status are preserved.
+
+| Run | Task | Production checkpoint | Final version | Physical sends |
+| --- | --- | --- | --- | --- |
+| A | 7cd5b033a735473794e7b093dc1844e5 | ad75735de4b75fa30a20d9c7f094488a27e6a390 | 91034bf1df7d48b687f61a25552bed02 | 27 = 25 normal + 2 compaction |
+| B | 4d92481c49444ffe9351f914bd77c4e2 | 78e2fae3261f5d7a15a9ddf80c9bf32e9129c524 | 130145fd981446c1954e422430529226 | 7 normal |
+
+Original workspaces:
+
+- A: .local\nursing-20261031-2220\task\workspace
+- B actual: .local\fd01-20261101-0033\converter-ready\workspace
+- B supplied earlier preparation location: .local\fd01-20261101-0033\converter\workspace. This is not the seven-send live store. The existing app-preparation.json explicitly identifies converter-ready/workspace and the selected task. This path discrepancy is retained rather than forcing the supplied location to match.
+
+Source: .local\nursing-20261031-2220\source.pdf
+
+Both task source_pdf blobs independently match SHA-256 65eca1863b014229595dc4e613200ec45bd91714a8843cef4ef5b6c5d7b5cbc1, 1,707,307 bytes, fourteen physical pages. A source ref is 29e3d2b61f10443a9ae3cbb21ece14f9; B source ref is 207368db300648559b03aea19b1f1f4c. Run A covers the fourteen-page task; B covers only physical pages 2/13. Different conversion scope, instructions, image populations and histories prevent a causal A-versus-B efficiency comparison.
+
+There are exactly 34 requests, 34 distinct attempts and 34 matching request_started events, with one attempt per request. Every request and attempt is accepted with HTTP 200. There are 32 normal requests and 2 natural compaction requests, no failed, retried or unknown attempts in this selected population. Stream chunks/events are not physical sends. Active time is retained at 1665.906 seconds for A and 239.141 for B; this analysis consumes none of either task's allowance.
+
+Each catalog was copied as a file while its WAL was absent/empty, without opening an original SQLite connection. Copies passed integrity_check, and their hashes equal the entry inventory. Queries use mode=ro&immutable=1 against these copies. Immutable blob reads verify registered length and SHA-256. Raw SSE chunks are rejoined within their own attempt and matched to its raw-stream object, then reconstructed with the offline decoder. Native response, accepted usage and attempt usage agree. A second, independent scan of raw SSE data lines verifies the non-null usage observations and one original [DONE] marker per attempt. No terminator, usage or prompt was synthesized.
+
+samples.csv and samples.json retain every full request/attempt ID; provenance.json retains payload references/hashes, accepted/native/stream references/hashes, original capacity metadata and current recomputation separately. No matching usage was missing: 34 known / 0 unknown. The method preserves null for missing usage rather than imputing it. Provider attribution means reported through this route; upstream model identity, billing accuracy, fees and subscription quota allocation are not established.
+
+Every frozen request independently confirms Chat Completions, alias cliproxy/gpt-6.1-sol, BPE profile, vision enabled, configured capacity 131,072, output reserve 8,192 and image allowance 4,096. The input allowance is therefore 122,880. All route identity hashes are 323e4be385c75d06b2f8d34c06ebe6a077c3493c5871599bb232056973263d2c. This hash covers endpoint/model/protocol/parameters, not every setting. Frozen streaming waits differ: A 600/300/1200 seconds; B 600/300/900. No private connection configuration or credential field was inspected or printed.
+
+### Three distinct measurements
+
+1. Original estimate: the request's persisted meta.capacity, tied by SHA-256 to its actual frozen request_input.
+2. Current recomputation: the current estimate() called on that exact decoded/re-encoded payload and that request's own frozen Route. No current SYSTEM, tools, source prompt or newer task state is assembled.
+3. Provider input: prompt_tokens from that attempt's original SSE/native response. completion_tokens is output; cached_tokens is a prompt detail and reasoning_tokens a completion detail. Neither detail is added to input or total.
+
+All 34 payloads are canonical byte-identical after decode/re-encode. Every recomputed estimator field matches its original recorded field, including text count, reserves, images, request/route hashes and fits. All original outcome_reserve values are zero. There is no hidden original-versus-current estimate difference to explain away.
+
+The estimator, schema, working-context integration, Nexus, dependency manifest/lock and bundled vocabulary have unchanged Git content across A, B and current HEAD. context.py and tools.py differ in the FD-01 guidance increment; those changed prompts/descriptions are already in each run's own frozen payload. source-identities.json records the exact hashes. This analysis never substitutes today's prompt for A's prompt.
+
+Current formula, with text proxy T and native image count I:
+
+    input reservation = T + ceil(T / 4) + 1024 + I * 4096
+    fits = input reservation + 8192 <= 131072
+
+T counts complete canonical native JSON after replacing each native image object with a measurement placeholder. It uses pinned tiktoken 0.14.0, bundled hash-verified o200k_base ordinary BPE, in consecutive 8,192-Unicode-character chunks without truncation. This is a complete request proxy, not proof of route-native tokenization. The fixed/text/image terms are reservations, not measured protocol/image costs. Output reserve is separate. Unsupported modalities/configuration stop explicitly. Counter failure or explicit selection uses a visible UTF-8-byte fallback; no download or alias-based tokenizer inference occurs.
+
+### Results
+
+Relative error is (estimate - reported input) / reported input. Weighted error is the sum of signed errors divided by the sum of reported input tokens; it is not a fee or an independent-sample confidence interval.
+
+| Group | n | Reported input sum | Estimate sum | Weighted error | Estimate / usage range |
+| --- | --- | --- | --- | --- | --- |
+| A normal | 25 | 1,222,005 | 1,964,332 | 60.75% | 1.330–1.930 |
+| A compaction | 2 | 99,614 | 140,079 | 40.62% | 1.400–1.413 |
+| A all | 27 | 1,321,619 | 2,104,411 | 59.23% | 1.330–1.930 |
+| B normal | 7 | 156,317 | 217,617 | 39.22% | 1.319–1.698 |
+| All | 34 | 1,477,936 | 2,322,028 | 57.11% | 1.319–1.930 |
+
+Useful input-composition groups (nested histories are correlated; n is not independent task count):
+
+| Composition | n | Reported input sum | Estimate sum | Weighted error | Estimate / usage range |
+| --- | --- | --- | --- | --- | --- |
+| A 0 native images | 2 | 27,135 | 37,486 | 38.15% | 1.330–1.689 |
+| A 1–2 native images | 5 | 140,212 | 197,569 | 40.91% | 1.348–1.560 |
+| A 5–8 native images | 4 | 159,753 | 252,499 | 58.06% | 1.406–1.814 |
+| A 10–14 native images | 14 | 894,905 | 1,476,778 | 65.02% | 1.475–1.930 |
+| B 0 native images | 2 | 9,090 | 14,922 | 64.16% | 1.634–1.650 |
+| B 1–2 native images | 1 | 11,854 | 20,133 | 69.84% | 1.698–1.698 |
+| B 5–8 native images | 4 | 135,373 | 182,562 | 34.86% | 1.319–1.384 |
+
+All 34 estimates are high: signed error +2,680 to +53,087; relative error +31.88% to +93.05%; median relative error 57.98%. A's median signed error is +29,699, B's +9,644. The two compactions are text-only native projections and remain high by 40.02%–41.29%. They do not supply measured image costs or a semantic handoff assessment.
+
+Input usage totals 1,477,936. Output totals 32,363; total tokens 1,510,299. Nested cached input details total 59,008, and nested reasoning output details total 1,672. These details are already within their parent categories. Missing/unknown fees stay unknown. No token ratio is treated as a savings or billing multiplier.
+
+Per-request table: O=C means the original recorded estimate equals current recomputation; both values remain separate in CSV/JSON. All rows use the common 1,024 fixed reserve and 131,072/8,192 configured capacity/output above. ID suffixes expand with the run's task ID. N=normal; C=compaction. Headroom excludes output reserve.
+
+#### Run A
+
+| # / ID suffix | Kind | Text T | Text reserve | Images / cost | O=C | Reported input | Signed error | Relative error | Headroom |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 / 0:0 | N | 4,435 | 1,109 | 0 / 0 | 6,568 | 3,888 | +2,680 | 68.93% | 116,312 |
+| 2 / 1:1 | N | 23,915 | 5,979 | 0 / 0 | 30,918 | 23,247 | +7,671 | 33.00% | 91,962 |
+| 3 / 2:2 | N | 24,561 | 6,141 | 1 / 4,096 | 35,822 | 25,020 | +10,802 | 43.17% | 87,058 |
+| 4 / 3:3 | N | 24,910 | 6,228 | 1 / 4,096 | 36,258 | 25,306 | +10,952 | 43.28% | 86,622 |
+| 5 / 4:4 | N | 25,441 | 6,361 | 1 / 4,096 | 36,922 | 25,767 | +11,155 | 43.29% | 85,958 |
+| 6 / 5:5 | N | 29,194 | 7,299 | 7 / 28,672 | 66,189 | 36,490 | +29,699 | 81.39% | 56,691 |
+| 7 / 6:6 | N | 33,453 | 8,364 | 14 / 57,344 | 100,185 | 51,897 | +48,288 | 93.05% | 22,695 |
+| 8 / 7:7 | N | 36,981 | 9,246 | 14 / 57,344 | 104,595 | 55,245 | +49,350 | 89.33% | 18,285 |
+| 9 / 8:8 | N | 43,532 | 10,883 | 14 / 57,344 | 112,783 | 61,577 | +51,206 | 83.16% | 10,097 |
+| 10 / 9:9 | N | 50,115 | 12,529 | 14 / 57,344 | 121,012 | 67,925 | +53,087 | 78.16% | 1,868 |
+| 11 / 10:10 | C | 52,397 | 13,100 | 0 / 0 | 66,521 | 47,080 | +19,441 | 41.29% | 56,359 |
+| 12 / 10:11 | N | 8,310 | 2,078 | 1 / 4,096 | 15,508 | 9,939 | +5,569 | 56.03% | 107,372 |
+| 13 / 11:12 | N | 51,074 | 12,769 | 2 / 8,192 | 73,059 | 54,180 | +18,879 | 34.84% | 49,821 |
+| 14 / 12:13 | N | 53,557 | 13,390 | 6 / 24,576 | 92,547 | 65,827 | +26,720 | 40.59% | 30,333 |
+| 15 / 13:14 | N | 56,030 | 14,008 | 10 / 40,960 | 112,022 | 75,940 | +36,082 | 47.51% | 10,858 |
+| 16 / 14:15 | C | 58,027 | 14,507 | 0 / 0 | 73,558 | 52,534 | +21,024 | 40.02% | 49,322 |
+| 17 / 14:16 | N | 12,337 | 3,085 | 5 / 20,480 | 36,926 | 21,003 | +15,923 | 75.81% | 85,954 |
+| 18 / 15:17 | N | 28,266 | 7,067 | 5 / 20,480 | 56,837 | 36,433 | +20,404 | 56.00% | 66,043 |
+| 19 / 16:18 | N | 31,319 | 7,830 | 10 / 40,960 | 81,133 | 51,472 | +29,661 | 57.63% | 41,747 |
+| 20 / 17:19 | N | 34,188 | 8,547 | 14 / 57,344 | 101,103 | 63,094 | +38,009 | 60.24% | 21,777 |
+| 21 / 18:20 | N | 34,938 | 8,735 | 14 / 57,344 | 102,041 | 63,775 | +38,266 | 60.00% | 20,839 |
+| 22 / 19:21 | N | 35,844 | 8,961 | 14 / 57,344 | 103,173 | 64,614 | +38,559 | 59.68% | 19,707 |
+| 23 / 20:22 | N | 36,239 | 9,060 | 14 / 57,344 | 103,667 | 64,940 | +38,727 | 59.64% | 19,213 |
+| 24 / 21:23 | N | 36,809 | 9,203 | 14 / 57,344 | 104,380 | 65,442 | +38,938 | 59.50% | 18,500 |
+| 25 / 22:24 | N | 40,022 | 10,006 | 14 / 57,344 | 108,396 | 68,279 | +40,117 | 58.75% | 14,484 |
+| 26 / 23:25 | N | 41,824 | 10,456 | 14 / 57,344 | 110,648 | 69,990 | +40,658 | 58.09% | 12,232 |
+| 27 / 24:26 | N | 42,617 | 10,655 | 14 / 57,344 | 111,640 | 70,715 | +40,925 | 57.87% | 11,240 |
+
+#### Run B
+
+| # / ID suffix | Kind | Text T | Text reserve | Images / cost | O=C | Reported input | Signed error | Relative error | Headroom |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 / 0:0 | N | 4,897 | 1,225 | 0 / 0 | 7,146 | 4,330 | +2,816 | 65.03% | 115,734 |
+| 2 / 1:1 | N | 5,401 | 1,351 | 0 / 0 | 7,776 | 4,760 | +3,016 | 63.36% | 115,104 |
+| 3 / 2:2 | N | 8,733 | 2,184 | 2 / 8,192 | 20,133 | 11,854 | +8,279 | 69.84% | 102,747 |
+| 4 / 3:3 | N | 10,594 | 2,649 | 5 / 20,480 | 34,747 | 25,103 | +9,644 | 38.42% | 88,133 |
+| 5 / 4:4 | N | 13,803 | 3,451 | 5 / 20,480 | 38,758 | 28,146 | +10,612 | 37.70% | 84,122 |
+| 6 / 5:5 | N | 19,336 | 4,834 | 6 / 24,576 | 49,770 | 37,170 | +12,600 | 33.90% | 73,110 |
+| 7 / 6:6 | N | 20,396 | 5,099 | 8 / 32,768 | 59,287 | 44,954 | +14,333 | 31.88% | 63,593 |
+
+### Error sources: observations, hypotheses and limits
+
+**Text encoding/counting — supported observation.** In all six zero-image samples, the BPE text proxy alone exceeds total reported input by 547–5,493. This confirms a text/protocol projection mismatch on these samples before adding reserves. Complete serialized JSON contains field names, escaping, envelopes, repeated argument/result representations and placeholders that need not match upstream rendering. The data does not isolate encoding choice from protocol conversion or upstream accounting. An alias is not proof of o200k equivalence. Selecting cl100k or another encoding by a lower fitted error would not prove correctness; no alternate vocabulary was installed or downloaded.
+
+**Chunk boundaries — supported small local effect.** Whole-string ordinary BPE on the same complete text yields 1–19 fewer proxy tokens per sample. With the same 25% reserve, the largest final reservation difference is 24; the sum is 416. All 34 fit classifications remain unchanged. This effect is much smaller than the observed errors. Whole-string counting gives up the existing protection against expensive unbroken/repetitive BPE inputs, without solving image or protocol accounting. No new latency benchmark or unseen-input bound is claimed.
+
+**25% reserve — supported arithmetic, not causal decomposition.** It adds 258,389 units across sent requests: 30.61% of the aggregate observed gap of 844,092. Removing it leaves all 34 estimates high, with weighted error 39.63%. The gap also includes proxy and image mismatch; the reserve's exact necessary amount is not identified. Lowering this component is more defensible to validate first than altering pixels or using an aggregate divisor, because it preserves all content and leaves image/native/output reservations intact.
+
+**1,024 fixed reserve — supported arithmetic.** It adds 34,816 units, 4.12% of the aggregate gap. Removing it changes neither retained compaction boundary from failing to fitting. A model-specific message/tool wrapper may still need a reserve. These samples do not identify its true fixed component.
+
+**4,096 per native image — composition-sensitive and not independently calibrated.** It contributes 995,328 units across these repeatedly assembled inputs. The six zero-image observations cannot establish an image rule. Aggregate input minus text proxy mixes image cost, text mismatch and protocol differences; dividing that residual by image count would invent causal precision. Native images include source page renders, figure crops and document previews; details are unspecified in the payload and decoded dimensions differ. image_details in samples.json preserves dimensions, bytes and hashes without treating them as tokens.
+
+The sensitivity-only 2,048 image allowance underestimates B #4 (:3:3) by 596 (24,507 versus 25,103) and B #7 (:6:6) by 2,051 (42,903 versus 44,954), despite retaining the current text and fixed reserves. Do not discard those samples or select an image rule based only on A's page-heavy fit. Conversely, unchanged 4,096 is not a proven upper bound for unseen crops, detail modes or routes.
+
+**Protocol and upstream — unresolved.** All selected samples are streaming Chat Completions through one route and one source PDF. They expand the earlier non-streaming R01 evidence but do not calibrate Responses, another provider or every PDF. Provider usage is route-reported, not independently verified upstream metering. The historical 59-sample ratios 1.32–1.72 remain a distinct older population and were not used as correction factors.
+
+### Concrete capacity and admission consequences
+
+#### Actual frozen sends
+
+All 34 were admitted under the unchanged estimator, with minimum local headroom 1,868 at A #10. Every smaller-reserve variant below preserves these 34 fit decisions. Therefore their average errors alone do not demonstrate a changed real execution.
+
+The largest reported successful input is 75,940 at A #15 (:13:14), whose estimate is 112,022. The highest estimate is 121,012 at A #10, whose reported input is 67,925. Neither success measures the route maximum. Replacing the current counter with byte fallback would instead reject 20 of these saved, actually successful payloads at the same configured input allowance. This is a concrete restriction consequence of a documented fallback condition, not a request to disable fallback or change configuration.
+
+#### Two retained natural-compaction boundaries
+
+The saved context_compacted events record pre-handoff normal estimates 125,784 and 136,352, versus input allowance 122,880. These are the normal projections at handoff acceptance, not the frozen compaction payloads (66,521 and 73,558). The normal-before payloads were not frozen, so there is no byte-exact normal-before recomputation or corresponding provider usage.
+
+For bounded sensitivity only, their recorded totals can be decomposed by the unchanged formula and retained native-image evidence. A had no context_update calls, pins, releases or recorded deferrals. The first preceding frozen normal input has 14 native images; its newly returned preview, retained in the next frozen normal, adds 1. The second has 10 and its five new retained render results add 5. Each boundary therefore has 15 native images (61,440 allowance). No Context method or task state was executed. Formula inversion yields text proxies 50,656 / 59,110 and text reserves 12,664 / 14,778. capacity-consequences.json records the inference and limitations explicitly.
+
+| Independent saved boundary | Current | 12.5% text reserve | 0% text reserve | 0 fixed reserve |
+| --- | --- | --- | --- | --- |
+| Before :10:10 | 125,784 — fails | 119,452 — fits | 113,120 — fits | 124,760 — fails |
+| Before :14:15 | 136,352 — fails | 128,963 — fails | 121,574 — fits | 135,328 — fails |
+
+The text-reserve thresholds for local fit are approximately 19.27% and 2.21% at those separate boundaries, with images/fixed/output unchanged. This establishes that current reserve selection can determine whether historical normal content is locally admissible. It does not prove either normal request would be accepted upstream, that a compaction was unnecessary for quality/cost, or that an alternative history would eliminate two compactions. Changing the first boundary changes future agent actions and invalidates treating the second historical snapshot as that alternate future.
+
+#### Run B's repeated full-result deferral
+
+B #2–#7 defer the same immutable result, result:4d92481c49444ffe9351f914bd77c4e2:0:0:0, not six different results. Its saved size is 788,497 bytes; it is the complete two-page dict extraction. Four long strings are embedded image/mask Base64 data inside the textual dict (19,824 / 281,164 / 20,812 / 242,136 characters). It has no top-level image_ref, so this body is serialized as tool text rather than charged as native image pixels. That representation distinction matters; it does not authorize stripping fields or hiding source data.
+
+Original before_admission_estimate values are 620,086–671,604, versus actual projected sends of 7,776–59,287. The recorded projection names that one result; native-image count is unchanged when its text body is deferred. Inverting each recorded full-input total gives local text proxies 495,249–510,249. Even sensitivity removal of text, fixed and image reserves leaves these proxies above 122,880. None of the assessed reserve-only alternatives reverses this deferral. Full pre-deferral native payloads and their provider usages are absent; these are local-proxy arithmetic statements, not provider-token lower bounds or proofs of actual upstream overflow.
+
+The successful B task later chose text and native-pixel reads autonomously. That is inherited execution evidence, not a requirement to adopt a compulsory text-first path, an analyst-chosen field preset or a quality verdict against full dict access. Original full/raw/field/range/native access remains required.
+
+### Options and tradeoffs
+
+Sensitivity metrics below concern the 34 frozen sends, with the same complete text and images. They are not independently validated estimator replacements.
+
+| Option | Observed undercounts | Signed error range | Weighted error | Sent fit changes |
+| --- | --- | --- | --- | --- |
+| current | 0 | 2,680 to 53,087 | 57.11% | 0 |
+| text_reserve_12_5pct | 0 | 2,126 to 46,823 | 48.37% | 0 |
+| text_reserve_0pct | 0 | 1,571 to 40,558 | 39.63% | 0 |
+| fixed_reserve_0 | 0 | 1,656 to 52,063 | 54.76% | 0 |
+| image_allowance_2048_sensitivity_only | 2 | -2,051 to 24,415 | 23.44% | 0 |
+| whole_string_same_reserves | 0 | 2,679 to 53,073 | 57.08% | 0 |
+| utf8_fallback | 0 | 17,828 to 172,826 | 220.85% | 20 |
+
+| Meaningful choice | Fidelity/access, fit and fallback | Maintenance/portability and assessment |
+| --- | --- | --- |
+| Retain current estimator/settings | Preserves all existing access and decisions; all selected sends overestimate, and two retained boundaries fail locally. Existing byte fallback is explicit but much more restrictive. | Small pinned offline mechanism; no route-wide bound. Recommended interim production baseline, with the demonstrated restriction kept open as R01/CTX-02. |
+| Route-scoped text reserve adjustment | Same exact content/counter/images/output. 12.5% has no sample undercounts and flips one retained boundary; zero percent flips both independent snapshots but is less cautious. Keep explicit fallback; do not silently apply a learned value to fallback or old frozen requests. | Preferred improvement class to validate. A route/profile needs identity, scope, observed signed errors and reversion criteria; avoid alias-only portability claims. 12.5% is a candidate, not selected or justified as universally adequate. |
+| Lower fixed reserve alone | No retained boundary reversal; leaves text/image mismatch. Does not affect complete access. | Smaller local gain and weak evidence of true fixed overhead; do not prioritize. |
+| Lower per-image allowance / universal correction factor | Halving image allowance produces two observed undercounts. A universal divisor mixes protocols, images, schemas and reserves and has no evaluated bound. | Reject for current selection. Any future image rule needs applicable route/detail/preprocessing evidence and explicit unsupported-mode fallback. |
+| Whole-string/alternate local tokenizer | Whole-string changes only 1–24 final units on sent samples; full payload and pixels remain available. Another encoding does not supply native/protocol counts. | Whole-string risks pathological counting cost; an alternate vocabulary/model mapping adds maintenance without applicable route evidence. No replacement is supported by this analysis. |
+| Route-applicable complete-input counter | Could count native structure and modalities more directly if the exact route/protocol supports it; retain complete payloads, explicit unavailable behavior and offline fallback. | Official OpenAI Responses documentation describes an input-token counting endpoint for full Responses inputs, including images/tools and structural formatting. This Chat Completions Nexus route is not thereby supported; converting protocols would change the subject. It adds service dependence, request authority and latency. No endpoint was probed or called. A conditional future option, not a current replacement. |
+
+Official documentation consulted on 2026-11-01: [Counting tokens](https://developers.openai.com/api/docs/guides/token-counting). It explains complete Responses-input counting and the limits of local plain-text tokenization. The inference that this route is not yet eligible follows from the absence of route-specific capability evidence, not an official statement about Nexus.
+
+### Smallest missing evidence and planned validation
+
+No additional evidence is needed to decide against replacing BPE, using an aggregate divisor, or halving image allowance on these data. To change the interim retain-settings recommendation, the smallest discriminating evidence is a route-applicable complete-input count or corresponding response usage for a byte-identified normal input near the first retained boundary, with approximately 15 native images and representative tool/draft history. Its recorded payload, image/detail handling, exact route/profile and configured capacity/output must accompany the count. The historical normal-before byte sequence was not retained; this report does not pretend that it can be recovered exactly from its total. The existing two compaction responses cannot supply that missing normal-input usage.
+
+A count above a candidate reservation would reject that candidate; count/headroom consistent with it would support a bounded route-specific trial, not prove an unseen-input upper bound. Independent text-heavy/non-ASCII/tool-argument and image/preview compositions should then challenge the profile, because these 34 nested requests come from only one PDF and two successful tasks. Effective route capacity provenance belongs to CTX-01 separately and must not be replaced by a largest-success claim.
+
+If subsequently authorized, validate a proposed component/profile offline against all retained requests first, preserving outliers and unknowns. Require exact payload/hash identity, signed errors by composition, unchanged full access and explicit fallback/applicability handling. Exercise counter-unavailable/invalid data and unsupported modalities locally, without silently changing capacity, output or image rules. Scope any new live interval separately; measure actual admission, source-led saved/reopened/exported fidelity, autonomous useful progress, compactions/retrieval/repair overhead and whole-task price-weighted cost only where fees are known. One changed local fit or fewer tokens is not actual agent benefit. Do not force compaction or continue either closed task as part of this plan.
+
+### Offline reproduction, availability and preservation
+
+The local analysis README gives the fresh-directory sequence: inspect_evidence.py, analyze.py, inspect_decisions.py, capacity_consequences.py, verify_analysis.py, verify_preservation.py and make_report.py, using the existing Python 3.12.14 / tiktoken 0.14.0 environment with -B. Each helper derives a fresh ignored output root from its own location; old writers/controls were inspected, not run. Catalog copies are read-only; immutable blobs are verified before use. No Store/Runtime/Engine/Nexus instance, Context assembly or task-state replay was executed. A socket audit guard records zero estimator-analysis network attempts.
+
+Full per-request payload hashes, attempt/stream references and original raw evidence remain in the private local samples.csv/json, provenance.json and associated manifests. Repository-only readers can inspect the method/results above but cannot independently reproduce private-payload counts without those originals. No private source, credential or runtime file is added to versioned records.
+
+The completed analysis independently verified all 34 raw SSE usages, unique start/request/attempt identities, source identity, CSV/formulas and complete metadata correspondence. Its selected before/after inventory covers 10,352 existing files / 633,160,512 bytes, with no changed/missing file or new actual-workspace file. Original catalogs, source, output trees, task/configuration and Git state, including DEVELOPMENT_GUIDE, were preserved. Provider calls, task replay, application/test/dependency changes, maintained-document writes and Git mutations were all zero under that earlier handoff-only scope. This later records-only instruction permits the maintained-document writes here, without changing those earlier evidence/scope facts or granting execution authority.
+
+### Maintained-record synchronization and checks (2026-11-01)
+
+The subsequent records-only update reconciles CURRENT_STATE, PHASE_PLAN, README, INDEX, REVIEW_HANDOFF, the Nursing decision/discussion, R01, and affected figure/estimator guide summaries. The two live verification owners receive clearly labelled later-decision annotations; their original bodies and all earlier Nursing decision entries remain unchanged. FD-01's required outcome and the effective estimator formula are unchanged. The 34 per-request rows above were compared against the saved analysis data, and the current summaries were read against the detailed result and task-closeout scope rather than judged by term counts alone.
+
+Repository-only documentation checks pass: 87 Markdown files, 4,423 local links/destinations and 503 bundled source files checked, with no errors. Git whitespace checks pass. File-hash protection confirms the other 10,338 selected existing files and all 37 registered original analysis artifacts are unchanged, including source/test/dependency files, both actual task stores, outputs and DEVELOPMENT_GUIDE. No application tests/builds, task/configuration changes, provider calls or task continuation were performed for this documentation update. Local checks/snapshots are retained under .local/record-estimator-nursing-20261101-r1/; these checks establish scoped record consistency/preservation, not fresh runtime or source-content acceptance.

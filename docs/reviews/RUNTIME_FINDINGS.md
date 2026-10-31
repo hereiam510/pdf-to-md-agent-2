@@ -476,6 +476,14 @@ Any future proposal must distinguish received position, last committed durable c
 
 For the next real Nursing choice, explicitly choose either this bounded remedy discussion/validation first or continuation with the documented fragmentation risk and actual chunk/timing observation. A real run would resolve route incidence and could alter priority; it is not needed to establish this local defect class or authorize a probe now. Future task settings (current live task remains legacy 180 seconds), exact unknown-request recovery and failure/invalid-handoff exits still require separate authority. R07 malformed settlement remains an independent candidate, triggered by its own selection or relevant failure. R03–R12/H01–H05/CTX dispositions remain discoverable, not automatic prerequisites. No model call, recovery, setting change, Git write, release or storage implementation follows this completed batch. Fourteen-page faithful autonomous delivery/save/reopen/export remains unmet product acceptance.
 
+## R01 current-estimator calibration update (2026-11-01)
+
+The [latest offline assessment](../discussions/REQUEST_CAPACITY.md#current-estimator-offline-calibration-2026-11-01) retains 34 exact frozen sends (32 normal, two natural compactions) from the fourteen-page Nursing and two-page FD-01 runs. Every original/current estimator field matches; every corresponding raw SSE/native/accepted/attempt input usage agrees, with no missing usage. All estimates are high: ratios 1.31884..1.93046, signed errors +2,680..+53,087 and weighted relative error 57.11%. This is scoped streaming Chat Completions evidence on one route/source, distinct from the historical non-streaming population; route-wide calibration, upstream limits and actual fees remain unproved.
+
+R01 remains a **high-impact artificial-restriction concern**. Retained normal-before ledger arithmetic shows a 12.5% text reserve changes the first pressure boundary from 125,784/fail to 119,452/fit at unchanged input allowance 122,880; the second remains 128,963/fail. Those normal-before payloads were not frozen and have no provider usage; actual benefit or two avoided compactions is not proved. Image-allowance halving undercounts two FD-01 samples by 596/2,051. No lower-reserve variant changes the 34 actual sent-payload fit decisions; UTF-8 fallback would reject 20 of these actually successful inputs.
+
+**Current disposition:** the user retains the current BPE estimator/settings and authorizes recording only. Route-scoped text-reserve calibration is a proposed future improvement class; 12.5% is an unadopted validation candidate. Revisit with route-applicable complete-input count/usage for a byte-identified near-boundary normal composition, then independent composition/source-led fidelity evidence. CTX-01 capacity provenance, CTX-03 operational policy, CTX-06 handoff usefulness and whole-task benefit remain open. [Nursing task closeout](../decisions/NURSING.md#historical-fourteen-page-task-closeout-2026-11-01) retains its figure limitation and does not close those concerns. No implementation, configuration change, provider call, task replay or next phase is selected.
+
 ## R01 selected implementation — 2026-10-28
 
 ### Local implementation result
@@ -561,6 +569,8 @@ The original review did not select execution. Priorities below remain recommenda
 ## Detailed findings and next discriminating checks
 
 ### R01 — Usable context may be substantially narrower than the route can support
+
+**Current disposition:** [the 2026-11-01 update](#r01-current-estimator-calibration-update-2026-11-01) adds the latest 34 streaming samples and the user's retain-estimator/settings choice. The original claim/investigation proposal below retains its historical scope and is not a new execution queue.
 
 **Claim and impact.** The reviewer estimates a 3–4x overestimate and an effective approximately 30k-token window. The product issue is premature compaction/deferral that prevents text, pixels and drafts from remaining jointly usable, increases latency/subscription consumption and can disrupt editing. An exact 30k/40k value is not needed to make this important.
 
@@ -740,7 +750,7 @@ Counting attempts before send supports durable accounting; it alone does not pre
 
 ## Candidate follow-up and handoff
 
-[recorded phase selection](../history/PHASE_HISTORY.md#runtime-review-candidate-follow-up) owns the sequence. R01's selected archived capacity/usage analysis is complete above; its estimator-first recommendation awaits the user's remedy choice. R02 fragmented-stream measurement remains a high-value independent candidate and was not required for that analysis. R07 merits bounded parser-to-settlement verification and a repair proposal. R04 diagnosis can accompany receive work only if directly needed; broad retries, OCR recovery, export portability and isolation remain separately scoped.
+The [historical phase selection](../history/PHASE_HISTORY.md#runtime-review-candidate-follow-up) retains its original candidates. R01's [latest offline assessment](../discussions/REQUEST_CAPACITY.md#current-estimator-offline-calibration-2026-11-01) is complete; the user retains the current estimator/settings without selecting a new profile implementation or live validation. R02 residual performance, broader R07 shapes, R04, network/OCR recovery, export portability and isolation retain their own current evidence/triggers. Historical proposals do not independently queue execution.
 
 The next planner should identify relevant IDs, available existing evidence, the smallest useful missing evidence, competing options, preservation requirements and observable exit conditions. The next reviewer should say which IDs are resolved, still supported, superseded or unverified against the actual source. Updating this document is not verification of its proposed fixes. All application/model execution remains subject to current user authorization.
 

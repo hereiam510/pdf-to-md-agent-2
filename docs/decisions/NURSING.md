@@ -2,6 +2,14 @@
 
 [Central catalogue](../INDEX.md). These entries retain original adoption, corrections, alternatives and task-specific authority. Historical permission statements do not authorize present execution. Current designs and readiness are linked from the catalogue; later evidence may qualify an earlier completion claim.
 
+## Historical fourteen-page task closeout (2026-11-01)
+
+**Adopted human decision; recorded after the offline estimator assessment.** The user accepts the historical fourteen-page Nursing conversion task as complete with the known figure-delivery limitation retained. Extending FD-01 across all fourteen pages and captionless-source validation are deferred and do not block this task's closeout. This concerns task 7cd5b033a735473794e7b093dc1844e5, final version 91034bf1df7d48b687f61a25552bed02 and its closed 27-send / 1665.906-active-second interval.
+
+This task-closeout decision does not assert full FD-01 acceptance of the old output, alter historical execution/content-review/package evidence, close every Stage B source class, or resolve estimator/compaction concerns. Whole-page images and incomplete demonstration of figure-level text associations remain substantive limitations. [The acceptance correction](../verification/20261031_2242_NURSING_LIVE.md#acceptance-correction-2026-11-01) remains valid. The separate [two-page acceptance](../verification/20261101_0103_FD01_TWO_PAGE_LIVE.md), task 4d92481c49444ffe9351f914bd77c4e2 / version 130145fd981446c1954e422430529226, does not repair the fourteen-page version retrospectively.
+
+The immediately selected [offline estimator assessment](../discussions/REQUEST_CAPACITY.md#current-estimator-offline-calibration-2026-11-01) is complete. The user subsequently authorizes maintained-record synchronization and explicitly retains the current estimator and settings. No implementation, configuration or compaction-policy change, provider call/probe, task continuation or Stage D packaging is selected. The 12.5% text-reserve sensitivity remains an unadopted validation candidate. Neither closed interval's unused allowance carries forward. Revisit the deferred figure scopes only under a newly selected delivery need or explicit validation scope/authority; existing required outcomes and evidence remain preserved.
+
 ## Figure delivery requirements selected (2026-11-01)
 
 **Subsequent live approval:** the user's "approved" accepts the complete prepared two-page proposal: original physical pages 2/58 and 13/69, one Start, aggregate 24 sends / 2400 active / 3000 wall seconds, 600/300/900 request waits, trusted scripts, one attempt/no unknown replay, stated exits and destination. [The interval owner](../verification/20261101_0103_FD01_TWO_PAGE_LIVE.md) records actual execution. Ordinary secure credential entry is still required; no standing allowance, fourteen-page rerun or extra captionless fixture is approved.
