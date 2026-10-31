@@ -44,7 +44,7 @@ Read [the working agreement](AGENTS.md), then **[the document catalogue](docs/IN
 
 The catalogue leads directly to current streaming receive, document editing, context coordination, recovery and diagnostic designs, their reasons and original decision/discussion entries, applicable verification and preserved editions. [CONTRACTS](docs/CONTRACTS.md) is the shared-rule navigator; [DEVELOPMENT_GUIDE](docs/DEVELOPMENT_GUIDE.md) routes deeper engineering explanations.
 
-Latest application work: streaming contract A and SC02 have bounded local acceptance; complete real Nursing delivery remains unverified. [CURRENT_STATE](docs/CURRENT_STATE.md#verification-basis) distinguishes current code evidence from old builds, real attempts and future choices. No Langfuse integration is selected.
+Latest application work removes a reproduced Windows new-version rename dependency while preserving catalog-controlled publication; save/edit/reopen/export and destination image checks have bounded local acceptance. Complete real Nursing delivery remains unverified. [CURRENT_STATE](docs/CURRENT_STATE.md#verification-basis) distinguishes current code evidence from old builds, real attempts and the prepared unapproved live interval. No Langfuse integration is selected.
 
 ## Repository map
 

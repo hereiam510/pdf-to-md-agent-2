@@ -429,6 +429,16 @@ Do not delete unreferenced attempt/version files simply because they are not reg
 
 **Source basis:** EVT-0968, EVT-1005, EVT-1040, EVT-1068, EVT-1107, EVT-1147, EVT-1166. ATT-25–ATT-30.
 
+### Implemented unique-directory preparation (2026-10-31)
+
+`Documents.edit` now exclusively creates `versions/<new-UUID>/` and prepares its immutable JSON, Markdown, HTML, assets, originals and manifest there. Each file uses exclusive creation and is flushed, fsynced and closed before the existing short SQLite transaction. That transaction checks the operation identity and expected head, then registers the version, advances head and records the original success together. Readers first require a task-owned catalog version record and verify its hashes; they never infer visibility by enumerating directories. The desktop version/preview endpoint and exporter use that same record gate. Directory existence therefore remains preparation, including when its name is the eventual version ID.
+
+The preceding implementation prepared `.prepared-<UUID>/` and renamed that directory before the transaction. Repeated real synthetic saves failed at that extra Windows rename boundary. A controlled Windows read handle with read/write sharing but no delete sharing reproduces `WinError 5` through the actual edit path. Removing the rename lets that save, subsequent edit, reopen and export succeed while the handles remain open. This identifies a sufficient failure mechanism; it does not establish which process caused the historical refusals or whether they affected Nursing.
+
+A file-write failure, transaction rollback or stale head leaves useful unregistered files in place and does not publish a version. A UUID-directory collision refuses without overwriting. A committed operation replays its original receipt without changing a later head. No cleanup, backoff, automatic effect replay, compatibility migration or filesystem/database joint transaction was introduced. Other write/permission/storage failures and power-loss limits remain; catalog publication is not a promise that all filesystems always succeed. [The scoped checks](../verification/20261031_2220_VERSION_PUBLICATION.md#execution-results) retain failures, corrections and saved/reopened/exported evidence.
+
+Applicable official guidance checked for the existing Python 3.12 implementation: [flush/fsync](https://docs.python.org/3.12/library/os.html#os.fsync), [rename behavior](https://docs.python.org/3.12/library/os.html#os.rename), [SQLite transactions](https://docs.python.org/3.12/library/sqlite3.html#transaction-control), and Windows [CreateFile sharing](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew). In particular, Windows delete sharing also governs rename access. The existing explicit Store transaction lifecycle is unchanged; LangGraph, Pydantic and dependency versions are unchanged.
+
 <a id="historical-windows-publication"></a>
 ### Historical Windows replacement behavior
 

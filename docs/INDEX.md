@@ -112,6 +112,7 @@ The following lists maintained documents, root guidance, fixture documentation a
 
 | Document | Purpose / role |
 | --- | --- |
+| [docs/verification/20261031_2220_VERSION_PUBLICATION.md](verification/20261031_2220_VERSION_PUBLICATION.md) | Selected new-version publication increment, checks and concrete Nursing validation preparation. |
 | [docs/verification/20261031_2019_R07_INTEGRATION.md](verification/20261031_2019_R07_INTEGRATION.md) | Selected baseline integration, bounded R07 settlement/reopen acceptance and fresh execution evidence. |
 | [docs/verification/20261031_0157_DOCUMENTATION_STRUCTURE.md](verification/20261031_0157_DOCUMENTATION_STRUCTURE.md) | Documentation reorganization verification |
 | [docs/verification/20261031_0157_LOCAL_DIAGNOSTICS.md](verification/20261031_0157_LOCAL_DIAGNOSTICS.md) | Local diagnostic implementation and verification record |

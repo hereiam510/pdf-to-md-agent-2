@@ -161,7 +161,10 @@ class Documents:
                     raise ValueError("Invalid retained image-stream reference.")
                 originals[original["path"]] = {"ref": blob["ref"], "sha256": blob["sha256"], "provenance": blob["meta"]}
         version_id = uid()
-        prepared = self.root / f".prepared-{version_id}"
+        # Catalog registration publishes the version. Prepare in its unique final
+        # directory so a concurrent Windows reader need not permit a rename.
+        # Failed/unregistered work stays preserved but is not a readable version.
+        prepared = self.root / version_id
         prepared.mkdir()
         envelope = {"schema_version": 1, "job": job_id, "version": version_id,
                     "parent": edit.base_version, "edit_mode": edit.mode, "expected_head": edit.expected_head, "source_ref": job["source_ref"],
@@ -179,7 +182,6 @@ class Documents:
                 out.write(data)
                 out.flush()
                 os.fsync(out.fileno())
-        os.rename(prepared, self.root / version_id)
         hashes["manifest.json"] = sha256(files["manifest.json"]).hexdigest()
         result = {"version_id": version_id, "parent": edit.base_version, "claim": content.claim,
                   "edit_mode": edit.mode, "candidate_ref": candidate_ref, "blocks": len(content.blocks), "known_gaps": content.known_gaps}

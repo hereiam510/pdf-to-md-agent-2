@@ -22,6 +22,10 @@ Use [CURRENT_STATE](../CURRENT_STATE.md#nursing-boundary-and-next-product-decisi
 
 ## Evidence, choices and evolution
 
+The subsequent authorized [publication increment](../verification/20261031_2220_VERSION_PUBLICATION.md) selected the supported new-save risk, reproduced its rename boundary and removed that dependency without changing the catalog visibility contract. The controlled reader is a sufficient counterexample, not attribution of the historical OS cause. Actual synthetic new save, later edit, reopening and exported viewing at the proposed destination have separate byte/image checks. This avoids spending live conversion allowance on a demonstrated avoidable storage dependency.
+
+A fresh formal task is prepared from the unchanged fourteen-page PDF, with no prior drafts, summaries or matching answers. This keeps current-version evidence clear without legacy migration; it does not prove a fresh model run will solve the remaining conversion challenge. Old task consumption remains separate. The app's secure settings inspection currently reports no usable credential in the new profile despite retained encrypted configuration; a saved encrypted value alone is not credential availability. Do not extract secrets from logs or send provider probes. Ordinary secure entry and a concrete finite live authorization are the remaining execution dependencies; the detailed proposal and its enforcement limits belong to the increment owner.
+
 - [Baseline, zero-dispatch preparation and single-dispatch observations](../verification/20261031_0157_NURSING_BASELINE_AND_DISPATCH.md) separate observations, acceptance, effects and usage.
 - [Nursing decisions](../decisions/NURSING.md) retain selected allowances, staging and explicit control-interface deferral with their historical scope.
 - [Streaming discussion](STREAMING_RECEIVE.md) explains how the rejection led to protocol-contract work; [capacity discussion](REQUEST_CAPACITY.md) preserves the earlier context/evidence investigation.
