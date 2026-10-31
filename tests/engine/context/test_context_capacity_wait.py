@@ -154,11 +154,21 @@ def test_historical_revision_need_can_deliver_through_active_compaction(setup, p
         historical = runtime.context_updates.reject(job, state, f"{job['id']}:{state['seq']}:{state['revision']}",
             "Historical confirmed necessary-content excess.", reason="required_content_exceeds_capacity")
         diagnostic = {**state, **historical}
+        # Measure the full active input before selecting this test's pressure.
+        # The helper's earlier candidate-admission limit can already defer a
+        # history body; that smaller projection is not the normal-input bound
+        # for constructing a new normal-too-large/compaction-fits scenario.
+        job = store.update_job(job["id"], route={**job["route"], "context_tokens": 50000})
         mandatory = runtime.context.required(job, diagnostic)["input_estimate"]
         compact = runtime.context.compact_request(job, diagnostic)[1]["capacity"]["input_estimate"]
         normal = runtime.context.normal(job, diagnostic)[1]["input_estimate"]
-        allowance = (max(mandatory, compact) + normal) // 2
-        assert max(mandatory, compact) < allowance < normal
+        # Each history group must still fit on its own. Otherwise automatic
+        # body deferral can legitimately make normal fit, testing another path.
+        individual = max(runtime.context.normal(job, {**diagnostic, "history": [request]})[1]["input_estimate"]
+                         for request in diagnostic["history"])
+        lower = max(mandatory, compact, individual)
+        allowance = (lower + normal) // 2
+        assert lower < allowance < normal
         job = store.update_job(job["id"], route={**job["route"],
             "context_tokens": allowance + job["route"]["output_tokens"]})
         assert not runtime.context.normal(job, diagnostic)[1]["fits"]

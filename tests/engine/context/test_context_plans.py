@@ -90,8 +90,22 @@ def test_last_handoff_uses_specific_applied_outcome_not_unknown_reserve(setup, p
     future = {**state, "handoff": ref, "history": [], "revision": state["revision"] + 1}
     exact = context.prospective(job, future)
     cap = exact.normal(job, {**future, **policy, "context_waiting": None})[1]
-    job = store.update_job(job["id"], route={**job["route"],
-        "context_tokens": cap["input_estimate"] + cap["output_reserve"]})
+    # Capacity is itself serialized in working feedback. Select an interior
+    # window from both actual projections at the selected limit, rather than
+    # assuming the estimate at 65536 is an exact boundary at another limit.
+    limit = cap["input_estimate"] + cap["output_reserve"]
+    for _ in range(8):
+        job = store.update_job(job["id"], route={**job["route"], "context_tokens": limit})
+        specific = exact.normal(job, {**future, **policy, "context_waiting": None})[1]
+        generic = context.normal(job, {**future, **policy})[1]
+        if specific["fits"] and not generic["fits"]:
+            break
+        lower = specific["input_estimate"] + specific["output_reserve"]
+        upper = generic["input_estimate"] + generic["output_reserve"]
+        assert lower < upper  # The exact-outcome distinction must remain real.
+        limit = (lower + upper - 1) // 2
+    else:
+        pytest.fail("Could not establish the measured exact-outcome-only fixture window.")
     assert not context.normal(job, {**future, **policy})[1]["fits"]
     _, meta = context.compact_request(job, state)
     assert meta["covered"] == ["history"] and meta["projection"] == []

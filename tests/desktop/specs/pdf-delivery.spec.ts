@@ -10,8 +10,9 @@ test('PDF coordinates and native image originals survive saved preview, restart 
   const runFixture = (mode: string) => JSON.parse(execFileSync(resolve('.venv/Scripts/python.exe'),
     ['-m', 'tests.desktop.fixtures.pdf_delivery', mode, directory], { windowsHide: true, encoding: 'utf-8' }))
   const fixture = runFixture('prepare')
-  const launch = () => electron.launch({ args: [resolve('out/main/index.js')], env: { ...process.env,
-    PDFMD_DATA: join(directory, 'workspace'), PDFMD_PYTHON: resolve('.venv/Scripts/python.exe') } })
+  const launch = () => electron.launch({ args: [resolve('tests/desktop/support/isolated-workbench.cjs')], env: { ...process.env,
+    PDFMD_UI_PROFILE: join(directory, 'profile'), PDFMD_DATA: join(directory, 'workspace'),
+    PDFMD_PYTHON: resolve('.venv/Scripts/python.exe') } })
   let app = await launch()
   const observed: unknown[] = []
   try {
