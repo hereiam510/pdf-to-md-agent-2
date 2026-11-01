@@ -2,9 +2,9 @@
 
 ## Current question and discussion status
 
-R01's selected estimator/fallback work is implemented and the latest 34-send assessment is complete. **The recommendation to retain its inaccurate calibration is withdrawn.** [The corrected recommendation and concrete component-calibration proposal](#recommendation-correction-and-component-calibration-proposal-2026-11-01) prioritize improving whole-request accuracy while reusing the BPE foundation. Software/settings remain unchanged under the current no-implementation boundary, not as an accuracy endorsement. [Context management](../design/CONTEXT_MANAGEMENT.md), the [engineering explanation](../guides/CONTEXT_AND_EVIDENCE.md#implemented-r01-request-proxy) and [R01](../reviews/RUNTIME_FINDINGS.md#r01-current-estimator-calibration-update-2026-11-01) retain current mechanisms, evidence and limits.
+R01's selected estimator/fallback work is implemented and the 34-send assessment is complete. **The recommendation to retain its inaccurate calibration remains withdrawn.** The [component-calibration proposal](#recommendation-correction-and-component-calibration-proposal-2026-11-01) is one unadopted option; the subsequent [method discussion and review reconciliation](#estimation-method-discussion-and-review-reconciliation-2026-11-01) compares full local estimation, usage anchoring and residual correction with multi-model maintenance cost as an explicit design condition. The estimator already uses tiktoken/o200k_base. Software/settings remain unchanged under the execution boundary, not as an accuracy endorsement. [Context management](../design/CONTEXT_MANAGEMENT.md), the [engineering explanation](../guides/CONTEXT_AND_EVIDENCE.md#implemented-r01-request-proxy) and [R01](../reviews/RUNTIME_FINDINGS.md#r01-current-estimator-calibration-update-2026-11-01) retain effective mechanisms and limits.
 
-**Discussion status (2026-11-01, Asia/Singapore):** the user requests correction of the retain-status-quo conclusion and a concrete plan to select/validate text, fixed and image reservations. [That proposal](#recommendation-correction-and-component-calibration-proposal-2026-11-01) is now recorded with offline joint/transfer calculations; no numeric profile or acceptance target has been adopted. No implementation, setting/compaction-policy change, provider call/probe, task continuation or new product phase is authorized. Nursing closeout and deferred fourteen-page FD-01/captionless validation are unchanged; CTX-01/03/06 and whole-task benefit retain their [separate agenda](#complete-agenda).
+**Discussion status (2026-11-01, Asia/Singapore):** the user authorizes recording the discussion/reconciliations, followed by the [eight questions in order](#ordered-method-discussion-and-open-decisions), one question at a time. Question 1, overall method and responsibilities, is open. No replacement method, parameters or acceptance thresholds are selected. Nexus complete-input counting availability is question 8, deliberately last; direct Chat Completions support remains a requirement to consider. No application/test/dependency change, installation, setting/compaction-policy change, provider/counting/probe call, replay, task continuation, Stage D packaging, publication or subagent work is authorized. Nursing closeout and deferred fourteen-page FD-01/captionless validation are unchanged; CTX-01/03/06 and whole-task benefit retain their [separate agenda](#complete-agenda).
 
 The following stages preserve attributed positions, the complete CTX agenda and original authority. They are history of the decision, not new execution instructions. Earlier progress/wait discussion is under [Streaming receive](STREAMING_RECEIVE.md); full Nursing progression is preserved in [the preceding discussion](../history/discussions/20261031_0157_STAGE_B_CONVERSION.md).
 
@@ -775,8 +775,141 @@ A later live interval needs its own finite shared allowance and stop/review cond
 
 ### Present completion and remaining choice
 
-This task completes the recommendation correction, the 100-profile/transfer arithmetic and this concrete selection/validation proposal. No numeric r, F or A is selected for production. The next decision is whether to adopt this proposed calibration family, acceptance targets and a separately scoped implementation/measurement increment; it is no longer whether to endorse the inaccurate current calibration. Existing software/settings stay unchanged solely under the present execution boundary.
+This earlier task completed the recommendation correction, the 100-profile/transfer arithmetic and this concrete selection/validation proposal. No numeric r, F or A was selected for production. The later [ordered method discussion](#ordered-method-discussion-and-open-decisions) broadens the remaining choice before any calibration family or acceptance targets are adopted. Existing software/settings stay unchanged solely under the execution boundary; the inaccurate calibration is not endorsed.
 
 ### Proposal checks and limits
 
 This documentation/proposal increment independently checks all 100 scalar grid profiles and six conditional image floors, preserves the original 34-sample table region, and passes repository-only documentation/source-integrity and Git whitespace checks (87 Markdown files, 4,445 local links/destinations, 503 bundled source files). File hashes confirm 9,567 selected original runtime/output files and all 37 registered original analysis artifacts unchanged. Nursing closeout, both original live-record bodies, FD-01 requirements, source/test/dependency files, settings and DEVELOPMENT_GUIDE bytes are preserved. Only fourteen maintained Markdown sources and isolated analysis-only helpers/artifacts are written. No application implementation, provider calls, task database/executor use, task replay or new live validation occurs; proposed parameters/targets remain unadopted. Local verification and input hashes are retained under .local/calibration-plan-20261101-r1/.
+
+## Estimation method discussion and review reconciliation (2026-11-01)
+
+### User requirements, terminology and decision status
+
+The user challenged the incomplete method discussion and requested consideration of future Qwen, GLM, Kimi and other models, reusable libraries, existing coding harnesses and long-term maintenance cost. Multi-model access must not require manually maintaining an exact tokenizer/chat template for every model before it can be used. Preserve complete source/payload access and agent method choice. Support for a model and verified counting fidelity are distinct capabilities. Direct Chat Completions support must remain possible; investigation of Nexus complete-input counting is deliberately deferred to the last discussion question.
+
+A tokenizer is a component that maps text to tokens; BPE is one tokenization algorithm, and o200k_base is a particular encoding. The current implementation already uses the pinned tiktoken 0.14.0 BPE counter and bundled, hash-verified vocabulary. This is a whole-request estimation/calibration problem, not an unimplemented migration from bytes to a tokenizer. Complete native JSON counting remains a proxy: its escaping, tool schemas and wrappers differ from an upstream rendered model input, while native images are charged separately. Neither a model alias nor a tokenizer identifies the deployed protocol/template/image pipeline.
+
+Distinguish the expected input point estimate, a reservation for estimation uncertainty, and the separate output reserve. Existing metadata already separates several components; their numerical calibration is not established. High estimates are not justified merely by calling them safety margins, and low mean error does not justify removing every reserve. Both point accuracy and the final admission restriction need evaluation. Earlier 15%-per-run / 25%-per-composition targets remain proposals, not industry standards or adopted acceptance gates.
+
+The assistant initially favored per-model counting profiles, then proposed shared estimation with usage anchoring and optional model-specific counters. After user objections and external reviews, that combination was explicitly returned to candidate status: its scope, replacement handling, shared-consumer integration and validation are incomplete. External agreement and sample-local success do not select it. Leaving the application/settings unchanged is execution scope only. The user's latest instruction selects recording followed by ordered discussion, not an estimator, numerical profile or implementation.
+
+### Methods and responsibilities under discussion
+
+Let P be an exact request, B(P) a declared local estimate, and U0 the provider-reported input usage of an identified earlier request P0. In all calculations state whether B includes reserves; the current reservation is T + ceil(T/4) + 1024 + 4096I for these recorded routes. Output remains separate.
+
+| Candidate | Mechanism and expected value | Limits and maintenance implications |
+| --- | --- | --- |
+| Full local estimation | Measure the complete candidate request independently. Available without previous usage and for hypothetical/subset inputs. | Text/protocol and image bias can persist across long histories. Model assets may improve it but are not mandatory for every supported model. |
+| Usage baseline plus eligible additions | Reuse U0 only when its priced content remains applicable; estimate actual newly transmitted content and uncertainty. | Needs defensible eligibility, image increments, dynamic-message handling and fallback. Prior output/reasoning totals are not automatically next-input tokens; count the representation actually replayed. |
+| Residual correction | B(P) + [U0 - B(P0)], equivalently U0 + delta B. Can transfer an observed local bias to a related request. | Assumes the old bias transfers. It can undercount after additions, removals or replacements. A strict addition-only anchor is a restricted use of this idea, not an unrelated counting primitive. |
+
+These are alternatives and possible combinations, not three independently selected services. A shared measurement/evidence contract could offer different applicable methods; which consumers may use which method remains open. Do not silently mix them at an admission boundary or label a proxy as an upstream bound.
+
+Full local estimation is required by current internal workflows, not merely a first-turn fallback. Context.required measures SYSTEM/anchor/pins/tools without history or handoff; normal admission evaluates individual history groups during deferral; profitable_refs compares actual substitutions; compact_request changes instructions, tools, image inclusion and JSON representation; retention_target/handoff_target evaluate unsent continuations; apply_handoff compares assembled before/after inputs; inspect_context previews saved-policy changes. Those projections have no directly measured matching U0. A previous full normal usage cannot simply be assigned to them. Claims that other coding harnesses universally assemble only one request per turn were not established and are unnecessary to this project-specific conclusion.
+
+### Existing harnesses and reusable counting components
+
+The earlier read-only survey inspected the public source branches below on 2026-11-01. These observations are not claims about every released version, accuracy on our PDFs, or industry-mandated constants. No harness was installed or run.
+
+| Source | Observed mechanism | Relevance and qualification |
+| --- | --- | --- |
+| [pi coding-agent compaction](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/src/core/compaction/compaction.ts) | Latest applicable response usage plus estimated trailing messages; full estimation when invalidated. This path uses text length / 4 and a fixed image estimate. | Demonstrates multi-model operation without exact local tokenizers everywhere. Its session/projection rules must not be copied without checking our request transformations. |
+| [OpenCode compaction](https://github.com/anomalyco/opencode/blob/dev/packages/core/src/session/compaction.ts), [text helper](https://github.com/anomalyco/opencode/blob/dev/packages/core/src/util/token.ts) | Separates measured and estimated portions; estimates new content, with text length / 4 and fixed media values in the inspected dev branch. | Measured history and uncertain additions can be separated; the constants are not validated for our inputs. |
+| [Hermes usage anchor](https://github.com/NousResearch/hermes-agent/blob/main/agent/usage_anchor.py), [text estimate](https://github.com/NousResearch/hermes-agent/blob/main/agent/model_metadata.py), [image learning](https://github.com/NousResearch/hermes-agent/blob/main/agent/image_token_cost.py) | Prefix fingerprints, usage plus appended-content estimates, CJK/UTF-8 heuristics, and model/host image-cost learning from usage residuals. | Useful patterns; a residual also contains text/protocol error, so learned averages do not isolate image cost or establish a bound. |
+| [DeepSeek token-meter estimate](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/token-meter/src/estimate.ts), [measurement](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/token-meter/src/index.ts) | Fixed-density text/structure estimates and optional route image pricing. Measurement reuses usage only with a matching envelope and usage at least as large as the anchor's full estimated price. | That adoption condition would use no anchors in our 34 rows when compared with the current full estimate, or T + 4096I. This is a local comparison, not a result from running DeepSeek Harness. |
+
+[Hugging Face Tokenizers](https://github.com/huggingface/tokenizers) and [Transformers chat templates](https://huggingface.co/docs/transformers/main/en/chat_templating) can reuse model-published assets instead of hand-written tokenization. [LiteLLM token_counter](https://docs.litellm.ai/docs/completion/token_usage) offers model selection/custom tokenizers but documents tiktoken fallback for unsupported models; a returned number is not proof of exact model support. Harness modules are coupled to their native message/session formats and are not necessarily drop-in Python dependencies. Asset/version mapping, fallback visibility and route validation remain costs. No package, exact per-model profile, automatic learning policy or universal o200k correction is selected.
+
+### External review provenance and assessment
+
+Three user-supplied reviews were reconciled against implementation/documentation HEAD 4a29ec3962da4f0582689753d6b5196a16d75371 and the existing scalar evidence. The first reviewed package review-bpe-20261101-153208-4e2e6a; relevant source/doc/sample bytes were checked against its ZIP. Subsequent reviews addressed the method discussion and returned reconciliations. Originals remain unchanged; local copies and hashes are in .local/estimator-discussion-record-20261101-dedbd30b/entry.json and external-review-1.txt through external-review-3.txt. Attachment IDs are 81387e2a-8492-4a82-9136-1313d88c4a07, 1097197c-9772-4340-ae17-d58878101a06 and 3fce94a8-242a-4e41-a89b-79524483c0a1. Their text is evidence to assess, not authority to execute its proposed checks or save its conclusions unchanged.
+
+The original 34-send overestimation remains established: A 59.23%, B 39.22%, combined 57.11%. The 59 older non-streaming samples remain a separate workload; do not pool them into a homogeneous calibration/holdout population or universal divisor. During reconciliation, 100 grid profiles (1,300 scalar fields), six conditional floors, adjacent-request arithmetic and selected implementation behaviors were independently checked. This does not repeat the full application suite, original raw-SSE pairing or installed-build verification. Broad reviewer statements such as implementation integrity verified or all tests verified retain their actual supporting scope, not a proof of no defects.
+
+#### Incremental image residuals and scope corrections
+
+For the unadopted candidate E = T + 3072I, three Run B increments underpredict growth although complete-request errors remain positive:
+
+| Transition by physical-send ordinal | (delta U - delta T) / added images | delta E - delta U | E(new) - U(new) |
+| --- | ---: | ---: | ---: |
+| B #3 to #4 | 3796 | -2172 | +851 |
+| B #5 to #6 | 3491 | -419 | +598 |
+| B #6 to #7 | 3362 | -580 | +18 |
+
+This supports a material compensation/generalization concern: earlier excess estimates can hide deficient increments. It does not establish an individual image's actual token cost, a guaranteed failure for every short-history/large-image request, or a defect in the A_min arithmetic. The original proposal already labeled 3072 as an unadopted in-sample candidate, not a safe image allowance. Delta U - delta T includes changes in text/protocol estimation error; neither attributing all excess to JSON unescaping nor adjusting it with unrelated text-only steps isolates a physical image contribution.
+
+There are 16, not the first review's 12, zero-image-delta normal-to-normal transitions (A 14, B 2). All have delta U - delta T in [-499, -63], with delta U/delta T about 0.819..0.994. There are 12 image-adding transitions. Eleven with smaller text deltas have residual/raw-32-pixel-patch ratios about 1.114..1.179; the omitted transition has delta T = 42764 and ratio about 0.793. Report the full population and exclusion rationale. This association motivates dimension-stratified investigation; it is not evidence of the upstream patch algorithm, measured per-image cost or a safe patch bound.
+
+A negative delta E - delta U alone is not failure of a full-request estimator: its positive excess may shrink. It is directly consequential for a usage-plus-delta estimator that discards that earlier excess. These two evaluation purposes need different criteria.
+
+#### Reproducible simplified-anchor comparisons
+
+The following calculations use chronological observations separately per run. An anchor is used when adjacent sends are both normal, route_identity is equal, delta T >= 0 and delta I >= 0. Otherwise use the specified full fallback. This selects 28 transitions and six fallback rows; it does not verify complete message preservation, a proposed fingerprint or production eligibility. Current U is used only to score that row; the prediction uses previous U.
+
+| Candidate | Anchored prediction | Fallback for six rows | Undercounts / minimum signed error | Maximum excess | Weighted error, all / A / B |
+| --- | --- | --- | --- | ---: | --- |
+| Current full | None | T + ceil(T/4) + 1024 + 4096I on all 34 | 0 / +2680 | 53087 | 57.11% / 59.23% / 39.22% |
+| Best examined uniform grid | None | T + 3072I on all 34 | 0 / +18 | 17225 | 20.44% / 22.35% / 4.30% |
+| 3a | U0 + delta T + delta ceil(T/4) + 4096 delta I | Current full | 0 / +150 | 21024 | 12.51% / 12.91% / 9.17% |
+| 3b, current fallback | U0 + delta T + 4096 delta I | Current full | 0 / +63 | 21024 | 10.16% / 10.57% / 6.69% |
+| 3b, reduced fallback | U0 + delta T + 4096 delta I | T + 4096I | 0 / +63 | 17606 | 7.37% / 7.61% / 5.25% |
+| 3c, current fallback | U0 + delta T + 3072 delta I | Current full | 3 / -2172 | 21024 | 7.38% / 8.09% / 1.45% |
+| 3c, reduced fallback | U0 + delta T + 3072 delta I | T + 3072I | 3 / -2172 | 11462 | 4.18% / 4.67% / 0.01% |
+
+Effect attribution must retain all steps: 57.11% to 12.51% changes to the simplified anchor with current increment/fallback; 12.51% to 10.16% also removes the incremental text reserve; 10.16% to 7.37% additionally removes text/fixed reserves from fallback rows. None is blind validation or evidence that a proposed block-based algorithm achieves the same values. The six fallback rows include first requests, compactions and the first normal request after each compaction. Their alternative reservations are analytical candidates, not setting changes.
+
+The review's original same-state-revision gate contradicts these results: Runtime.tools increments revision after normal turns, and none of the 28 adjacent normal pairs has equal revision. Literal application would yield zero anchors. A handoff identity can help identify a generation, but is not sufficient to establish content preservation. The reviewer accepted this correction.
+
+Image metadata adds bounded evidence: all 28 old sequences of (type, detail, sha256) are prefixes allowing equality of the next sequence; 16 are equal and 12 are proper/strict extensions. The later review's 28 strict prefixes claim is corrected. Deferred lists match on 27 transitions; the change is B #1 to #2, where the giant result first enters history and is immediately deferred. These fields do not verify text, pins, selected ranges or all native representation changes. Net token/image growth can conceal replacement, and checking release/defer flags alone is insufficient. Complete serialized JSON byte-prefix equality is not a useful eligibility definition for newly serialized requests; no measured message-level zero-eligibility conclusion follows from the scalar evidence.
+
+#### Cross-state counterexamples and capacity consequences
+
+Unconditional residual transfer produces the following results. N/C denote normal/compaction, and B_current includes current reserves:
+
+| Transition | New reported input | New B_current | U0 + delta B_current | U0 + delta T + 4096 delta I |
+| --- | ---: | ---: | ---: | ---: |
+| A #10 N to #11 C | 47080 | 66521 | 13434 | 12863 |
+| A #11 C to #12 N | 9939 | 15508 | -3933 | 7089 |
+| A #15 N to #16 C | 52534 | 73558 | 37476 | 36977 |
+| A #16 C to #17 N | 21003 | 36926 | 15902 | 27324 |
+
+These are genuine arithmetic counterexamples to unqualified transfer, not execution results from a replacement estimator. Let e(P) = B(P) - U(P). The residual-corrected error is e(P_new) - e(P_old): changing bias, not merely the sign of delta B, causes failure. Reject the review's universal claim that every negative adjustment is mathematically forbidden. Rejecting removals can be a conservative eligibility policy candidate; additions can still undercount, as 3c demonstrates. Provider image cost and particular text-escaping contributions remain unidentified.
+
+At the two retained, unfrozen normal-before boundaries, U0 + delta B_current gives 67925 + (125784 - 121012) = 72697 and 75940 + (136352 - 112022) = 100270, both locally below the unchanged input allowance 122880. These are ledger-based hypothetical estimates, not frozen requests with measured usage or verified eligibility. They do not demonstrate two avoided compactions, an accepted route maximum, or whole-task savings; changing an earlier boundary can change subsequent history. The large Run B dict deferral remains an important full/subprojection case; an anchored sent-request comparison alone does not establish changed internal deferral behavior.
+
+### Unresolved specification boundaries
+
+The assistant and reviewers agree that the method must handle non-append-only assembly. Context.anchor includes changing head, delivery, notes and policy references. Pins precede history, historical arguments/results can be projected differently, and tail/control messages change. Working context feedback contains the estimate itself. Preserving some image hashes or reference IDs does not establish preservation of the priced request.
+
+The later review proposes an invariant route/system/tools/handoff core, byte-identical old history/pins, separately estimated new parts, and explicit dynamic anchor/feedback replacement. Retain this as an unvalidated candidate, with the following open issues:
+
+- Specify ordered, repeated native representations and their accounting metadata, not just sets or object IDs. Image bytes alone do not capture detail/processing changes. route_identity covers endpoint/model/protocol/parameters, not every estimator setting/version; define compatibility explicitly.
+- Define the replacement formula. Absolute proxy difference can be zero for different texts with different upstream costs. Charging new replacement content or an empirical reserve is an option, not a demonstrated upper bound. The proposed feedback delta and replacement reserve are not yet algorithms.
+- Separately tokenizing new blocks is not necessarily delta T of complete JSON: wrapping, boundaries and 8192-character chunk alignment can differ. Re-evaluate that exact algorithm rather than inherit 10.16% from another formula.
+- Paired comparisons need compatible bases and explicit uncertainty. A possible common full-local comparison is unselected. Keep relative reduction distinct from absolute admission. A release can add reference/control framing, so do not promise that every release decreases input or bypass admission merely because a candidate removes some content.
+- Mixed-method discontinuities are prospective integration risks, not existing anchor bugs. Context.admission compares policy deferrals, profitable_refs tests reductions, apply_handoff requires after < before, and inspect_context reports input_delta. Reviewer examples such as 72000 to 105000 or 72697 versus 73059 are hypothetical, not observed failures. Do not mistake switching methods/reserves for changing content.
+- Freeze the chosen anchor request/payload/usage identity, its availability at preparation, counting version and reservation basis. Reopening or previewing an old request must not silently use newer usage, including that request's own later response. This is a specification need, not an implemented metadata change.
+- inspect_context reproduces the saved normal input and checks exact encoded equality before preview. Changing an estimate changes embedded feedback; define historical reconstruction and feedback convergence explicitly. A shared estimator cannot silently gain mutable latest-usage state that changes the same saved input's historical meaning.
+
+### Confirmed engineering issues and review limits
+
+The [R01 engineering reconciliation](../reviews/RUNTIME_FINDINGS.md#r01-engineering-review-reconciliation-2026-11-01) owns the confirmed but unfixed modality-traversal and failed-counter retry issues, the frozen-build verification gap, and the pending-outcome feedback distinction. They are not automatically part of an implementation increment or prerequisites for this discussion. The initial review's critical-image-cost language was qualified without dismissing the material composition/admission risk.
+
+### Ordered method discussion and open decisions
+
+The user selected this sequence, one question at a time. Explain the problem, evidence, options, tradeoffs and choice; mark dependencies on later questions without settling them early. Agreement by reviewers, an assistant recommendation or a successful in-sample fit is not adoption.
+
+1. **Overall method and responsibilities — open, current topic.** Compare independent full estimation, eligible usage-plus-delta and residual correction; decide what each would be responsible for before specifying eligibility. A full local capability remains necessary, but whether anchors become a normal path, a conditional improvement or observation-only is unselected.
+2. **Exact usage eligibility.** Which preserved, appended, replaced or removed native content permits reuse, including dynamic control messages?
+3. **Text, fixed, image and uncertainty reservations.** How are they selected and validated without double-counting residual error?
+4. **Multi-model access, reuse and maintenance.** Which shared mechanisms, existing libraries and optional model assets justify their costs?
+5. **Comparison semantics.** How do admission, deferral, preview and handoff remain comparable without conflating content change with changed uncertainty?
+6. **Anchor provenance and lifecycle.** Define versions, freezing, reopening, historical reconstruction and feedback behavior.
+7. **Complete validation and acceptance.** Evaluate prediction/admission errors, method availability, internal projections, independent compositions, capacity consequences and actual benefit; no acceptance thresholds are adopted.
+8. **Nexus complete-input counting — last.** Determine whether an applicable capability exists, also considering direct Chat Completions. No provider/count/probe call follows from this question.
+
+Recording is complete as a discussion/reconciliation action, not method selection. No application/test/dependency/configuration change, historical task continuation, compaction-policy implementation, Stage D work or publication is authorized. Nursing acceptance with its known figure limitation and deferred full fourteen-page FD-01/captionless scope remain unchanged.
+
+### Discussion-record synchronization checks
+
+This records-only increment entered branch codex/project-organization at HEAD 4a29ec3962da4f0582689753d6b5196a16d75371 with an empty index and only the pre-existing DEVELOPMENT_GUIDE status entry; its bytes equal HEAD and are preserved. Seven existing maintained documents hold the detailed discussion/findings and their status/navigation summaries. Repository documentation checks pass for 87 Markdown files, 4459 local links/destinations and 503 bundled source files; Git whitespace checks pass. The original 34-send assessment and numerical tables are unchanged. Local entry hashes, before-copies, original supplied review copies and record-check results are retained under .local/estimator-discussion-record-20261101-dedbd30b/. This increment performs document consistency/preservation checks only, not a new estimator experiment, application suite or frozen build. No provider call, task-store/output/consumption change, configuration change or publication occurs.
