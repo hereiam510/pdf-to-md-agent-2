@@ -7,7 +7,7 @@ The agreed document, context and execution boundaries and their implemented Q1â€
 | Responsibility | Effective owner |
 | --- | --- |
 | Q1 documents, candidates, precise reads and working-evidence feedback | [Document model](design/DOCUMENT_MODEL.md) |
-| Q2 context capacity, handoff, pins and admission | [Context management](design/CONTEXT_MANAGEMENT.md), [coordination mechanism](design/CONTEXT_UPDATE_COORDINATION.md) |
+| Q2 context capacity, handoff, pins and admission | [Context management](design/CONTEXT_MANAGEMENT.md), [usage-anchoring trial v1](design/CONTEXT_MANAGEMENT.md#usage-anchoring-v1-first-bounded-trial-2026-11-05), [coordination mechanism](design/CONTEXT_UPDATE_COORDINATION.md) |
 | Q3 persistence, Continue, Stop, budgets, settings and export | [Runtime and delivery](design/RUNTIME_AND_DELIVERY.md) |
 | Historical accepted-evidence recovery | [Recovery design](design/ACCEPTED_EVIDENCE_RECOVERY.md#historical-accepted-evidence-local-recovery) |
 | PDF coordinates, image display and preserved originals | [PDF evidence](design/PDF_EVIDENCE.md) |
