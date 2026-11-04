@@ -124,6 +124,8 @@ At implementation closeout, the recorded fixtures met the offline exit criteria 
 
 The two cases exercise different writers of the same diagnostic record. The first replaces settled fields during freeze confirmation. The second reinterprets the settlement. [Observer implementation](../../src/pdfmd/usage_observation.py) · [Existing preparation, graph and reopen checks](../../tests/engine/context/test_usage_observation.py)
 
+The subsequently selected [settled-usage repair](#settled-usage-preservation-repair-2026-11-05) corrects both writers and records the new offline acceptance. The reproduced review observations above retain their original source boundary.
+
 ### Disposition of the eight pasted findings
 
 | # | Finding and assessment |
@@ -145,3 +147,45 @@ The two cases exercise different writers of the same diagnostic record. The firs
 2. **Verify comparator and image records.** Fail each comparator separately and check that every independently computable result survives with its own status. Exercise valid pixels, unavailable geometry and image-like metadata outside native content positions on supported protocols. Check occurrence counts, configured charges, geometry status and preserved ordinary payloads.
 3. **Measure the work on a representative offline fixture.** Compare complete observer-off/on preparation at Run B scale, including predecessor reproduction, edit checks, initial and deferred forms, counter work and diagnostic I/O. Measure settlement lookup as unrelated rows accumulate. Report payload sizes, elapsed times and cache conditions so the workload owner can judge acceptable latency.
 4. **Define what the period would measure.** Specify the cohort, near-boundary criterion, route/accounting profile and treatment of diagnostic failures and missing usage. Distinguish all opportunities from assessable cases. A named workload, an explicit way to enable the default-off observer and separate authorization are still required. These are proposed verification steps. Trial enrollment and admission authority remain separate decisions.
+
+## Settled usage preservation repair (2026-11-05)
+
+The user selected implementation of the two settled-usage repairs and their offline checks. Entry is `4867329` on `codex/project-organization`. Inherited working-tree entries are `docs/DEVELOPMENT_GUIDE.md` and `docs/REVIEW_HANDOFF.md`. The former has no content diff. The latter already adds the review continuation and labels the old implementation prompt historical. Preserve those edits while synchronizing the affected handoff summary. Operational observation remains deferred.
+
+**Basis and selected method.** The observation-only contract requires attributable final usage and durable deduplication without changing ordinary request bytes or send authority. The two reproduced defects above violate that evidence requirement. Preparation writes will preserve the diagnostic settlement writer's `actual` and `reservation_errors` together for the matching immutable payload inside one short diagnostic transaction. This covers stale in-memory opportunities as well as reopened preparation. Relinking will normalize each row under its saved profile, using `basis.profile` for pre-repair rows. New rows retain an explicit profile even when predecessor inspection fails. An absent declaration stays unavailable. These are implementation corrections under the existing contract.
+
+**Planned acceptance.** Exercise Chat Completions and Responses through `Runtime.prepare` / `model`, settle one mock request with 100 input tokens, then prepare in the same process, reopen and prepare, and replay the cached acceptance under undeclared, different declared and original profiles. Compare the persisted attempt, native raw-usage reference/hash, normalized input, reservation errors and declaration after every transition. The ordinary frozen and outgoing bytes must agree with one physical target send. Include pre-repair row layout, simultaneous declared/undeclared rows for one request, cached coordinate flushes and an anchored reservation-error control. Run the focused observer suite and directly affected runtime/settlement checks, retaining separate logs and temporary workspaces in a unique ignored local batch.
+
+**Deferred findings.** Review finding 1's comparator isolation and unreadable geometry, plus the additional metadata image-classification defect, still affect diagnostic coverage and pricing. Findings 2–3 require complete Run B-scale preparation/lookup timing before an operational period. Findings 4–8 retain their recorded dispositions and triggers. These repairs do not establish operational readiness, source fidelity, route accounting validity or whole-task savings. Revisit the independent defects and timing checks before selecting an observation workload.
+
+### Executed checks and evidence
+
+Python 3.12.14 from this repository's existing `.venv` ran the checks without dependency changes. Separate execution logs, JUnit XML, final measurement JSON and isolated stores are retained under the unique ignored batch `.local/settled-usage-20261105-c87eb93f`. They are local evidence. The maintained tests and this explanation supply the reusable acceptance basis. No source PDF or historical task store was used. `httpx.MockTransport` supplied synthetic native replies. The related runtime suite overlapped part of the observer suite, so elapsed times below are test execution facts, not representative workload timing.
+
+| Execution | Actual result and meaning |
+| --- | --- |
+| `regression.log` / `regression.xml` | Two passed, three failed in 4.70 s. Two Responses cases retained the Chat endpoint after changing protocol. One legacy-layout case removed the profile only on disk while retaining the newer in-memory field. Corrected the fixture endpoint and recreated the observer before settling the legacy row. No production correction followed these fixture failures. |
+| `regression-02.log` / `regression-02.xml` | All five new regression cases passed in 5.10 s. Four cover protocol/layout combinations and the fifth covers two profiles observing the same preparation. |
+| `observer.log` / `observer.xml` | All 51 cases in `tests/engine/context/test_usage_observation.py` passed in 70.64 s. Includes the original 46, paired observer-off/on payload and send equivalence, telemetry faults, graph/active-time controls, plus the five new cases. |
+| `runtime.log` / `runtime.xml` | All 63 cases across `tests/engine/execution/test_runtime.py`, `test_acceptance_settlement.py` and `test_active_time.py` passed in 36.17 s. These exercise ordinary runtime, durable settlement and time accounting independently of the opt-in observer cases. |
+
+The full commands used `.venv/Scripts/python.exe -m pytest` with the listed file paths, one separate `--basetemp` and `--junitxml` per execution. The initial regression commands selected `-k 'settled_usage_survives or relink_preserves'`. `PDFMD_OBSERVER_EVIDENCE` pointed to the batch for the observer executions. The existing measurement writer also retained the four final `settled-<protocol>-<legacy>.json` before/after records. Earlier failed logs/workspaces are preserved.
+
+`test_settled_usage_survives_preparation_and_profile_relinking` reads the diagnostic database after every same-process preparation, injected diagnostic-write failure and retry, reopened preparation, and cached model re-entry under no declaration, another declaration and the original declaration. It compares the entire accepted `actual`, including attempt and raw native usage reference/hash, plus reservation errors and the saved declaration/basis. Native usage is independently read and hashed. The actual outgoing request equals the immutable frozen bytes. Each case retains exactly one request, one attempt and one physical mock send throughout.
+
+| Protocol / saved declaration location | Payload bytes | Input after every transition | Preserved reservation errors, F / decoded shadow | Physical sends |
+| --- | --- | --- | --- | --- |
+| Chat Completions / explicit profile | 22,159 | 100 | 6,811 / 6,723 | 1 |
+| Chat Completions / legacy `basis.profile` | 22,159 | 100 | 6,806 / 6,718 | 1 |
+| Responses / explicit profile | 22,217 | 100 | 6,849 / 6,763 | 1 |
+| Responses / legacy `basis.profile` | 22,217 | 100 | 6,849 / 6,763 | 1 |
+
+These payloads include generated task identities, so exact hashes and counts need not match across independent fixtures. Equality is checked within each case. The dual-row control `test_relink_preserves_each_rows_accounting_declaration` establishes that a declared row retains input 100 and its anchored reservation error while an undeclared row retains unavailable input/errors. Both retain the accepted attempt while coordinate flushes stale cached opportunities, preparation confirms the frozen request, and either runtime re-enters the cached result. It has one prior seed attempt and one target send. The seed is separate from the measured target send count.
+
+### Tested source, closeout and remaining work
+
+The only production change is `src/pdfmd/usage_observation.py`, SHA256 `c2132eaa89b7763dd819daac18bdc5db57994cf6708de0fc0a16867b3587dffa`. The tested `tests/engine/context/test_usage_observation.py` is SHA256 `df6d37c9deaee393c98b8bc7b999d8ca847dd65a884b5840091790bfaa30e7a9`. Both files remained unchanged between the final focused and related executions and the recorded hash check. [The engineering owner](../guides/CONTEXT_AND_EVIDENCE.md#observation-only-usage-anchoring) explains field ownership, transactional preservation and per-row profile handling. Current state and the handoff identify the remaining selection. The handoff's inherited continuation/historical-prompt edits are preserved and integrated in this closeout. DEVELOPMENT_GUIDE remains excluded from the checkpoint.
+
+The selected repair meets the offline acceptance conditions. Operational observation remains deferred. Review finding 1, the additional image-classification defect and Run B-scale timing for findings 2–3 remain open before an observation period. The repair does not resolve the broader R01 estimation concern, CTX-01 capacity provenance, CTX-03 operational policy or CTX-06 handoff quality. Full-suite, installed-product and operational readiness are outside this evidence. No provider call, task enrollment, trial dispatch authority or distribution was performed.
+
+Repository documentation/source checks passed through `tools/docs/check_docs.py` with 88 Markdown files, 4,658 local destinations and zero errors. The retained output is `docs.log` in the local batch. These navigation/integrity checks complement the mechanism explanation and executed tests above.

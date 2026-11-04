@@ -73,8 +73,22 @@ class DiagnosticSink:
             row = db.execute("SELECT data FROM observations WHERE id=?", (key,)).fetchone()
         return json.loads(row[0]) if row else None
 
-    def put(self, value):
+    def put(self, value, *, preserve_actual=False):
         with closing(self.connect()) as db, db:
+            # Preparation may hold a pre-settlement in-memory copy. Keep the
+            # settlement writer's fields together, including calculated errors.
+            db.execute("BEGIN IMMEDIATE")
+            if preserve_actual:
+                row = db.execute("SELECT data FROM observations WHERE id=?", (value["id"],)).fetchone()
+                saved = json.loads(row[0]) if row else {"forms": []}
+                for form in value["forms"]:
+                    previous = next((f for f in saved["forms"] if f.get("payload_ref")
+                        and f["payload_ref"] == form.get("payload_ref")
+                        and f["payload_sha256"] == form["payload_sha256"]), None)
+                    if previous and previous.get("actual") is not None:
+                        form["actual"] = previous["actual"]
+                        if "reservation_errors" in previous:
+                            form["reservation_errors"] = previous["reservation_errors"]
             db.execute("INSERT INTO observations VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data",
                        (value["id"], encode(value).decode("utf-8")))
 
@@ -314,22 +328,31 @@ class UsageObserver:
                 checked = inspect_acceptance(self.store, job, key)
                 raw = self.store.json(checked["native"]["ref"], job).get("usage")
                 outcome["attempt"] = checked["attempt_id"]
-                if (self.profile and self.profile.route_sha256 == digest(request["route"])
-                        and self.profile.accounting == "inclusive_input_v1" and self.profile.declaration):
-                    outcome["normalized_usage"] = {**normalized_input(request["route"]["protocol"], raw),
-                        "raw_usage_ref": checked["native"]["ref"], "raw_usage_sha256": digest(raw)}
-                else:
-                    outcome["usage_unavailable"] = "route_accounting_or_profile_undeclared"
         except Exception as exc:
             outcome["usage_unavailable"] = str(exc) or type(exc).__name__
             outcome["observer_error"] = type(exc).__name__
         for value in self.sink.records():
             if value["request_key"] != key or value["job"] != job:
                 continue
+            actual = deepcopy(outcome)
+            if "attempt" in actual:
+                # Older rows bind the declaration in basis.profile. Never use
+                # the profile of whichever observer happens to relink them.
+                bound = value.get("profile", (value.get("basis") or {}).get("profile"))
+                try:
+                    if (bound and bound["route_sha256"] == digest(request["route"])
+                            and bound["accounting"] == "inclusive_input_v1" and bound["declaration"]):
+                        actual["normalized_usage"] = {**normalized_input(request["route"]["protocol"], raw),
+                            "raw_usage_ref": checked["native"]["ref"], "raw_usage_sha256": digest(raw)}
+                    else:
+                        actual["usage_unavailable"] = "route_accounting_or_profile_undeclared"
+                except Exception as exc:
+                    actual["usage_unavailable"] = str(exc) or type(exc).__name__
+                    actual["observer_error"] = type(exc).__name__
             for form in value["forms"]:
                 if form.get("payload_ref") == request["payload_ref"]:
-                    form["actual"] = outcome
-                    measured = outcome["normalized_usage"]
+                    form["actual"] = actual
+                    measured = actual["normalized_usage"]
                     form["reservation_errors"] = ({name: form[name]["reservation"] - measured["input"]
                         for name in ("full_local", "anchored", "decoded_full_local") if form.get(name)
                         and form[name].get("reservation") is not None} if measured else None)
@@ -342,6 +365,7 @@ class Opportunity:
         self.prior = None
         self.value = restored or {"id": identity, "job": job["id"], "request_key": key,
             "snapshot_sha256": digest(snapshot(job, state)), "mode": "observation_only",
+            "profile": owner.profile.__dict__ if owner.profile else None,
             "active_time_policy": "observer_work_outside_ordinary_active_budget_v1",
             "governing_method": "deployed_full_local_F", "recipe": RECIPE, "basis": None,
             "forms": [], "obstructions": [], "ordinary_disposition": None,
@@ -349,7 +373,7 @@ class Opportunity:
             "distinct_evaluations": 0, "new_payload_bytes": 0}
 
     def persist(self):
-        self.owner.sink.put(self.value)
+        self.owner.sink.put(self.value, preserve_actual=True)
 
     def observe(self, role, payload, capacity):
         started = perf_counter()

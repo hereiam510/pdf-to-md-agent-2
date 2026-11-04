@@ -400,6 +400,134 @@ def test_reopen_and_failed_write_reentry_have_no_duplicate_effects(setup, monkey
     rt.close()
 
 
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+@pytest.mark.parametrize("legacy", [False, True], ids=["explicit-profile", "basis-profile"])
+def test_settled_usage_survives_preparation_and_profile_relinking(setup, monkeypatch, protocol, legacy):
+    store, job = setup
+    endpoint = "http://127.0.0.1:8317/v1/" + ("responses" if protocol == "responses" else "chat/completions")
+    job = store.update_job(job["id"], route={**job["route"], "protocol": protocol, "endpoint": endpoint})
+    state = initial(job)
+    declared = profile(job)
+    observer = UsageObserver(store, profile=declared)
+    seen = []
+
+    def reply(request):
+        seen.append(request.content)
+        value = native(protocol, tool("report", {"state": "partial", "message": "fixture"}))
+        value["usage"] = ({"prompt_tokens": 100, "completion_tokens": 50} if protocol == "chat_completions"
+                          else {"input_tokens": 100, "output_tokens": 50})
+        return httpx.Response(200, json=value)
+
+    def runtime(local, observed):
+        return Runtime(local, Nexus(local, lambda _: "synthetic", httpx.MockTransport(reply)),
+                       usage_observer=observed)
+
+    rt = runtime(store, observer)
+    prepared = rt.prepare(state)
+    request = store.get("request", prepared["pending"])
+    payload = store.bytes(request["payload_ref"], job["id"])
+    if legacy:
+        # Pre-repair rows retain their accounting declaration only in basis.
+        value = observer.sink.records()[0]
+        value.pop("profile", None)
+        observer.sink.put(value)
+        rt.close()
+        observer = UsageObserver(store, profile=declared)
+        rt = runtime(store, observer)
+    rt.model({**state, **prepared})
+    baseline = observer.sink.records()[0]
+    final = baseline["forms"][0]
+    actual = final["actual"]
+    assert actual["attempt"] == store.get("request", request["id"])["attempts"][0]
+    assert actual["normalized_usage"]["input"] == 100
+    raw_ref = actual["normalized_usage"]["raw_usage_ref"]
+    raw_usage = store.json(raw_ref, job["id"])["usage"]
+    assert actual["normalized_usage"]["raw_usage_sha256"] == digest(raw_usage)
+    assert final["reservation_errors"] == {
+        name: final[name]["reservation"] - 100 for name in ("full_local", "decoded_full_local")}
+
+    def assert_preserved(observed, local):
+        saved = observed.sink.records()[0]
+        assert saved.get("profile") == baseline.get("profile")
+        assert saved["basis"] == baseline["basis"]
+        assert saved["forms"][0]["actual"] == actual
+        assert saved["forms"][0]["reservation_errors"] == final["reservation_errors"]
+        assert local.bytes(request["payload_ref"], job["id"]) == payload
+        assert seen == [payload]
+        assert len(local.records("attempt", job["id"])) == 1
+        assert len(local.records("request", job["id"])) == 1
+
+    assert rt.prepare(state) == prepared
+    assert_preserved(observer, store)
+    with monkeypatch.context() as injected:
+        injected.setattr(observer.sink, "put", fail)
+        assert rt.prepare(state) == prepared
+        assert_preserved(observer, store)
+    assert rt.prepare(state) == prepared
+    assert_preserved(observer, store)
+    rt.close()
+    reopened = Store(store.root)
+    resumed = UsageObserver(reopened, profile=declared)
+    rt = runtime(reopened, resumed)
+    assert rt.prepare(state) == prepared
+    assert_preserved(resumed, reopened)
+    rt.close()
+    for caller in (None, ObservationProfile(declared.route_sha256, "Another fixture declaration"), declared):
+        relinker = UsageObserver(reopened, profile=caller)
+        rt = runtime(reopened, relinker)
+        rt.model({**state, **prepared})
+        assert_preserved(relinker, reopened)
+        rt.close()
+    save_measurement(f"settled-{protocol}-{legacy}", {"before": baseline,
+        "after": resumed.sink.records()[0], "physical_sends": len(seen),
+        "request_sha256": sha256(payload).hexdigest()})
+
+
+def test_relink_preserves_each_rows_accounting_declaration(setup):
+    store, job = setup
+    state = seed(store, job)
+    seen = []
+
+    def reply(request):
+        seen.append(request.content)
+        return httpx.Response(200, json=response(tool("report", {"state": "partial", "message": "fixture"})))
+
+    observers = [UsageObserver(store, profile=profile(job)), UsageObserver(store)]
+    runtimes = [Runtime(store, Nexus(store, lambda _: "synthetic", httpx.MockTransport(reply)),
+                        usage_observer=observer) for observer in observers]
+    # Both profiles see this preparation before either freezes the request.
+    for rt in runtimes:
+        rt.coordinate(deepcopy(state))
+    prepared = [rt.prepare(deepcopy(state)) for rt in runtimes]
+    assert prepared[0] == prepared[1]
+    runtimes[0].model({**state, **prepared[0]})
+    baseline = {value["id"]: value for value in observers[0].sink.records()}
+    assert len(baseline) == 2
+    for value in baseline.values():
+        final = value["forms"][0]
+        if value["profile"]:
+            assert final["actual"]["normalized_usage"]["input"] == 100
+            assert "anchored" in final["reservation_errors"]
+        else:
+            assert final["actual"]["normalized_usage"] is None
+            assert final["actual"]["usage_unavailable"] == "route_accounting_or_profile_undeclared"
+            assert final["reservation_errors"] is None
+    for rt in reversed(runtimes):
+        # coordinate also flushes a cached pre-settlement opportunity.
+        rt.coordinate(deepcopy(state))
+        rt.prepare(deepcopy(state))
+        rt.model({**state, **prepared[0]})
+        for value in observers[0].sink.records():
+            expected = baseline[value["id"]]
+            assert value["profile"] == expected["profile"]
+            assert value["forms"][0]["actual"] == expected["forms"][0]["actual"]
+            assert value["forms"][0]["reservation_errors"] == expected["forms"][0]["reservation_errors"]
+        rt.close()
+    request = store.get("request", prepared[0]["pending"])
+    assert seen == [store.bytes(request["payload_ref"], job["id"])]
+    assert len(store.records("attempt", job["id"])) == 2  # One seed, one target send.
+
+
 @pytest.mark.parametrize("fault", [None, "counter", "usage", "write"])
 def test_original_freeze_failure_is_preserved(setup, tmp_path, monkeypatch, fault):
     store, job = setup
