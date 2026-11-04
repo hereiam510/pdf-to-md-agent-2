@@ -526,7 +526,7 @@ class Context:
                 group = candidate
         return group, deferred
 
-    def normal(self, job: dict, state: dict) -> tuple[dict, dict]:
+    def normal(self, job: dict, state: dict, *, observe=None, capacity_deferral: bool = True) -> tuple[dict, dict]:
         route = Route.model_validate(job["route"])
         messages = [{"role": "user", "content": self.anchor(job, state)}]
         handoff = self.handoff(job["id"], state)
@@ -561,8 +561,10 @@ class Context:
         payload = pack(groups)
         capacity = measure(groups)
         original_estimate = capacity["input_estimate"]
+        if observe is not None:
+            observe("initial_complete", payload, capacity)
         decisions = []
-        if not capacity["fits"]:
+        if capacity_deferral and not capacity["fits"]:
             for index, request in enumerate(history):
                 groups[index], deferred = self.admit_group(job, request, state,
                                                            lambda group: measure([group]))

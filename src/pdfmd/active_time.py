@@ -5,6 +5,7 @@ charged as work. Checkpoints and the known total move in one short transaction.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 import time
 
 from .storage import Conflict, Store, uid
@@ -35,6 +36,22 @@ class ActiveTime:
         pending = (max(0.0, time.monotonic() - self.mark)
                    if self.session and current.get("active_session") == self.session else 0.0)
         return current["active_seconds"] + pending
+
+    @contextmanager
+    def exclude_diagnostic_time(self):
+        """Measure observer latency separately from ordinary conversion work.
+
+        The single task writer performs no ordinary work/checkpoint inside this
+        interval. Failure still excludes its elapsed time; no metadata commits
+        or allowance changes are made here. Crash tails retain the usual unknown
+        interval semantics rather than inventing a known exclusion.
+        """
+        session, started = self.session, time.monotonic()
+        try:
+            yield
+        finally:
+            if session is not None and self.session == session:
+                self.mark += max(0.0, time.monotonic() - started)
 
     def checkpoint(self, *, force: bool = True, close: bool = False) -> None:
         if self.session is None:

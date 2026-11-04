@@ -172,7 +172,7 @@ class ContextUpdates:
             return self.reject(job, state, key, str(exc), reason="invalid_selection")
         return self.wait(job, state, "compaction", "The complete candidate remains eligible. History or handoff needs reduction before admission.", capacity=capacity)
 
-    def continuation(self, job: dict, state: dict) -> tuple[dict, dict, str]:
+    def continuation(self, job: dict, state: dict, *, observe=None) -> tuple[dict, dict, str]:
         """Select an actual executable request; a saved disposition never changes."""
         if state.get("context_waiting"):
             check = self.store.json(state["context_check"], job["id"])
@@ -180,7 +180,7 @@ class ContextUpdates:
                 raise StopRun(check["reason"], check["message"])
             payload, meta = self.context.compact_request(job, state)
             return payload, meta, "compaction"
-        payload, capacity = self.context.normal(job, state)
+        payload, capacity = self.context.normal(job, state, **({"observe": observe} if observe is not None else {}))
         if capacity["fits"]:
             return payload, {"capacity": capacity}, "normal"
         # Only the target's supported lower bound can establish an obstruction
