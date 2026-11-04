@@ -14,7 +14,7 @@
 
 | Design identity / status | Meaning and saved basis |
 | --- | --- |
-| Usage anchoring v1, 2026-11-05 (adopted specification, unimplemented) | [Bounded-trial rules](#usage-anchoring-v1-first-bounded-trial-2026-11-05). Implementation and enrollment each require separate authorization. |
+| Usage anchoring v1, 2026-11-05 (observation subset implemented; trial authority unimplemented) | [Bounded-trial rules](#usage-anchoring-v1-first-bounded-trial-2026-11-05), original specification in Git at `f9cabb9cee4161f5020fb3e57f2db960dd3b6f0c`; [observer verification](../verification/20261105_0220_USAGE_OBSERVATION.md). No enrollment or operational observation period is selected. |
 | Deployed carried-forward design | The adoption identity and consequential corrections are stated in the basis above. The deployed full-local contract is preserved in this owner. Its pre-consolidation text is also available in Git at `150be6587d2db3c5c274b3dd22a1a0fd3cfe7e5b`. |
 | Pre-filing source edition, captured 2026-10-31 01:57 UTC+08:00 | [Complete preceding owner](../../docs/history/contracts/20261031_0157_CONTRACTS.md). It retains the rule body and its captured shared requirements/architecture. Capture time is not original adoption time. |
 
@@ -127,7 +127,7 @@ An application receipt, not the existence of a handoff archive, establishes that
 
 ## Usage anchoring v1 first bounded trial (2026-11-05)
 
-**Status.** Adopted design for a separately authorized implementation and enrollment. The deployed [assembled-request budget](#assembled-request-budget) remains the production contract. V1 adds conditional authority for eligible normal requests in a named trial. It preserves native source and image access, complete payloads, agent choice and the separate output reserve. No trial is active by virtue of this specification.
+**Status.** Adopted trial design; its observation-only subset is implemented under the 2026-11-05 request and has separate [offline verification](../verification/20261105_0220_USAGE_OBSERVATION.md). Trial authority and enrollment remain unimplemented/unselected. The deployed [assembled-request budget](#assembled-request-budget) remains the production contract. V1 specifies conditional authority for eligible normal requests in a named trial. It preserves native source and image access, complete payloads, agent choice and the separate output reserve. No trial is active by virtue of this specification or the observer implementation.
 
 ### Eligibility and pricing
 
@@ -170,6 +170,8 @@ Before a dependent commit a crash can lead to selection from a new view. After c
 **Remote counting boundary.** This first trial uses local preparation and attributable post-response usage; it makes no remote preflight count. Direct Chat Completions remains a supported path. The first-trial route under discussion uses Chat Completions and still requires explicit enrollment. The preferred future evaluation on a confirmed native Responses route counts only final decisive candidates. It requires separate route evidence and authority before capability discovery or counting, and separate evaluation of count-assisted outcomes. An over-allowance count withholds the candidate. An unavailable count grants no permission to send; follow only the future mode's independently authorized fallback. [Question 8 settlement](../discussions/REQUEST_CAPACITY.md#question-8-settlement-and-decisive-only-future-option-2026-11-05)
 
 ### Observation-only increment
+
+**Implementation boundary.** The current implementation is explicitly supplied to Runtime in isolated offline fixtures; default construction observes nothing. [The engineering owner](../guides/CONTEXT_AND_EVIDENCE.md#observation-only-usage-anchoring) explains callbacks, cutoff/trust checks, v2 adapter coverage, private diagnostics, failure isolation and timing. [The verification owner](../verification/20261105_0220_USAGE_OBSERVATION.md) separates executed acceptance from remaining product/trial questions. The following adopted rules are unchanged.
 
 Use ordinary full-local F for selection, admission and model-visible feedback. Evaluate the shadow methods on at most two distinct finalized byte sequences per normal preparation opportunity: the initially selected complete candidate before ordinary deferral, and the final ordinary payload if one is produced. Reuse results for identical bytes within the same opportunity and basis. Link the two roles when they coincide. If a form cannot be finalized, record its role and obstruction. Skip intermediate deferral candidates, self-inclusive rendering iterations and speculative Pa builds. Deduplicate durable observations on preparation re-entry. Previews do not create preparation opportunities.
 

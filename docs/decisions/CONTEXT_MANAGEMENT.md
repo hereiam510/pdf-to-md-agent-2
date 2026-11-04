@@ -1,5 +1,13 @@
 # Context Management: decisions and rationale
 
+## Observation-only isolation implementation (2026-11-05)
+
+The current human request selects only implementation/offline verification of the observation-only subset at specification commit `f9cabb9cee4161f5020fb3e57f2db960dd3b6f0c`. Keep deployed F and all ordinary content/admission/dispatch decisions; default Runtime has no observer. Stable effective assembly identities join coordinate's existing continuation precheck with prepare, so the pre-deferral candidate and a coordination obstruction are visible without counting projections/previews or preparation re-entry as new opportunities. Private scalar/reference diagnostics commit independently; no new payload copy is needed by the fixtures. [The guide](../guides/CONTEXT_AND_EVIDENCE.md#observation-only-usage-anchoring) owns the mechanism and [the increment record](../verification/20261105_0220_USAGE_OBSERVATION.md) owns execution evidence.
+
+A controlled-clock check exposed an actual noninterference violation: observer-only counter delay consumed the ordinary active-time budget and blocked before the first send, while observation off completed. The required correction measures this diagnostic cost separately and excludes its synchronous intervals through the existing shared ActiveTime owner. It changes no configured limit, ordinary persistence transaction or crash-tail rule. Increasing the budget or tolerating a different ordinary disposition would violate the selected increment. [The runtime contract](../design/RUNTIME_AND_DELIVERY.md#active-time-measurement-and-unmeasured-intervals) owns this narrowly applicable accounting exception; its previous rule remains available at the specification commit. The failing and corrected checks are retained, including independent observer faults and complete graph effects.
+
+This implementation choice grants no trial authority, provider access, operational observation period or enrollment. The independent blind design review and unselected R01 repairs remain open at their existing boundaries. Runtime availability and practical resource thresholds need a separately selected workload; the measured local overhead is not a promotion criterion.
+
 [Central catalogue](../INDEX.md). These entries retain original adoption, corrections, alternatives and task-specific authority. Historical permission statements do not authorize present execution. Current designs and readiness are linked from the catalogue; later evidence may qualify an earlier completion claim.
 
 ## Context coordination design recording boundary

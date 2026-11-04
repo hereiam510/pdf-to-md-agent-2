@@ -21,6 +21,8 @@ This policy owns project-specific storage, authoritative copies, access and rete
 
 An installed Electron app normally uses its own user-data location. `tools/dev/start.ps1` selects ignored `workspaces/default` unless passed `-Workspace`; direct `pnpm dev` uses Electron user-data defaults. `Start Workbench.cmd` selects this checkout's default store for the existing packaged app. These locations are distinct; reorganizing source files neither imports nor migrates a task store.
 
+An explicitly supplied offline usage observer keeps private scalar/reference diagnostics in `usage-observations.sqlite` inside its selected isolated task workspace, separately from ordinary catalogue commits. It retains zero new diagnostic payload bytes by default and reuses ordinary immutable request-input references. Unfrozen digest-only candidates are not promised reproducible. The [observer mechanism](guides/CONTEXT_AND_EVIDENCE.md#observation-only-usage-anchoring) and [verification record](verification/20261105_0220_USAGE_OBSERVATION.md) describe the implemented boundary. No real observation period or exceptional byte capture is enabled by this implementation.
+
 ## Test executions
 
 `playwright.config.ts` creates a unique default `.local/test-runs/<UTC-timestamp>-<process-id>/` and passes its absolute path to workers as `PDFMD_TEST_RUN_ROOT`. Specs resolve their default synthetic evidence below that root. Electron harness profiles use that same identity. Playwright's `results/` child can be cleared by the runner; case stores, screenshots and reports needed beyond that lifecycle belong in sibling locations. A fresh default run does not overwrite the preceding run.
