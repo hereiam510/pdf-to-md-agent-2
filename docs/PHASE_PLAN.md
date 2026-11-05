@@ -8,6 +8,16 @@ The 2026-10-31 topic reorganization is completed documentation maintenance along
 
 The later [whole-project organization](decisions/PROJECT_ORGANIZATION.md) groups renderer features, tests and tools and establishes artifact ownership. Its local regression outcome is recorded separately; it does not close Stage B, select interruption remedies or certify an installed distribution.
 
+## Next increment selection
+
+This is the single roadmap; [WORK_ITEMS](WORK_ITEMS.md) owns item dispositions and [CURRENT_STATE](CURRENT_STATE.md#find-current-work) readiness. The 2026-11-06 documentation selection connects phase outcomes to outstanding work without changing acceptance or selecting implementation.
+
+The user has held real conversions because of cost. Recommend an offline production-estimator correctness increment for discussion: R01-MOD has recorded false-image/rejection counterexamples in admission, and R01-COUNT repeats failure work. Assess current behavior and remedies offline; the observer repair did not change production F. Define behavior and discriminating checks before implementation. R01-FEEDBACK/SURROGATE remain separate questions.
+
+R03 is a substantial Stage C continuation gap requiring its own recovery design; blind replay remains unsafe. OBS-02/03 are measured optimization candidates, but no operational threshold/workload justifies putting them ahead of correctness. R08/R14/R01-PACK/DIST-01 re-enter with declared Stage D destinations/distribution. F03/F04 and smaller hygiene/options remain visible with triggers. Uncertain magnitude or later phase placement does not dismiss a supported blocker.
+
+UA-01 trial implementation and UA-02 observation remain unselected. Before proposing costly live work, identify the remaining question, why cheaper checks are insufficient and how defects affect interpretation. After each increment, reconcile work items and phase readiness. Stage B states an outcome, not an instruction to convert next or clear every unrelated bug first.
+
 ## Delivery route
 
 | Stage | Intended outcome | Effective disposition |

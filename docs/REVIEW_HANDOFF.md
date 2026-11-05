@@ -1,5 +1,7 @@
 # Current review and continuation handoff
 
+Current continuation starts with [WORK_ITEMS](WORK_ITEMS.md#selection-now) and [phase selection](PHASE_PLAN.md#next-increment-selection). Real conversions remain on hold; the next recommended discussion is offline production-estimator correctness, with R03 separately visible. Historical scopes below do not select a new live period.
+
 ## Start with the current question
 
 Read [CURRENT_STATE](CURRENT_STATE.md#find-current-work) for present scope and [PHASE_PLAN](PHASE_PLAN.md#delivery-route) for the product outcome. This handoff routes the latest evidence; it does not authorize another implementation, model request or Nursing transition. Earlier handoffs are retained in [REVIEW_HISTORY](history/REVIEW_HISTORY.md), labeled as historical evidence and instructions for their original tasks.

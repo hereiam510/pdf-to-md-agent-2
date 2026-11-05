@@ -2,11 +2,13 @@
 
 This is a retained-options record, not an execution queue. Inclusion establishes neither superiority, adoption nor scheduling. Current rules belong to the [topic designs](INDEX.md#topics); current delivery belongs to [the phase plan](PHASE_PLAN.md). The earlier mixed [options edition](history/discussions/20261031_0157_DESIGN_OPTIONS.md) remains retrievable.
 
+Current cross-topic dispositions are in [WORK_ITEMS](WORK_ITEMS.md); this owner retains substantive alternatives and rationale.
+
 ## Find an option
 
 | Unselected direction | Location / trigger |
 | --- | --- |
-| Whole-request estimation, usage anchoring and component calibration | [Method options and review reconciliation](discussions/REQUEST_CAPACITY.md#estimation-method-discussion-and-review-reconciliation-2026-11-01), including the earlier [component proposal](discussions/REQUEST_CAPACITY.md#recommendation-correction-and-component-calibration-proposal-2026-11-01). Material overestimation and multi-model maintenance cost motivate comparison; no method, parameters, targets, implementation or provider sampling are adopted. [Ordered discussion](discussions/REQUEST_CAPACITY.md#ordered-method-discussion-and-open-decisions) starts with responsibilities, with Nexus counting last. |
+| Whole-request estimation, usage anchoring and component calibration | [Usage-anchoring v1](design/CONTEXT_MANAGEMENT.md#usage-anchoring-v1-first-bounded-trial-2026-11-05) is adopted and the observer is offline verified. Production recalibration remains open; trial implementation/enrollment and operational observation remain unselected. [WORK_ITEMS](WORK_ITEMS.md#context-capability-and-delivery-work) owns CTX-02/UA-01/UA-02 dispositions; [discussion](discussions/REQUEST_CAPACITY.md) preserves earlier alternatives. |
 | Langfuse, external export, F03/F04 work | [Observability discussion](discussions/OBSERVABILITY.md); select for a demonstrated missing diagnostic need and settle privacy, deployment and reliability choices first. |
 | Diagnostic detail cost and bounds | [Read cost](#diagnostic-detail-read-cost-and-bounds); revisit on measured responsiveness/scale impact. |
 | Prepare-only, before-tools gate or multi-dispatch fail-stop controls | [Execution controls](#explicit-request-preparation-and-execution-stop-controls); select only the needed boundary. |

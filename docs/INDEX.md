@@ -2,6 +2,16 @@
 
 Start with the question or capability below. [CURRENT_STATE](CURRENT_STATE.md) owns actual readiness and the next decision; [PHASE_PLAN](PHASE_PLAN.md) owns product outcomes/acceptance. This catalogue owns retrieval and the full maintained-document inventory. [README](../README.md) explains setup/usage, [AGENTS](../AGENTS.md) the working agreement. Read relevant owners rather than every file.
 
+## Start development
+
+| Question | Owner |
+| --- | --- |
+| What works and what is active? | [CURRENT_STATE](CURRENT_STATE.md#find-current-work) |
+| What remains across the project? | [WORK_ITEMS](WORK_ITEMS.md): current item dispositions, impact and next checks |
+| Why this next increment and what must the phase deliver? | [PHASE_PLAN](PHASE_PLAN.md#next-increment-selection), the single roadmap |
+
+Read these together before recommending next work, then follow relevant detailed owners. README/INDEX supply navigation; WORK_ITEMS owns current item dispositions, PHASE_PLAN sequencing and CURRENT_STATE readiness. Recorded items do not authorize execution.
+
 ## Topics
 
 | Topic | Current design / contract | Discussion and decisions | Evidence / next choice |
@@ -54,6 +64,7 @@ The following lists maintained documents, root guidance, fixture documentation a
 | [docs/REVIEW_HANDOFF.md](REVIEW_HANDOFF.md) | Current source/evidence/authority boundaries for review and continuation. |
 | [docs/TECHNICAL_TERMS.md](TECHNICAL_TERMS.md) | Technical terminology and mechanism navigator |
 | [README.md](../README.md) | pdf-to-md-agent-2 |
+| [docs/WORK_ITEMS.md](WORK_ITEMS.md) | Project-wide work register and current item dispositions. |
 
 ### Current topic designs
 
@@ -128,6 +139,8 @@ The following lists maintained documents, root guidance, fixture documentation a
 | [docs/verification/20261031_1917_DOCUMENTATION_CONFORMANCE.md](verification/20261031_1917_DOCUMENTATION_CONFORMANCE.md) | Applicable documentation-rule coverage, semantic/navigation checks and preservation. |
 | [docs/verification/20261031_1917_RECOVERY_ACCEPTANCE.md](verification/20261031_1917_RECOVERY_ACCEPTANCE.md) | Relocated 2026-10-29 recovery and diagnostic execution evidence; no new product run. |
 | [docs/verification/20261031_1917_STREAMING_ACCEPTANCE.md](verification/20261031_1917_STREAMING_ACCEPTANCE.md) | Relocated SC02 source identity, failures/reruns and acceptance evidence from 2026-10-30. |
+
+| [docs/verification/20261106_0112_WORK_REGISTER.md](verification/20261106_0112_WORK_REGISTER.md) | Development-entry/register reconciliation and checks. |
 
 ### Findings and reviews
 

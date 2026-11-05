@@ -4,6 +4,8 @@ PDF Markdown Workbench is a local Electron app with a Python agent engine. The a
 
 **The first application increment is implemented.** It includes a Windows folder build and a desktop workflow for importing a PDF, specifying a scope, running an autonomous agent, reviewing or editing saved versions, and exporting a portable ZIP. See [current state](docs/CURRENT_STATE.md) for actual verification and limits. The original project remains unchanged.
 
+**[Start development](docs/INDEX.md#start-development):** current readiness, phase roadmap and project-wide outstanding work.
+
 ## Run locally
 
 Install Python 3.12 through `uv`, Node.js 24 and `pnpm`. From this repository:

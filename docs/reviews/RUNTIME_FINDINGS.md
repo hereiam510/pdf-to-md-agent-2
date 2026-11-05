@@ -1,5 +1,7 @@
 # Runtime findings and review reconciliation
 
+Current project-wide dispositions are owned by [WORK_ITEMS](../WORK_ITEMS.md). Assessments and scoped status statements below retain their original evidence/date boundaries; the register reconciles later results and issue families. This remains the detailed evidence owner, not a competing work queue.
+
 ## How to use this review
 
 Start at the [SC/R/F/H/CTX issue navigator](#issue-navigation), then read the selected finding's current disposition and retained evidence together. Original reviewer claims and recommendations are preserved, including disagreements, but do not become current requirements or execution authority. Current scope and verification are routed through [CURRENT_STATE](../CURRENT_STATE.md#find-current-work).
