@@ -198,6 +198,9 @@ def test_unreadable_native_image_and_metadata_keep_payload_and_anchor(setup, tmp
                 assert cost["images"] == 1 and cost["image_cost"] == 4096
                 assert cost["image_occurrences"][0]["geometry_status"] == "unavailable"
                 assert cost["image_occurrences"][0]["geometry_reason"].startswith("image_decode_failed:")
-            assert form["full_local"]["components"]["images"] == 2  # Deployed F is preserved.
+            # R01-MOD changes governing F as well as its observed baseline:
+            # one real native image, with route metadata retained as text.
+            assert form["full_local"]["components"]["images"] == 1
+            assert form["full_local"]["components"]["modality_projection"] == "protocol_native_content_v2"
         rt.close()
     assert outcomes[0] == outcomes[1]

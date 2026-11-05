@@ -4,6 +4,11 @@ This file records selected application changes, repository maintenance and impor
 
 ## Unreleased
 
+### 2026-11-06 — Production modality classification
+
+- Correct production capacity estimation so image/file-like metadata stays completely counted as text; charge supported native image occurrences only at protocol-native content positions and retain explicit unsupported-modality errors. Preserve original payloads, canonical JSON/BPE/fallback counting and numerical reserves.
+- Identify new observations as `modality_projection=protocol_native_content_v2`. [Scope and checks](docs/reviews/RUNTIME_FINDINGS.md#r01-mod-production-classification-increment-2026-11-06) include fresh negative controls, alias preservation, actual admission/feedback, prospective commitment and synthetic reopen/export. Coverage is composite with retained failures/corrections; no live route, savings, installed build or release is claimed.
+
 ### 2026-11-01 — Figure delivery requirements and acceptance correction
 
 - Reopen Nursing content-delivery acceptance after user review of whole-page images; preserve the original agent report, source observations, package/pixel/usage checks and consumed allowance. [Correction](docs/verification/20261031_2242_NURSING_LIVE.md#acceptance-correction-2026-11-01).

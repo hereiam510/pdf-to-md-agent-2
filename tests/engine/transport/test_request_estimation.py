@@ -224,11 +224,14 @@ def test_legacy_task_settings_and_explicit_profile_change_preserve_frozen_reques
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
-def test_prospective_native_payload_matches_committed_boundary_exactly(setup, protocol):
+@pytest.mark.parametrize("misleading_metadata", [False, True])
+def test_prospective_native_payload_matches_committed_boundary_exactly(setup, protocol, misleading_metadata):
     from tests.engine.context.test_context_coordination import accepted_batch, coordinate, offline
     from tests.engine.execution.test_runtime import tool
     store, original = setup
     job = protocol_job(store, original, protocol)
+    if misleading_metadata:
+        job = store.update_job(job["id"], route={**job["route"], "parameters": {"metadata": {"type": "file"}}})
     runtime = offline(store)
     try:
         state = {**state_for(job, []), "pin_views": {}}

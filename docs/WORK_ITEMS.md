@@ -4,7 +4,7 @@ Updated 2026-11-06, Asia/Singapore. This is the central view of known outstandin
 
 ## Selection now
 
-The user has held real conversions because of cost and requested documentation alignment. This task selects no application repair or live observation. **Recommended next discussion: offline production-estimator correctness**, starting with R01-MOD, then R01-COUNT. Recorded local counterexamples affect admission or repeated failure work and can be investigated without provider calls. The observer-only correction does not repair production F. Verify present code before selecting remedies and acceptance conditions.
+The user holds real conversions because of cost. **R01-MOD is implemented and locally verified** at its [recorded source and acceptance](reviews/RUNTIME_FINDINGS.md#r01-mod-production-classification-increment-2026-11-06): production F now classifies native content positions and retains metadata as text. Affected engine checks pass at the recorded composite scope, with initial failures and corrections retained. **Recommended next discussion: R01-COUNT recovery semantics**, separating deterministic corruption from transient I/O before selecting failure caching. No further implementation, live observation or provider call is selected.
 
 R03 remains a separate substantial recovery candidate. OBS-02/03 are measured costs but no operational threshold/workload is selected. R08/R14/R01-PACK connect to declared distribution/destination needs. Important alternatives and revisit conditions remain below. A Stage B title does not direct immediate conversion; live work needs a specific evidence question, assessment of relevant defects and cheaper checks, and current authority.
 
@@ -35,11 +35,11 @@ Evidence is inherited from linked review scopes and [current verification](CURRE
 
 ## Production estimation residuals
 
-Stable suffixes identify remaining questions under R01 without renumbering original findings. All are unselected for implementation. [November 1 evidence](reviews/RUNTIME_FINDINGS.md#r01-engineering-review-reconciliation-2026-11-01) and [November 4 evidence](reviews/RUNTIME_FINDINGS.md#r01-november-4-engineering-review) retain reproductions and limits.
+Stable suffixes identify remaining questions under R01 without renumbering original findings. R01-MOD is locally complete; other residuals remain unselected for implementation. [November 1 evidence](reviews/RUNTIME_FINDINGS.md#r01-engineering-review-reconciliation-2026-11-01) and [November 4 evidence](reviews/RUNTIME_FINDINGS.md#r01-november-4-engineering-review) retain original reproductions and limits.
 
 | ID | Evidence / impact | Next action and completion or revisit condition |
 | --- | --- | --- |
-| R01-MOD | Non-content metadata can add a false image charge or reject estimation. Production F was outside the observer repair. | First B/E offline candidate: reproduce current behavior, define protocol-native positions, verify real images and misleading nested metadata in both protocols. |
+| R01-MOD | Historical non-content metadata false-image/rejection defect corrected in production F; both protocols/profiles and native/error controls verified offline. | Locally complete at [recorded scope/source](reviews/RUNTIME_FINDINGS.md#r01-mod-production-classification-increment-2026-11-06). Reopen on a supported classification/text-preservation counterexample; calibration and upstream incidence remain separate. |
 | R01-COUNT / OBS-06 | Corrupt counter resources repeatedly load/decompress; invocation counts reproduced, latency not established. | Next offline candidate: distinguish deterministic corruption from transient I/O, define recovery and preserve honest fallback before caching failures. |
 | R01-PACK | Frozen smoke test omits counter loading/BPE-mode assertion; no packaged failure demonstrated. | D: at next selected build verify actual frozen vocabulary/native loading, known vector and mode. |
 | R01-FEEDBACK | Automatic feedback omits fallback method/reason exposed in metadata. | Unselected B/E visibility improvement; assess full payload/convergence and actual use. |
