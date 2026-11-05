@@ -674,6 +674,68 @@ The historical **Dual-Anchor Capacity Accounting** combined an API Reported Anch
 
 Sources: [P2-036–041](../history/discussions/20261031_0157_REBUILD_CONTEXT.md#p2-036), [P2-045](../history/discussions/20261031_0157_REBUILD_CONTEXT.md#p2-045), EVT-1040, EVT-1166.
 
+### Offline calibration evaluator
+
+`pdfmd.calibration` is an explicitly invoked offline developer utility. It uses the current production `request_estimation.estimate`, the existing `Route` validators and `interpret_usage`; it imports no Runtime/Store instance and calls no provider. The [v1 contract](../design/CONTEXT_MANAGEMENT.md#offline-calibration-evaluation-v1) owns its strict finite-corpus semantics, and [R01-CAL](../reviews/RUNTIME_FINDINGS.md#r01-cal-offline-evaluator-increment-2026-11-06) owns execution evidence. It neither fits nor selects/installs coefficients. No new dependency, route counting capability or model identity is inferred.
+
+From the repository root, with an existing caller-owned output directory:
+
+```powershell
+.venv\Scripts\python.exe -B -m pdfmd.calibration .local/my-study/study.json .local/my-study/corpus.json --output .local/my-study/report-01.json
+```
+
+Input references resolve relative to `corpus.json`, including deliberate paths outside its directory. All source files stay read-only. Output must be a new file and must not name any input, even an unavailable input; existing results are never overwritten. Exit 0 means a report was produced, including `fail` or `inconclusive` candidate results. Exit 2 means invalid declarations, broken study binding or report-publication failure; stderr contains a safe reason code instead of native content/configuration values. Row-level unavailable evidence stays in the report. Keep private studies/reports outside Git under [artifact storage](../ARTIFACT_STORAGE.md).
+
+The following study is a **format example**, with illustrative thresholds/support only. It is intentionally development-only (`predeclared=false`, no validation sources), so it cannot yield a clean validation pass. These values are not production acceptance or calibrated token costs:
+
+```json
+{
+  "version": 1,
+  "route": {
+    "endpoint": "http://localhost/v1/chat/completions",
+    "model": "offline-fixture", "context_tokens": 131072,
+    "output_tokens": 8192, "image_tokens": 4096
+  },
+  "measurement": {
+    "method": "o200k_native_json_proxy_v1",
+    "modality_projection": "protocol_native_content_v2",
+    "vocabulary_sha256": "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d"
+  },
+  "candidates": [
+    {"id": "comparison-only", "text_margin": "0.125", "fixed_tokens": 512, "image_tokens": 3072}
+  ],
+  "gates": {
+    "max_run_overestimate_pct": "15", "max_group_overestimate_pct": "25",
+    "min_known_per_run": 1, "min_known_per_group": 1,
+    "required_groups": ["normal-text"], "require_fit_improvement": false
+  },
+  "validation": {"predeclared": false, "source_sha256": []}
+}
+```
+
+`text_margin` is a nonnegative decimal/fraction string such as `"0.125"` or `"1/8"`; ceiling and gate comparisons use `Fraction` exactly. Fixed/image units are nonnegative integers, excluding booleans. All gate fields are required. Run/group percentage strings are percentages, not unit ratios. No 15%/25% threshold or minimum support is silently supplied. The v1 evaluator always fails a candidate on any observed known undercount, including development counterexamples. Support and coverage remain study decisions; tiny synthetic groups establish software behavior, not a population estimate.
+
+A corpus has `version=1`, the exact raw study-file `study_sha256`, and `observations`. Each row requires:
+
+| Field | Meaning |
+| --- | --- |
+| `id`, `run`, `attempt_id` | Unique row and `(run, physical attempt)` identity. Separate retries remain exposures; duplicate attempts/IDs reject the corpus. |
+| `partition` | `development` or `validation`. Already inspected data, including the old 34 sends, belongs to development. |
+| `source_sha256` | Original source identity, or null when unknown. It is a provenance declaration, not proof of source independence. |
+| `previously_inspected` | Explicit true/false or null. Validation needs false; unknown/inspected declarations cannot pass. |
+| `request_kind`, `group` | `normal`/`compaction` and declared composition label. Report both; expected validation groups come from the study. Labels do not certify source coverage. |
+| `payload`, `usage` | Each is `{ "path": "relative-or-absolute-path", "sha256": "actual 64-character lowercase digest" }`. Verify actual file bytes; do not put example hashes into real studies. |
+
+Payload files contain complete canonical immutable native JSON exactly as saved by Nexus, with original language/characters. They must equal `storage.encode(parsed_payload)` without normalization, pretty-printing or reconstruction; a noncanonical file is unavailable rather than silently rewritten. There is no payload truncation or prescribed converter reading method. The evaluator measures once per input and reuses its complete BPE text count T/native occurrence count I for `T + ceil(r*T) + F + I*A`. Configured output reserve is added only for local fit. UTF-8 fallback, mismatched measurement identity and unsupported native content are candidate-inapplicable, with current F's own baseline/cause retained.
+
+The usage file is an attribution wrapper around native accounting, not a transcript or acceptance receipt. It requires `run`, `attempt_id`, `protocol`, `request_sha256`, `route_sha256`, `accounting="inclusive_input_v1"` and `native_usage` (which may be null). Its request digest must match the row's payload digest; run/attempt/protocol must agree. Calculate `route_sha256` with `calibration.route_fingerprint(Route.model_validate(study["route"]))`, including Route defaults; it is a distinct complete route/configuration fingerprint, not the estimator's narrower `route_identity`. Hash a file with `hashlib.sha256(path.read_bytes()).hexdigest()` or PowerShell `Get-FileHash`; hash the original raw bytes, not a reserialized approximation.
+
+For Chat Completions, an example native accounting value is `{"prompt_tokens":1000,"completion_tokens":20,"total_tokens":1020,"prompt_tokens_details":{"cached_tokens":300}}`. For Responses it is `{"input_tokens":1000,"output_tokens":20,"total_tokens":1020,"input_tokens_details":{"cached_tokens":300}}`. These examples are not observations. Input is 1000 in each, not 1300 or 700. The shared interpreter rejects contradictions/invalid subsets. A valid input count can be used while absent output/total fields retain `usage_status=partial`. Missing input, unknown accounting or unmatched attribution stays null with a reason, never zero. The wrapper is supplied evidence: field equality and file hashes do not prove the native response belonged to that physical attempt or was accepted by a provider. Preserve those external provenance limits.
+
+Reports retain every row's IDs/partition/kind/group, hashes, current baseline components, candidate estimate/fit, usage status/reason and signed error. They contain no native payload, raw usage or route body. Both implementation-file hashes and study/corpus hashes identify the assessment. Metrics separate all/known/unknown/unavailable/scored rows, physical exposures, unique payloads, signed error, positive excess and worst/count of underestimation. Weighted excess is `sum(max(E-U,0))/sum(U)` over scored observations; signed error uses `sum(E-U)` separately. A positive and negative error cannot cancel the excess or conceal an undercount. Zero denominators remain null, and display rounding never determines a gate.
+
+Run/group gates apply to validation. Missing required groups/sources, insufficient support, unknown validation usage, unavailable candidate estimates, absent/unconfirmed predeclaration or source/run/payload overlap with development prevent `pass`. Numeric counterexamples produce `fail` even if other evidence is incomplete; otherwise missing evidence gives `inconclusive`. A requested fit improvement is only current-F-block/candidate-fit on the same frozen bytes. It does not reassemble self-inclusive feedback, prove actual upstream acceptance or establish conversion benefit. A pass means only the supplied finite-corpus numerical conditions were met under declared provenance. After viewing validation while choosing/revising a candidate, it is development evidence; obtain a distinct validation set. No source independence, predeclaration chronology, unseen-token bound, price-weighted savings, installed readiness or fidelity is certified by this tool.
+
 <a id="oversized-results"></a>
 ## 15. Oversized results and capacity states
 

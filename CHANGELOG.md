@@ -4,6 +4,11 @@ This file records selected application changes, repository maintenance and impor
 
 ## Unreleased
 
+### 2026-11-06 — Offline calibration evaluation
+
+- Add `python -m pdfmd.calibration` for explicit hash-bound study/corpus evaluation using current production measurement and native usage interpretation. Preserve unknowns, independent-validation declarations, strict finite-corpus gates, exclusive reports and source/configuration privacy. No fitting or production activation is included.
+- [Verification and limits](docs/reviews/RUNTIME_FINDINGS.md#r01-cal-offline-evaluator-increment-2026-11-06): 39 new cases and 214 affected engine cases pass; saved/reopened synthetic reports demonstrate all three verdicts. Production F/dependencies remain unchanged; actual numeric calibration, validation data, costs and fidelity remain open.
+
 ### 2026-11-06 — Counter resource recovery
 
 - Reuse deterministic failed vocabulary decoding in separate one-entry production/shadow caches. Changed resource bytes restore counting automatically; transient reads and unrelated construction errors remain retryable. Retain source access, ordinary profiles/reserves, immutable history and honest fallback.
