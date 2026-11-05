@@ -215,13 +215,30 @@ def inspect(context, request: dict, current_job: dict, *, changes: dict | None =
               "cost_note": "Body bytes exclude receipt/envelope escaping. Group deltas are separate native-envelope measurements, not additive totals; image allowance can overlap groups. Total includes all input and feedback; output reserve is separate. These are local estimates, not provider usage. release_ref names the exact result, arguments or pin representation; ref names its source when available."}
     if saved:
         result["snapshot_policy_ref"] = policy_ref(saved["state"])
+    anchor = request["meta"].get("capacity", {}).get("anchor")
+    if anchor or request["meta"].get("admission_version"):
+        from .anchor_basis import reproduce
+        try:
+            if saved is None or encode(reproduce(context, request, saved)) != encode(payload):
+                raise ValueError("Frozen anchor-capable input cannot be reproduced.")
+            result["historical_governing"] = {"status": "available", "decision": deepcopy(anchor),
+                                              "assessment": "recorded_decision_not_current_remeasurement"}
+        except (ValueError, KeyError, TypeError, OSError) as exc:
+            result["historical_governing"] = {"status": "unavailable", "reason": str(exc)}
+            if changes is not None:
+                raise ValueError("Historical anchor provenance is unavailable; a current hypothetical preview cannot replace it.") from exc
+    elif getattr(context, "usage_trial", None) is not None:
+        result["historical_governing"] = {"status": "legacy_full_local", "assessment": "predates_anchor_provenance"}
     if changes is not None:
         if saved is None:
             raise ValueError("This historical request has no context snapshot; full frozen input remains readable, but a hypothetical policy preview cannot be reconstructed reliably.")
         if not isinstance(changes, dict):
             raise ValueError("changes must be an object containing selected pin/release/notes changes.")
         # Do not preview against a newer job/head or silently replace frozen tools.
-        baseline, _ = context.normal(saved["job"], saved["state"])
+        if anchor:
+            baseline = reproduce(context, request, saved)
+        else:
+            baseline, _ = context.normal(saved["job"], saved["state"])
         if encode(baseline) != encode(payload):
             raise ValueError("The current assembler cannot reproduce this frozen input exactly. Inspect its recorded input; do not treat a reconstructed preview as admission.")
         policy = context.policy(job_id, saved["state"], changes)
@@ -230,4 +247,6 @@ def inspect(context, request: dict, current_job: dict, *, changes: dict | None =
         result["preview"] = {"capacity": preview, "policy_ref": policy_ref(projected), "applied": False,
                              "basis": "Snapshot active policy and history, not pending candidates or current batch results. No policy/eligibility/receipt/consumption changes. Whole-batch admission still decides actual application.",
                              "input_delta": preview["input_estimate"] - capacity["input_estimate"]}
+        if anchor:
+            result["preview"]["governing_trial_decision"] = "not_recomputed_full_local_hypothetical_only"
     return result

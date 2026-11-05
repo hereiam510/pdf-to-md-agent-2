@@ -58,14 +58,20 @@ def build_graph(owner, checkpointer):
 
 
 class Runtime:
-    def __init__(self, store: Store, nexus: Nexus, *, scripts: bool = False, usage_observer=None):
+    def __init__(self, store: Store, nexus: Nexus, *, scripts: bool = False, usage_observer=None, usage_trial=None):
+        if usage_observer is not None and usage_trial is not None:
+            raise ValueError("Observation-only diagnostics and trial authority require separate Runtime instances.")
         self.store, self.nexus = store, nexus
         self.usage_observer = usage_observer
+        self.usage_trial = usage_trial
+        if usage_trial is not None:
+            usage_trial.bind(nexus)
         self.active_time = ActiveTime(store)
         self.nexus.active_time = self.active_time
         self.dispatcher = Dispatcher(store, scripts=scripts)
         self.dispatcher.active_time = self.active_time
         self.context = Context(store, self.dispatcher)
+        self.context.usage_trial = usage_trial
         self.context_updates = ContextUpdates(self.context)
         self.context_revisions = ContextRevisions(self.context)
         self.connection = sqlite3.connect(store.root / "graph.sqlite", check_same_thread=False)
@@ -101,7 +107,7 @@ class Runtime:
             observation = self.observation(job, state, key)
             observe = self.observation_callback(observation)
             try:
-                self.context_updates.continuation(job, state, **({"observe": observe} if observe else {}))
+                self.continuation(job, state, key, observe=observe)
                 changes["context_check"] = None
             except StopRun as exc:
                 if observation:
@@ -117,6 +123,17 @@ class Runtime:
         if self.usage_observer is not None and not state.get("context_waiting"):
             return self.observe_call(self.usage_observer.start, job, state, key, existing_only=existing_only)
         return None
+
+    def continuation(self, job, state, key, *, observe=None):
+        descriptor = None
+        if self.usage_trial is not None:
+            selected, descriptor = self.usage_trial.prepare(self.context, job, state, key)
+            if selected is not None:
+                return selected
+        payload, meta, kind = self.context_updates.continuation(job, state, **({"observe": observe} if observe else {}))
+        if descriptor is not None:
+            meta["capacity"]["anchor"] = self.usage_trial.ordinary_result(descriptor, payload, meta, kind, job["id"])
+        return payload, meta, kind
 
     def observe_call(self, method, *args, **kwargs):
         # Telemetry latency is measured separately. It must not exhaust the
@@ -141,13 +158,24 @@ class Runtime:
         if request is None:
             try:
                 observe = self.observation_callback(observation)
-                payload, meta, kind = self.context_updates.continuation(job, state, **({"observe": observe} if observe else {}))
+                payload, meta, kind = self.continuation(job, state, key, observe=observe)
                 if observation and kind == "normal":
                     observe("final_ordinary", payload, meta["capacity"])
                 if repairs.get(kind, {}).get("count", 0) > job["limits"].get("max_response_repairs", 2):
                     raise StopRun("response_repair_exhausted", f"Automatic {kind} correction limit reached. Saved work, candidates and replies remain available. Continue does not reset this correction episode.")
-                request = self.nexus.freeze(job["id"], key, payload, kind, {**meta, "repairs": repairs,
-                    **({"context_snapshot": context_snapshot(job, state)} if kind == "normal" else {})})
+                def freeze(payload, meta, kind):
+                    return self.nexus.freeze(job["id"], key, payload, kind, {**meta, "repairs": repairs,
+                        **({"context_snapshot": context_snapshot(job, state)} if kind == "normal" else {})})
+                try:
+                    request = freeze(payload, meta, kind)
+                except StopRun as exc:
+                    if exc.reason != "usage_trial_revoked_before_freeze":
+                        raise
+                    # The committed cutoff stays bound. A fresh ordinary F
+                    # evaluation honors revocation before any request freezes.
+                    job = self.store.get("job", job["id"])
+                    payload, meta, kind = self.continuation(job, state, key, observe=observe)
+                    request = freeze(payload, meta, kind)
             except Exception as exc:
                 if observation:
                     self.observe_call(observation.finish, "ordinary_failure", opportunity=observation,

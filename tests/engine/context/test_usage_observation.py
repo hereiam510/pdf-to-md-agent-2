@@ -555,12 +555,12 @@ def test_original_freeze_failure_is_preserved(setup, tmp_path, monkeypatch, faul
         elif fault == "write":
             monkeypatch.setattr(observer.sink, "put", fail)
         rt = Runtime(local, Nexus(local, lambda _: "unused"), usage_observer=observer if mode == "on" else None)
-        put = local.put
-        def ordinary_failure(kind, *args, **kwargs):
+        put = local.put_tx
+        def ordinary_failure(db, kind, *args, **kwargs):
             if kind == "request":
                 raise RuntimeError("original ordinary request publication failure")
-            return put(kind, *args, **kwargs)
-        monkeypatch.setattr(local, "put", ordinary_failure)
+            return put(db, kind, *args, **kwargs)
+        monkeypatch.setattr(local, "put_tx", ordinary_failure)
         with pytest.raises(RuntimeError, match="^original ordinary request publication failure$"):
             rt.prepare(state)
         assert len(local.records("request")) == len(local.records("attempt")) == 1

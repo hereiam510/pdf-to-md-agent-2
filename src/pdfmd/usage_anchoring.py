@@ -175,8 +175,13 @@ def layout(payload, protocol):
     if not feedback.get("content", "").startswith(PREFIX):
         raise ValueError("unsupported_feedback_layout")
     summary = json.loads(feedback["content"][len(PREFIX):])
-    if (set(summary) != FEEDBACK_FIELDS or summary["estimate_kind"] != "local_request_proxy_not_provider_usage"
-            or summary["feedback_estimate"] != "self_inclusive_upper_reservation"):
+    ordinary = set(summary) == FEEDBACK_FIELDS and summary["estimate_kind"] == "local_request_proxy_not_provider_usage"
+    anchored = (set(summary) == FEEDBACK_FIELDS | {"anchor"}
+                and summary["estimate_kind"] == "usage_anchored_reservation_not_provider_bound"
+                and isinstance(summary["anchor"], dict)
+                and set(summary["anchor"]) == {"basis_id", "pricing", "measured_input"}
+                and summary["anchor"]["pricing"] == RECIPE["pricing"])
+    if not (ordinary or anchored) or summary["feedback_estimate"] != "self_inclusive_upper_reservation":
         raise ValueError("unsupported_feedback_schema_or_provenance")
     return {"envelope": {k: v for k, v in payload.items() if k != key},
             "system": units[:start], "task": control, "task_unit": task,
