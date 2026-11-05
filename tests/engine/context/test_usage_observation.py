@@ -33,6 +33,11 @@ def profile(job):
     return ObservationProfile(digest(job["route"]), "Synthetic fixture: input main count includes cached input once")
 
 
+def protocol_job(store, job, protocol):
+    return store.update_job(job["id"], route={**job["route"], "protocol": protocol,
+        "endpoint": "http://127.0.0.1/v1/" + ("responses" if protocol == "responses" else "chat/completions")})
+
+
 def seed(store, job, *, large=False, missing=False, image=False):
     size = 180000 if large else 120
     body = "".join(random.Random(37).choices("abcdefghijklmnopqrstuvwxyz0123456789", k=size))
@@ -73,9 +78,11 @@ def ordinary_records(store):
 
 
 @pytest.mark.parametrize("large", [False, True], ids=["unchanged", "large-deferral"])
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
 @pytest.mark.parametrize("fault", [None, "counter", "usage", "write"], ids=["on", "counter-fault", "usage-fault", "write-fault"])
-def test_paired_preparation_equivalence(setup, tmp_path, monkeypatch, large, fault):
+def test_paired_preparation_equivalence(setup, tmp_path, monkeypatch, large, fault, protocol):
     store, job = setup
+    job = protocol_job(store, job, protocol)
     if large:
         job = store.update_job(job["id"], route={**job["route"], "context_tokens": 18000})
     state = seed(store, job, large=large)
@@ -101,7 +108,9 @@ def test_paired_preparation_equivalence(setup, tmp_path, monkeypatch, large, fau
     def transport(index):
         def reply(request):
             seen[index].append(request.content)
-            return httpx.Response(200, json=response(tool("report", {"state": "partial", "message": "fixture"})))
+            value = native(protocol, tool("report", {"state": "partial", "message": "fixture"}))
+            value["usage"] = {"prompt_tokens" if protocol == "chat_completions" else "input_tokens": 100}
+            return httpx.Response(200, json=value)
         return httpx.MockTransport(reply)
     runtimes = [Runtime(s, Nexus(s, lambda _: "synthetic", transport(i)), usage_observer=observer if i else None)
                 for i, s in enumerate((off, on))]
@@ -194,7 +203,7 @@ def test_paired_preparation_equivalence(setup, tmp_path, monkeypatch, large, fau
     assert final["actual"]["normalized_usage"]["input"] == 100
     for runtime in runtimes:
         runtime.close()
-    save_measurement(f"{large}-{fault}", {"off_seconds": durations[0], "on_seconds": durations[1],
+    save_measurement(f"{protocol}-{large}-{fault}", {"off_seconds": durations[0], "on_seconds": durations[1],
         "difference_seconds": durations[1]-durations[0], "observation": settled,
         "complete_preparation_observer_seconds": preparation_work,
         "new_diagnostic_database_bytes_after_preparation": preparation_diagnostic_bytes,
@@ -238,8 +247,10 @@ def test_recipe_exact_projection_chunks_and_cache_accounting():
 
 
 @pytest.mark.parametrize("fault", [None, "counter", "usage", "write"])
-def test_ordinary_obstruction_and_persistence_failure_equivalence(setup, tmp_path, monkeypatch, fault):
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+def test_ordinary_obstruction_and_persistence_failure_equivalence(setup, tmp_path, monkeypatch, fault, protocol):
     store, job = setup
+    job = protocol_job(store, job, protocol)
     state = seed(store, job)
     # Mandatory instructions alone cannot fit. The ordinary exception must
     # survive every independent telemetry fault, with no frozen request/send.
@@ -262,7 +273,7 @@ def test_ordinary_obstruction_and_persistence_failure_equivalence(setup, tmp_pat
         with pytest.raises(StopRun) as error:
             rt.prepare(state)
         outcomes.append((error.value.reason, str(error.value)))
-        save_measurement(f"obstruction-{fault}-{i}", {"seconds": perf_counter()-start,
+        save_measurement(f"obstruction-{protocol}-{fault}-{i}", {"seconds": perf_counter()-start,
             "complete_preparation_observer_seconds": dict(observer.work) if i else None})
         assert len(s.records("request")) == 1 and len(s.records("attempt")) == 1
         rt.close()
@@ -709,8 +720,10 @@ def test_graph_obstruction_is_observed_at_coordinate_before_wait(setup):
 
 
 @pytest.mark.parametrize("fault", [None, "counter", "usage", "write"])
-def test_complete_graph_fault_equivalence_and_single_document_effect(setup, tmp_path, monkeypatch, fault):
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+def test_complete_graph_fault_equivalence_and_single_document_effect(setup, tmp_path, monkeypatch, fault, protocol):
     store, job = setup
+    job = protocol_job(store, job, protocol)
     results = []
     for enabled in (False, True):
         root = tmp_path / str(enabled)
@@ -731,7 +744,25 @@ def test_complete_graph_fault_equivalence_and_single_document_effect(setup, tmp_
         elif fault == "write":
             monkeypatch.setattr(observer.sink, "put", fail)
         seen = []
-        rt = Runtime(local, Nexus(local, lambda _: "synthetic", transport_for(local, job["id"], seen)), usage_observer=observer if enabled else None)
+        def reply(request):
+            payload = json.loads(request.content)
+            seen.append(payload)
+            if len(seen) == 1:
+                call = tool("inspect_pdf", {"pages": [1], "mode": "text"})
+            elif len(seen) == 2:
+                receipts = [m.get("content", m.get("output")) for m in payload.get("messages", payload.get("input", []))
+                            if m.get("role") == "tool" or m.get("type") == "function_call_output"]
+                text = json.loads(receipts[-1])["data"]["value"]["pages"][0]["content"]
+                call = tool("edit_document", {"base_version": None, "expected_head": None,
+                    "replace_blocks": [{"id": "section", "pages": [1], "markdown": text}],
+                    "page_updates": {"1": {"printed": "none", "disposition": "included"}}, "claim": "complete"})
+            else:
+                call = tool("report", {"state": "complete", "message": "Saved the synthetic section.",
+                                       "version_id": local.get("job", job["id"])["head"]})
+            value = native(protocol, call)
+            value["usage"] = {"prompt_tokens" if protocol == "chat_completions" else "input_tokens": 100}
+            return httpx.Response(200, json=value)
+        rt = Runtime(local, Nexus(local, lambda _: "synthetic", httpx.MockTransport(reply)), usage_observer=observer if enabled else None)
         rt.run(job["id"])
         frozen = local.records("request")[0]
         rt.prepare(frozen["meta"]["context_snapshot"]["state"])
@@ -749,7 +780,9 @@ def test_complete_graph_fault_equivalence_and_single_document_effect(setup, tmp_
     # Operation/version timestamps are persistence facts, not transmitted input.
     assert results[0]["outgoing"] == results[1]["outgoing"]
     assert results[0]["requests"] == results[1]["requests"]
-    assert [op["id"] for op in results[0]["operations"]] == [op["id"] for op in results[1]["operations"]]
+    assert results[0]["operations"] == results[1]["operations"]
+    assert [{k: v for k, v in version.items() if k != "created"} for version in results[0]["versions"]] == [
+        {k: v for k, v in version.items() if k != "created"} for version in results[1]["versions"]]
 
 
 def test_observer_failure_time_cannot_exhaust_ordinary_active_budget(setup, tmp_path, monkeypatch):

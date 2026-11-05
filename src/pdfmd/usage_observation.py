@@ -239,7 +239,7 @@ class UsageObserver:
         base_layout = layout(baseline, protocol)
         base_units = append_charge(old, base_layout, appended)
         route = Route.model_validate(job["route"])
-        pre_edit = price(base_units, route.image_tokens)
+        pre_edit = price(base_units, route.image_tokens, protocol=protocol, native_image_units=True)
         if pre_edit["charge"] + prior["usage_input"] + cap.get("outcome_reserve", 0) > route.context_tokens - route.output_tokens:
             raise ValueError("pre_edit_anchor_does_not_fit")
         selected_ref = None
@@ -395,6 +395,9 @@ class Opportunity:
                     "full_local": {"reservation": capacity["input_estimate"], "fits": capacity["fits"],
                                    "components": deepcopy(capacity)},
                     "anchored": None, "decoded_full_local": None, "actual": None,
+                    "comparator_status": {"full_local": {"status": "available"},
+                        "decoded_full_local": {"status": "unavailable", "reason": "not_computed"},
+                        "anchored": {"status": "unavailable", "reason": "not_computed"}},
                     "allowance": capacity["capacity"] - capacity["output_reserve"],
                     "image_rule": self.owner.profile.image_rule if self.owner.profile else None}
             self.value["forms"].append(form)
@@ -416,14 +419,20 @@ class Opportunity:
             route = Route.model_validate(self.job["route"])
             # Distinctly labeled decoded full-local shadow, retaining today's
             # 25%/1024 structure. It never replaces deployed F.
-            full = price(payload, route.image_tokens)
-            reservation = full["split_counts"][0] + (full["split_counts"][0] + 3)//4 + full["image_cost"] + 1024 + capacity.get("outcome_reserve", 0)
-            form["decoded_full_local"] = {"method": "decoded_full_local_o200k_25pct_1024_v1",
-                "reservation": reservation, "fits": reservation <= form["allowance"], "components": {
-                    "text_tokens": full["split_counts"][0], "text_uncertainty": (full["split_counts"][0]+3)//4,
-                    "native_overhead_reserve": 1024, "outcome_reserve": capacity.get("outcome_reserve", 0),
-                    **{key: full[key] for key in ("images", "image_cost", "image_occurrences", "text_features")}}}
+            try:
+                full = price(payload, route.image_tokens, protocol=route.protocol)
+                reservation = full["split_counts"][0] + (full["split_counts"][0] + 3)//4 + full["image_cost"] + 1024 + capacity.get("outcome_reserve", 0)
+                form["decoded_full_local"] = {"method": "decoded_full_local_o200k_25pct_1024_v1",
+                    "reservation": reservation, "fits": reservation <= form["allowance"], "components": {
+                        "text_tokens": full["split_counts"][0], "text_uncertainty": (full["split_counts"][0]+3)//4,
+                        "native_overhead_reserve": 1024, "outcome_reserve": capacity.get("outcome_reserve", 0),
+                        **{key: full[key] for key in ("images", "image_cost", "image_occurrences", "text_features")}}}
+                form["comparator_status"]["decoded_full_local"] = {"status": "available"}
+            except Exception as exc:
+                form["comparator_status"]["decoded_full_local"] = {"status": "unavailable",
+                    "reason": str(exc) or type(exc).__name__, "observer_error": type(exc).__name__}
             if not basis["eligibility"]:
+                form["comparator_status"]["anchored"] = {"status": "unavailable", "reason": basis["first_failure"]}
                 return
             if self.prior is None:
                 # Restore only the already selected evidence. No later usage
@@ -438,7 +447,7 @@ class Opportunity:
             units, edit, evidence = self.owner.charged(self.job, self.state, payload, self.prior, capacity)
             if edit not in self.owner.profile.edits:
                 raise ValueError("edit_not_declared_in_profile")
-            charge = price(units, route.image_tokens)
+            charge = price(units, route.image_tokens, protocol=route.protocol, native_image_units=True)
             if charge["images"] and self.owner.profile.image_rule != "configured_per_occurrence_uncalibrated_v1":
                 raise ValueError("unsupported_image_rule")
             reservation = self.prior["usage_input"] + charge["charge"] + capacity.get("outcome_reserve", 0)
@@ -446,12 +455,15 @@ class Opportunity:
                 "fits": reservation <= form["allowance"], "normalized_prior": self.prior["usage_input"],
                 "components": charge, "outcome_reserve": capacity.get("outcome_reserve", 0),
                 "edit": edit, "edit_evidence": evidence})
+            form["comparator_status"]["anchored"] = {"status": "available"}
         except Exception as exc:
             if evaluated_form is not None:
                 form = evaluated_form
                 if form["first_failure"] is None:
                     form["first_failure"] = str(exc) or type(exc).__name__
                 form["observer_error"] = type(exc).__name__
+                form["comparator_status"]["anchored"] = {"status": "unavailable",
+                    "reason": str(exc) or type(exc).__name__, "observer_error": type(exc).__name__}
             else:
                 self.value["obstructions"].append({"role": role, "reason": type(exc).__name__})
         finally:

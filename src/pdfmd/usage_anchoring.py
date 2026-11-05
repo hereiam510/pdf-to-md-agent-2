@@ -16,7 +16,7 @@ from .usage import interpret_usage
 KIMI_PATTERN = r"[\p{Han}]+|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}&&[^\p{Han}]]*[\p{Ll}\p{Lm}\p{Lo}\p{M}&&[^\p{Han}]]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}&&[^\p{Han}]]+[\p{Ll}\p{Lm}\p{Lo}\p{M}&&[^\p{Han}]]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"
 PATTERN_DIGESTS = ("2d1b8dc11e89af71459b36004f698ab3693f59fd84f63e8ec2b49564ab857420",
                    "de5781783b193d5ccf5b1b28edfa70fa816ce78d54603fdc422cfd8d4ea4411f")
-RECIPE = {"pricing": "cross_split_o200k_6pct_v1", "projection": "decoded_native_json_v1",
+RECIPE = {"pricing": "cross_split_o200k_6pct_v1", "projection": "decoded_native_json_v2",
           "matching": "retained_units_v2", "normalization": "inclusive_input_v1",
           "counter": "tiktoken-0.14.0", "vocabulary_sha256": VOCAB_SHA256,
           "split_sha256": list(PATTERN_DIGESTS), "chunk_characters": COUNT_CHARS}
@@ -43,31 +43,59 @@ def counters():
                                   mergeable_ranks=ranks, special_tokens={}) for i, p in enumerate(patterns))
 
 
-def projection(value):
-    """Decoded strings once, JSON punctuation/quotes intact, no inner JSON parse."""
+def projection(value, *, protocol=None, native_image_units=False):
+    """Decode strings once; recognize images only at native content positions.
+
+    Internal v2 edit matching can select individual image parts from a verified
+    batch. Only that caller opts into root-array image units. Neither metadata
+    nor JSON serialized inside tool text is a native content position.
+    """
     images = []
-    def visit(item):
+    protocol = protocol or ("responses" if isinstance(value, dict) and "input" in value else "chat_completions")
+    key, kind = (("messages", "image_url") if protocol == "chat_completions" else ("input", "input_image"))
+    units = value.get(key, []) if isinstance(value, dict) else value if isinstance(value, list) else []
+    prefix = (key,) if isinstance(value, dict) else ()
+    positions = set()
+    for index, unit in enumerate(units):
+        if not isinstance(unit, dict):
+            continue
+        path = (*prefix, index)
+        if native_image_units and not prefix and unit.get("type") == kind:
+            positions.add(path)
+        if unit.get("role") == "user" and isinstance(unit.get("content"), list):
+            positions.update((*path, "content", i) for i, part in enumerate(unit["content"])
+                             if isinstance(part, dict) and part.get("type") == kind)
+
+    def visit(item, path=()):
         if isinstance(item, dict):
-            if item.get("type") in ("image_url", "input_image"):
+            if path in positions:
                 native = item.get("image_url")
                 url = native.get("url") if isinstance(native, dict) else native
                 facts = {"representation_sha256": digest(item), "type": item["type"],
                          "detail": (native.get("detail", "unspecified") if isinstance(native, dict)
                                     else item.get("detail", "unspecified")),
                          "width": None, "height": None, "area": None, "aspect": None,
-                         "geometry_coverage": "uncalibrated_extrapolation"}
-                if isinstance(url, str) and url.startswith("data:") and ";base64," in url:
-                    import pymupdf
-                    data = base64.b64decode(url.split(";base64,", 1)[1], validate=True)
-                    image = pymupdf.Pixmap(data)
-                    facts["image_sha256"] = sha256(data).hexdigest()
-                    w, h = image.width, image.height
-                    facts.update(width=w, height=h, area=w*h, aspect=w/h if h else None)
+                         "geometry_coverage": "uncalibrated_extrapolation",
+                         "geometry_status": "unavailable", "geometry_reason": "inline_base64_unavailable"}
+                try:
+                    if isinstance(url, str) and url.startswith("data:") and ";base64," in url:
+                        import pymupdf
+                        data = base64.b64decode(url.split(";base64,", 1)[1], validate=True)
+                        facts["image_sha256"] = sha256(data).hexdigest()
+                        image = pymupdf.Pixmap(data)
+                        w, h = image.width, image.height
+                        facts.update(width=w, height=h, area=w*h, aspect=w/h if h else None,
+                                     geometry_status="available", geometry_reason=None)
+                except Exception as exc:
+                    # Geometry is auxiliary: a genuine occurrence still costs
+                    # its configured allowance even if local decoding fails.
+                    facts.update(geometry_reason="image_decode_failed:" + type(exc).__name__,
+                                 geometry_error=type(exc).__name__)
                 images.append(facts)
                 item = {"type": item["type"], "image": "[native image charged separately]"}
-            return "{" + ",".join(visit(key) + ":" + visit(item[key]) for key in sorted(item)) + "}"
+            return "{" + ",".join(visit(key) + ":" + visit(item[key], (*path, key)) for key in sorted(item)) + "}"
         if isinstance(item, list):
-            return "[" + ",".join(visit(part) for part in item) + "]"
+            return "[" + ",".join(visit(part, (*path, i)) for i, part in enumerate(item)) + "]"
         return '"' + item + '"' if isinstance(item, str) else encode(item).decode("utf-8")
     return visit(value), images
 
@@ -84,8 +112,8 @@ def text_features(text):
             "inter_han_u0020_spaces": spaces}
 
 
-def price(value, image_allowance, *, count=None):
-    text, images = projection(value)
+def price(value, image_allowance, *, count=None, protocol=None, native_image_units=False):
+    text, images = projection(value, protocol=protocol, native_image_units=native_image_units)
     selected = counters() if count is None else count
     totals = [sum(len(counter.encode_ordinary(text[start:start + COUNT_CHARS]))
                   for start in range(0, len(text), COUNT_CHARS)) for counter in selected]
