@@ -3,12 +3,11 @@ from __future__ import annotations
 
 import base64
 from functools import lru_cache
-import gzip
 from hashlib import sha256
 from importlib.resources import files
 import json
 
-from .request_estimation import COUNT_CHARS, PATTERN, VOCAB_SHA256
+from .request_estimation import COUNT_CHARS, PATTERN, VOCAB_SHA256, vocabulary_ranks
 from .storage import encode
 from .usage import interpret_usage
 
@@ -27,20 +26,31 @@ def digest(value):
 
 
 @lru_cache(maxsize=1)
+def _counters_from_resource(compressed: bytes):
+    import tiktoken
+
+    ranks, invalid = vocabulary_ranks(compressed)
+    if invalid is not None:
+        return None, invalid
+    return tuple(tiktoken.Encoding(f"pdfmd_shadow_{i}_v1", pat_str=p,
+                                  mergeable_ranks=ranks, special_tokens={}) for i, p in enumerate((PATTERN, KIMI_PATTERN))), None
+
+
+@lru_cache(maxsize=1)
 def counters():
     # Own caches: observing cannot poison or change F's counter/fallback cache.
     import tiktoken
+
     if tiktoken.__version__ != "0.14.0":
         raise ValueError("Shadow counter version mismatch")
     patterns = (PATTERN, KIMI_PATTERN)
     if tuple(sha256(p.encode("utf-8")).hexdigest() for p in patterns) != PATTERN_DIGESTS:
         raise ValueError("Shadow split recipe mismatch")
-    data = gzip.decompress(files("pdfmd").joinpath("data/o200k_base.tiktoken.gz").read_bytes())
-    if sha256(data).hexdigest() != VOCAB_SHA256:
-        raise ValueError("Shadow vocabulary mismatch")
-    ranks = {base64.b64decode(t): int(r) for t, r in (line.split() for line in data.splitlines())}
-    return tuple(tiktoken.Encoding(f"pdfmd_shadow_{i}_v1", pat_str=p,
-                                  mergeable_ranks=ranks, special_tokens={}) for i, p in enumerate(patterns))
+    compressed = files("pdfmd").joinpath("data/o200k_base.tiktoken.gz").read_bytes()
+    selected, invalid = _counters_from_resource(compressed)
+    if invalid is not None:
+        raise ValueError(invalid)
+    return selected
 
 
 def projection(value, *, protocol=None, native_image_units=False):

@@ -4,7 +4,7 @@ Updated 2026-11-06, Asia/Singapore. This is the central view of known outstandin
 
 ## Selection now
 
-The user holds real conversions because of cost. **R01-MOD is implemented and locally verified** at its [recorded source and acceptance](reviews/RUNTIME_FINDINGS.md#r01-mod-production-classification-increment-2026-11-06): production F now classifies native content positions and retains metadata as text. Affected engine checks pass at the recorded composite scope, with initial failures and corrections retained. **Recommended next discussion: R01-COUNT recovery semantics**, separating deterministic corruption from transient I/O before selecting failure caching. No further implementation, live observation or provider call is selected.
+The user holds real conversions because of cost. **R01-MOD and R01-COUNT/OBS-06 are locally complete** at their recorded scopes. [Counter recovery](reviews/RUNTIME_FINDINGS.md#r01-count-automatic-recovery-increment-2026-11-06) passes affected engine checks with automatic changed-byte recovery and independent caches; repeated resource reads remain explicit. **Recommended next discussion: production F calibration scope/acceptance**, including independent representative validation, before choosing numeric tuning or live evidence. The high-impact calibration concern remains; no next implementation, experiment, provider call, observation, enrollment or packaging/publication is selected.
 
 R03 remains a separate substantial recovery candidate. OBS-02/03 are measured costs but no operational threshold/workload is selected. R08/R14/R01-PACK connect to declared distribution/destination needs. Important alternatives and revisit conditions remain below. A Stage B title does not direct immediate conversion; live work needs a specific evidence question, assessment of relevant defects and cheaper checks, and current authority.
 
@@ -35,12 +35,12 @@ Evidence is inherited from linked review scopes and [current verification](CURRE
 
 ## Production estimation residuals
 
-Stable suffixes identify remaining questions under R01 without renumbering original findings. R01-MOD is locally complete; other residuals remain unselected for implementation. [November 1 evidence](reviews/RUNTIME_FINDINGS.md#r01-engineering-review-reconciliation-2026-11-01) and [November 4 evidence](reviews/RUNTIME_FINDINGS.md#r01-november-4-engineering-review) retain original reproductions and limits.
+Stable suffixes identify remaining questions under R01 without renumbering original findings. R01-MOD and R01-COUNT/OBS-06 are locally complete; other residuals remain unselected. [November 1 evidence](reviews/RUNTIME_FINDINGS.md#r01-engineering-review-reconciliation-2026-11-01) and [November 4 evidence](reviews/RUNTIME_FINDINGS.md#r01-november-4-engineering-review) retain original reproductions and limits.
 
 | ID | Evidence / impact | Next action and completion or revisit condition |
 | --- | --- | --- |
 | R01-MOD | Historical non-content metadata false-image/rejection defect corrected in production F; both protocols/profiles and native/error controls verified offline. | Locally complete at [recorded scope/source](reviews/RUNTIME_FINDINGS.md#r01-mod-production-classification-increment-2026-11-06). Reopen on a supported classification/text-preservation counterexample; calibration and upstream incidence remain separate. |
-| R01-COUNT / OBS-06 | Corrupt counter resources repeatedly load/decompress; invocation counts reproduced, latency not established. | Next offline candidate: distinguish deterministic corruption from transient I/O, define recovery and preserve honest fallback before caching failures. |
+| R01-COUNT / OBS-06 | Deterministic bad-resource decoding is reused independently by production/shadow loaders; changed bytes and transient faults recover automatically. | Locally complete at [recorded source/acceptance](reviews/RUNTIME_FINDINGS.md#r01-count-automatic-recovery-increment-2026-11-06). Resource rereads/key work remain; revisit on recovery/isolation regression or measured remaining I/O impact. No latency saving is claimed. |
 | R01-PACK | Frozen smoke test omits counter loading/BPE-mode assertion; no packaged failure demonstrated. | D: at next selected build verify actual frozen vocabulary/native loading, known vector and mode. |
 | R01-FEEDBACK | Automatic feedback omits fallback method/reason exposed in metadata. | Unselected B/E visibility improvement; assess full payload/convergence and actual use. |
 | R01-SURROGATE | Lone U+D800 fails UTF-8 serialization before either counter profile. | B input-validity investigation: trace reachable inputs and specify an honest error boundary without replacing source characters; actual user incidence unknown. |
@@ -57,7 +57,7 @@ OBS-01–08 alias findings #1–8 in the [observer review](verification/20261105
 | OBS-03 | Full-sink scan remains; median linking 1.04–1.25 s with 5,000 unrelated rows/two matches. | Keyed lookup is an unselected optimization; compare at chosen scale and preserve row identity/accounting across reopen. |
 | OBS-04 | Policy-byte label corrected; actual object/byte inventories supplied. | Closed for measured fixtures; reopen on extra-write evidence, not a universal storage claim. |
 | OBS-05 | Original cutoff and diagnostic-failure reason retained. | Reporting constraint: preserve all opportunities and distinguish diagnostic failures when selecting denominators. |
-| OBS-06 | Repeated counter failure unchanged. | Same item as R01-COUNT, not another repair. |
+| OBS-06 | Same locally completed decoding/recovery repair as R01-COUNT; original three-decode evidence remains historical. | Preserve automatic changed-byte/transient recovery and independent caches. Remaining reads are explicit, without a measured latency claim. |
 | OBS-07 | regex supplied transitively; no observed import failure. | Unselected direct-dependency declaration; verify when dependency maintenance is selected. |
 | OBS-08 | Repair-tail layout correctly rejects with a general reason. | Unselected diagnostic-label improvement; revisit when breakdown needs a separate repair-tail category. |
 

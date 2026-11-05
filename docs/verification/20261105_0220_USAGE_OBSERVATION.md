@@ -2,6 +2,8 @@
 
 Recorded 2026-11-05, Asia/Singapore (UTC+08:00). The filename marks the start of this verification record, not a provider execution. This is the increment/evidence owner; the [design](../design/CONTEXT_MANAGEMENT.md#observation-only-increment) owns requirements and the [engineering guide](../guides/CONTEXT_AND_EVIDENCE.md#observation-only-usage-anchoring) owns mechanisms.
 
+**Later dispositions, 2026-11-06.** [R01-MOD](../reviews/RUNTIME_FINDINGS.md#r01-mod-production-classification-increment-2026-11-06) separately corrects production classification. [R01-COUNT/OBS-06](../reviews/RUNTIME_FINDINGS.md#r01-count-automatic-recovery-increment-2026-11-06) separately implements bounded invalid-resource reuse and automatic recovery in both counter owners. Their source/checks are in those increment records; the original observer measurements and review below keep their original baseline and authority. Remaining resource rereads and unmeasured latency are explicit.
+
 ## Authority, specification and preserved scope
 
 The current human request authorizes application changes, focused tests, isolated offline verification and affected maintained records. It explicitly excludes provider/counting/capability calls, historical request replay, operational observation, trial authority/enrollment, unrelated R01 repairs, dependency installation, packaging/publication and subagents. All model responses in this increment are synthetic `httpx.MockTransport` responses. No original repository, historical task store, output or evidence was changed.

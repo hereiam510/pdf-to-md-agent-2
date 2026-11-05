@@ -28,23 +28,43 @@ PATTERN = "|".join([
 ])
 
 
+def vocabulary_ranks(compressed: bytes):
+    """Pure byte validation, shared code without shared counter/cache state."""
+    try:
+        data = gzip.decompress(compressed)
+    except (gzip.BadGzipFile, EOFError, zlib.error) as exc:
+        # These failures describe the supplied bytes. Resource I/O, imports and
+        # construction are outside this boundary and never become negative hits.
+        return None, f"Bundled counter vocabulary has invalid compressed data ({type(exc).__name__}: {exc})."
+    if hashlib.sha256(data).hexdigest() != VOCAB_SHA256:
+        return None, "Bundled counter vocabulary failed its SHA-256 check."
+    ranks = {base64.b64decode(token): int(rank) for token, rank in (line.split() for line in data.splitlines())}
+    return ranks, None
+
+
+@lru_cache(maxsize=1)
+def _counter_from_resource(compressed: bytes):
+    import tiktoken
+
+    ranks, invalid = vocabulary_ranks(compressed)
+    if invalid is not None:
+        return None, invalid  # No exception/traceback or private text is retained.
+    return tiktoken.Encoding("pdfmd_o200k_ordinary_v1", pat_str=PATTERN, mergeable_ranks=ranks, special_tokens={}), None
+
+
 @lru_cache(maxsize=1)
 def counter():
     import tiktoken
 
     if tiktoken.__version__ != "0.14.0":
         raise ValueError("The installed counter differs from the selected version.")
+    # A failed load rereads bytes, so repaired resources recover immediately.
+    # Only their deterministic decode result is reused; I/O failures can retry.
     compressed = files("pdfmd").joinpath("data/o200k_base.tiktoken.gz").read_bytes()
-    try:
-        data = gzip.decompress(compressed)
-    except zlib.error as exc:
-        # Normalize only the decompressor's invalid-data error. Other expected
-        # resource failures already reach estimate's explicit offline fallback.
-        raise ValueError("Bundled counter vocabulary has invalid compressed data.") from exc
-    if hashlib.sha256(data).hexdigest() != VOCAB_SHA256:
-        raise ValueError("Bundled counter vocabulary failed its SHA-256 check.")
-    ranks = {base64.b64decode(token): int(rank) for token, rank in (line.split() for line in data.splitlines())}
-    return tiktoken.Encoding("pdfmd_o200k_ordinary_v1", pat_str=PATTERN, mergeable_ranks=ranks, special_tokens={})
+    selected, invalid = _counter_from_resource(compressed)
+    if invalid is not None:
+        raise ValueError(invalid)
+    return selected
 
 
 @lru_cache(maxsize=512)

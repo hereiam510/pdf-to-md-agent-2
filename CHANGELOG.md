@@ -4,6 +4,11 @@ This file records selected application changes, repository maintenance and impor
 
 ## Unreleased
 
+### 2026-11-06 — Counter resource recovery
+
+- Reuse deterministic failed vocabulary decoding in separate one-entry production/shadow caches. Changed resource bytes restore counting automatically; transient reads and unrelated construction errors remain retryable. Retain source access, ordinary profiles/reserves, immutable history and honest fallback.
+- [Offline acceptance](docs/reviews/RUNTIME_FINDINGS.md#r01-count-automatic-recovery-increment-2026-11-06): 223 affected engine cases pass, including 25 new recovery controls. Resource rereads remain necessary; no latency/savings or installed-product result is claimed.
+
 ### 2026-11-06 — Production modality classification
 
 - Correct production capacity estimation so image/file-like metadata stays completely counted as text; charge supported native image occurrences only at protocol-native content positions and retain explicit unsupported-modality errors. Preserve original payloads, canonical JSON/BPE/fallback counting and numerical reserves.
