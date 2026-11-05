@@ -2,13 +2,16 @@
 from copy import deepcopy
 import json
 import random
+import shutil
 
 import httpx
 import pytest
+import pymupdf
 
 from pdfmd.nexus import Nexus, StopRun
 from pdfmd.evidence import Evidence
 from pdfmd.runtime import Runtime
+from pdfmd.schema import Route
 from pdfmd.storage import Conflict, Store, encode
 from pdfmd.usage_anchoring import digest
 from pdfmd.usage_trial import DAYS, OfflineUsageTrial
@@ -57,6 +60,316 @@ def another_member(store, job, trial, *, body=8000, measured=500):
     peer = OfflineUsageTrial(peer_store, trial.lineage, clock=trial.clock)
     peer.enroll_synthetic(other["id"], "synthetic-work")
     return seed_member(peer_store, other, peer, body=body, measured=measured)
+
+
+@pytest.fixture(scope="module", params=["chat_completions", "responses"])
+def settled_cohort(tmp_path_factory, request):
+    return build_settled_cohort(tmp_path_factory.mktemp("cohort-" + request.param), request.param)
+
+
+def build_settled_cohort(root, protocol, counts=(3, 3, 2, 2)):
+    """Real mock settlement and useful-chain artifacts; never provider evidence."""
+    from pdfmd.documents import Documents
+    from tests.engine.documents.test_documents import call, edit
+    root.mkdir(exist_ok=True)
+    store = Store(root / "workspace")
+    route = {"endpoint": "http://127.0.0.1/v1/" + ("responses" if protocol == "responses" else "chat/completions"), "protocol": protocol,
+             "model": "offline-fixture", "context_tokens": 12000, "output_tokens": 2048}
+    route = Route.model_validate(route).model_dump()
+    trial = OfflineUsageTrial.create(store, "settled-cohort", route, "Synthetic inclusive input")
+    scores = []
+    for i, count in enumerate(counts):
+        path = root / f"source-{i}.pdf"
+        with pymupdf.open() as document:
+            document.new_page().insert_text((72, 72), f"Synthetic source family {i}: preserve 25 mg.")
+            document.save(path)
+        job = Evidence(store).create_job(str(path), "Complete synthetic section", route)
+        trial.enroll_synthetic(job["id"], f"family-{i}")
+        _, job, rt, _, state, sent, _ = seed_member(store, job, trial)
+        try:
+            for _ in range(count):
+                state.update(rt.prepare(state))
+                frozen = store.get("request", state["pending"])
+                assert frozen["meta"]["capacity"]["anchor"]["method"] == "usage_anchor"
+                rt.model(state)
+                state.update(rt.tools(state))
+                scores.append((job["id"], frozen["id"]))
+            assert len(sent) == count + 1
+        finally:
+            rt.close()
+    # Generate actual versions, reopen byte checks and ZIPs after all sends so
+    # authored output work cannot affect any preparation under comparison.
+    from pdfmd.tools import Dispatcher
+    dispatcher = Dispatcher(store)
+    versions = {}
+    for job_id, key in scores[:5]:
+        if job_id not in versions:
+            version_id = call(dispatcher, job_id, f"{job_id}:synthetic-save", edit())["data"]["version_id"]
+            exported = Documents(store).export(job_id, version_id, str(root / f"{job_id}.zip"))
+            versions[job_id] = (version_id, exported["id"])
+        version_id, export_id = versions[job_id]
+        frozen = store.get("request", key)
+        review = {"request": key, "payload_sha256": frozen["meta"]["capacity"]["anchor"]["payload_sha256"],
+                  "source_sha256": trial.current()["members"][job_id]["source_sha256"],
+                  "useful": True, "source_fidelity": True, "saved_reopened_exported": True,
+                  "reviewer": "Authored synthetic declaration", "reviewed_pages": [1],
+                  "review_note": "Local correspondence only, not real source acceptance",
+                  "executed_operation": f"{key}:0", "ordinary_alternative_ref": trial.ordinary_alternative(job_id, key),
+                  "version_id": version_id, "export_id": export_id}
+        trial.record_chain(job_id, key, store.blob(job_id, "synthetic_review", review)["ref"])
+    trial.close_cohort()
+    assert trial.report()["review"] == "eligible_for_separate_expansion_review"
+    return store.root, trial.lineage, scores
+
+
+def cohort_copy(settled_cohort, tmp_path):
+    root, lineage, scores = settled_cohort
+    copied = tmp_path / "cohort"
+    shutil.copytree(root, copied)
+    store = Store(copied)
+    return store, OfflineUsageTrial(store, lineage), scores
+
+
+@pytest.mark.parametrize("missing", ["decision", "basis", "pf", "pa", "request", "payload", "attempt", "accepted", "native",
+                                     "native_corrupt", "predecessor", "usage_hash", "input", "margin"])
+def test_report_revalidates_unchained_scored_evidence(settled_cohort, tmp_path, missing):
+    store, trial, scores = cohort_copy(settled_cohort, tmp_path)
+    job_id, key = scores[-1]  # Deliberately outside the five useful chains.
+    frozen = store.get("request", key)
+    a = frozen["meta"]["capacity"]["anchor"]
+    decision = store.get("trial_decision", a["decision_id"])
+    if missing == "native_corrupt":
+        ref = store.json(frozen["accepted_ref"], job_id)["native_ref"]
+        record = store.get("blob", ref)
+        (store.root / "objects" / record["sha256"]).write_bytes(b"corrupt native bytes")
+    elif missing in {"usage_hash", "input", "margin"}:
+        receipt = store.get("trial_attempt", frozen["attempts"][-1])
+        field = "usage_sha256" if missing == "usage_hash" else missing
+        receipt[field] = "0" * 64 if field == "usage_sha256" else receipt[field] + 1
+        store.put("trial_attempt", receipt["attempt"], job_id, receipt)
+    else:
+        kind, ref = {
+            "decision": ("trial_decision", a["decision_id"]), "basis": ("blob", decision["basis_ref"]),
+            "pf": ("blob", decision["pf"]["ref"]), "pa": ("blob", decision["pa"]["ref"]),
+            "request": ("request", key), "payload": ("blob", frozen["payload_ref"]),
+            "attempt": ("attempt", frozen["attempts"][-1]),
+            "accepted": ("blob", frozen["accepted_ref"]),
+            "native": ("blob", store.json(frozen["accepted_ref"], job_id)["native_ref"]),
+            "predecessor": ("blob", store.json(decision["basis_ref"], job_id)["predecessor"]["native_ref"])}[missing]
+        with store.transaction() as db:
+            db.execute("DELETE FROM records WHERE kind=? AND id=?", (kind, ref))
+    result = trial.report()
+    assert result["physical_attempts"] == result["charged_physical_attempts"] == 10
+    # Equal mock replies share native object bytes. Corrupting those bytes
+    # invalidates both their owners; deleting one blob registration does not.
+    assert result["scored_logical_requests"] == (8 if missing in {"predecessor", "native_corrupt"} else 9)
+    assert result["review"] == "inconclusive" and result["unavailable_score_evidence"]
+    assert key in {r["request"] for r in result["unavailable_score_evidence"]}
+    assert OfflineUsageTrial(Store(store.root), trial.lineage).report() == result
+
+
+def test_valid_settled_scores_and_report_are_read_only(settled_cohort, tmp_path):
+    store, trial, _ = cohort_copy(settled_cohort, tmp_path)
+    with store.read_snapshot() as db:
+        before = [tuple(r) for r in db.execute("SELECT * FROM records ORDER BY kind,id")]
+    objects = sorted((store.root / "objects").iterdir())
+    result = trial.report()
+    assert result["review"] == "eligible_for_separate_expansion_review"
+    assert result["scored_logical_requests"] == result["physical_attempts"] == 10
+    assert result["scored_source_hashes"] == 4 and sorted(result["scored_conversions"].values()) == [2, 2, 3, 3]
+    assert result["reviewed_useful_recovery_chains"] == 5 and result["unavailable_score_evidence"] == []
+    assert result["cost"] is result["savings"] is None and result["fidelity"] == "not_established"
+    assert OfflineUsageTrial(Store(store.root), trial.lineage).report() == result
+    with store.read_snapshot() as db:
+        assert [tuple(r) for r in db.execute("SELECT * FROM records ORDER BY kind,id")] == before
+    assert sorted((store.root / "objects").iterdir()) == objects
+
+
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+def test_missing_score_bars_clean_review_even_when_minima_remain(tmp_path, protocol):
+    root, lineage, scores = build_settled_cohort(tmp_path / "extra", protocol, (3, 3, 3, 2))
+    store = Store(root)
+    trial = OfflineUsageTrial(store, lineage)
+    job_id, key = scores[-1]
+    decision = store.get("request", key)["meta"]["capacity"]["anchor"]["decision_id"]
+    with store.transaction() as db:
+        db.execute("DELETE FROM records WHERE kind='trial_decision' AND id=?", (decision,))
+    report = trial.report()
+    assert report["physical_attempts"] == report["charged_physical_attempts"] == 11
+    assert report["scored_logical_requests"] == 10 and report["scored_source_hashes"] == 4
+    assert report["reviewed_useful_recovery_chains"] == 5
+    assert report["review"] == "inconclusive" and report["review_reasons"] == ["required_score_evidence_unavailable"]
+
+
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+@pytest.mark.parametrize("fault", [OSError, ImportError, EOFError, ValueError])
+@pytest.mark.parametrize("stage", ["pf", "pa"])
+def test_anchor_counter_fault_preserves_ordinary_preparation(setup, monkeypatch, protocol, fault, stage):
+    from pdfmd import usage_anchoring
+    store, job, rt, trial, state, _, _ = fixture(setup, protocol=protocol)
+    try:
+        ordinary, _, kind = rt.context_updates.continuation(job, state)
+        original = usage_anchoring.counters
+        calls = []
+        def broken():
+            calls.append(True)
+            if stage == "pa" and len(calls) == 1:
+                return original()
+            raise fault("synthetic counter resource fault")
+        monkeypatch.setattr(usage_anchoring, "counters", broken)
+        state.update(rt.prepare(state))
+        frozen = store.get("request", state["pending"])
+        assert store.bytes(frozen["payload_ref"], job["id"]) == encode(ordinary) and frozen["kind"] == kind
+        decision = store.get("trial_decision", frozen["meta"]["capacity"]["anchor"]["decision_id"])
+        assert decision["first_failure"] and decision["disposition"] == "ordinary"
+        assert decision["pa"] is decision["anchor"] is None and not decision["otherwise_qualified"]
+        assert trial.current()["attempts"] == 0 and trial.current()["slot"] is None and not trial.current()["stops"]
+        assert not store.records("trial_attempt")
+        original_calls = len(calls)
+        rt.close()
+        rt = Runtime(Store(store.root), Nexus(store, lambda _: pytest.fail("credentials"), httpx.MockTransport(lambda _: pytest.fail("send"))),
+                     usage_trial=OfflineUsageTrial(store, trial.lineage))
+        rt.prepare(state)
+        assert len(calls) == original_calls and store.get("trial_decision", decision["id"]) == decision
+        monkeypatch.setattr(usage_anchoring, "counters", original)
+        changed = {**state, "revision": state["revision"] + 1, "notes": "A new unfrozen preparation after resource repair."}
+        changed.update(rt.prepare(changed))
+        next_request = store.get("request", changed["pending"])
+        next_a = next_request["meta"]["capacity"]["anchor"]
+        if protocol == "chat_completions":
+            assert next_a["method"] == "usage_anchor"
+        else:
+            # The provisional notes edit is not supported on Responses.
+            assert next_a["method"] == "full_local"
+            assert store.get("trial_decision", next_a["decision_id"])["first_failure"] == "edit_profile_unsupported_for_protocol"
+        assert store.bytes(frozen["payload_ref"], job["id"]) == encode(ordinary)
+    finally:
+        rt.close()
+
+
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+@pytest.mark.parametrize("problem", [None, "missing", "binding", "unreviewed"])
+def test_report_revalidates_late_same_attempt_usage(setup, protocol, problem):
+    store, job, rt, trial, state, _, replies = fixture(setup, protocol=protocol)
+    replies[1]["usage"] = None
+    try:
+        state.update(rt.prepare(state))
+        rt.model(state)
+        frozen = store.get("request", state["pending"])
+        attempt = frozen["attempts"][-1]
+        assert trial.report()["scored_logical_requests"] == 0
+        evidence = {"request": frozen["id"], "attempt": attempt, "accepted_ref": frozen["accepted_ref"],
+                    "payload_sha256": store.get("blob", frozen["payload_ref"])["sha256"],
+                    "route_sha256": digest(frozen["route"]),
+                    "native_usage": {"prompt_tokens" if protocol == "chat_completions" else "input_tokens": 600}}
+        wrong = store.blob(job["id"], "late_usage", {**evidence, "attempt": "other-attempt"})["ref"]
+        with pytest.raises(Conflict, match="same accepted physical attempt"):
+            trial.late_usage(job["id"], attempt, wrong)
+        ref = store.blob(job["id"], "late_usage", evidence)["ref"]
+        trial.late_usage(job["id"], attempt, ref)
+        trial.close_cohort()
+        if problem != "unreviewed":
+            trial.review_attribution(reviewed_attempt=attempt)
+        if problem == "missing":
+            with store.transaction() as db:
+                db.execute("DELETE FROM records WHERE kind='blob' AND id=?", (ref,))
+        elif problem == "binding":
+            receipt = store.get("trial_attempt", attempt)
+            receipt["late_evidence_ref"] = wrong
+            store.put("trial_attempt", attempt, job["id"], receipt)
+        report = trial.report()
+        assert report["physical_attempts"] == report["charged_physical_attempts"] == 1
+        assert report["scored_logical_requests"] == (0 if problem in {"missing", "binding"} else 1)
+        assert bool(report["unavailable_score_evidence"]) == (problem in {"missing", "binding"})
+        if problem == "unreviewed":
+            assert "required_attribution_unresolved" in report["review_reasons"]
+        assert store.get("request", frozen["id"])["status"] == "accepted" and trial.current()["pause"]
+        assert OfflineUsageTrial(Store(store.root), trial.lineage).report() == report
+    finally:
+        rt.close()
+
+
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+def test_anchor_programming_error_and_ordinary_obstruction_remain_visible(setup, monkeypatch, protocol):
+    from pdfmd import usage_anchoring
+    store, job, rt, trial, state, _, _ = fixture(setup, protocol=protocol)
+    try:
+        def broken():
+            raise RuntimeError("unrelated programming error")
+        monkeypatch.setattr(usage_anchoring, "counters", broken)
+        with pytest.raises(RuntimeError, match="unrelated programming error"):
+            rt.prepare(state)
+        def obstruction(*args, **kwargs):
+            raise StopRun("capacity_configuration", "ordinary obstruction")
+        monkeypatch.setattr(rt.context, "normal", obstruction)
+        with pytest.raises(StopRun, match="ordinary obstruction"):
+            rt.prepare(state)
+        assert trial.current()["attempts"] == 0 and not trial.current()["stops"]
+    finally:
+        rt.close()
+
+
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+def test_repaired_counter_serves_later_supported_append(setup, monkeypatch, protocol):
+    from pdfmd import usage_anchoring
+    store, job, rt, trial, state, _, _ = fixture(setup, context=65536, body=120, protocol=protocol)
+    try:
+        original = usage_anchoring.counters
+        def broken():
+            raise OSError("synthetic counter fault")
+        monkeypatch.setattr(usage_anchoring, "counters", broken)
+        state.update(rt.prepare(state))
+        frozen = store.get("request", state["pending"])
+        first = store.get("trial_decision", frozen["meta"]["capacity"]["anchor"]["decision_id"])
+        original_bytes = store.bytes(frozen["payload_ref"], job["id"])
+        assert first["first_failure"] and first["disposition"] == "ordinary"
+        monkeypatch.setattr(usage_anchoring, "counters", original)
+        rt.model(state)
+        state.update(rt.tools(state))
+        state.update(rt.prepare(state))
+        next_request = store.get("request", state["pending"])
+        next_a = next_request["meta"]["capacity"]["anchor"]
+        next_decision = store.get("trial_decision", next_a["decision_id"])
+        assert next_decision["first_failure"] is None
+        assert store.json(next_decision["basis_ref"], job["id"])["eligibility"] is True
+        assert store.get("trial_decision", first["id"]) == first
+        assert store.bytes(frozen["payload_ref"], job["id"]) == original_bytes
+        assert trial.current()["attempts"] == 0
+    finally:
+        rt.close()
+
+
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+@pytest.mark.parametrize("fault", ["read", "import"])
+def test_warm_production_cold_anchor_loader_fault_and_recovery(setup, monkeypatch, protocol, fault):
+    import sys
+    from pdfmd import request_estimation, usage_anchoring
+    store, job, rt, trial, state, _, _ = fixture(setup, protocol=protocol)
+    try:
+        # Warm only production's independent successful counter, then force
+        # the actual anchor loader to traverse its import/resource boundary.
+        production = request_estimation.counter()
+        usage_anchoring.counters.cache_clear()
+        with monkeypatch.context() as patch:
+            if fault == "read":
+                class Resource:
+                    def joinpath(self, *args):
+                        return self
+                    def read_bytes(self):
+                        raise OSError("synthetic unreadable package resource")
+                patch.setattr(usage_anchoring, "files", lambda _: Resource())
+            else:
+                patch.setitem(sys.modules, "tiktoken", None)
+            state.update(rt.prepare(state))
+            frozen = store.get("request", state["pending"])
+            d = store.get("trial_decision", frozen["meta"]["capacity"]["anchor"]["decision_id"])
+            assert d["first_failure"].startswith("anchor_evaluation_unavailable:")
+            assert request_estimation.counter() is production and d["anchor"] is None
+            assert trial.current()["attempts"] == 0 and trial.current()["slot"] is None
+        assert len(usage_anchoring.counters()) == 2
+        assert store.get("trial_decision", d["id"]) == d
+    finally:
+        rt.close()
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
@@ -484,6 +797,9 @@ def test_intermediate_stream_usage_does_not_pause_before_accepted_settlement(set
         assert store.get("request",state["pending"])["meta"]["capacity"]["anchor"]["method"]=="usage_anchor"
         rt.model(state)
         assert bool(trial.current()["pause"])==missing and trial.current()["slot"] is None
+        report = trial.report()
+        assert report["scored_logical_requests"] == (0 if missing else 1)
+        assert not report["unavailable_score_evidence"] and report["physical_attempts"] == 1
     finally: rt.close()
 
 
@@ -538,9 +854,10 @@ def test_review_gate_denominators_are_separate_and_passing_only_invites_review(s
             "status":"accepted_unscorable" if problem=="unattributed" and i==9 else "accepted_scored","margin":5})
         if i<(4 if problem=="few_chains" else 5):
             store.put("trial_chain",key,member,{"id":key,"job":member,"lineage":trial.lineage,"review_ref":key})
-    # This is the reporting reducer, with correspondence exercised separately
-    # above against actual local receipts, saved/reopened versions and a ZIP.
+    # Pure numerical reducer only: fake receipts cannot establish evidence
+    # eligibility. Complete settled cohorts above exercise both real validators.
     monkeypatch.setattr(trial,"check_chain",lambda member,key,ref:store.get("trial_chain",key))
+    monkeypatch.setattr(trial,"check_score",lambda lineage,receipt:receipt)
     if problem=="exceedance": trial.stop(t,"reservation_exceeded",member,"synthetic")
     store.put("usage_trial",trial.lineage,trial.lineage,t)
     result=trial.report()

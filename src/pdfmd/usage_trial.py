@@ -17,6 +17,7 @@ import zipfile
 
 import httpx
 
+from .acceptance import inspect_acceptance
 from .anchor_basis import AnchorEvaluator, ObservationProfile, preparation_basis
 from .nexus import StopRun
 from .request_estimation import estimate
@@ -265,10 +266,14 @@ class OfflineUsageTrial:
                         decision["disposition"] = "busy" if t["slot"] else "decisive"
                     else:
                         decision["first_failure"] = "pa_not_decisive"
-            except (ValueError, KeyError, TypeError) as exc:
-                # The first unsupported boundary is durable; no older anchor or
-                # cheaper representation is substituted to rescue eligibility.
-                decision["first_failure"] = str(exc) or type(exc).__name__
+            except (ImportError, OSError, EOFError, ValueError, KeyError, TypeError) as exc:
+                # Only optional anchor evaluation is inside this boundary.
+                # Ordinary assembly, durable writes and restore remain outside.
+                failure = ("anchor_evaluation_unavailable:" + type(exc).__name__
+                           if isinstance(exc, (ImportError, OSError, EOFError)) else str(exc) or type(exc).__name__)
+                decision.update(first_failure=failure,
+                                disposition="ordinary", anchor=None, pa=None, otherwise_qualified=False)
+                pa = None
         basis["first_failure"] = decision["first_failure"]
         basis["eligibility"] = decision["anchor"] is not None and decision["first_failure"] is None
         decision["basis_ref"] = self.store.blob(job["id"], "trial_basis", basis)["ref"]
@@ -655,6 +660,98 @@ class OfflineUsageTrial:
             r["attribution_review_required"] = False
             self.store.put_tx(db, "trial_attempt", reviewed_attempt, r["job"], r)
 
+    def check_score(self, t, receipt):
+        """Read-only correspondence for every score, before logical reduction.
+
+        Settlement established these facts once. A report must also establish
+        that their required evidence is still available, including for scores
+        that have no useful-recovery review. Never reprice historical inputs.
+        """
+        job, key, attempt_id = receipt["job"], receipt["request"], receipt["attempt"]
+        request = self.store.get("request", key, job=job)
+        a = request["meta"]["capacity"]["anchor"]
+        d = self.store.get("trial_decision", receipt["decision_id"], job=job)
+        basis = self.store.json(d["basis_ref"], job)
+        saved = request["meta"]["context_snapshot"]
+        if (receipt["lineage"] != self.lineage or job not in t["members"]
+                or receipt["status"] != "accepted_scored"
+                or self.store.get("trial_attempt", attempt_id, job=job) != receipt
+                or type(receipt["ordinal"]) is not int or not 1 <= receipt["ordinal"] <= t["attempts"]
+                or request["kind"] != "normal" or request["status"] != "accepted"
+                or a["method"] != "usage_anchor" or a["lineage"] != self.lineage
+                or a["generation"] != t["generation"] or a["decision_id"] != d["id"]
+                or d["request"] != key or d["job"] != job or d["lineage"] != self.lineage
+                or d["generation"] != a["generation"] or d["disposition"] != "decisive"
+                or d["otherwise_qualified"] is not True or a["basis_ref"] != d["basis_ref"]
+                or basis["id"] != d["id"] or basis["lineage"] != self.lineage
+                or basis["generation"] != d["generation"] or basis["eligibility"] is not True
+                or basis["first_failure"] is not None or basis["implementation"] != t["implementation"]
+                or basis["recipe"] != t["implementation"]["recipe"]
+                or basis["snapshot"] != preparation_basis(saved["job"], saved["state"])
+                or route_identity(request["route"]) != t["route_identity"]
+                or basis["route_sha256"] != digest(request["route"])):
+            raise Conflict("Scored claim, decision and frozen basis do not correspond.")
+        pf, pa = (self.store.json(d[form]["ref"], job) for form in ("pf", "pa"))
+        native_key = "messages" if request["route"]["protocol"] == "chat_completions" else "input"
+        if (digest(pf) != d["pf"]["sha256"] or digest(pa) != d["pa"]["sha256"]
+                or a["pf_ref"] != d["pf"]["ref"] or a["pf_sha256"] != digest(pf)
+                or a["payload_sha256"] != digest(pa)
+                or self.store.bytes(request["payload_ref"], job) != encode(pa)
+                or pa[native_key][:-1] != pf[native_key][:-1]
+                or {k:v for k,v in pa.items() if k != native_key} != {k:v for k,v in pf.items() if k != native_key}
+                or d["pa"]["capacity"]["fits"] is not False or d["pa"]["anchor"]["fits"] is not True
+                or receipt["reservation"] != a["reservation"] or a["reservation"] != d["pa"]["anchor"]["reservation"]):
+            raise Conflict("Scored reservation or same-final-payload evidence changed.")
+        # The source and predecessor behind the manifest must survive too;
+        # validating a manifest hash is not validation of its references.
+        source = self.store.bytes(saved["job"]["source_ref"], job)
+        if sha256(source).hexdigest() != t["members"][job]["source_sha256"]:
+            raise Conflict("Scored source differs from its enrolled hash.")
+        predecessor = basis["predecessor"]
+        prior = inspect_acceptance(self.store, job, predecessor["request"])
+        prior_request = prior["request"]
+        raw_prior = prior["accepted"]["usage"]
+        usage = basis["normalized_usage"]
+        if (prior["attempt_id"] != predecessor["attempt"] or prior["boundary"]["status"] != "compatible"
+                or prior_request["status"] != "accepted" or prior["attempt"]["status"] != "accepted"
+                or prior_request["payload_ref"] != predecessor["payload_ref"]
+                or digest(self.store.json(predecessor["payload_ref"], job)) != predecessor["payload_sha256"]
+                or prior_request["accepted_ref"] != predecessor["accepted_ref"]
+                or prior["native"]["ref"] != predecessor["native_ref"] or prior["stream_ref"] != predecessor["stream_ref"]
+                or usage != {**normalized_input(prior_request["route"]["protocol"], raw_prior),
+                             "raw_usage_sha256": digest(raw_prior), "raw_usage_ref": prior["native"]["ref"]}
+                or d["pa"]["anchor"]["normalized_prior"] != usage["input"]):
+            raise Conflict("Scored predecessor or normalized anchor usage changed.")
+        checked = inspect_acceptance(self.store, job, key)
+        raw = checked["accepted"]["usage"]
+        if (checked["attempt_id"] != attempt_id or checked["attempt"]["status"] != "accepted"
+                or checked["boundary"]["status"] != "compatible"
+                or receipt["accepted_ref"] != request["accepted_ref"]
+                or digest(raw) != receipt["usage_sha256"]):
+            raise Conflict("Scored accepted attempt or native usage changed.")
+        if receipt.get("late_evidence_ref"):
+            evidence = self.store.json(receipt["late_evidence_ref"], job)
+            if (evidence["request"] != key or evidence["attempt"] != attempt_id
+                    or evidence["accepted_ref"] != request["accepted_ref"]
+                    or evidence["payload_sha256"] != digest(pa) or evidence["route_sha256"] != digest(request["route"])
+                    or type(receipt.get("attribution_review_required")) is not bool):
+                raise Conflict("Late usage does not identify this scored physical attempt.")
+            # Late attribution supplements an originally unscorable reply;
+            # it never substitutes another attempt for known native usage.
+            try:
+                normalized_input(request["route"]["protocol"], raw)
+            except ValueError:
+                pass
+            else:
+                raise Conflict("Late usage contradicts already attributable native usage.")
+            raw = evidence["native_usage"]
+        actual = normalized_input(request["route"]["protocol"], raw)["input"]
+        if (type(receipt["input"]) is not int or receipt["input"] != actual
+                or type(receipt["reservation"]) is not int or type(receipt["margin"]) is not int
+                or receipt["margin"] != receipt["reservation"] - actual):
+            raise Conflict("Scored input or margin contradicts attributable usage.")
+        return receipt
+
     def report(self):
         with self.store.connection_scope(), self.store.read_snapshot():
             t = self.current()
@@ -681,14 +778,24 @@ class OfflineUsageTrial:
                     verified_chains.append(c)
                 except (ValueError, KeyError, TypeError, OSError, zipfile.BadZipFile) as exc:
                     unavailable_chains.append({"request": c["id"], "reason": type(exc).__name__})
-            tasks = {job:self.store.get("job", job) for job in t["members"]}
+            scores, unavailable_scores = {}, []
+            for r in attempts:
+                if r.get("status") == "accepted_scored":
+                    try:
+                        checked = self.check_score(t, r)
+                        scores[checked["request"]] = checked
+                    except (ValueError, KeyError, TypeError, AttributeError, IndexError, OSError) as exc:
+                        unavailable_scores.append({"request": r.get("request"), "attempt": r.get("attempt"),
+                            "job": r.get("job"), "input": None, "margin": None,
+                            "reason": str(exc) or type(exc).__name__})
+            tasks = {job:self.store.maybe("job", job) or {} for job in t["members"]}
             requests = [r for job in t["members"] for r in self.store.records("request", job)]
-        scores = {r["request"]: r for r in attempts if r["status"] == "accepted_scored"}
         conversions = Counter(r["job"] for r in scores.values())
         families = Counter(t["members"][r["job"]]["family"] for r in scores.values())
         sources = {t["members"][r["job"]]["source_sha256"] for r in scores.values()}
         n = len(scores)
         reasons = []
+        if unavailable_scores: reasons.append("required_score_evidence_unavailable")
         if unavailable_decisions: reasons.append("required_decision_evidence_unavailable")
         if t["attempts"] != len(attempts): reasons.append("physical_claim_receipts_incomplete")
         if n < 10: reasons.append("fewer_than_ten_logical_scores")
@@ -728,6 +835,7 @@ class OfflineUsageTrial:
                 "reviewed_useful_recovery_chains": len(reviewed),
                 "unavailable_chain_evidence": unavailable_chains,
                 "unavailable_decision_evidence": unavailable_decisions,
+                "unavailable_score_evidence": unavailable_scores, "score_validation": "accepted_trial_evidence_v1",
                 "review": "reject" if any(s["reason"] in {"reservation_exceeded", "confirmed_context_overflow"} for s in t["stops"])
                           else "inconclusive" if reasons else "eligible_for_separate_expansion_review",
                 "review_reasons": reasons, "fidelity_basis": "attributed_source_led_reviews_only",
