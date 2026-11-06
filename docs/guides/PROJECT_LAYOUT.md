@@ -8,6 +8,7 @@ This guide owns maintained code, test and utility locations. [Architecture](../A
 | --- | --- |
 | `src/pdfmd/` | Installed Python package, exposed through `pdf-md-engine` / `pdfmd.server:main`. Keep one engine and shared tools. No backend package migration is needed to use this layout. |
 | `src/desktop/main.ts`, `preload.ts` | Electron process lifecycle, authenticated local engine, explicit IPC and isolated renderer bridge. Their explicit electron-vite inputs remain in the root configuration. |
+| `src/desktop/connection.ts` | Main-process credential initialization, safe settings snapshots, explicit key revisions and serialized connection persistence. No renderer credential access or provider dispatch. |
 | `src/renderer/main.tsx`, `index.html` | Application composition and renderer entry. Root `types.ts` defines shared desktop/renderer contracts; `style.css` owns the existing global styles. |
 | `src/renderer/features/documents/` | Saved-document edit-session hook and obsolete-read/session guards. |
 | `src/renderer/features/settings/` | Task-limit and response-waiting editors. Connection composition reuses the same waiting component. |

@@ -24,8 +24,8 @@ j=s.update_job(j["id"],attempts=3,active_seconds=17)
 r=Nexus(s,lambda _: "must-not-be-used").freeze(j["id"],"existing-frozen",{"stream":False,"original":"preserved"},"compaction",{})
 print(json.dumps({"job":j,"request":r}))
 `, workspace, source, protocol], { windowsHide: true, encoding: 'utf-8' }))
-    const launch = () => electron.launch({ args: [resolve('out/main/index.js')], env: { ...process.env,
-      PDFMD_DATA: workspace, PDFMD_PYTHON: python } })
+    const launch = () => electron.launch({ args: [resolve('tests/desktop/support/isolated-workbench.cjs')], env: { ...process.env,
+      PDFMD_UI_PROFILE: join(directory, 'profile'), PDFMD_DATA: workspace, PDFMD_PYTHON: python } })
     let app = await launch()
     try {
       let page = await app.firstWindow()

@@ -5,7 +5,8 @@ export type Route = {
   timeout_seconds: number; wait_policy?: WaitPolicy | null; parameters: Record<string, unknown>
 }
 export type Limits = { max_requests: number; max_active_seconds: number; replay_unknown: boolean; max_attempts_per_request: number; max_response_repairs: number }
-export type Settings = { route?: Route; limits?: Limits; hasKey?: boolean; encryptionAvailable?: boolean; remember?: boolean }
+export type Settings = { route?: Route; limits?: Limits; hasKey?: boolean; encryptionAvailable?: boolean; remember?: boolean;
+  revision?: number; credentialState?: 'ready' | 'failed'; error?: string }
 export type ReceiveObservation = {
   mode?: string; settled?: boolean; stop_cause?: string | null; http_status?: number | null;
   headers_elapsed_seconds?: number | null; first_body_elapsed_seconds?: number | null; last_body_elapsed_seconds?: number | null;

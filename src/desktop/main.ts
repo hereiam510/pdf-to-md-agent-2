@@ -1,4 +1,5 @@
-import { app, BrowserWindow, dialog, ipcMain, safeStorage, session } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, session } from 'electron'
+import { ConnectionState } from './connection'
 import { spawn, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { promises as fs, existsSync } from 'node:fs'
@@ -8,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 let window: BrowserWindow | null = null
 let child: ChildProcess | null = null
 let origin = ''
-let apiKey = ''
+let connection: ConnectionState
 let selectedPdf = ''
 let startupError = ''
 let stopping = false
@@ -18,25 +19,6 @@ const dataRoot = process.env.PDFMD_DATA || join(app.getPath('userData'), 'worksp
 const settingsPath = join(dirname(dataRoot), 'connection.json')
 if (process.argv.includes('--preview-worker')) {
   app.setPath('userData', join(app.getPath('temp'), `pdfmd-preview-${randomBytes(12).toString('hex')}`))
-}
-
-async function settings() {
-  const encryptionAvailable = await safeStorage.isAsyncEncryptionAvailable()
-  try {
-    const data = JSON.parse(await fs.readFile(settingsPath, 'utf8'))
-    if (data.secret && encryptionAvailable && !apiKey) {
-      const decrypted = await safeStorage.decryptStringAsync(Buffer.from(data.secret, 'base64'))
-      apiKey = decrypted.result
-      if (decrypted.shouldReEncrypt) {
-        data.secret = (await safeStorage.encryptStringAsync(apiKey)).toString('base64')
-        await fs.writeFile(settingsPath, JSON.stringify(data, null, 2), { mode: 0o600 })
-      }
-    }
-    delete data.secret
-    return { ...data, hasKey: Boolean(apiKey), encryptionAvailable }
-  } catch {
-    return { hasKey: Boolean(apiKey), encryptionAvailable }
-  }
 }
 
 async function call(path: string, method = 'GET', body?: unknown) {
@@ -57,24 +39,8 @@ function id(value: unknown): string {
 
 async function launchBackend() {
   await fs.mkdir(dataRoot, { recursive: true })
-  // Development convenience only. Read one owner-selected file, never logs/profiles.
-  // Keep its value in memory and leave connection/task settings untouched.
-  if (!app.isPackaged && process.env.PDFMD_SKIP_CREDENTIAL_FILE !== '1') {
-    const explicit = process.env.PDFMD_CREDENTIAL_FILE
-    const filename = explicit || join(root, 'private', 'api-key.txt')
-    if (explicit || existsSync(filename)) {
-      try {
-        const metadata = await fs.stat(filename)
-        if (!metadata.isFile() || metadata.size > 65536) throw new Error()
-        const credential = new TextDecoder('utf-8', { fatal: true }).decode(await fs.readFile(filename)).trim()
-        if (!credential || /[\x00-\x20\x7f]/.test(credential)) throw new Error()
-        apiKey = credential
-      } catch {
-        throw new Error('Cannot load the development credential file. Use a nonempty UTF-8 file containing one credential, or disable file loading.')
-      }
-    }
-  }
-  await settings()
+  const settled = await connection.settings()
+  if (settled.error) throw new Error(settled.error)
   const packaged = app.isPackaged
   const python = process.env.PDFMD_PYTHON || join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python')
   const executable = packaged ? join(process.resourcesPath, 'engine', 'pdf-md-engine', process.platform === 'win32' ? 'pdf-md-engine.exe' : 'pdf-md-engine') : python
@@ -105,7 +71,7 @@ async function launchBackend() {
   })
   child.stderr?.on('data', (chunk: Buffer) => {
     let text = chunk.toString('utf8').split(token).join('[local token]')
-    if (apiKey) text = text.split(apiKey).join('[credential]')
+    text = connection.redact(text)
     void fs.appendFile(join(dataRoot, 'engine.log'), text).catch(() => undefined)
   })
   child.on('error', (error) => { startupError = `Cannot start the local engine: ${error.message}` })
@@ -152,21 +118,13 @@ app.whenReady().then(async () => {
   }
   if (!app.requestSingleInstanceLock()) { app.quit(); return }
   app.on('second-instance', () => { window?.show(); window?.focus() })
+  connection = new ConnectionState(settingsPath, root, app.isPackaged)
   ipcMain.handle('workbench', async (event, action: string, args: Record<string, any>) => {
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame) throw new Error('Untrusted IPC sender.')
     switch (action) {
       case 'health': return origin ? call('/health') : { ready: false, error: startupError }
-      case 'settings': return settings()
-      case 'saveSettings': {
-        if (typeof args.key === 'string' && args.key) apiKey = args.key
-        if (args.clearKey) apiKey = ''
-        const saved: Record<string, unknown> = { route: args.route, limits: args.limits, remember: Boolean(args.remember) }
-        const encryptionAvailable = await safeStorage.isAsyncEncryptionAvailable()
-        if (args.remember && apiKey && encryptionAvailable) saved.secret = (await safeStorage.encryptStringAsync(apiKey)).toString('base64')
-        await fs.mkdir(dirname(settingsPath), { recursive: true })
-        await fs.writeFile(settingsPath, JSON.stringify(saved, null, 2), { mode: 0o600 })
-        return { ...saved, secret: undefined, hasKey: Boolean(apiKey), encryptionAvailable }
-      }
+      case 'settings': return connection.settings()
+      case 'saveSettings': return connection.save(args)
       case 'choosePdf': {
         const result = await dialog.showOpenDialog(window, { properties: ['openFile'], filters: [{ name: 'PDF documents', extensions: ['pdf'] }] })
         selectedPdf = result.canceled ? '' : result.filePaths[0]
@@ -193,9 +151,10 @@ app.whenReady().then(async () => {
       case 'resolveConflict': return call(`/jobs/${id(args.job)}/accepted-evidence-resolution`, 'POST', {
         request: args.request, basis: args.basis, choice: 'preserve_and_replan' })
       case 'start': {
-        const configuration = await settings()
+        await connection.settings()
         const current = await call(`/jobs/${id(args.job)}`)
-        return call(`/jobs/${id(args.job)}/start`, 'POST', { key: apiKey,
+        const { configuration, key } = await connection.forStart()
+        return call(`/jobs/${id(args.job)}/start`, 'POST', { key,
           route: current.route ? undefined : configuration.route, limits: current.route ? undefined : configuration.limits,
           amendment: args.amendment || '', scripts: args.scripts === true,
           recover_compaction_request: args.recover_compaction_request })
