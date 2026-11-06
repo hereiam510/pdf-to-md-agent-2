@@ -1,5 +1,15 @@
 # Documentation organization decisions
 
+## Daily document maintenance and owner repair (2026-11-07)
+
+The user requests reorganization with the updated vibe-coding skill and explicitly identifies pdf-to-md-agent-2 as the target. Execute the existing DOC-ORG-R1 repair plus its connected daily-development/entry maintenance. The [batch specification](../batches/DOC-ORG-R1/spec.md) defines scope and acceptance, [tickets](../batches/DOC-ORG-R1/tickets.md) own execution, and [verification](../batches/DOC-ORG-R1/verification.md) owns actual observations and the verdict. Keep local tickets plus GitHub repository/PR delivery; no remote publication is part of this request.
+
+Use one owner for each current fact: WORK_ITEMS for item selection/disposition and revisit conditions; tickets for execution progress; verification for observations and batch acceptance; PHASE_PLAN for comparative sequencing; CURRENT_STATE for distinct cross-topic readiness and active-work links; README/INDEX/REVIEW_HANDOFF for their usage/navigation roles. The fixed batch spec now owns the application assignment/boundary previously carried in REVIEW_HANDOFF. Earlier ownership statements remain historical where superseded.
+
+Inspect unchanged consumers during ordinary implementation and review, and check replacement prose for repeated status/results before closeout. A hypothetical change to one task state, evidence observation or validation selection must not require synchronized copies. Independent requirements, product decisions and historical observations retain their distinct meanings. The operative project routine is in [AGENTS](../../AGENTS.md#daily-development-and-document-maintenance); it requires no separate documentation request or parallel log.
+
+Retain the established source/test/tool/storage locations: no consumer need justifies moving them. Preserve the inherited DEVELOPMENT_GUIDE bytes, application and private/runtime data, adopted product requirements, original reviews and closed-interval evidence. This maintenance selection does not execute CRED-03/04, rerun conversions or establish new product acceptance.
+
 ## Updated skill organization (2026-11-06)
 
 The user requests reorganization of this project with the updated vibe-coding skill. This selects ordinary document/file-ownership repairs, navigation and preservation checks. The existing `src/`, `tests/`, `tools/` and private/generated storage responsibilities already fit their consumers; inspection found no necessary physical source relocation for this outcome. Keep them in place. Do not execute the preserved credential assignment, adopt product changes, move private data, remove evidence or publish remotely as part of organization.

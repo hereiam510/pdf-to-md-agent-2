@@ -8,16 +8,11 @@ The complete-section delivery gap demonstrated by R01CAL-A01 remains material. N
 
 ## Find current work
 
-[Batch catalogue](INDEX.md#batch-documents) provides the fixed local-ticket entrances. [Layout organization evidence](batches/DOC-LAYOUT-01/verification.md) records this migration; substantive repair acceptance remains with each batch.
+Use the [batch catalogue](INDEX.md#batch-documents) for fixed spec, local-ticket and verification entrances. The [daily development routine](../AGENTS.md#daily-development-and-document-maintenance) applies within each selected task.
 
+Documentation maintenance: [DOC-ORG-R1 scope](batches/DOC-ORG-R1/spec.md), [execution](batches/DOC-ORG-R1/tickets.md) and [acceptance evidence](batches/DOC-ORG-R1/verification.md). Its [selection and revisit condition](WORK_ITEMS.md#maintenance-and-coverage) are independent of application implementation.
 
-The project-organization request is documentation/file-ownership maintenance. Its [decision and acceptance](decisions/DOCUMENTATION.md#updated-skill-organization-2026-11-06) and [verification](verification/20261106_2300_PROJECT_ORGANIZATION.md) explain the changed entry points and preserved history. Application behavior and product acceptance are unchanged by this work.
-
-The [follow-up organization review](reviews/20261106_2307_ORGANIZATION_REVIEW.md#assessment) qualifies the documentation completion assessment. Use its preservation checks and DOC-ORG-R1 evidence with the [work-register disposition](WORK_ITEMS.md#maintenance-and-coverage); this review does not execute a correction or the application assignment.
-
-For documentation planning, use the [DOC-ORG-R1 specification](batches/DOC-ORG-R1/spec.md) and [local execution tickets](batches/DOC-ORG-R1/tickets.md). Their owner distinguishes planned acceptance, assignment and actual execution.
-
-For application continuation, use the [selected work](WORK_ITEMS.md#selection-now), [sequencing rationale](PHASE_PLAN.md#next-increment-selection) and [credential follow-up assignment](REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06). The organization task preserves that assignment; it does not execute it or turn earlier live-run allowances into current authority. Detailed CRED-03/04 counterexamples and acceptance remain in their linked owners.
+Application continuation: [item dispositions](WORK_ITEMS.md#development-credential-startup), [comparative sequencing](PHASE_PLAN.md#next-increment-selection), [credential batch agreement](batches/CRED-03-04/spec.md), [execution](batches/CRED-03-04/tickets.md) and [verification](batches/CRED-03-04/verification.md). The [handoff navigator](REVIEW_HANDOFF.md) preserves earlier continuation routes. Read the selected assignment and current human instruction together; documentation maintenance and historical provider allowances do not start that application work.
 
 ## Verification basis
 
@@ -46,7 +41,7 @@ Read [WORK_ITEMS](WORK_ITEMS.md) for the project-wide current dispositions and r
 
 ## Documentation batch
 
-The [organization verification](verification/20261106_2300_PROJECT_ORGANIZATION.md) owns the current documentation checks and preservation limits. The [entry snapshot](history/20261106_2300_CURRENT_STATE.md) retains the preceding detailed status narrative, its historical source/checkpoint identities and original qualifications. Current designs, decisions and execution owners remain authoritative for their separate roles; snapshots are not active status ledgers.
+[DOC-ORG-R1 verification](batches/DOC-ORG-R1/verification.md) owns this maintenance outcome. Earlier [organization evidence](verification/20261106_2300_PROJECT_ORGANIZATION.md), its [qualifying review](reviews/20261106_2307_ORGANIZATION_REVIEW.md#assessment), and [batch-layout evidence](batches/DOC-LAYOUT-01/verification.md) retain their own scopes. The [entry snapshot](history/20261106_2300_CURRENT_STATE.md) retains the older detailed narrative and source identities. Historical observations are not synchronized as current status.
 
 ## Project organization
 

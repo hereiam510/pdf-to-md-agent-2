@@ -1,6 +1,6 @@
 # Current review and continuation handoff
 
-Read [INDEX](INDEX.md#start-development) for project orientation. This file carries the selected application assignment and its execution boundary; [WORK_ITEMS](WORK_ITEMS.md#selection-now) owns its current disposition. The 2026-11-06 organization task preserves the assignment without executing it.
+Read [INDEX](INDEX.md#start-development) for project orientation. This file routes continuation to the batch specification, which owns the application assignment and its execution boundary; [WORK_ITEMS](WORK_ITEMS.md#selection-now) owns selection/disposition, local tickets own execution progress, and batch verification owns evidence. For documentation maintenance use [DOC-ORG-R1](batches/DOC-ORG-R1/spec.md).
 
 ## Start with the current question
 
@@ -8,7 +8,7 @@ Read [CURRENT_STATE](CURRENT_STATE.md#find-current-work), [WORK_ITEMS](WORK_ITEM
 
 ## Credential follow-up implementation handoff (2026-11-06)
 
-[Batch agreement and execution boundary](batches/CRED-03-04/spec.md) · [Local tickets](batches/CRED-03-04/tickets.md) · [Verification](batches/CRED-03-04/verification.md). The original assignment is preserved in the batch specification; this organization task does not execute it.
+[Batch agreement and execution boundary](batches/CRED-03-04/spec.md) · [Local tickets](batches/CRED-03-04/tickets.md) · [Verification](batches/CRED-03-04/verification.md). Read the batch owners for the actual assignment, progress and evidence. This navigation entry does not grant fresh execution authority.
 
 ## Credential startup implementation handoff (2026-11-06)
 

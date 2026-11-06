@@ -4,6 +4,8 @@ PDF Markdown Workbench is a local Electron app with a Python agent engine. The a
 
 **[Start development](docs/INDEX.md#start-development):** current readiness, phase roadmap and project-wide outstanding work. Consult [CURRENT_STATE](docs/CURRENT_STATE.md) before treating a development build or an existing installer as current verified delivery.
 
+For day-to-day work, follow the [development routine](AGENTS.md#daily-development-and-document-maintenance) and [batch catalogue](docs/INDEX.md#batch-documents). Each batch separates scope, local tickets and verification; affected documentation is maintained as part of delivery.
+
 ## Run locally
 
 Install Python 3.12 through `uv`, Node.js 24 and `pnpm`. From this repository:

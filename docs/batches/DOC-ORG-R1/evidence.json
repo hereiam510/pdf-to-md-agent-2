@@ -1,0 +1,104 @@
+{
+  "entry_head": "29bc76d",
+  "skill_checkpoint": "9d7d5d5",
+  "method": "Direct main-agent scoped document repair, semantic comparison and hypothetical change exercises; no product execution or subagent trial.",
+  "tracked_entry_files": 821,
+  "changed_files": {
+    "AGENTS.md": {
+      "before_sha256": "800a52205ba32a9d7cae1b42cfdad4308f829e395f14ff0283aff8e9eac9765d",
+      "after_sha256": "b75b28f1e28a321f8fe1de3947fa6b166a5dde8c4e5ed91ce90df651ce213252"
+    },
+    "README.md": {
+      "before_sha256": "c10d41c7a89a54f7017002f8382489447c4b34ba39c1f71edf4b7b3766fc7017",
+      "after_sha256": "7399954ace107b7010d6ebe32a232018afeed5b76d619f8fefe67d5d4ae4d897"
+    },
+    "docs/CURRENT_STATE.md": {
+      "before_sha256": "93cead705dfa5010f1aeed56a5c46bdc1564b9e120d5fffe600ed6a93d0a4944",
+      "after_sha256": "a17885220ff612ae26ef2e364de853be8b8a47858b25f87351050b568c052f2c"
+    },
+    "docs/INDEX.md": {
+      "before_sha256": "dd8a2f5d443fd8084125b54ac225e17f54bc89b5ed563a2f802d96ccf0319ed4",
+      "after_sha256": "22e038f24e0780599e5782e21059509e1b602b1196c6dd25c45fbe4824b4b6d1"
+    },
+    "docs/REVIEW_HANDOFF.md": {
+      "before_sha256": "73186dbf5b6bea77d3a9fd31de21856990a62a41ac0838fc0a6ac8fd3237eb6f",
+      "after_sha256": "6979fc976fa2f76c356d3d58f6d39bdf57487f6fdaf13aed40db5accf281d0c4"
+    },
+    "docs/WORK_ITEMS.md": {
+      "before_sha256": "a7947752d9842a0927e84255ce75202b9860f90eb54782fc81e119a07f28ffe2",
+      "after_sha256": "02fcef15b630900a12a0f38bf2adbbb98bb7ba17fac2c53406b51996d59bad1a"
+    },
+    "docs/batches/DOC-ORG-R1/spec.md": {
+      "before_sha256": "3da42b83b69e459a7cee117c6b2d86f9b8e5d947fb0e730fd65136548efd8ffa",
+      "after_sha256": "cf359442a59dc3385fa0ebbbeb05d922b4940c6d48a70f00edf7b24172eb3c54"
+    },
+    "docs/batches/DOC-ORG-R1/tickets.md": {
+      "before_sha256": "323b899e605fe7db548f1d0c9028e7ff749fc647ee29e039b948bb153d19a06a",
+      "after_sha256": "fc18bea333d750e45abb6c0179c7a7a678510227579f7b9fdc63f6b279a7828b"
+    },
+    "docs/batches/DOC-ORG-R1/verification.md": {
+      "before_sha256": "624595acaa1f5c38d44103613231a176e2a7f833f5e2fc60388ae57e502c98cc",
+      "after_sha256": "ecbc1a04c210201e29ff70009a774cee8b21d5b66b85822b2acef699910862f7"
+    },
+    "docs/decisions/DOCUMENTATION.md": {
+      "before_sha256": "c2f69f367cad40b4d953db5411e06edbf49384694901bd0c01759d18617b9e55",
+      "after_sha256": "25fc8dd43646183b2856ba87885996a507d9f2c11fe8293f1878de1ee56a1830"
+    },
+    "docs/design/FIGURE_DELIVERY.md": {
+      "before_sha256": "084499fede33045d6efab4ba25493a1c1aa3a2618bf3301c432af64f2a80ab17",
+      "after_sha256": "1ea97a38d2e4a0fe2d4cd2ee1a5a9ff91025274283d397f39bf1ee242fbea8d0"
+    },
+    "docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md": {
+      "before_sha256": "ea3736be4c3194899998a4a37b58c4c72aae010f32bcdab2a1c4168cc41538f1",
+      "after_sha256": "9a90d0be261c0ccf1f38ad2c36409a84610520110df3ea8f7cdc8c066eac43d0"
+    }
+  },
+  "unexpected_changed_files": [],
+  "protected_file_count": 809,
+  "protected_entry_manifest_sha256": "3a8cd2946b23a33fbdf652531fd04e73a8c6fbee9b58fa5f7a9638e2fed5197b",
+  "protected_final_manifest_sha256": "3a8cd2946b23a33fbdf652531fd04e73a8c6fbee9b58fa5f7a9638e2fed5197b",
+  "development_guide_sha256": "0ff2d5e9a74d3dfa67c6380580845e73a28e1031619e4e23c3db2155acbb0eba",
+  "required_sections": {
+    "docs/design/FIGURE_DELIVERY.md :: ## Required outcome": {
+      "unchanged": true,
+      "normalized_text_sha256": "6e4d3a6861e6f8cacece27385d90c8add847b0fa21c8d09369b9c50fb78671b7"
+    },
+    "docs/design/FIGURE_DELIVERY.md :: ## Verification and acceptance plan": {
+      "unchanged": true,
+      "normalized_text_sha256": "a8e9c111e88b5fd815e7e71ad48d7a1c402dbf49b4f4c8db9b9eb0f4cb1482b3"
+    },
+    "docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md :: ### Credential repair acceptance": {
+      "unchanged": true,
+      "normalized_text_sha256": "f9dae4765ddd8fd11b65beb7e2dd51ae66fb90e57d1d2340569dc406d256e271"
+    },
+    "docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md :: 1. **CRED-03:": {
+      "unchanged": true,
+      "normalized_text_sha256": "2d17818d56f8e25afd20d31b60c4dee56aea34c6e25dc1c236f6bfc3be89e5c0"
+    },
+    "docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md :: ### Credential follow-up acceptance": {
+      "unchanged": true,
+      "normalized_text_sha256": "a77ef236c2cff5d22bc9399af2793bfe8ba39d624336d33f2b42a9303b384e44"
+    }
+  },
+  "repository_document_check": {
+    "command": "python -B tools/docs/check_docs.py",
+    "exit_code": 0,
+    "result": {
+      "markdown_files": 108,
+      "local_links_and_destinations_checked": 5368,
+      "preserved_points": 356,
+      "source_dispositions": 275,
+      "bundled_source_files_verified": 503,
+      "development_detail_mappings": 356,
+      "errors": [],
+      "scope": "Repository-only link, source-integrity and coverage checks. Counts do not prove semantic completeness or runtime correctness."
+    },
+    "stderr": ""
+  },
+  "whitespace": {
+    "command": "git -c core.whitespace=cr-at-eol diff --check",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "warning: in the working copy of 'README.md', CRLF will be replaced by LF the next time Git touches it\n"
+  }
+}

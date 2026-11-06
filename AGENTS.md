@@ -48,8 +48,14 @@ This does not require dependency upgrades or a particular directory pattern wher
 - Check the actual source-led saved/reopened/exported result proportionately. Software tests, mechanism availability, accepted content and installed-product readiness are separate.
 - A formal comparison converter receives no matching-range reference answer, another arm's output or developer transcription. Reviewers may consult examples. Do not turn optional mechanism use or non-use into a quality verdict.
 - Optimize whole-task price-weighted cost at unchanged fidelity, autonomy and source access. Preserve unknown usage/fees. Cache-hit percentage, characters and total tokens alone do not establish savings.
-- Update the affected owner and CURRENT_STATE with effective behavior, checks, limitations and next work. Record design, implementation and verification honestly. Keep one owner per contract. Use Git for changes. Keep consequential rationale with the relevant topic decisions and supporting discussion/research.
+- Update each changed fact in its owner; update CURRENT_STATE only for distinct cross-topic readiness or next-work decisions, with links to task/evidence owners. Record design, implementation and verification honestly. Keep one owner per contract. Use Git for changes. Keep consequential rationale with the relevant topic decisions and supporting discussion/research.
 - Old run ledgers, closed-job permissions, defaults and test results must not become current obligations or readiness evidence in this repository.
+
+## Daily development and document maintenance
+
+At start or resume, reconcile the selected spec, tickets and current source/evidence before relying on an older handoff. During meaningful changes, update the fact's owner and inspect affected consumers, including guides and entry files absent from the diff. Before delivery, check both meaning and links: if changing one ticket state or correcting one evidence result would require rewriting another sentence merely to restate it, replace that sentence with a descriptive owner link. Independent project decisions retain their own reasoning. Preserve historical observations and adopted targets awaiting implementation.
+
+Ordinary implementation includes supported in-scope documentation corrections and a brief document-impact/check note in its existing verification owner; no separate `document` request or extra ledger is needed. Scale checks to the affected surface, and leave accurate unrelated guides unchanged. Standalone review retains its assessment scope; explicit read-only and response-only instructions prohibit file writes. Actual handoff reconciles necessary records but does not start the next task. [Ownership decision](docs/decisions/DOCUMENTATION.md#daily-document-maintenance-and-owner-repair-2026-11-07) records this adoption.
 
 ## Batch documents and ticket mode
 
