@@ -13,6 +13,18 @@ Start with the question or capability below. [CURRENT_STATE](CURRENT_STATE.md) o
 
 Read these together before recommending next work, then follow relevant detailed owners. README/INDEX supply navigation; WORK_ITEMS owns current item dispositions, PHASE_PLAN sequencing and CURRENT_STATE readiness. Recorded items do not authorize execution.
 
+## Batch documents
+
+[Project ticket policy](../AGENTS.md#batch-documents-and-ticket-mode). These files own batch details; historical and unselected topic records retain their existing roles.
+
+| Batch | Spec | Local tickets | Verification |
+| --- | --- | --- | --- |
+| DOC-LAYOUT-01 | [Spec](batches/DOC-LAYOUT-01/spec.md) | [Tickets](batches/DOC-LAYOUT-01/tickets.md) | [Verification](batches/DOC-LAYOUT-01/verification.md) |
+| DOC-ORG-R1 | [Spec](batches/DOC-ORG-R1/spec.md) | [Tickets](batches/DOC-ORG-R1/tickets.md) | [Verification](batches/DOC-ORG-R1/verification.md) |
+| CRED-03-04 | [Spec](batches/CRED-03-04/spec.md) | [Tickets](batches/CRED-03-04/tickets.md) | [Verification](batches/CRED-03-04/verification.md) |
+
+Preserved migration sources: [work register](history/20261107_BATCH_LAYOUT_WORK_ITEMS.md), [application handoff](history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md).
+
 ## Topics
 
 | Topic | Current design / contract | Discussion and decisions | Evidence / next choice |
@@ -151,6 +163,7 @@ The following lists maintained documents, root guidance, fixture documentation a
 
 | Document | Purpose / role |
 | --- | --- |
+| [docs/reviews/20261106_2307_ORGANIZATION_REVIEW.md](reviews/20261106_2307_ORGANIZATION_REVIEW.md) | Updated-skill reorganization review: preservation comparisons, reader checks and remaining active duplication |
 | [docs/reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md](reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md) | Documentation structure review and disposition |
 | [docs/reviews/20261031_1907_PROJECT_ORGANIZATION.md](reviews/20261031_1907_PROJECT_ORGANIZATION.md) | Whole-project organization review, canonical fixture-import correction and scoped verification. |
 | [docs/reviews/20261031_1917_DOCUMENTATION_CONFORMANCE.md](reviews/20261031_1917_DOCUMENTATION_CONFORMANCE.md) | DOC-14–19: documentation conformity gaps, impact and disposition. |

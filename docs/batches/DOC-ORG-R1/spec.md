@@ -1,0 +1,23 @@
+# DOC-ORG-R1 specification
+
+[Register](../../WORK_ITEMS.md#maintenance-and-coverage) · [Tickets](tickets.md) · [Verification](verification.md)
+
+Prepared 2026-11-06, UTC+08:00. Scope is inferred from the current reorganization discussion and the user's request for specs/tickets. The substantive repair remains a ready planning proposal under the existing [ownership decision](../../decisions/DOCUMENTATION.md#updated-skill-organization-2026-11-06), not permission to execute the repair. No unresolved material method choice is identified. Baseline: `f1929b7` plus the uncommitted organization review and its CURRENT_STATE/INDEX/WORK_ITEMS links; preserve the unrelated DEVELOPMENT_GUIDE change. Recheck actual working state before implementation.
+
+**Outcome:** a maintainer can change a current item disposition, correct an execution observation or select a different validation scope without updating redundant prose copies of that same fact. Readers can still find the substantive reasons, requirements, results and historical limits from the project entrance.
+
+**Scope and method:** correct the reviewed WORK_ITEMS credential/Task A passages and INDEX figure-delivery row, then inspect their directly connected active restatements in CURRENT_STATE, REVIEW_HANDOFF and the credential/evidence owners. Resolve only redundant representations of these same facts, preserving independently necessary design/implementation distinctions. The individual work-item entries own current dispositions and next/revisit actions; original execution records own run observations; PHASE_PLAN owns comparative sequencing; INDEX owns navigation. Selection summaries may link items and explain distinct selection facts, but must not duplicate their pending/completed states. A copied result list becomes an exact evidence link, not a shorter copied result list.
+
+Historical snapshots, source collections, dated reviews and original execution observations remain intact. Preserve unique impact, rationale, caveats, known failures, uncertainty, identifiers and explicit unimplemented-target labels. Do not turn historical evidence into an active status owner or leave link chains with no substantive answer. No application, skill, dependency, private-data, retention or remote change is included. This batch neither implements CRED-03/04 nor starts a conversion. The approved layout migration changes document locations; it does not select a remote tracker or subagent.
+
+**Acceptance criteria — planned, not executed:**
+
+| ID | Condition and expected outcome | Discriminating check |
+| --- | --- | --- |
+| <a id="a1"></a>A1 | A hypothetical CRED-03 completion changes its disposition in one item owner; other active destinations remain truthful through links. | Trace the credential selection/introduction/rows, catalogue, handoff and mechanism labels. Distinguish an independently necessary mechanism change from a copied status sentence. Record every surviving occurrence and its role. |
+| <a id="a2"></a>A2 | A hypothetical correction to Task A's send/time/acceptance observation has one execution-evidence owner; the register retains its independent disposition, impact and next action. | Follow the Task A evidence-to-register route and search affected active owners for copied measurements/results. Do not change real measured values during the exercise. |
+| <a id="a3"></a>A3 | A hypothetical selection of broader FD-01 validation changes its disposition once; catalogue links and historical two-page evidence remain valid. | Trace INDEX → work item → decision/execution evidence. Neither rewrite the closed historical interval nor falsely imply that a newly selected scope has passed. |
+| <a id="a4"></a>A4 | Every removed active passage retains any unique meaning in an appropriate substantive owner. Existing historical evidence and unrelated files remain unchanged. | Compare actual entry and final content; account for reasons, qualifications and counterexamples, not only matching words. Check protected file identities and required old anchors. |
+| <a id="a5"></a>A5 | The corrected records work together and the batch verdict matches evidence. | Follow README/AGENTS → INDEX → register/phase/state and each A1–A3 route; run `python tools/docs/check_docs.py` and whitespace checks. Record remaining limitations and actual reviewed state. Link success alone does not satisfy A1–A4. |
+
+Use review-only hypothetical changes or disposable copies for A1-A3. Record actual evidence and the combined repair verdict in [verification](verification.md). All A1-A5 are required for repair acceptance; this layout migration does not satisfy those checks.

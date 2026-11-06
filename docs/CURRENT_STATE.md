@@ -8,7 +8,14 @@ The complete-section delivery gap demonstrated by R01CAL-A01 remains material. N
 
 ## Find current work
 
+[Batch catalogue](INDEX.md#batch-documents) provides the fixed local-ticket entrances. [Layout organization evidence](batches/DOC-LAYOUT-01/verification.md) records this migration; substantive repair acceptance remains with each batch.
+
+
 The project-organization request is documentation/file-ownership maintenance. Its [decision and acceptance](decisions/DOCUMENTATION.md#updated-skill-organization-2026-11-06) and [verification](verification/20261106_2300_PROJECT_ORGANIZATION.md) explain the changed entry points and preserved history. Application behavior and product acceptance are unchanged by this work.
+
+The [follow-up organization review](reviews/20261106_2307_ORGANIZATION_REVIEW.md#assessment) qualifies the documentation completion assessment. Use its preservation checks and DOC-ORG-R1 evidence with the [work-register disposition](WORK_ITEMS.md#maintenance-and-coverage); this review does not execute a correction or the application assignment.
+
+For documentation planning, use the [DOC-ORG-R1 specification](batches/DOC-ORG-R1/spec.md) and [local execution tickets](batches/DOC-ORG-R1/tickets.md). Their owner distinguishes planned acceptance, assignment and actual execution.
 
 For application continuation, use the [selected work](WORK_ITEMS.md#selection-now), [sequencing rationale](PHASE_PLAN.md#next-increment-selection) and [credential follow-up assignment](REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06). The organization task preserves that assignment; it does not execute it or turn earlier live-run allowances into current authority. Detailed CRED-03/04 counterexamples and acceptance remain in their linked owners.
 

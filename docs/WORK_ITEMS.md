@@ -6,7 +6,7 @@ Updated 2026-11-06, Asia/Singapore. This is the central view of known outstandin
 
 [Task A evidence](verification/20261106_1408_R01CAL_TASK_A.md) owns the closed interval and partial-delivery result. [Credential execution evidence](reviews/RUNTIME_FINDINGS.md#credential-startup-repair-implementation-and-offline-acceptance-2026-11-06) owns the original repair results; the individual dispositions follow below.
 
-**Selected next increment: CRED-03/04 fixes, offline regressions and records.** The [d370082 review](reviews/RUNTIME_FINDINGS.md#credential-repair-follow-up-review-2026-11-06) supports the core CRED-01/02 fixes but reproduces two P2 preservation regressions. Both corrections are selected and pending under the [active implementation handoff](REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06). After this bounded repair, reassess the recommended, separately unselected offline R01CAL-A01 diagnosis before proposing B. B stays ready with zero attempts and unselected. Numerical calibration, certified holdout provenance and candidate/gates remain open. Production calibration/full source access are unchanged; observer and usage-anchoring enrollment remain off. Provider calls, conversions, packaging, publication, cleanup and subagents remain excluded. R03, OBS-02/03, UA-01-DEFAULTS and distribution retain their triggers.
+**Selected next increment: CRED-03/04 fixes, offline regressions and records.** The [d370082 review](reviews/RUNTIME_FINDINGS.md#credential-repair-follow-up-review-2026-11-06) supports the core CRED-01/02 fixes but reproduces two P2 preservation regressions. The [batch specification](batches/CRED-03-04/spec.md) preserves the selected assignment; [local tickets](batches/CRED-03-04/tickets.md) own execution progress. After this bounded repair, reassess the recommended, separately unselected offline R01CAL-A01 diagnosis before proposing B. B stays ready with zero attempts and unselected. Numerical calibration, certified holdout provenance and candidate/gates remain open. Production calibration/full source access are unchanged; observer and usage-anchoring enrollment remain off. Provider calls, conversions, packaging, publication, cleanup and subagents remain excluded. R03, OBS-02/03, UA-01-DEFAULTS and distribution retain their triggers.
 
 R03 remains a separate substantial recovery candidate. OBS-02/03 are measured costs but no operational threshold/workload is selected. R08/R14/R01-PACK connect to declared distribution/destination needs. Important alternatives and revisit conditions remain below. A Stage B title does not direct immediate conversion; Task A's specifically approved interval is now closed, and further live work needs its own selection.
 
@@ -18,8 +18,8 @@ CRED-01/02 are repaired at their recorded offline scope. The later CRED-03/04 P2
 | --- | --- | --- |
 | CRED-01 | An early remembered-key decryption can finish after file loading and replace the selected file key; a later Start can use stale credentials. | Locally complete at the [recorded offline scope](reviews/RUNTIME_FINDINGS.md#credential-startup-repair-implementation-and-offline-acceptance-2026-11-06). Both candidate-read readiness orders preserve file identity; valid-file remembered decryption is excluded. Replacement/Clear, persistence and current-key Start checks pass. Reopen on a supported ordering/persistence regression. |
 | CRED-02 | The renderer retains an early `hasKey=false` snapshot after loading succeeds, so the Start guard unnecessarily opens Connection settings. | Locally complete in the same increment. Actual delayed-file and delayed-settings-response renderer cases reach ordinary local Start without a settings detour; loading controls, stale replies and manual/error paths pass. Reopen on a supported stale-settings or readiness regression. |
-| CRED-03 | Default-file stat succeeds, then read ENOENT is treated as absence and selects remembered credentials. Reproduced at d370082; 66d779e blocks the same failure. P2 unintended-credential risk; incidence unmeasured. | Selected, implementation pending. Narrow benign absence to initial discovery; prove discovered-file failure blocks engine/Start with zero fallback while missing-default/manual and explicit-path controls remain correct. |
-| CRED-04 | Startup encryption unavailability is cached through explicit Remember saves after capability recovers; no ciphertext is saved. Reproduced at d370082; 66d779e rechecks and persists. P2 persistence/recovery failure. | Selected, implementation pending. Refresh capability within the existing save owner/queue; prove recovery plus encrypted restart and newer Clear/replacement/Remember-off protection across delayed capability/encryption. |
+| CRED-03 | Default-file stat succeeds, then read ENOENT is treated as absence and selects remembered credentials. Reproduced at d370082; 66d779e blocks the same failure. P2 unintended-credential risk; incidence unmeasured. | Selected. [Task and progress](batches/CRED-03-04/tickets.md#cred-03); [scope and acceptance basis](batches/CRED-03-04/spec.md). |
+| CRED-04 | Startup encryption unavailability is cached through explicit Remember saves after capability recovers; no ciphertext is saved. Reproduced at d370082; 66d779e rechecks and persists. P2 persistence/recovery failure. | Selected. [Task and progress](batches/CRED-03-04/tickets.md#cred-04); [scope and acceptance basis](batches/CRED-03-04/spec.md). |
 
 The [phase selection rationale](PHASE_PLAN.md#next-increment-selection) compares this correction with R01CAL-A01, calibration, recovery and distribution. The [handoff](REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06) defines its execution boundary; it authorizes no follow-on work.
 
@@ -126,12 +126,26 @@ OBS-01–08 alias findings #1–8 in the [observer review](verification/20261105
 | F05, F06 | F05 maps R07; F06 maps H01/H02/H03. | Follow those items without duplicate repairs. |
 | DOC-01–13 | Earlier [reorganization](reviews/DOCUMENTATION_REORGANIZATION_2026-10.md) and [structure](reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md) corrections closed within their recorded scopes. | New preservation/navigation contradiction; historical checks are not rerun here. |
 | DOC-14–19 | [Conformance increment closed](reviews/20261031_1917_DOCUMENTATION_CONFORMANCE.md#disposition). | Lost basis/meaning, contradictory summary or wrong acceptance mapping. |
-| DOC-ORG-20261106 | [Updated-skill organization](verification/20261106_2300_PROJECT_ORGANIZATION.md) owns the preservation and navigation checks. | Local organization complete at the recorded scope; revisit on duplicated active status, a lost historical route or an ownership regression. |
+| DOC-ORG-20261106 | [Updated-skill organization](verification/20261106_2300_PROJECT_ORGANIZATION.md) owns the original preservation and navigation checks; [follow-up review](reviews/20261106_2307_ORGANIZATION_REVIEW.md#assessment) qualifies completion. | Preservation/navigation scope passed; full one-owner conformance remains open through DOC-ORG-R1 below. |
 | ORG-01 | [Organization correction closed](reviews/20261031_1907_PROJECT_ORGANIZATION.md#correction-checks-and-closeout). | Relevant ownership/path regression. |
 | History-pressure coordination | Adopted and implemented; [decision](decisions/CONTEXT_MANAGEMENT.md#history-pressure-admission-retained-option-and-adoption-basis). | Supported contract violation; expiry is separate. |
 
 ## Maintenance and coverage
 
+**DOC-ORG-R1:** Retained as the bounded documentation repair; execution and acceptance are owned by the linked batch files. [Review evidence](reviews/20261106_2307_ORGANIZATION_REVIEW.md#doc-org-r1--remaining-mutable-status-and-result-mirrors) establishes the defect; the [batch specification](batches/DOC-ORG-R1/spec.md) and [tickets](batches/DOC-ORG-R1/tickets.md) own the proposed correction and execution plan. This documentation follow-up does not change application priorities or authorize the credential repair.
+
 Update affected items with discoveries, decisions and evidence in the same authorized increment. Keep IDs stable; cross-reference duplicates and retain original aliases. Add unfinished adopted capabilities and new review families. Leave partial scope visible after bounded closure and reconcile phase/current-state summaries. Original assessments retain their historical scope; the register owns current item dispositions. README and INDEX link here without copying the list.
 
 Initial coverage reconciles maintained R/H/F/SC/CTX navigators, observer #1–8/latest results, current state/phase/handoff, retained options and named conformance/organization closeouts. This is recorded-evidence reconciliation, not a fresh code audit or discovery of all unknown defects. No private task stores or historical permissions were used as execution authority.
+
+### DOC-ORG-R1 specification
+
+[Current specification](batches/DOC-ORG-R1/spec.md).
+
+### DOC-ORG-R1 tickets
+
+[Local tickets](batches/DOC-ORG-R1/tickets.md).
+
+## Batch layout organization
+
+DOC-LAYOUT-01 is the user-selected organization task. [Spec](batches/DOC-LAYOUT-01/spec.md), [tickets](batches/DOC-LAYOUT-01/tickets.md), [verification](batches/DOC-LAYOUT-01/verification.md). Existing application priorities remain under their phase and selection owners.

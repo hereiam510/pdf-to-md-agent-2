@@ -50,3 +50,9 @@ This does not require dependency upgrades or a particular directory pattern wher
 - Optimize whole-task price-weighted cost at unchanged fidelity, autonomy and source access. Preserve unknown usage/fees. Cache-hit percentage, characters and total tokens alone do not establish savings.
 - Update the affected owner and CURRENT_STATE with effective behavior, checks, limitations and next work. Record design, implementation and verification honestly. Keep one owner per contract. Use Git for changes. Keep consequential rationale with the relevant topic decisions and supporting discussion/research.
 - Old run ledgers, closed-job permissions, defaults and test results must not become current obligations or readiness evidence in this repository.
+
+## Batch documents and ticket mode
+
+The user selected local tickets plus GitHub repository/PR delivery on 2026-11-07. `batch_root: docs/batches`; `ticket_mode: local`. Every batch uses separate `spec.md`, `tickets.md` and `verification.md`; create each when its stage has substantive content. Small batches use the same paths. Local tickets own task content, dependencies, responsibility and progress. Verification owns observed checks and the combined verdict. WORK_ITEMS owns selection/disposition and links, without copying execution progress. Keep completed batch paths stable.
+
+GitHub remains the code/document repository and PR review destination. This setting creates no Issues and grants no new push/PR/merge authority. Changing ticket mode requires an explicit project-wide migration. [Batch catalogue](docs/INDEX.md#batch-documents) lists current owners. Preserve historical plans and evidence; unselected work remains in its existing topic owners until a batch is established.
