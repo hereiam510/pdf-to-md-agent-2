@@ -4,11 +4,22 @@ Updated 2026-11-06, Asia/Singapore. This is the central view of known outstandin
 
 ## Selection now
 
-**R01-CAL Task A is executed/reviewed and closed, with partial delivery.** [Evidence](verification/20261106_1408_R01CAL_TASK_A.md): nine normal sends / 233.188 active seconds; five-page transcription source-checked, saved/reopened/exported bytes and native usage verified. Version `a8e6fc980c884f6f8b0ab4fdbd816061` stays partial because 274 outside-request pages remain unprocessed. No operator content repair or further allowance is selected. The general development credential loader is implemented and locally verified under the user's later explicit request; its [owner](guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading) records startup/precedence/opt-out controls.
+**R01-CAL Task A is executed/reviewed and closed, with partial delivery.** [Evidence](verification/20261106_1408_R01CAL_TASK_A.md): nine normal sends / 233.188 active seconds; five-page transcription source-checked, saved/reopened/exported bytes and native usage verified. Version `a8e6fc980c884f6f8b0ab4fdbd816061` stays partial because 274 outside-request pages remain unprocessed. No operator content repair or further allowance is selected. The general development credential loader has successful local startup evidence, but the subsequent [CRED-01/02 review](reviews/RUNTIME_FINDINGS.md#development-credential-startup-review-2026-11-06) identifies two unfixed startup races. Its [mechanism owner](guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading) distinguishes selected behavior from those gaps.
 
-Recommend a bounded offline R01CAL-A01 diagnosis before proposing B; this recommendation selects no repair or provider interval. B remains ready, zero-exposure and unselected. Numerical calibration, certified holdout provenance and candidate/gates remain open. Production calibration and full source access are unchanged; observer and usage-anchoring enrollment remain off. R03, OBS-02/03, UA-01-DEFAULTS and broader distribution keep their separate impact-based triggers.
+Recommend a bounded CRED-01/02 startup repair and then the offline R01CAL-A01 classification diagnosis before proposing B. The current task only records the review and prepares a handoff; neither repair nor a provider interval is selected. B remains ready, zero-exposure and unselected. Numerical calibration, certified holdout provenance and candidate/gates remain open. Production calibration and full source access are unchanged; observer and usage-anchoring enrollment remain off. R03, OBS-02/03, UA-01-DEFAULTS and broader distribution keep their separate impact-based triggers.
 
 R03 remains a separate substantial recovery candidate. OBS-02/03 are measured costs but no operational threshold/workload is selected. R08/R14/R01-PACK connect to declared distribution/destination needs. Important alternatives and revisit conditions remain below. A Stage B title does not direct immediate conversion; Task A's specifically approved interval is now closed, and further live work needs its own selection.
+
+## Development credential startup
+
+These two P2 defects affect the requested whole-development loader. Both are source-supported and reproduced using controlled promises in production function bodies; live GUI incidence and provider consequences remain unmeasured. Detailed [evidence and proposed acceptance](reviews/RUNTIME_FINDINGS.md#development-credential-startup-review-2026-11-06) are owned by the runtime review. The successful Task A interval remains valid at its recorded scope.
+
+| ID | Evidence / impact | Current disposition and next check |
+| --- | --- | --- |
+| CRED-01 | An early remembered-key decryption can finish after file loading and replace the selected file key; a later Start can use stale credentials. | Confirmed, unfixed; bounded development-startup repair recommended, not selected. Coordinate initialization/updates and test both completion orders, manual replacement/Clear and the key at a synthetic Start boundary. |
+| CRED-02 | The renderer retains an early `hasKey=false` snapshot after loading succeeds, so the Start guard unnecessarily opens Connection settings. | Confirmed, unfixed; related startup repair recommended, not selected. Verify the ordinary UI after a delayed file load, with no extra settings handling, while preserving manual-entry/error paths. |
+
+These issues share a startup-ownership boundary and can be repaired/verified offline. They are the recommended bounded development follow-up; they do not select calibration changes, another live run or distribution work. Reassess R01CAL-A01 and other phase candidates after that increment if it is authorized.
 
 ## Runtime and engineering inventory
 
