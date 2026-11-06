@@ -70,7 +70,7 @@ Desktop checks use synthetic local model/IPC fixtures. They do not make provider
 
 | Location | Entry points and consumers |
 | --- | --- |
-| `tools/dev/` | `setup.ps1` installs from existing frozen lockfiles; `start.ps1` launches development or the existing packaged app; `make-smoke-pdf.py` generates a synthetic test source at the supplied destination. |
+| `tools/dev/` | `setup.ps1` installs from existing frozen lockfiles; `start.ps1` launches development or the existing packaged app, with development-only credential-file selection/opt-out; `make-smoke-pdf.py` generates a synthetic test source at the supplied destination. |
 | `tools/build/` | `build-windows.ps1` freezes the Python engine, runs its smoke checks and packages Electron; `engine-entry.py` is the frozen entry and explicit trusted-script child entry; `check-frozen-engine.py` validates the existing frozen runtime without a network call. |
 | `tools/docs/` | `check_docs.py` validates documentation/source references; `source_lookup.py` reads the bundled provenance. Both find the repository two parents above their own file, independently of caller working directory. |
 | `tools/runtime/ocr-worker.cjs` | Tesseract worker launched by Electron in development and copied to the packaged resource root by electron-builder. Its packaged name stays `ocr-worker.cjs`. |

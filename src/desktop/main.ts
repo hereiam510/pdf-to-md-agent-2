@@ -24,7 +24,7 @@ async function settings() {
   const encryptionAvailable = await safeStorage.isAsyncEncryptionAvailable()
   try {
     const data = JSON.parse(await fs.readFile(settingsPath, 'utf8'))
-    if (data.secret && encryptionAvailable) {
+    if (data.secret && encryptionAvailable && !apiKey) {
       const decrypted = await safeStorage.decryptStringAsync(Buffer.from(data.secret, 'base64'))
       apiKey = decrypted.result
       if (decrypted.shouldReEncrypt) {
@@ -57,6 +57,23 @@ function id(value: unknown): string {
 
 async function launchBackend() {
   await fs.mkdir(dataRoot, { recursive: true })
+  // Development convenience only. Read one owner-selected file, never logs/profiles.
+  // Keep its value in memory and leave connection/task settings untouched.
+  if (!app.isPackaged && process.env.PDFMD_SKIP_CREDENTIAL_FILE !== '1') {
+    const explicit = process.env.PDFMD_CREDENTIAL_FILE
+    const filename = explicit || join(root, 'private', 'api-key.txt')
+    if (explicit || existsSync(filename)) {
+      try {
+        const metadata = await fs.stat(filename)
+        if (!metadata.isFile() || metadata.size > 65536) throw new Error()
+        const credential = new TextDecoder('utf-8', { fatal: true }).decode(await fs.readFile(filename)).trim()
+        if (!credential || /[\x00-\x20\x7f]/.test(credential)) throw new Error()
+        apiKey = credential
+      } catch {
+        throw new Error('Cannot load the development credential file. Use a nonempty UTF-8 file containing one credential, or disable file loading.')
+      }
+    }
+  }
   await settings()
   const packaged = app.isPackaged
   const python = process.env.PDFMD_PYTHON || join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python')

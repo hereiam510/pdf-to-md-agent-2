@@ -6,6 +6,8 @@ import { resolve } from 'node:path'
 const testRunRoot = resolve(process.env.PDFMD_TEST_RUN_ROOT ||
   `.local/test-runs/${new Date().toISOString().replace(/\D/g, '')}-${process.pid}`)
 process.env.PDFMD_TEST_RUN_ROOT = testRunRoot
+// Synthetic desktop checks never load the developer's private credential by default.
+process.env.PDFMD_SKIP_CREDENTIAL_FILE = '1'
 mkdirSync(testRunRoot, { recursive: true })
 
 export default defineConfig({
