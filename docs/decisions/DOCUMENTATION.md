@@ -1,5 +1,15 @@
 # Documentation organization decisions
 
+## Updated skill organization (2026-11-06)
+
+The user requests reorganization of this project with the updated vibe-coding skill. This selects ordinary document/file-ownership repairs, navigation and preservation checks. The existing `src/`, `tests/`, `tools/` and private/generated storage responsibilities already fit their consumers; inspection found no necessary physical source relocation for this outcome. Keep them in place. Do not execute the preserved credential assignment, adopt product changes, move private data, remove evidence or publish remotely as part of organization.
+
+The inspected entry had overlapping current status and detailed execution histories in README, CURRENT_STATE, PHASE_PLAN and REVIEW_HANDOFF, including several superseded next-work assignments. These copies obscure current work and make a result change require edits across unrelated entrances. The updated one-owner rule corrects that maintenance problem: README owns purpose/setup/use; INDEX owns navigation/catalogue; CURRENT_STATE owns cross-batch readiness; WORK_ITEMS owns current item dispositions; PHASE_PLAN owns outcomes, acceptance and ordering rationale; REVIEW_HANDOFF owns the selected assignment and execution boundary. Detailed verification, findings, mechanisms and decisions remain in their existing owners. Use stable descriptive links elsewhere.
+
+Preserve the four entry views as [historical snapshots](../verification/20261106_2300_PROJECT_ORGANIZATION.md#preservation-and-owner-map), including the inherited uncommitted credential follow-up. Relative links are adjusted and the snapshot header states capture time and historical applicability. Retain the selected credential assignment at its stable anchor; earlier handoff anchors lead to their captured entries. No adopted design or requirement is revised. Active guidance must not turn the organization request into CRED-03/04 implementation or turn historical provider intervals into current permission.
+
+Acceptance: a repository-only reader can reach the selected assignment, its exact defect/acceptance owners, phase rationale, outstanding alternatives and actual execution evidence; earlier source/checkpoint identities, failures, partial results and permissions remain retrievable as history. Local links, catalogue coverage, entry preservation and unchanged non-document bytes must be checked separately from reader meaning. The [verification owner](../verification/20261106_2300_PROJECT_ORGANIZATION.md) records actual checks and limits. This is a documentation assurance outcome, not new product readiness.
+
 ## Complete documentation conformance (2026-10-31)
 
 Recorded 2026-10-31 at 19:17, Asia/Singapore (UTC+08:00). The human explicitly requests that the documentation completely adhere to vibe-coding, following authorization to change the project directly. The selected increment is documentation correction and verification against the applicable skill rules. Preserve the adopted product contracts and the existing topic/category layout; no product redesign, framework change, new live run, data cleanup or remote publication is selected.
