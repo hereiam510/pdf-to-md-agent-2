@@ -1,6 +1,6 @@
 > Historical capture of `docs/design/CONTEXT_UPDATE_COORDINATION.md` at 2026-10-31 19:17, Asia/Singapore (UTC+08:00), before documentation conformance edits. Source: `aac40cc` worktree; the local entry manifest records exact input bytes. Capture time is not adoption time. Prose is retained; relative link locators are adjusted for this directory. Governing captured rules in the revision basis retain their versions. Other current-owner links are navigation to today's guidance, not certification of the original implementation. Later status/corrections belong to the [active owner](../../design/CONTEXT_UPDATE_COORDINATION.md).
 
-> Revision basis: the adopted design and recorded corrections below retain their original identities; this filing is not new adoption. [Decisions](../../decisions/CONTEXT_MANAGEMENT.md#context-coordination-design-recording-boundary), [discussion](../../discussions/CONTEXT_COORDINATION.md#d20-human-adopts-the-integrated-design-and-authorizes-recording), [captured shared contract](../contracts/20261031_0157_CONTRACTS.md#q2-context-transitions), [captured requirements](../contracts/20261031_0157_PRODUCT_REQUIREMENTS.md) and [captured architecture](../contracts/20261031_0157_ARCHITECTURE.md) identify the applicable basis. Exact prior design identities not recorded remain unknown; current readiness is separate in [CURRENT_STATE](../../CURRENT_STATE.md).
+> Revision basis: the adopted design and recorded corrections below retain their original identities; this filing is not new adoption. [Decisions](../../decisions/CONTEXT_MANAGEMENT.md#context-coordination-design-recording-boundary), [discussion](../../discussions/CONTEXT_COORDINATION.md#d20-human-adopts-the-integrated-design-and-authorizes-recording), [captured shared contract](../contracts/20261031_0157_CONTRACTS.md#q2-context-transitions), [captured requirements](../contracts/20261031_0157_PRODUCT_REQUIREMENTS.md) and [captured architecture](../contracts/20261031_0157_ARCHITECTURE.md) identify the applicable basis. Exact prior design identities not recorded remain unknown; current readiness is separate in [CURRENT_STATE](../20261107_1358_CURRENT_STATE.md).
 
 # Context update coordination: consolidated target design
 
@@ -10,7 +10,7 @@ Updated 2026-10-26, Asia/Hong_Kong (UTC+08:00). Application baseline `a484b9b` a
 
 ## Guide navigation
 
-Read the relevant mechanism below with [current contracts](../../CONTRACTS.md#reading-this-contract) and [current verification](../../CURRENT_STATE.md#verification-basis). Historical alternatives and original implementation-order proposals retain their stated status.
+Read the relevant mechanism below with [current contracts](../20261107_1358_CONTRACTS.md#reading-this-contract) and [current verification](../20261107_1358_CURRENT_STATE.md#verification-basis). Historical alternatives and original implementation-order proposals retain their stated status.
 
 <details>
 <summary>Sections in this guide</summary>
@@ -306,7 +306,7 @@ The concrete implementation uses `ContextRevisions`, `Context`, `ContextUpdates`
 
 ## Observable acceptance and limits
 
-The matrix below defines acceptance. [recorded implementation result](../IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) and the [review handoff](../../REVIEW_HANDOFF.md) identify executed checks; a row here alone is not a passing result. Use both Chat Completions and Responses with local scripted replies/mock transport before proposing live work. Preserve unchanged capacity in shrinking-update cases.
+The matrix below defines acceptance. [recorded implementation result](../IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) and the [review handoff](../20261107_1358_REVIEW_HANDOFF.md) identify executed checks; a row here alone is not a passing result. Use both Chat Completions and Responses with local scripted replies/mock transport before proposing live work. Preserve unchanged capacity in shrinking-update cases.
 
 | Capability | Observable acceptance |
 | --- | --- |
@@ -333,4 +333,4 @@ The implementation synchronizes CONTRACTS Q2/Q3, ARCHITECTURE, callable-tool gui
 
 The bounded exit is a complete supported context-update route with these representative neighboring operations, or a precise remaining direct blocker. Do not add unrelated hypothetical mechanisms to delay completion. A materially reproduced blocker cannot be dismissed just because the three original controls pass.
 
-After authorized implementation meets that exit, recommend [Stage B](../../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources): a selected real source/range, Nexus route and finite call allowance, separately authorized. Observe autonomous completion, interventions and source-led saved/reopened/exported quality. Let context management occur naturally; non-use does not verify it and does not prove it unnecessary. Stage A implementation closeout is recorded in CURRENT_STATE; this design document does not authorize Stage B.
+After authorized implementation meets that exit, recommend [Stage B](../20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources): a selected real source/range, Nexus route and finite call allowance, separately authorized. Observe autonomous completion, interventions and source-led saved/reopened/exported quality. Let context management occur naturally; non-use does not verify it and does not prove it unnecessary. Stage A implementation closeout is recorded in CURRENT_STATE; this design document does not authorize Stage B.

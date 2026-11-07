@@ -4,19 +4,19 @@ Captured 2026-11-07, Asia/Hong_Kong, from the working tree at f1929b7 with inher
 
 # Project work register
 
-Updated 2026-11-06, Asia/Singapore. This is the central view of known outstanding work and current item dispositions. [INDEX](../INDEX.md#start-development) is the entrance; [PHASE_PLAN](../PHASE_PLAN.md#next-increment-selection) owns outcomes and sequencing; [CURRENT_STATE](../CURRENT_STATE.md#find-current-work) owns readiness and active work. Detailed linked owners retain explanations, original observations and verification. Inclusion is not implementation authority or a requirement to fix everything before delivery.
+Updated 2026-11-06, Asia/Singapore. This is the central view of known outstanding work and current item dispositions. [INDEX](../INDEX.md#start-by-task) is the entrance; [PHASE_PLAN](20261107_1358_PHASE_PLAN.md#next-increment-selection) owns outcomes and sequencing; [CURRENT_STATE](20261107_1358_CURRENT_STATE.md#find-current-work) owns readiness and active work. Detailed linked owners retain explanations, original observations and verification. Inclusion is not implementation authority or a requirement to fix everything before delivery.
 
 ## Selection now
 
 [Task A evidence](../verification/20261106_1408_R01CAL_TASK_A.md) owns the closed interval and partial-delivery result. [Credential execution evidence](../reviews/RUNTIME_FINDINGS.md#credential-startup-repair-implementation-and-offline-acceptance-2026-11-06) owns the original repair results; the individual dispositions follow below.
 
-**Selected next increment: CRED-03/04 fixes, offline regressions and records.** The [d370082 review](../reviews/RUNTIME_FINDINGS.md#credential-repair-follow-up-review-2026-11-06) supports the core CRED-01/02 fixes but reproduces two P2 preservation regressions. Both corrections are selected and pending under the [active implementation handoff](../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06). After this bounded repair, reassess the recommended, separately unselected offline R01CAL-A01 diagnosis before proposing B. B stays ready with zero attempts and unselected. Numerical calibration, certified holdout provenance and candidate/gates remain open. Production calibration/full source access are unchanged; observer and usage-anchoring enrollment remain off. Provider calls, conversions, packaging, publication, cleanup and subagents remain excluded. R03, OBS-02/03, UA-01-DEFAULTS and distribution retain their triggers.
+**Selected next increment: CRED-03/04 fixes, offline regressions and records.** The [d370082 review](../reviews/RUNTIME_FINDINGS.md#credential-repair-follow-up-review-2026-11-06) supports the core CRED-01/02 fixes but reproduces two P2 preservation regressions. Both corrections are selected and pending under the [active implementation handoff](20261107_1358_REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06). After this bounded repair, reassess the recommended, separately unselected offline R01CAL-A01 diagnosis before proposing B. B stays ready with zero attempts and unselected. Numerical calibration, certified holdout provenance and candidate/gates remain open. Production calibration/full source access are unchanged; observer and usage-anchoring enrollment remain off. Provider calls, conversions, packaging, publication, cleanup and subagents remain excluded. R03, OBS-02/03, UA-01-DEFAULTS and distribution retain their triggers.
 
 R03 remains a separate substantial recovery candidate. OBS-02/03 are measured costs but no operational threshold/workload is selected. R08/R14/R01-PACK connect to declared distribution/destination needs. Important alternatives and revisit conditions remain below. A Stage B title does not direct immediate conversion; Task A's specifically approved interval is now closed, and further live work needs its own selection.
 
 ## Development credential startup
 
-CRED-01/02 are repaired at their recorded offline scope. The later CRED-03/04 P2 regressions are reproduced and selected, with implementation pending. The runtime review owns the [original evidence](../reviews/RUNTIME_FINDINGS.md#development-credential-startup-review-2026-11-06) and [follow-up counterexamples](../reviews/RUNTIME_FINDINGS.md#credential-repair-follow-up-review-2026-11-06); the mechanism owner supplies [original](../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-repair-acceptance) and [follow-up acceptance](../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance). Actual desktop incidence and provider consequences remain unmeasured. Task A remains valid at its closed scope.
+CRED-01/02 are repaired at their recorded offline scope. The later CRED-03/04 P2 regressions are reproduced and selected, with implementation pending. The runtime review owns the [original evidence](../reviews/RUNTIME_FINDINGS.md#development-credential-startup-review-2026-11-06) and [follow-up counterexamples](../reviews/RUNTIME_FINDINGS.md#credential-repair-follow-up-review-2026-11-06); the mechanism owner supplies [original](design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-repair-acceptance) and [follow-up acceptance](design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance). Actual desktop incidence and provider consequences remain unmeasured. Task A remains valid at its closed scope.
 
 | ID | Evidence / impact | Current disposition and next check |
 | --- | --- | --- |
@@ -25,11 +25,11 @@ CRED-01/02 are repaired at their recorded offline scope. The later CRED-03/04 P2
 | CRED-03 | Default-file stat succeeds, then read ENOENT is treated as absence and selects remembered credentials. Reproduced at d370082; 66d779e blocks the same failure. P2 unintended-credential risk; incidence unmeasured. | Selected, implementation pending. Narrow benign absence to initial discovery; prove discovered-file failure blocks engine/Start with zero fallback while missing-default/manual and explicit-path controls remain correct. |
 | CRED-04 | Startup encryption unavailability is cached through explicit Remember saves after capability recovers; no ciphertext is saved. Reproduced at d370082; 66d779e rechecks and persists. P2 persistence/recovery failure. | Selected, implementation pending. Refresh capability within the existing save owner/queue; prove recovery plus encrypted restart and newer Clear/replacement/Remember-off protection across delayed capability/encryption. |
 
-The [phase selection rationale](../PHASE_PLAN.md#next-increment-selection) compares this correction with R01CAL-A01, calibration, recovery and distribution. The [handoff](../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06) defines its execution boundary; it authorizes no follow-on work.
+The [phase selection rationale](20261107_1358_PHASE_PLAN.md#next-increment-selection) compares this correction with R01CAL-A01, calibration, recovery and distribution. The [handoff](20261107_1358_REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06) defines its execution boundary; it authorizes no follow-on work.
 
 ## Runtime and engineering inventory
 
-Evidence is inherited from linked review scopes and [current verification](../CURRENT_STATE.md#verification-basis), not freshly reproduced here. R01 concrete residuals follow. R02 retains performance uncertainty and historical OS attribution after the later publication repair. R07 and H01 are not blanket open repair tasks. R03/R09 connect primarily to C, R08/R14 to D, R01/R02/R11 to B/E; other findings re-enter the phase whose selected outcome they affect.
+Evidence is inherited from linked review scopes and [current verification](20261107_1358_CURRENT_STATE.md#verification-basis), not freshly reproduced here. R01 concrete residuals follow. R02 retains performance uncertainty and historical OS attribution after the later publication repair. R07 and H01 are not blanket open repair tasks. R03/R09 connect primarily to C, R08/R14 to D, R01/R02/R11 to B/E; other findings re-enter the phase whose selected outcome they affect.
 
 | ID | Topic | Evidence / assessment | Current disposition and next check or revisit condition |
 | --- | --- | --- | --- |
@@ -83,7 +83,7 @@ OBS-01–08 alias findings #1–8 in the [observer review](../verification/20261
 
 ## Context, capability and delivery work
 
-[CTX agenda](../discussions/REQUEST_CAPACITY.md#complete-agenda) preserves original questions. Later [contracts](../CONTRACTS.md) and results qualify its old open-method/API wording.
+[CTX agenda](../discussions/REQUEST_CAPACITY.md#complete-agenda) preserves original questions. Later [contracts](20261107_1358_CONTRACTS.md) and results qualify its old open-method/API wording.
 
 | ID | Current disposition / phase | Next action or completion/revisit condition |
 | --- | --- | --- |
@@ -136,7 +136,7 @@ OBS-01–08 alias findings #1–8 in the [observer review](../verification/20261
 
 ## Maintenance and coverage
 
-**DOC-ORG-R1:** Open; specification and local ticket plan prepared at the user's request. Implementation has not started. [Review evidence](../reviews/20261106_2307_ORGANIZATION_REVIEW.md#doc-org-r1--remaining-mutable-status-and-result-mirrors) establishes the defect; the [batch specification](../WORK_ITEMS.md#doc-org-r1-specification) and [tickets](../WORK_ITEMS.md#doc-org-r1-tickets) below own the proposed correction and execution plan. This documentation follow-up does not change application priorities or authorize the credential repair.
+**DOC-ORG-R1:** Open; specification and local ticket plan prepared at the user's request. Implementation has not started. [Review evidence](../reviews/20261106_2307_ORGANIZATION_REVIEW.md#doc-org-r1--remaining-mutable-status-and-result-mirrors) establishes the defect; the [batch specification](20261107_1358_WORK_ITEMS.md#doc-org-r1-specification) and [tickets](20261107_1358_WORK_ITEMS.md#doc-org-r1-tickets) below own the proposed correction and execution plan. This documentation follow-up does not change application priorities or authorize the credential repair.
 
 Update affected items with discoveries, decisions and evidence in the same authorized increment. Keep IDs stable; cross-reference duplicates and retain original aliases. Add unfinished adopted capabilities and new review families. Leave partial scope visible after bounded closure and reconcile phase/current-state summaries. Original assessments retain their historical scope; the register owns current item dispositions. README and INDEX link here without copying the list.
 

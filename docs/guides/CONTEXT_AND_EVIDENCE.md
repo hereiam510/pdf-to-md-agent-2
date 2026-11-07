@@ -1,6 +1,6 @@
 # Context and evidence engineering guide
 
-This guide explains context and evidence reasoning, concrete cases and alternatives without requiring the old checkout or conversation export. [The implemented contracts](../CONTRACTS.md#implemented-first-version-contracts) now select the first-version schemas and transitions; they supersede statements below that those choices remain open. Illustrative and historical mechanisms retain their original status. [CURRENT_STATE](../CURRENT_STATE.md) records verified scope rather than treating every discussed option as implemented.
+This guide explains context and evidence reasoning, concrete cases and alternatives without requiring the old checkout or conversation export. [The topic contracts](../INDEX.md#initial-contract-basis) now select the first-version schemas and transitions; they supersede statements below that those choices remain open. Illustrative and historical mechanisms retain their original status. [implementation evidence](../history/IMPLEMENTATION_HISTORY.md) records verified scope rather than treating every discussed option as implemented.
 
 The later `a484b9b` capability review and repeated policy discussion are recorded in [Context management: discussion and design convergence](../discussions/CONTEXT_COORDINATION.md). The user has selected whole-batch commitment, no automatic partial context application, explicit agent reselection after new instructions, and B for confirmed necessary-content excess. The adopted [coordination design](../design/CONTEXT_UPDATE_COORDINATION.md) integrates waiting/disposition/delivery, necessary-cost proof, explicit reuse and recovery. Its implementation is described below and in Q2; [current status](../history/IMPLEMENTATION_HISTORY.md#context-coordination-discussion-and-design-record) separates executed verification from outstanding evidence.
 
@@ -99,7 +99,7 @@ For [FD-01](../design/FIGURE_DELIVERY.md), `Context.normal` sends SYSTEM with th
 - Capacity: [complete-request accounting](#14-complete-request-capacity-accounting), including the implemented BPE proxy/reserves and uncertainty; route calibration remains distinct.
 - Acceptance/history: [resolved historical batches](#resolved-historical-batches), [tool intents/settlement](#11-tool-intents-and-one-settlement-boundary), [frozen requests](#13-input-view-frozen-request-and-causal-linkage).
 - Continuation: [rolling compaction](#16-rolling-compaction-and-exact-replacement-coverage), [handoff](#17-self-sufficient-handoff-and-working-notes), [failed handoff/restart](#19-failed-handoff-restart-and-context-facing-recovery).
-- Product/evidence limits: [verification meaning](#26-verification-meaning-and-the-three-remaining-contracts), [CURRENT_STATE](../CURRENT_STATE.md#verification-basis).
+- Product/evidence limits: [verification meaning](#26-verification-meaning-and-the-three-remaining-contracts), [topic verification routes](../INDEX.md#find-by-topic).
 
 <details>
 <summary>All sections in this owner</summary>
@@ -146,7 +146,7 @@ All actual consumers use the same classification: group assembly, batch refs, pr
 
 Recovery feedback uses the ordinary outcome schema (`status`, `applied`, `proposal_ref`, `receipt_ref`, `reason`). A complete uncommitted `context-proposal:<K>` remains immutable. Incomplete capture uses a separate `recovery_context` object with ordered operation references and `complete=false`, not an invented applied policy or a structural-invalidity claim. `ContextRevisions.reuse` accepts selected operations from either representation, or an exact original candidate, against an explicitly named active base. This is a new agent selection of saved content, not replay of old intent. Committed applied/superseded/needs-agent-revision dispositions retain their own facts and reasons. Related pending bases are superseded without reviving fallback; unrelated pending proposals remain for the coordinator. Historical completion reports remain readable but cannot close the new planning boundary.
 
-Local controlled large-result, large-argument and large-context-argument cases exercise both protocols, required-content fit, actual estimate equality, explicit release, deferral reasons and unchanged complete originals. These establish mechanism behavior, not semantic fidelity of a natural agent or route-wide savings. CURRENT_STATE owns exact source/test evidence and the [local recovery acceptance contract](../design/ACCEPTED_EVIDENCE_RECOVERY.md#historical-accepted-evidence-local-recovery) separates local resolution from Continue.
+Local controlled large-result, large-argument and large-context-argument cases exercise both protocols, required-content fit, actual estimate equality, explicit release, deferral reasons and unchanged complete originals. These establish mechanism behavior, not semantic fidelity of a natural agent or route-wide savings. [recovery verification](../verification/20261031_1917_RECOVERY_ACCEPTANCE.md) owns exact source/test evidence and the [local recovery acceptance contract](../design/ACCEPTED_EVIDENCE_RECOVERY.md#historical-accepted-evidence-local-recovery) separates local resolution from Continue.
 
 ## Implemented PDF coordinates and image delivery
 
@@ -162,7 +162,7 @@ Official guidance consulted before this implementation: [PyMuPDF Page coordinate
 
 ## Implemented capacity admission and independent pins
 
-The complete coordination implementation separates four responsibilities: `ContextRevisions` captures/composes intent; `Context` projects native requests and measures costs; `ContextUpdates` decides eligibility, disposition and continuation; Runtime/checkpoints recover committed effects and execute the next step. [Q2](../design/CONTEXT_MANAGEMENT.md#q2-context-transitions) owns the executable contract. [CURRENT_STATE](../CURRENT_STATE.md) owns executed checks and limitations. Implementation alone is not evidence of real-model autonomy or general PDF fidelity.
+The complete coordination implementation separates four responsibilities: `ContextRevisions` captures/composes intent; `Context` projects native requests and measures costs; `ContextUpdates` decides eligibility, disposition and continuation; Runtime/checkpoints recover committed effects and execute the next step. [Q2](../design/CONTEXT_MANAGEMENT.md#q2-context-transitions) owns the executable contract. [implementation evidence](../history/IMPLEMENTATION_HISTORY.md) owns executed checks and limitations. Implementation alone is not evidence of real-model autonomy or general PDF fidelity.
 
 ### Whole-batch intent and explicit reuse
 
@@ -216,7 +216,7 @@ Handoff recovery likewise needs a committed application receipt, not just an arc
 
 The coordination increment replaces immediate preflight/placeholder commitment and the former rule requiring an executable active fallback before capacity rejection. Those old capacity-wait cases remain historical evidence, not the selected B policy. CC-R1, CC-R2 and CC-R3 are the reproduced motivations: a normal-template gate blocking actual compaction, specific-outcome/reserve mismatch, and short-reference expansion hiding prefix savings. The earlier lowered-capacity test raised capacity to 500000; it did not demonstrate restoration to precisely the original value.
 
-Existing synthetic extraction, dual-protocol, pin, handoff-repair and saved/reopened/exported checks apply to their executed versions. The 512-by-512 incompressible image example exposed over one million Base64 characters in text extraction, not provider frequency or cost. Scripted responses validate application transitions and retained bytes, not natural agent choice, summary fidelity or arbitrary PDF conversion. Current new-policy checks and their limitations belong to [CURRENT_STATE](../CURRENT_STATE.md); historical counts are not relabeled as new validation.
+Existing synthetic extraction, dual-protocol, pin, handoff-repair and saved/reopened/exported checks apply to their executed versions. The 512-by-512 incompressible image example exposed over one million Base64 characters in text extraction, not provider frequency or cost. Scripted responses validate application transitions and retained bytes, not natural agent choice, summary fidelity or arbitrary PDF conversion. Current new-policy checks and their limitations belong to [implementation evidence](../history/IMPLEMENTATION_HISTORY.md); historical counts are not relabeled as new validation.
 
 LangGraph 1.2.16 and SQLite checkpointer 3.1.2 remain selected. Official [checkpointer guidance](https://docs.langchain.com/oss/python/langgraph/checkpointers) supports the existing synchronous checkpoint/state-update boundary; application receipts reconcile effects before a graph checkpoint. No provider call or dependency change is required. The sections below preserve reasoning and historical alternatives; Q2 and the current responsibility sections above govern implemented behavior.
 
@@ -1151,7 +1151,7 @@ This guide retains the following questions from the discussion stage. They are h
 | Q2: capacity and handoff | Unknown-estimate policy, send/release/compaction/stop transitions, exact coverage/revision application, replacement/rejection and continuation content. | Assess complete requests, preserve originals/unprocessed history, allow partial rolling progress, use self-sufficient continuation, keep relevance with the agent. |
 | Q3: persistence/recovery/stop | Authoritative record placement, boundary re-entry, batch/context effects, original-budget/cancellation/waiting behavior and publication reconciliation. | One active task writer, frozen same-request replay, historical receipts, complete accepted-batch handling, preserved useful work and explicit-version export. |
 
-These are the same three questions in [initial contract decisions](../decisions/INITIAL_CONTRACTS.md), not additional prerequisites. [CONTRACTS](../CONTRACTS.md#implemented-first-version-contracts) owns selected fields and transition rules. The following historical choice list does not make generic field/table counts or fixed thresholds new prerequisites:
+These are the same three questions in [initial contract decisions](../decisions/INITIAL_CONTRACTS.md), not additional prerequisites. [The linked topic contracts](../INDEX.md#initial-contract-basis) own selected fields and transition rules. The following historical choice list does not make generic field/table counts or fixed thresholds new prerequisites:
 
 * Exact field names.
 * Table/module counts.

@@ -1,6 +1,6 @@
 # DOC-ORG-R1 specification
 
-[Register](../../WORK_ITEMS.md#maintenance-and-coverage) · [Tickets](tickets.md) · [Verification](verification.md)
+[Register](../../history/20261107_1358_WORK_ITEMS.md#maintenance-and-coverage) · [Tickets](tickets.md) · [Verification](verification.md)
 
 Originally prepared 2026-11-06, UTC+08:00, as a planning proposal at `f1929b7` plus its organization review/links. On 2026-11-07 the user explicitly selected pdf-to-md-agent-2 for reorganization with the updated skill, authorizing this repair and connected entry/document maintenance through review and verification. [The adoption decision](../../decisions/DOCUMENTATION.md#daily-document-maintenance-and-owner-repair-2026-11-07) records the scope. Implementation entry: `29bc76d`, with the inherited DEVELOPMENT_GUIDE modification preserved. No material method choice remains unresolved.
 

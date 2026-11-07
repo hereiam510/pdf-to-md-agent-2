@@ -1,6 +1,6 @@
 # Recorded streaming acceptance evidence
 
-Recorded 2026-10-31 at 19:17, Asia/Singapore (UTC+08:00), by relocating the existing SC02 execution report from the streaming design. The original execution was recorded on 2026-10-30; this is not a new run. Prose, source identities, unsuccessful checks and limitations below are retained. [Current design](../design/STREAMING_RECEIVE.md), [A's separate result](../history/IMPLEMENTATION_HISTORY.md#streaming-contract-a-implemented-and-locally-verified-2026-10-30) and [current readiness](../CURRENT_STATE.md#verification-basis) have separate responsibilities. Local evidence paths identify retained execution products, not files automatically available to a repository-only reader.
+Recorded 2026-10-31 at 19:17, Asia/Singapore (UTC+08:00), by relocating the existing SC02 execution report from the streaming design. The original execution was recorded on 2026-10-30; this is not a new run. Prose, source identities, unsuccessful checks and limitations below are retained. [Current design](../design/STREAMING_RECEIVE.md), [A's separate result](../history/IMPLEMENTATION_HISTORY.md#streaming-contract-a-implemented-and-locally-verified-2026-10-30) and [current readiness](../history/20261107_1358_CURRENT_STATE.md#verification-basis) have separate responsibilities. Local evidence paths identify retained execution products, not files automatically available to a repository-only reader.
 
 ## SC02 local verification closeout (2026-10-30)
 

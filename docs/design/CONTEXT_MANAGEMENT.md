@@ -2,12 +2,12 @@
 
 ## Basis for this revision
 
-**Design identity of the carried-forward sections:** Existing implemented contract; no separate historical design revision ID was recorded. This 2026-10-31 organization does not change adopted meaning, reset acceptance or create a newly adopted design revision. HEAD `ba8bad3` plus pre-existing uncommitted implementation is the entry worktree; see [current state](../CURRENT_STATE.md) for actual source/check identities and limits.
+**Design identity of the carried-forward sections:** Existing implemented contract; no separate historical design revision ID was recorded. This 2026-10-31 organization does not change adopted meaning, reset acceptance or create a newly adopted design revision. HEAD `ba8bad3` plus pre-existing uncommitted implementation is the entry worktree; see [implementation evidence](../history/IMPLEMENTATION_HISTORY.md) for actual source/check identities and limits.
 
-- **Applicable shared rules:** [requirements, captured edition](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md#acceptance-and-cost), [architecture, captured edition](../history/contracts/20261031_0157_ARCHITECTURE.md#responsibilities), and [preceding shared contract](../history/contracts/20261031_0157_CONTRACTS.md#q2-context-transitions). Current topic rules below retain that edition's effective guarantees; today's global owners are reached through [the contract navigator](../CONTRACTS.md).
+- **Applicable shared rules:** [requirements, captured edition](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md#acceptance-and-cost), [architecture, captured edition](../history/contracts/20261031_0157_ARCHITECTURE.md#responsibilities), and [preceding shared contract](../history/contracts/20261031_0157_CONTRACTS.md#q2-context-transitions). Current topic rules below retain that edition's effective guarantees; today's global owners are reached through [the contract navigator](../INDEX.md#initial-contract-basis).
 - **Choices and reasons:** [applicable decision entry](../decisions/CONTEXT_MANAGEMENT.md#context-coordination-design-recording-boundary) and [supporting discussion / contract closure](../discussions/CONTEXT_COORDINATION.md#d20-human-adopts-the-integrated-design-and-authorizes-recording). The detailed rule sections retain additional supporting entries; carried-forward choices remain applicable.
 - **Discussion:** [CONTEXT_COORDINATION](../discussions/CONTEXT_COORDINATION.md); the relevant original stages and reviewer disagreements are linked from it.
-- **Verification:** adoption and local mechanism checks do not establish real-route compatibility, full fourteen-page fidelity or installed-product readiness. Follow the specific evidence entries below and [current verification](../CURRENT_STATE.md#verification-basis).
+- **Verification:** adoption and local mechanism checks do not establish real-route compatibility, full fourteen-page fidelity or installed-product readiness. Follow the specific evidence entries below and [current verification](../INDEX.md#find-by-topic).
 
 <a id="preserved-source-edition"></a>
 ## Design versions

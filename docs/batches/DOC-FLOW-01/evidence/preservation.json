@@ -1,0 +1,103 @@
+{
+  "baseline": "3407626bbda562823f6a0e273d80a6bd9fa798d2",
+  "checks": {
+    "non_document_bytes": {
+      "checked": 184,
+      "changed": []
+    },
+    "source_collection_bytes": {
+      "checked": 534,
+      "changed": []
+    },
+    "historical_prose_unchanged_except_link_targets": {
+      "checked": 54,
+      "mismatches": []
+    },
+    "snapshot_prose": [
+      {
+        "original": "docs/CURRENT_STATE.md",
+        "capture": "docs/history/20261107_1358_CURRENT_STATE.md",
+        "original_prose_preserved": true
+      },
+      {
+        "original": "docs/PHASE_PLAN.md",
+        "capture": "docs/history/20261107_1358_PHASE_PLAN.md",
+        "original_prose_preserved": true
+      },
+      {
+        "original": "docs/WORK_ITEMS.md",
+        "capture": "docs/history/20261107_1358_WORK_ITEMS.md",
+        "original_prose_preserved": true
+      },
+      {
+        "original": "docs/CONTRACTS.md",
+        "capture": "docs/history/20261107_1358_CONTRACTS.md",
+        "original_prose_preserved": true
+      },
+      {
+        "original": "docs/REVIEW_HANDOFF.md",
+        "capture": "docs/history/20261107_1358_REVIEW_HANDOFF.md",
+        "original_prose_preserved": true
+      }
+    ],
+    "credential_capture_preserved": true,
+    "credential_rules_and_matrices_exact_except_record_destination": true,
+    "credential_engineering_paragraphs_retained": true,
+    "work_item_ids": {
+      "missing": [],
+      "original_table_keys": 73
+    },
+    "maintained_catalogue": {
+      "files": 110,
+      "missing": []
+    }
+  },
+  "inherited_guide": {
+    "original_sha256": "0ff2d5e9a74d3dfa67c6380580845e73a28e1031619e4e23c3db2155acbb0eba",
+    "saved_bytes_match": true,
+    "original_text_matches_baseline_git": true,
+    "only_nine_reviewed_locator_owner_replacements": true,
+    "current_sha256": "e1386b46d4961196f68c90f2e89c6a5149c3d80bf92fa6e12e153f86ef28e51b",
+    "diff_for_main_review": [
+      "--- \n",
+      "+++ \n",
+      "@@ -5 +5 @@\n",
+      "-The first application increment is implemented. [CONTRACTS](CONTRACTS.md#implemented-first-version-contracts) owns its selected schemas and transitions; [CURRENT_STATE](CURRENT_STATE.md) owns verified scope. Older explanatory examples retain these status meanings:",
+      "+The first application increment is implemented. [Topic contracts](INDEX.md#initial-contract-basis) own its selected schemas and transitions; [implementation evidence](history/IMPLEMENTATION_HISTORY.md) records verified scope. Older explanatory examples retain these status meanings:",
+      "@@ -13 +13 @@\n",
+      "-For **View activity and diagnostics**, read the [API and read lifecycle](design/LOCAL_DIAGNOSTICS.md#task-activity-and-local-diagnostic-api) and [observability implementation/evidence owner](verification/20261031_0157_LOCAL_DIAGNOSTICS.md#f01f02-implementation-method-2026-10-29). Ordinary polling exposes event count/latest identity; pages and selected factual joins reuse temporary catalog copies on demand. CURRENT_STATE records local acceptance independently of conversion readiness.",
+      "+For **View activity and diagnostics**, read the [API and read lifecycle](design/LOCAL_DIAGNOSTICS.md#task-activity-and-local-diagnostic-api) and [observability implementation/evidence owner](verification/20261031_0157_LOCAL_DIAGNOSTICS.md#f01f02-implementation-method-2026-10-29). Ordinary polling exposes event count/latest identity; pages and selected factual joins reuse temporary catalog copies on demand. The linked verification records local acceptance independently of conversion readiness.",
+      "@@ -35 +35 @@\n",
+      "-| Historical accepted-evidence conflict diagnosis, local resolution, graph reentry and paired history | [Recovery target and implementation map](design/ACCEPTED_EVIDENCE_RECOVERY.md), [execution mechanism](guides/EXECUTION_AND_DELIVERY.md#historical-conflict-recovery-implementation), [resolved history](guides/CONTEXT_AND_EVIDENCE.md#resolved-historical-batches), [local API/UI](guides/INTEGRATION_AND_MODEL_BOUNDARY.md#local-saved-acceptance-diagnosis-and-recovery-api) | [Local recovery contract](design/ACCEPTED_EVIDENCE_RECOVERY.md#historical-accepted-evidence-local-recovery); CURRENT_STATE owns checks and limits |",
+      "+| Historical accepted-evidence conflict diagnosis, local resolution, graph reentry and paired history | [Recovery target and implementation map](design/ACCEPTED_EVIDENCE_RECOVERY.md), [execution mechanism](guides/EXECUTION_AND_DELIVERY.md#historical-conflict-recovery-implementation), [resolved history](guides/CONTEXT_AND_EVIDENCE.md#resolved-historical-batches), [local API/UI](guides/INTEGRATION_AND_MODEL_BOUNDARY.md#local-saved-acceptance-diagnosis-and-recovery-api) | [Local recovery contract](design/ACCEPTED_EVIDENCE_RECOVERY.md#historical-accepted-evidence-local-recovery); [recovery verification](verification/20261031_1917_RECOVERY_ACCEPTANCE.md) owns checks and limits |",
+      "@@ -38 +38 @@\n",
+      "-| How the three initial contracts were closed, and the limits of that closure | [Three contract closures](decisions/INITIAL_CONTRACTS.md) | [Effective contracts](CONTRACTS.md); historical open questions do not reopen settled work |",
+      "+| How the three initial contracts were closed, and the limits of that closure | [Three contract closures](decisions/INITIAL_CONTRACTS.md) | [Effective contracts](INDEX.md#initial-contract-basis); historical open questions do not reopen settled work |",
+      "@@ -134 +134 @@\n",
+      "-Checks use repository files only. Counts/hashes do not prove semantic completeness or runtime correctness. Source-aware review and independent repository-only reading supplement them. [CURRENT_STATE](CURRENT_STATE.md) records documentation checks separately from application checks.",
+      "+Checks use repository files only. Counts/hashes do not prove semantic completeness or runtime correctness. Source-aware review and independent repository-only reading supplement them. [Batch verification](INDEX.md#batch-documents) records documentation checks separately from application checks.",
+      "@@ -138 +138 @@\n",
+      "-This overview was relocated from README on 2026-10-30. Batch numbers and build observations retain their recorded scope; [CURRENT_STATE](CURRENT_STATE.md) identifies the latest source and limits. Contracts remain authoritative for effective behavior.",
+      "+This overview was relocated from README on 2026-10-30. Batch numbers and build observations retain their recorded scope; the [topic evidence routes](INDEX.md#find-by-topic) identify source and verification owners. Contracts remain authoritative for effective behavior.",
+      "@@ -155 +155 @@\n",
+      "-For a historical saved-acceptance conflict, use **Inspect saved acceptance** in the task panel. The on-demand diagnosis explains retained bytes, original publication, receive-rule compatibility and tool-effect certainty. Eligible finish-boundary cases offer **Preserve work and prepare to re-plan**, a credential-free local action. It preserves original acceptance and consumption, retains completed effects, and pairs unstarted calls with truthful receipts. Review/export saved versions, reopen or add instructions, then use the separate **Continue** to start further model work. Uncommitted candidates, a committed decision awaiting graph projection, and ready local recovery are distinct states. Unknown effects and unsupported evidence remain explicit stopped cases. See [the recovery contract](design/ACCEPTED_EVIDENCE_RECOVERY.md#historical-accepted-evidence-local-recovery), [target and implementation map](design/ACCEPTED_EVIDENCE_RECOVERY.md), and CURRENT_STATE for local verification and limits. This adds no Langfuse integration or external telemetry.",
+      "+For a historical saved-acceptance conflict, use **Inspect saved acceptance** in the task panel. The on-demand diagnosis explains retained bytes, original publication, receive-rule compatibility and tool-effect certainty. Eligible finish-boundary cases offer **Preserve work and prepare to re-plan**, a credential-free local action. It preserves original acceptance and consumption, retains completed effects, and pairs unstarted calls with truthful receipts. Review/export saved versions, reopen or add instructions, then use the separate **Continue** to start further model work. Uncommitted candidates, a committed decision awaiting graph projection, and ready local recovery are distinct states. Unknown effects and unsupported evidence remain explicit stopped cases. See [the recovery contract](design/ACCEPTED_EVIDENCE_RECOVERY.md#historical-accepted-evidence-local-recovery), [target and implementation map](design/ACCEPTED_EVIDENCE_RECOVERY.md), and [recovery verification](verification/20261031_1917_RECOVERY_ACCEPTANCE.md) for local checks and limits. This adds no Langfuse integration or external telemetry.",
+      "@@ -165 +165 @@\n",
+      "-Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Reviewer handoff](REVIEW_HANDOFF.md) maps the changes and review evidence. The three accepted follow-up phases and the Phase 3 closeout are implemented. [Recorded state](history/IMPLEMENTATION_HISTORY.md#review-follow-up-progress) records checks and limitations separately from plan acceptance and release.",
+      "+Existing Windows folder/installer artifacts still contain the earlier response-correction build; use the development launcher for this revision. [Implementation history](history/IMPLEMENTATION_HISTORY.md#review-follow-up-progress) maps the changes and review evidence. The three accepted follow-up phases and the Phase 3 closeout are implemented. [Recorded state](history/IMPLEMENTATION_HISTORY.md#review-follow-up-progress) records checks and limitations separately from plan acceptance and release.",
+      "@@ -169 +169 @@\n",
+      "-The integrated coordination implementation addresses the reproduced shrinking-update guard, particular-outcome preview and short-reference progress inconsistencies. Actual compaction is checked separately from normal input; a one-way necessary-cost proof never replaces full admission. Committed decisions and policy effects recover before current settings are evaluated. [The design](design/CONTEXT_UPDATE_COORDINATION.md) preserves the rationale and [the handoff](REVIEW_HANDOFF.md) identifies the tested source, evidence and remaining real-model limits.",
+      "+The integrated coordination implementation addresses the reproduced shrinking-update guard, particular-outcome preview and short-reference progress inconsistencies. Actual compaction is checked separately from normal input; a one-way necessary-cost proof never replaces full admission. Committed decisions and policy effects recover before current settings are evaluated. [The design](design/CONTEXT_UPDATE_COORDINATION.md) preserves the rationale and [the implementation evidence](history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) identifies the tested source, evidence and remaining real-model limits."
+    ]
+  },
+  "documentation_checker": {
+    "markdown_files": 116,
+    "local_links_and_destinations_checked": 5588,
+    "preserved_points": 356,
+    "source_dispositions": 275,
+    "bundled_source_files_verified": 503,
+    "development_detail_mappings": 356,
+    "errors": [],
+    "scope": "Repository-only link, source-integrity and coverage checks. Counts do not prove semantic completeness or runtime correctness."
+  }
+}

@@ -2,7 +2,7 @@
 
 ## Basis for this revision
 
-The adopted design and recorded corrections below retain their original identities; this filing is not new adoption. [Decisions](../decisions/CONTEXT_MANAGEMENT.md#context-coordination-design-recording-boundary), [discussion](../discussions/CONTEXT_COORDINATION.md#d20-human-adopts-the-integrated-design-and-authorizes-recording), [captured shared contract](../history/contracts/20261031_0157_CONTRACTS.md#q2-context-transitions), [captured requirements](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md) and [captured architecture](../history/contracts/20261031_0157_ARCHITECTURE.md) identify the applicable basis. Exact prior design identities not recorded remain unknown; current readiness is separate in [CURRENT_STATE](../CURRENT_STATE.md).
+The adopted design and recorded corrections below retain their original identities; this filing is not new adoption. [Decisions](../decisions/CONTEXT_MANAGEMENT.md#context-coordination-design-recording-boundary), [discussion](../discussions/CONTEXT_COORDINATION.md#d20-human-adopts-the-integrated-design-and-authorizes-recording), [captured shared contract](../history/contracts/20261031_0157_CONTRACTS.md#q2-context-transitions), [captured requirements](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md) and [captured architecture](../history/contracts/20261031_0157_ARCHITECTURE.md) identify the applicable basis. Exact prior design identities not recorded remain unknown; phase readiness is separate in [PHASE_PLAN](../PHASE_PLAN.md#readiness-and-evidence).
 
 ## Design versions
 
@@ -11,7 +11,7 @@ The adopted design and recorded corrections below retain their original identiti
 | Current adopted meaning | D15/D18/D20 policy choices, followed by D21 implementation; design checkpoint `c1e6fcc`. This edit changes retrieval and status clarification, not policy. |
 | Pre-edit source edition, captured 2026-10-31 19:17 UTC+08:00 | [Complete dedicated owner](../history/design/20261031_1917_CONTEXT_UPDATE_COORDINATION.md), including its shared-rule/decision/discussion basis. This is a capture identity, not an invented earlier adoption timestamp. |
 
-Older separate design identities not preserved in the supplied records remain unclaimed. Applicable original decision entries retain their own dates and scopes; current readiness is in [CURRENT_STATE](../CURRENT_STATE.md).
+Older separate design identities not preserved in the supplied records remain unclaimed. Applicable original decision entries retain their own dates and scopes; phase readiness is in [PHASE_PLAN](../PHASE_PLAN.md#readiness-and-evidence).
 
 Updated 2026-10-26, Asia/Hong_Kong (UTC+08:00). Application baseline `a484b9b` and design checkpoint `c1e6fcc` precede the complete coordination implementation. This document retains the adopted design and rationale; [CONTRACTS Q2/Q3](CONTEXT_MANAGEMENT.md#q2-context-transitions) owns effective behavior and [recorded implementation result](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) owns actual checks and limits.
 
@@ -19,7 +19,7 @@ Updated 2026-10-26, Asia/Hong_Kong (UTC+08:00). Application baseline `a484b9b` a
 
 ## Guide navigation
 
-Read the relevant mechanism below with [current contracts](../CONTRACTS.md#reading-this-contract) and [current verification](../CURRENT_STATE.md#verification-basis). Historical alternatives and original implementation-order proposals retain their stated status.
+Read the relevant mechanism below with [current contracts](../INDEX.md#initial-contract-basis) and [current verification](../INDEX.md#find-by-topic). Historical alternatives and original implementation-order proposals retain their stated status.
 
 <details>
 <summary>Sections in this guide</summary>
@@ -316,7 +316,7 @@ The concrete implementation uses `ContextRevisions`, `Context`, `ContextUpdates`
 
 ## Observable acceptance and limits
 
-The matrix below defines acceptance. [recorded implementation result](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) and the [review handoff](../REVIEW_HANDOFF.md) identify executed checks; a row here alone is not a passing result. Use both Chat Completions and Responses with local scripted replies/mock transport before proposing live work. Preserve unchanged capacity in shrinking-update cases.
+The matrix below defines acceptance. [recorded implementation result](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination) identifies executed checks; a row here alone is not a passing result. Use both Chat Completions and Responses with local scripted replies/mock transport before proposing live work. Preserve unchanged capacity in shrinking-update cases.
 
 | Capability | Observable acceptance |
 | --- | --- |
@@ -343,7 +343,7 @@ The implementation synchronizes CONTRACTS Q2/Q3, ARCHITECTURE, callable-tool gui
 
 The bounded exit is a complete supported context-update route with these representative neighboring operations, or a precise remaining direct blocker. Do not add unrelated hypothetical mechanisms to delay completion. A materially reproduced blocker cannot be dismissed just because the three original controls pass.
 
-After authorized implementation meets that exit, recommend [Stage B](../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources): a selected real source/range, Nexus route and finite call allowance, separately authorized. Observe autonomous completion, interventions and source-led saved/reopened/exported quality. Let context management occur naturally; non-use does not verify it and does not prove it unnecessary. Stage A implementation closeout is recorded in CURRENT_STATE; this design document does not authorize Stage B.
+After authorized implementation meets that exit, recommend [Stage B](../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources): a selected real source/range, Nexus route and finite call allowance, separately authorized. Observe autonomous completion, interventions and source-led saved/reopened/exported quality. Let context management occur naturally; non-use does not verify it and does not prove it unnecessary. Stage A implementation closeout is recorded in [coordination evidence](../history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination); this design document does not authorize Stage B.
 
 ## Acceptance implementation and recorded evidence
 

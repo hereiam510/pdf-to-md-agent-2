@@ -2,11 +2,11 @@
 
 ## Basis for this revision
 
-**Design identity:** Existing implemented contract; no separate historical design revision ID was recorded. This 2026-10-31 organization does not change adopted meaning, reset acceptance or create a newly adopted design revision. HEAD `ba8bad3` plus pre-existing uncommitted implementation is the entry worktree; see [current state](../CURRENT_STATE.md) for actual source/check identities and limits.
+**Design identity:** Existing implemented contract; no separate historical design revision ID was recorded. This 2026-10-31 organization does not change adopted meaning, reset acceptance or create a newly adopted design revision. HEAD `ba8bad3` plus pre-existing uncommitted implementation is the entry worktree; see [implementation evidence](../history/IMPLEMENTATION_HISTORY.md) for actual source/check identities and limits.
 
-- **Applicable shared rules:** [requirements, captured edition](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md#acceptance-and-cost), [architecture, captured edition](../history/contracts/20261031_0157_ARCHITECTURE.md#responsibilities), and [preceding shared contract](../history/contracts/20261031_0157_CONTRACTS.md#q3-execution-recovery-and-delivery). Current topic rules below retain that edition's effective guarantees; today's global owners are reached through [the contract navigator](../CONTRACTS.md).
+- **Applicable shared rules:** [requirements, captured edition](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md#acceptance-and-cost), [architecture, captured edition](../history/contracts/20261031_0157_ARCHITECTURE.md#responsibilities), and [preceding shared contract](../history/contracts/20261031_0157_CONTRACTS.md#q3-execution-recovery-and-delivery). Current topic rules below retain that edition's effective guarantees; today's global owners are reached through [the contract navigator](../INDEX.md#initial-contract-basis).
 - **Choices and reasons:** [applicable decision entry](../decisions/REBUILD.md#reopening-policy) and [supporting discussion / contract closure](../decisions/INITIAL_CONTRACTS.md#q3-persistence-recovery-and-stop-contract). The detailed rule sections retain additional supporting entries; carried-forward choices remain applicable.
-- **Verification:** adoption and local mechanism checks do not establish real-route compatibility, full fourteen-page fidelity or installed-product readiness. Follow the specific evidence entries below and [current verification](../CURRENT_STATE.md#verification-basis).
+- **Verification:** adoption and local mechanism checks do not establish real-route compatibility, full fourteen-page fidelity or installed-product readiness. Follow the specific evidence entries below and [current verification](../INDEX.md#find-by-topic).
 
 <a id="preserved-source-edition"></a>
 ## Design versions
@@ -80,7 +80,7 @@ Protocol output and diagnostics require a deliberate process/channel boundary, b
 
 ### Q3: execution, recovery and delivery
 
-Chat Completions `tool_calls` may be absent, null, or an array. Absent/null means no executable calls; non-array non-null values are rejected. This interpretation does not rewrite the original native message. A nonempty text-only reply still follows its normal continuation or compaction contract; empty, refused, truncated or invalid calls do not become executable. See the official [Chat Completions response schema](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create). Actual Nexus route validation remains separately recorded in CURRENT_STATE.
+Chat Completions `tool_calls` may be absent, null, or an array. Absent/null means no executable calls; non-array non-null values are rejected. This interpretation does not rewrite the original native message. A nonempty text-only reply still follows its normal continuation or compaction contract; empty, refused, truncated or invalid calls do not become executable. See the official [Chat Completions response schema](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create). Actual Nexus route validation remains separately recorded in [implementation evidence](../history/IMPLEMENTATION_HISTORY.md).
 
 `catalog.sqlite` owns jobs, requests, attempts, operation receipts, committed context dispositions/effects, version registration and exports. `graph.sqlite` owns LangGraph checkpoints with synchronous durability. External immutable objects own the retained bytes. A cross-process file lock permits one task executor; manual editing uses the same lock. Independent jobs can run separately. These stores do not form a shared transaction.
 

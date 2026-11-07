@@ -1,5 +1,15 @@
 # Documentation organization decisions
 
+## Progressive disclosure and interaction continuation (2026-11-07)
+
+The user selected applying the discussed architecture with the updated vibe-coding skill, including GPT-6.1 Sol low subagent reading/update/continuation checks and main-agent review/verification. [DOC-FLOW-01](../batches/DOC-FLOW-01/spec.md) owns this maintenance scope and [verification](../batches/DOC-FLOW-01/verification.md) owns its outcome. This supersedes earlier current-owner assignments below where they differ; their original reasoning and scope remain historical.
+
+INDEX routes by task and topic and catalogues the complete collection. CURRENT_STATE owns interaction focus and exact resumption, including discussion before a batch; WORK_ITEMS owns work selection, comparative priority and revisit/residual-scope decisions; PHASE_PLAN owns phase outcomes and acceptance. Batch spec, tickets and verification retain their separate responsibilities. A named task does not require rereading every catalogue entry; complete applicable rule sections and their conditional dependencies do need reading. When meaningful discussion or a decision forms, save it before it can be lost, then update the continuation pointer when its activity changes.
+
+One-way references point to substantive owners; inverse impact is found through topic/concept/path searches rather than mirrored dependency tables. Necessary semantic/evidence links are retained without requiring an acyclic graph. Remove compatibility-only navigation stubs, preserve meaningful old content and repair actual consumers. Credential rules and acceptance move from the integration guide to DEVELOPMENT_CREDENTIALS; operational explanation stays in the guide. CONTRACTS and REVIEW_HANDOFF have no separate live ownership after consolidation. Product rules, acceptance guarantees and application work selection are preserved; this task does not implement CRED-03/04 or adopt the earlier hypothetical R03-01 walkthrough as real work.
+
+Existing inherited DEVELOPMENT_GUIDE content is captured before necessary locator repairs. Source collections and evidence observations remain unchanged; historical locator changes are recorded separately. The operative routes and update triggers are in [INDEX](../INDEX.md) and [AGENTS](../../AGENTS.md#daily-development-and-document-maintenance). Local ticket mode, no-provider boundaries and publication authority remain in force.
+
 ## Daily document maintenance and owner repair (2026-11-07)
 
 The user requests reorganization with the updated vibe-coding skill and explicitly identifies pdf-to-md-agent-2 as the target. Execute the existing DOC-ORG-R1 repair plus its connected daily-development/entry maintenance. The [batch specification](../batches/DOC-ORG-R1/spec.md) defines scope and acceptance, [tickets](../batches/DOC-ORG-R1/tickets.md) own execution, and [verification](../batches/DOC-ORG-R1/verification.md) owns actual observations and the verdict. Keep local tickets plus GitHub repository/PR delivery; no remote publication is part of this request.

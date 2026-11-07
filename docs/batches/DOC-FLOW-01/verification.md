@@ -1,0 +1,72 @@
+# DOC-FLOW-01 verification
+
+[Spec and criteria](spec.md#acceptance) Â· [Execution](tickets.md) Â· [Adoption](../../decisions/DOCUMENTATION.md#progressive-disclosure-and-interaction-continuation-2026-11-07).
+
+## Entry basis
+
+Baseline and inherited content are identified in the spec. The initial repository documentation check completed with no errors: 108 Markdown documents, 5,368 local links/destinations, 356 preserved points/detail mappings, 275 source dispositions and 503 bundled-source files. These establish mechanical entry facts, not semantic completeness or application acceptance.
+
+## Combined acceptance
+
+Accepted for the selected documentation organization and bounded reading/update/continuation checks on 2026-11-07, Asia/Singapore. Main-agent review found no remaining in-scope blocker after the corrections below. Application behavior and CRED-03/04 acceptance are unchanged; no application, provider, conversion or installed-build tests ran. The six successful behavioral trials do not establish that future agents can never omit a document.
+
+The first trial candidate and final documentation are separately identified by the [candidate manifest](evidence/candidate-manifest.json) and [final content manifest](evidence/final-documents.json). The local Git checkpoint containing this record is the delivery identity; no remote publication is part of this batch.
+
+## Results
+
+| Criterion | Evidence and main assessment |
+| --- | --- |
+| A1: reading routes | Named CRED reading found the complete credential rule, original/follow-up acceptance, counterexamples, execution state and source limits. Fresh continuation readers recovered the correct discussion instead of choosing the newest batch or the whole catalogue. |
+| A2: credential preservation | Original rule body and both matrices match the new design after excluding two engineering paragraphs retained in the guide and replacing the contradictory new-results recording destination with batch verification. Original text also survives in its dated capture. Main review checked initial-absence versus post-discovery failure, newer-intent ordering across awaits, valid-file decryption exclusion, settings/Start readiness, Clear/Remember and packaged exclusion. |
+| A3: work and owner separation | Every original work-item table key remains. Concrete comparative sequencing moved to WORK_ITEMS; phase outcomes/acceptance remain in PHASE_PLAN; interaction focus moved to CURRENT_STATE. Repeated task verdicts/metrics became evidence routes, while residual scope, severity, deferrals and revisit reasons remain. Historical captures retain preceding wording. |
+| A4: updates | Partial-outcome writer kept supplied failure/unchecked scope in verification and execution in tickets, saved the handling question and updated authority/continuation without changing WORK_ITEMS or PHASE_PLAN. Separate filename-change writer found stale README text outside the seeded code diff, updated current policy and preserved historical filename observations. |
+| A5: interaction and fresh continuation | R03 discussion writer saved the user-selected no-replay direction, attributed assistant proposals and two unresolved questions before an explicit handoff, with parked DOC-FLOW/CRED routes. Fresh readers recovered both that discussion and the separate partial-CRED failure, obeyed response-only instructions and started no implementation. |
+| A6: integrated review | Link/fragment/source checks, complete maintained catalogue, preserved historical prose, exact credential comparisons, work IDs, non-document byte hashes, inherited-guide replacement allowlist and input reconstruction passed. The main agent inspected actual writer diffs and reader responses, not only their success reports. |
+
+## Behavioral trials
+
+All six used explicitly requested `gpt-6.1-sol`, `reasoning_effort: low`, `fork_turns: none`. The frozen vibe-coding input is `db0338e`. Project inputs were copied from the docs-only candidate over `3407626bbda562823f6a0e273d80a6bd9fa798d2`; the consumer trial adds two recorded synthetic filename literals. Isolated fixture commits are evaluation identities, not product commits.
+
+The [exact assignments, first final responses and main assessments](evidence/behavioral-trials.json) preserve the tested requests. Expected outcomes were the spec's A1â€“A6 conditions before dispatch; assignments did not disclose the expected owner edit list. Full tool event streams are not exported. Reader section lists are self-reported retrieval; actual response meaning and writer artifacts supply the stronger behavioral evidence.
+
+| Agent / case | Observed result | Saved artifacts |
+| --- | --- | --- |
+| pdf_docs_reading: named ready spec, preparation only | Recovered both CRED exceptions and both matrices, differentiated historical and unrun checks, respected no implementation. It reported recovering applicable bodies after aggregated output truncation. | [No-write result](evidence/reading-artifacts.json) |
+| pdf_docs_update: partial development and a bug | Five existing owners changed. Synthetic results and unknown causal mechanism remained explicit; no copied batch verdict in the register/phase plan and no acceptance weakening. | [Diff and file identities](evidence/update-artifacts.json) |
+| pdf_docs_interaction: switch work during discussion | Substantive R03 discussion plus INDEX/CURRENT_STATE routes; no invented spec/batch, no reprioritization, original topics parked. | [Diff and new discussion](evidence/interaction-artifacts.json) |
+| pdf_docs_resume: new chat, vague continuation | Independently recovered R03, adopted direction, unadopted UI/recovery proposals, exact next questions and parked work; no writes. | Same interaction artifacts; first response in trial record |
+| pdf_docs_bug_resume: new chat after partial failure | Independently recovered the newer-Clear failure, evidence limits and discussion-first instruction; did not infer key/ciphertext outcomes or a selected fix; no writes. | Same update artifacts; first response in trial record |
+| pdf_docs_consumers: development changes a filename | Source inspection found the supplied literals; README and the current design were reconciled, valid guide pointers and original historical observations retained. Runtime acceptance remained unclaimed. | [Diff](evidence/consumer-artifacts.json), [synthetic seed](evidence/consumer-seed.json) |
+
+No behavioral failure requiring a corrective agent rerun was observed in these six cases. They are a finite workflow sample, not a comparison benchmark or a measured cost/speed/reliability improvement. Explicit skill paths test reading/application, not implicit skill discovery. Fresh contexts still inherit host/system instructions. Trial discussions, simulated CRED progress and `private/development-key.txt` changes are not integrated into the real project.
+
+## Main review and preservation
+
+The main agent applied the skill and owned shared-file edits, integration and the verdict. Review followed README/AGENTS through named-batch and implicit-continuation routes; checked the credential original/follow-up targets against the old owner; traced CRED progress to its still-unstarted real tickets; and traced R01CAL-A01, R03, UA defaults, figure validation and distribution deferrals to their selection and evidence owners. A completed task or corrected evidence result can change its owner without a second copied result in INDEX, CURRENT_STATE, WORK_ITEMS or PHASE_PLAN. Distinct continuation, priority or phase judgments change only when their own facts change.
+
+Why retain three core files: CURRENT_STATE changes with interaction activity, including pre-spec discussion and temporary switches; WORK_ITEMS changes with problem selection, priority and residual scope; PHASE_PLAN changes with phase outcomes, ordering and acceptance. These are distinct decisions with different update triggers. Batch spec/tickets/verification continue to own agreement, execution and observed acceptance separately.
+
+CONTRACTS and REVIEW_HANDOFF were navigators without a necessary separate live responsibility. Their useful routes now reach INDEX, substantive designs, the CRED batch and exact historical evidence. The five preceding coordination views and original credential section are captured with dates and provenance; no compatibility-only files or empty hierarchy remain. Existing source/test/tool layout stays intact. Long historical discussions are reached by current-question/topic routes rather than mandatory full reads.
+
+Main-review corrections, retained as observations rather than hidden passes:
+
+- Initial relocation checks found two remaining `find-current-work` fragments and an incorrect settings-evidence fragment; corrected to the actual task/evidence destinations. A later direct historical-handoff repair used a nonexistent coordination heading; inspecting REVIEW_HISTORY identified the correct Stage A record. Final link/fragment checks have no errors.
+- Independent catalogue reconciliation found two pre-existing omitted batch-layout captures; added both. Removed the now-unneeded DOC-ORG-R1 forwarding headings from WORK_ITEMS; historical references already reach the captured original.
+- A semantic consumer search found older guide/design/decision/discussion prose still assigning checks/readiness to CURRENT_STATE. Corrected current owner descriptions to exact evidence or PHASE_PLAN routes, including a current Nursing entry that would otherwise point to an old readiness capture. Historical attributed user statements, results and source collections retain their original meaning.
+- The staged whitespace check flagged trailing blank lines in the two newly created credential owners/captures; trimmed those blank lines without changing their prose.
+
+The [preservation checks](evidence/preservation.json) establish:
+
+- All 184 baseline tracked files outside project documentation/entry files are byte-identical. No application/test/tool/config source changed.
+- All 534 files under `docs/sources/` are byte-identical. The repository checker separately verifies 503 bundled originals, 356 preserved point/detail mappings and 275 source dispositions.
+- Fifty-four existing history/review/verification/closed-batch Markdown files preserve exactly the same prose after ignoring only Markdown link destinations. The five new coordination captures and credential capture preserve their original prose.
+- All 110 maintained root/docs Markdown files outside source collections are catalogued. Original source collections remain represented by their entry points and complete manifests; fixture documentation retains its catalogue route.
+- The inherited DEVELOPMENT_GUIDE was captured before edits. Its raw original SHA256 is `0ff2d5e9a74d3dfa67c6380580845e73a28e1031619e4e23c3db2155acbb0eba`; its text matches the baseline Git version. The final file differs by exactly nine reviewed locator/owner-description substitutions. All other inherited content is retained.
+
+The final documentation checker and whitespace checks pass. Hashes and link counts do not prove semantic completeness; the owner comparisons, main reader review and behavioral trials supply the bounded meaning/usability evidence. Private/runtime data was not inspected, so no private-store integrity audit is claimed.
+
+## Evidence and reconstruction
+
+Necessary evidence is versioned here; ignored `.local/doc-flow-01/` contains working copies and preparation scratch. The [candidate patch](evidence/candidate.patch.gz), [candidate manifest](evidence/candidate-manifest.json) and [frozen skill input](evidence/skill-inputs.json) preserve the tested text. After gzip decompression, starting from the recorded baseline, the patch reconstructs all 118 frozen Markdown files, including source/fixture entries, with matching UTF-8 LF hashes; [reconstruction checks](evidence/reconstruction.json) used a separate Git index and left the main index/worktree untouched. Fixture diffs/new-file text reconstruct writer outputs; the [locator-repair record](evidence/locator-repairs.json) documents the initial relocation passes. The final Git diff and final content manifest include subsequent semantic corrections.
+
+After the first candidate, main-only changes repaired catalogue omissions, removed forwarding headings, reconciled additional evidence-owner prose and recorded closeout. These do not alter the credential rules or interaction/update rules exercised by agents; they were checked directly in the final integrated state. No additional application acceptance is inferred from the documentation checkpoint.

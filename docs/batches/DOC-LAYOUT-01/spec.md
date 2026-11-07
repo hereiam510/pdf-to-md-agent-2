@@ -1,6 +1,6 @@
 # DOC-LAYOUT-01 specification
 
-[Tickets](tickets.md) · [Verification](verification.md) · [Register](../../WORK_ITEMS.md#batch-layout-organization)
+[Tickets](tickets.md) · [Verification](verification.md) · [Register](../../history/20261107_1358_WORK_ITEMS.md#batch-layout-organization)
 
 The user approved project organization and selected local tickets plus GitHub repo/PR delivery. Scope: establish the project policy; migrate DOC-ORG-R1 planning and CRED-03/04 assignment into fixed separate files; repair the catalogue, current entry and legacy anchors. Preserve all inherited edits, especially DEVELOPMENT_GUIDE, and original review/evidence. Application execution, broader DOC-ORG-R1 duplicate-owner repair, remote publication and unrelated file/data cleanup are outside this organization batch.
 

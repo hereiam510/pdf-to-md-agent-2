@@ -1,48 +1,17 @@
 # Current state
 
-## Current product status
+## Focus and resume route
 
-Updated 2026-11-06, Asia/Singapore. The development app implements autonomous conversion, precise source access, immutable document versions, durable execution and explicit-version export. Local mechanism checks and bounded real-source results support continued development; they do not establish general native/scanned/mixed-source fidelity or current installed-product readiness. [Phase outcomes and acceptance](PHASE_PLAN.md#delivery-route) define the remaining product work.
+Current focus: DOC-FLOW-01 documentation handoff.
+Resume at: [DOC-FLOW-01 verification](batches/DOC-FLOW-01/verification.md#combined-acceptance) and its [main review](batches/DOC-FLOW-01/verification.md#main-review-and-preservation); [tickets](batches/DOC-FLOW-01/tickets.md) retain execution details.
+Next activity: no further activity is selected by this documentation request. A follow-up review can start at the recorded evidence; use the return routes below when the current request selects another topic.
+Instruction basis: the current user request selects this documentation work and GPT-6.1 Sol low subagent checks; [scope and preservation](batches/DOC-FLOW-01/spec.md#outcome-and-authority) applies. It does not start application implementation, conversion or provider work.
 
-The complete-section delivery gap demonstrated by R01CAL-A01 remains material. Numerical context calibration, broader figure/source-class validation and interrupted local-process recovery also limit readiness. Existing distributions predate recent source changes. [WORK_ITEMS](WORK_ITEMS.md) owns individual dispositions; the evidence routes below retain their actual scopes and counterexamples.
+## Return routes
 
-## Find current work
+- Application work selected before this maintenance: [CRED-03-04 spec](batches/CRED-03-04/spec.md). Read its [tickets](batches/CRED-03-04/tickets.md) and [verification](batches/CRED-03-04/verification.md) for actual execution/acceptance, and [WORK_ITEMS](WORK_ITEMS.md#selection-now) for comparative priority. Resume when the current user request selects that activity; this documentation assignment does not execute it.
+- R03 and R01CAL-A01 remain at their [work-item owners](WORK_ITEMS.md), not invented batches. The earlier R03-01 walkthrough was illustrative and is not a project assignment.
 
-Use the [batch catalogue](INDEX.md#batch-documents) for fixed spec, local-ticket and verification entrances. The [daily development routine](../AGENTS.md#daily-development-and-document-maintenance) applies within each selected task.
+## Continuation discipline
 
-Documentation maintenance: [DOC-ORG-R1 scope](batches/DOC-ORG-R1/spec.md), [execution](batches/DOC-ORG-R1/tickets.md) and [acceptance evidence](batches/DOC-ORG-R1/verification.md). Its [selection and revisit condition](WORK_ITEMS.md#maintenance-and-coverage) are independent of application implementation.
-
-Application continuation: [item dispositions](WORK_ITEMS.md#development-credential-startup), [comparative sequencing](PHASE_PLAN.md#next-increment-selection), [credential batch agreement](batches/CRED-03-04/spec.md), [execution](batches/CRED-03-04/tickets.md) and [verification](batches/CRED-03-04/verification.md). The [handoff navigator](REVIEW_HANDOFF.md) preserves earlier continuation routes. Read the selected assignment and current human instruction together; documentation maintenance and historical provider allowances do not start that application work.
-
-## Verification basis
-
-Each linked record owns its execution identities, failures, passing checks and limits. The table is navigation, not a second results ledger. No application checks or provider calls were performed by the organization task.
-
-| Capability / question | Evidence owner |
-| --- | --- |
-| Credential startup and preservation | [Original repair](reviews/RUNTIME_FINDINGS.md#credential-startup-repair-implementation-and-offline-acceptance-2026-11-06), [follow-up counterexamples](reviews/RUNTIME_FINDINGS.md#credential-repair-follow-up-review-2026-11-06) |
-| Complete-section source delivery | [Task A execution and source review](verification/20261106_1408_R01CAL_TASK_A.md), including saved/reopened/exported consistency and the partial-delivery finding |
-| Trial coordinator and reviewed corrections | [UA-01 execution evidence](reviews/RUNTIME_FINDINGS.md#ua-01-repair-implementation-increment-2026-11-06) |
-| Observer correctness and cost | [Offline measurement](verification/20261105_0220_USAGE_OBSERVATION.md#offline-correctness-and-measurement-increment-2026-11-06) |
-| Production estimator classification and counter recovery | [R01-MOD](reviews/RUNTIME_FINDINGS.md#r01-mod-production-classification-increment-2026-11-06), [R01-COUNT](reviews/RUNTIME_FINDINGS.md#r01-count-automatic-recovery-increment-2026-11-06) |
-| Figure guidance and bounded actual source delivery | [Local FD-01 checks](verification/20261101_0033_FD01_LOCAL.md), [two-page execution](verification/20261101_0103_FD01_TWO_PAGE_LIVE.md) |
-| Publication and saved-version consistency | [Publication checks](verification/20261031_2220_VERSION_PUBLICATION.md) |
-| Integrated baseline and finite malformed-response recovery | [R07 integration](verification/20261031_2019_R07_INTEGRATION.md) |
-| Accepted-evidence recovery and streaming | [Recovery checks](verification/20261031_1917_RECOVERY_ACCEPTANCE.md), [streaming checks](verification/20261031_1917_STREAMING_ACCEPTANCE.md) |
-| Diagnostics and earlier mechanisms | [Diagnostics checks](verification/20261031_0157_LOCAL_DIAGNOSTICS.md), [implementation history](history/IMPLEMENTATION_HISTORY.md) |
-
-## Nursing boundary and next product decision
-
-The [Nursing closeout decision](decisions/NURSING.md#historical-fourteen-page-task-closeout-2026-11-01) owns historical task acceptance and its retained figure limitation. [Full-run evidence and acceptance correction](verification/20261031_2242_NURSING_LIVE.md), [rejected earlier dispatch](verification/20261031_0157_NURSING_BASELINE_AND_DISPATCH.md#actual-single-dispatch-result-2026-10-30) and [separate two-page evidence](verification/20261101_0103_FD01_TWO_PAGE_LIVE.md) remain distinct. These records do not establish general Stage B readiness or authorize further sends. The work register and phase plan govern selection of future scopes.
-
-## Unresolved work and selection boundaries
-
-Read [WORK_ITEMS](WORK_ITEMS.md) for the project-wide current dispositions and revisit conditions and [PHASE_PLAN](PHASE_PLAN.md#next-increment-selection) for cross-topic priorities. [Runtime finding evidence](reviews/RUNTIME_FINDINGS.md#issue-navigation) and [unadopted options](PROPOSED_CHANGES.md#find-an-option) retain their detailed basis. A supported delivery blocker matters even when its exact incidence is unknown; a historical finding or proposal is not an execution queue.
-
-## Documentation batch
-
-[DOC-ORG-R1 verification](batches/DOC-ORG-R1/verification.md) owns this maintenance outcome. Earlier [organization evidence](verification/20261106_2300_PROJECT_ORGANIZATION.md), its [qualifying review](reviews/20261106_2307_ORGANIZATION_REVIEW.md#assessment), and [batch-layout evidence](batches/DOC-LAYOUT-01/verification.md) retain their own scopes. The [entry snapshot](history/20261106_2300_CURRENT_STATE.md) retains the older detailed narrative and source identities. Historical observations are not synchronized as current status.
-
-## Project organization
-
-[PROJECT_LAYOUT](guides/PROJECT_LAYOUT.md) owns source/test/tool locations; [ARTIFACT_STORAGE](ARTIFACT_STORAGE.md) owns private data, evidence, builds and retention. [INDEX](INDEX.md) owns the complete catalogue. Their established physical layout remains in use; generated/private stores and existing distributions are retained in place.
+This file owns the interaction's focus, exact resume destination, next activity and instruction basis. Keep detailed discussion/specification, execution and results at their owners. Save meaningful content when it forms; change this pointer when activity or focus changes. Parking a topic does not cancel or reprioritize it. For a vague continuation, read the linked owner and current instruction; for an explicit topic, follow that topic's route. A ready spec or newer timestamp alone does not authorize implementation.

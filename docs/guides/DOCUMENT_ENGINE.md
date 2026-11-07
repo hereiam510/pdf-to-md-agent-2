@@ -1,8 +1,8 @@
 # Document, evidence, and candidate engineering handoff
 
-This guide explains document-side responsibilities, rationale, failure cases and considered Q1 options without the original chat export. [The implemented contracts](../CONTRACTS.md#implemented-first-version-contracts) now select Q1's schema and transitions; they supersede statements below that those choices remain open. Other example names and historical mechanisms retain their original status. [CURRENT_STATE](../CURRENT_STATE.md) records verification.
+This guide explains document-side responsibilities, rationale, failure cases and considered Q1 options without the original chat export. [The topic contracts](../INDEX.md#initial-contract-basis) now select Q1's schema and transitions; they supersede statements below that those choices remain open. Other example names and historical mechanisms retain their original status. [implementation evidence](../history/IMPLEMENTATION_HISTORY.md) records verification.
 
-The active contract is [CONTRACTS](../CONTRACTS.md); [initial contract decisions](../decisions/INITIAL_CONTRACTS.md) records how Q1–Q3 were closed and the limits of that closure. It is not a current unresolved-design queue. [Execution and delivery](EXECUTION_AND_DELIVERY.md) owns durable requests, accepted batches, operation replay, cancellation, and packaging. [Context and evidence](CONTEXT_AND_EVIDENCE.md) owns selection, capacity, and history compaction. [Integration](INTEGRATION_AND_MODEL_BOUNDARY.md) owns protocol and framework wiring. The detailed late-source [reference record](../history/discussions/20261031_0157_REBUILD_DELIVERY.md) preserves rejected alternatives. [Local source material](../sources/rebuild/INDEX.md) is optional audit evidence.
+The active contract is [topic contracts](../INDEX.md#initial-contract-basis); [initial contract decisions](../decisions/INITIAL_CONTRACTS.md) records how Q1–Q3 were closed and the limits of that closure. It is not a current unresolved-design queue. [Execution and delivery](EXECUTION_AND_DELIVERY.md) owns durable requests, accepted batches, operation replay, cancellation, and packaging. [Context and evidence](CONTEXT_AND_EVIDENCE.md) owns selection, capacity, and history compaction. [Integration](INTEGRATION_AND_MODEL_BOUNDARY.md) owns protocol and framework wiring. The detailed late-source [reference record](../history/discussions/20261031_0157_REBUILD_DELIVERY.md) preserves rejected alternatives. [Local source material](../sources/rebuild/INDEX.md) is optional audit evidence.
 
 The central observed problem involved a retained candidate containing correct `本文件`. Full page-map validation rejected the submission. Later regeneration produced `本文作`. Better storage cannot prove transcription correct. However, it can avoid forcing the model to rewrite already-correct prose to repair metadata. The same reasoning applies to a large table with one missing bold span: precise editing should preserve everything outside the selected change.
 
@@ -18,7 +18,7 @@ The implementation places two line feeds between the comment and block content a
 
 ## Guide navigation
 
-Read the relevant mechanism below with [current contracts](../CONTRACTS.md#reading-this-contract) and [current verification](../CURRENT_STATE.md#verification-basis). Historical alternatives and original implementation-order proposals retain their stated status.
+Read the relevant mechanism below with [current contracts](../INDEX.md#initial-contract-basis) and [current verification](../INDEX.md#find-by-topic). Historical alternatives and original implementation-order proposals retain their stated status.
 
 <details>
 <summary>Sections in this guide</summary>

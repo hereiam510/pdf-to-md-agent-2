@@ -2,7 +2,7 @@
 
 ## Ownership and effective scope
 
-This plan owns product-stage outcomes, adopted scope, dependencies and completion conditions. [Requirements](PRODUCT_REQUIREMENTS.md) own fidelity/autonomy; [contracts](CONTRACTS.md) own behavior; [architecture](ARCHITECTURE.md) owns responsibilities; [CURRENT_STATE](CURRENT_STATE.md) owns current status/verification and the next decision. Decisions and finding owners retain rationale and evidence. The [preserved phase record](history/PHASE_HISTORY.md) keeps the starting scopes, revisions and earlier selections retrievable without treating them as current permissions.
+This plan owns product-stage outcomes, adopted scope, dependencies and completion conditions. [Requirements](PRODUCT_REQUIREMENTS.md) own fidelity/autonomy; [contracts](INDEX.md#initial-contract-basis) own behavior; [architecture](ARCHITECTURE.md) owns responsibilities; [CURRENT_STATE](CURRENT_STATE.md) owns interaction continuation; batch verification owns observed acceptance. This plan owns the distinct phase-level assessment. Decisions and finding owners retain rationale and evidence. The [preserved phase record](history/PHASE_HISTORY.md) keeps the starting scopes, revisions and earlier selections retrievable without treating them as current permissions.
 
 The 2026-10-31 topic reorganization is completed documentation maintenance alongside Stage B, with [its own decision and acceptance](decisions/DOCUMENTATION.md#topic-ownership-and-version-correspondence-2026-10-31). It changes navigation and record placement, not the product scope. A new live Nursing interval is not selected by that approval.
 
@@ -10,22 +10,22 @@ The later [whole-project organization](decisions/PROJECT_ORGANIZATION.md) groups
 
 ## Next increment selection
 
-[WORK_ITEMS](WORK_ITEMS.md#selection-now) owns the selected items and their current dispositions. [CURRENT_STATE](CURRENT_STATE.md) owns cross-batch readiness, and [the application handoff](REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06) supplies the bounded assignment. Project organization is maintenance alongside this route, not a new product phase.
+[WORK_ITEMS](WORK_ITEMS.md#selection-now) owns comparison of concrete candidates, selection/deferral reasons and revisit conditions. Use the phase outcomes below to judge their contribution. [CURRENT_STATE](CURRENT_STATE.md#focus-and-resume-route) identifies the current interaction, including maintenance or unfinished discussion. A focus switch does not revise phase acceptance, and a completed batch does not by itself close a stage.
 
-The credential preservation correction precedes the next source-delivery investigation because CRED-03/04 have deterministic P2 counterexamples, a small shared implementation surface and inexpensive offline acceptance. The successful state-owner design remains the baseline. [The review](reviews/RUNTIME_FINDINGS.md#credential-repair-follow-up-review-2026-11-06) and [acceptance owner](guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance) supply the evidence and completion conditions.
+Before selecting costly live work, identify the question, why cheaper checks are insufficient and how known defects affect interpretation. Previous run permissions and a phase title are not current execution authority. Documentation maintenance runs alongside the product direction without creating a product stage.
 
-After that increment, reassess R01CAL-A01's complete-section/page-classification gap offline before proposing another provider interval. The investigation is not technically dependent on credentials; its position reflects the bounded correction's readiness and cost. R01/CTX-02 numerical calibration remains high-impact and needs candidate, threshold and independent-validation choices. Neither local repairs nor the Task A baseline resolves that question.
+## Readiness and evidence
 
-R03 is a substantial Stage C recovery gap that needs its own design; blind replay is unsafe. OBS-02/03 are measured costs whose optimization priority depends on a selected workload and threshold. UA-01-DEFAULTS concerns sparse helper routes; complete-route use does not establish sparse-route acceptance. R08/R14/R01-PACK/DIST-01 re-enter with declared Stage D destinations/distribution. Other findings retain their work-register triggers. Uncertain incidence does not dismiss a supported blocker.
+The inherited assessment (2026-11-06, Asia/Singapore) distinguishes an implemented development app and bounded local/real-source evidence from general native/scanned/mixed-source fidelity and current installed-product acceptance. This organization performs no application verification. [Implementation history](history/IMPLEMENTATION_HISTORY.md), [Task A source review](verification/20261106_1408_R01CAL_TASK_A.md), [Nursing closeout](decisions/NURSING.md#historical-fourteen-page-task-closeout-2026-11-01), [figure checks](verification/20261101_0103_FD01_TWO_PAGE_LIVE.md) and the [topic evidence routes](INDEX.md#find-by-topic) retain their source/version limits.
 
-Before proposing costly live work, identify the unresolved question, why cheaper checks are insufficient and how known defects affect interpretation. After each increment, reassess priorities and phase readiness. The phase title does not authorize conversion or require every unrelated bug to be cleared. Closed intervals, unselected trials and proposals grant no new execution authority.
+Stage B remains open against its full outcome: the complete-section delivery finding, numerical calibration questions and broader figure/source-class acceptance prevent treating bounded results as general acceptance. Stage C separately addresses interrupted local-process recovery; Stage D requires a current declared distribution and destination. WORK_ITEMS owns the actionable candidates and their priorities. These are phase-level scope judgments, not copied ticket or batch verdicts. Reassess when evidence changes a stage's completion basis.
 
 ## Delivery route
 
 | Stage | Intended outcome | Effective disposition |
 | --- | --- | --- |
 | [A. Context coordination](#a-close-the-current-context-coordination-baseline) | Complete, recoverable context updates with bounded acceptance | Locally complete at its recorded scope; preserve completion anchors and respond to material new evidence. |
-| [B. Real autonomous conversion](#b-establish-complete-autonomous-conversion-on-actual-sources) | Faithful complete requested PDF scope with little routine intervention | Open; [readiness and evidence](CURRENT_STATE.md#current-product-status) distinguish bounded results from phase acceptance. |
+| [B. Real autonomous conversion](#b-establish-complete-autonomous-conversion-on-actual-sources) | Faithful complete requested PDF scope with little routine intervention | Open; [phase assessment and evidence](#readiness-and-evidence) distinguish bounded results from phase acceptance. |
 | [C. Ordinary interruptions](#c-continue-through-ordinary-interruptions) | Recover supported interruptions without avoidable manual reconstruction | Provisional; promote a demonstrated delivery blocker, not every possible interruption. |
 | [D. Usable distribution](#d-make-delivery-usable-outside-the-development-checkout) | Current app and exported assets work in the declared everyday environment | Provisional; old packaged artifacts do not establish current readiness. |
 | [E. Provider choice and efficiency](#e-improve-provider-choice-and-whole-task-efficiency) | Needed routes meet the same fidelity target with understood whole-task cost | Conditional; select when actual route/cost constraints justify it. |
@@ -40,15 +40,15 @@ Reopen on material new evidence of an unmet contract or accepted outcome. Ordina
 
 ## B. Establish complete autonomous conversion on actual sources
 
-[Source-delivery evidence](CURRENT_STATE.md#verification-basis) and [Nursing acceptance boundary](CURRENT_STATE.md#nursing-boundary-and-next-product-decision) retain the distinct bounded results. They do not close this phase.
+[Source-delivery evidence](INDEX.md#find-by-topic) and [Nursing acceptance boundary](decisions/NURSING.md#historical-fourteen-page-task-closeout-2026-11-01) retain the distinct bounded results. They do not close this phase.
 
 **Outcome:** the app's own agent completes agreed real PDF scopes with faithful, readable, reusable Markdown and source images and little routine handling. [FD-01](design/FIGURE_DELIVERY.md) owns figure outcomes; the readiness and evidence routes above retain historical acceptance and its limits.
 
 **Selection rule:** choose a coherent product increment that resolves or discriminates an evidenced obstacle to complete autonomous conversion, with necessary implementation, local verification and authorized source-led validation. The [2026-10-31 direction](decisions/NURSING.md#product-outcome-direction-2026-10-31) supersedes continuation-only or rerun-only sequencing. Compare supported continuation, a fresh task, local repair and structural correction by fidelity, autonomy, reliable delivery and whole-task cost. Backward compatibility is not required; preserve sources and useful evidence independently of old executable formats. Reconstruction is permitted when justified, not compulsory. The [earlier discussion basis](discussions/NURSING.md#product-direction-correction-and-review-basis-2026-10-31) retains the save-versus-export distinction and finding triggers. The completion conditions below govern each selected scope.
 
-[Execution and preservation records](CURRENT_STATE.md#verification-basis) own source/task/version identities and actual checks. They are not repeated as roadmap status.
+[Execution and preservation records](INDEX.md#find-by-topic) own source/task/version identities and actual checks. They are not repeated as roadmap status.
 
-[Current product readiness](CURRENT_STATE.md#current-product-status) and [work-item dispositions](WORK_ITEMS.md) distinguish bounded acceptance, deferred validation and unselected operational work.
+[Current product readiness](PHASE_PLAN.md#readiness-and-evidence) and [work-item dispositions](WORK_ITEMS.md) distinguish bounded acceptance, deferred validation and unselected operational work.
 
 Before live validation, refresh the chosen task/source/route/allowance facts, select finite shared budgets and meaningful failure/no-progress exits, and obtain the applicable execution authority. A new task starts its own counters while old experiment consumption remains recorded; continuation preserves cumulative consumption and frozen boundaries. Do not rewrite requests, reuse closed allowances, accept incomplete original raw or invoke an obsolete recovery selector. A plan and previous test permissions do not authorize provider calls. A local repair is followed by the relevant product validation within authority; if a bounded run fails, return its evidence to the responsible capability instead of repeating requests without a discriminating change.
 
@@ -100,7 +100,7 @@ Provider selection, supported task classes and any comparison budget remain open
 
 [Observer execution evidence](verification/20261105_0220_USAGE_OBSERVATION.md#offline-correctness-and-measurement-increment-2026-11-06) owns measured costs and scoped checks; [WORK_ITEMS](WORK_ITEMS.md) owns remaining observation work.
 
-[Runtime findings](reviews/RUNTIME_FINDINGS.md#issue-navigation), [context/calibration discussion](discussions/REQUEST_CAPACITY.md) and [unadopted options](PROPOSED_CHANGES.md) retain detailed evidence and choices. [WORK_ITEMS](WORK_ITEMS.md) owns current dispositions; the selection comparison above owns ordering.
+[Runtime findings](reviews/RUNTIME_FINDINGS.md#issue-navigation), [context/calibration discussion](discussions/REQUEST_CAPACITY.md) and [unadopted options](PROPOSED_CHANGES.md) retain detailed evidence and choices. [WORK_ITEMS](WORK_ITEMS.md) owns current dispositions; the register owns concrete item ordering; this plan owns stage ordering.
 
 Alpha/ICC/high-depth images and broader OCR quality remain source-dependent limits. General script isolation, external MCP/CLI surfaces, other platforms and broad crash recovery retain their product/design status; select them for a concrete requirement rather than making all of them Nursing prerequisites. Existing scripts use host-user permissions, not an OS sandbox. Full access, explicit agent choice and source fidelity remain effective requirements.
 

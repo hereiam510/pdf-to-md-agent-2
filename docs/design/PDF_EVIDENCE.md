@@ -2,11 +2,11 @@
 
 ## Basis for this revision
 
-**Design identity:** Existing implemented contract; no separate historical design revision ID was recorded. This 2026-10-31 organization does not change adopted meaning, reset acceptance or create a newly adopted design revision. HEAD `ba8bad3` plus pre-existing uncommitted implementation is the entry worktree; see [current state](../CURRENT_STATE.md) for actual source/check identities and limits.
+**Design identity:** Existing implemented contract; no separate historical design revision ID was recorded. This 2026-10-31 organization does not change adopted meaning, reset acceptance or create a newly adopted design revision. HEAD `ba8bad3` plus pre-existing uncommitted implementation is the entry worktree; see [PDF delivery evidence](../history/IMPLEMENTATION_HISTORY.md#phase-3-closeout-stencil-appearance-and-pin-admission) for actual source/check identities and limits.
 
-- **Applicable shared rules:** [requirements, captured edition](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md#acceptance-and-cost), [architecture, captured edition](../history/contracts/20261031_0157_ARCHITECTURE.md#responsibilities), and [preceding shared contract](../history/contracts/20261031_0157_CONTRACTS.md#pdf-coordinates-and-image-delivery). Current topic rules below retain that edition's effective guarantees; today's global owners are reached through [the contract navigator](../CONTRACTS.md).
+- **Applicable shared rules:** [requirements, captured edition](../history/contracts/20261031_0157_PRODUCT_REQUIREMENTS.md#acceptance-and-cost), [architecture, captured edition](../history/contracts/20261031_0157_ARCHITECTURE.md#responsibilities), and [preceding shared contract](../history/contracts/20261031_0157_CONTRACTS.md#pdf-coordinates-and-image-delivery). Current topic rules below retain that edition's effective guarantees; today's global owners are reached through [the contract navigator](../INDEX.md#initial-contract-basis).
 - **Choices and reasons:** [applicable decision entry](../decisions/REBUILD.md#established-rebuild-decisions) and [supporting discussion / contract closure](../history/discussions/20261031_0157_REBUILD_DELIVERY.md). The detailed rule sections retain additional supporting entries; carried-forward choices remain applicable.
-- **Verification:** adoption and local mechanism checks do not establish real-route compatibility, full fourteen-page fidelity or installed-product readiness. Follow the specific evidence entries below and [current verification](../CURRENT_STATE.md#verification-basis).
+- **Verification:** adoption and local mechanism checks do not establish real-route compatibility, full fourteen-page fidelity or installed-product readiness. Follow the specific evidence entries below and [current verification](../INDEX.md#find-by-topic).
 
 <a id="preserved-source-edition"></a>
 ## Design versions

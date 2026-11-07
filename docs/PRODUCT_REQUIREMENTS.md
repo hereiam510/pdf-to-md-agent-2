@@ -92,7 +92,7 @@ Characters, wire bytes, cumulative job input and per-request context are differe
 
 ## Requirement and acceptance owners
 
-The topic designs connect these requirements to implementation and discriminating checks. Their recorded local results remain separate from the complete source-led product acceptance above; a test definition is not a passing execution. Use [current readiness](CURRENT_STATE.md#verification-basis) for the actual source/evidence boundary.
+The topic designs connect these requirements to implementation and discriminating checks. Their recorded local results remain separate from the complete source-led product acceptance above; a test definition is not a passing execution. Use [current readiness](INDEX.md#find-by-topic) for the actual source/evidence boundary.
 
 | Requirement concern | Detailed acceptance / evidence route |
 | --- | --- |

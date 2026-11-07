@@ -2,7 +2,7 @@
 
 PDF Markdown Workbench is a local Electron app with a Python agent engine. The agent completes the conversion through Nexus. The app supplies source access, local OCR, document editing, context management, durable execution and explicit-version export.
 
-**[Start development](docs/INDEX.md#start-development):** current readiness, phase roadmap and project-wide outstanding work. Consult [CURRENT_STATE](docs/CURRENT_STATE.md) before treating a development build or an existing installer as current verified delivery.
+**[Start development](docs/INDEX.md#start-by-task):** choose a reading route for the requested task. [CURRENT_STATE](docs/CURRENT_STATE.md) locates unfinished discussion or work; [PHASE_PLAN](docs/PHASE_PLAN.md#readiness-and-evidence) assesses product-stage readiness. Use the linked verification owners before treating a development build or installer as verified delivery.
 
 For day-to-day work, follow the [development routine](AGENTS.md#daily-development-and-document-maintenance) and [batch catalogue](docs/INDEX.md#batch-documents). Each batch separates scope, local tickets and verification; affected documentation is maintained as part of delivery.
 
@@ -17,7 +17,7 @@ Install Python 3.12 through `uv`, Node.js 24 and `pnpm`. From this repository:
 
 The setup script uses the committed Python and JavaScript lockfiles. `-Uv` and `-Pnpm` accept executable paths. The launcher uses ignored `workspaces/default`; `-Workspace` selects a separate task store. Direct `pnpm dev` uses Electron's user-data directory instead.
 
-Development launches automatically read the ignored `private/api-key.txt` when present. The file contains one UTF-8 credential; its value stays in app memory unless you explicitly choose to remember it in Connection settings. This applies across development workspaces and tasks. Use `tools/dev/start.ps1 -CredentialFile <path>` for another file, or `-NoCredentialFile` for manual entry. Packaged apps do not load development credential files. See [credential loading](docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading) for precedence, errors and controls.
+Development launches automatically read the ignored `private/api-key.txt` when present. The file contains one UTF-8 credential; its value stays in app memory unless you explicitly choose to remember it in Connection settings. This applies across development workspaces and tasks. Use `tools/dev/start.ps1 -CredentialFile <path>` for another file, or `-NoCredentialFile` for manual entry. Packaged apps do not load development credential files. See [credential loading](docs/design/DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading) for precedence, errors and controls.
 
 Open **Nexus connection**, enter the full Chat Completions or Responses endpoint, model alias and credential, and configure the route's capacity and output allowance. Image inputs require a conservative per-image allowance. These are user configuration values, not discovered model specifications. Credentials can be remembered with Windows encryption; they are never stored in task journals. Choose a PDF, describe the whole document or complete section, and start conversion. Trusted host scripts are off by default.
 
@@ -44,9 +44,9 @@ The development engine supports exact-version document indexes and field/range r
 
 ## Start here
 
-Read [the working agreement](AGENTS.md), then **[the document catalogue](docs/INDEX.md)**. It provides topic routes and a complete categorized inventory. Use [CURRENT_STATE](docs/CURRENT_STATE.md) for actual implementation/verification and the next decision, [the phase plan](docs/PHASE_PLAN.md#delivery-route) for product outcomes, and [the handoff](docs/REVIEW_HANDOFF.md) for source/check boundaries. Historical run permissions are not present execution authority.
+Read [the working agreement](AGENTS.md), then **[the document catalogue](docs/INDEX.md)**. It provides topic routes and a complete categorized inventory. Use [CURRENT_STATE](docs/CURRENT_STATE.md) for actual implementation/verification and the next decision, [the phase plan](docs/PHASE_PLAN.md#delivery-route) for product outcomes, and [the handoff](docs/CURRENT_STATE.md#focus-and-resume-route) for source/check boundaries. Historical run permissions are not present execution authority.
 
-The catalogue leads directly to current streaming receive, document editing, context coordination, recovery and diagnostic designs, their reasons and original decision/discussion entries, applicable verification and preserved editions. [CONTRACTS](docs/CONTRACTS.md) is the shared-rule navigator; [DEVELOPMENT_GUIDE](docs/DEVELOPMENT_GUIDE.md) routes deeper engineering explanations.
+The catalogue leads directly to current streaming receive, document editing, context coordination, recovery and diagnostic designs, their reasons and original decision/discussion entries, applicable verification and preserved editions. [CONTRACTS](docs/INDEX.md#initial-contract-basis) is the shared-rule navigator; [DEVELOPMENT_GUIDE](docs/DEVELOPMENT_GUIDE.md) routes deeper engineering explanations.
 
 ## Repository map
 
@@ -56,7 +56,7 @@ Keep maintained source, private task data and generated evidence in their declar
 
 ## Rebuild baseline
 
-The detailed [workbench behavior and implementation overview](docs/DEVELOPMENT_GUIDE.md#workbench-behavior-and-implementation-overview) preserves the former README explanations, recovery distinctions and supporting links. Use it with current contracts and recorded validation; [CURRENT_STATE](docs/CURRENT_STATE.md) owns current readiness. The original `pdf-to-md-agent` repository remains unchanged.
+The detailed [workbench behavior and implementation overview](docs/DEVELOPMENT_GUIDE.md#workbench-behavior-and-implementation-overview) preserves the former README explanations, recovery distinctions and supporting links. Use it with current contracts and recorded validation; [PHASE_PLAN](docs/PHASE_PLAN.md#readiness-and-evidence) owns phase readiness. The original `pdf-to-md-agent` repository remains unchanged.
 
 ## Document checks
 

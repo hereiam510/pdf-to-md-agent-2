@@ -1,6 +1,6 @@
 # Implementation and validation history
 
-Retained on 2026-10-30 from `docs/CURRENT_STATE.md` during the [documentation reorganization](../decisions/DOCUMENTATION.md#documentation-ownership-and-navigation-reorganization-2026-10-30). This is the detailed historical record, including failed checks, original authority boundaries and superseded next actions. Statements such as "current", "next", "authorized" and "not implemented" belong to their recorded batch; consult [CURRENT_STATE](../CURRENT_STATE.md) and the [effective phase plan](../PHASE_PLAN.md) for present disposition. A documentation move creates neither a new test result nor execution permission.
+Retained on 2026-10-30 from `docs/CURRENT_STATE.md` during the [documentation reorganization](../decisions/DOCUMENTATION.md#documentation-ownership-and-navigation-reorganization-2026-10-30). This is the detailed historical record, including failed checks, original authority boundaries and superseded next actions. Statements such as "current", "next", "authorized" and "not implemented" belong to their recorded batch; consult [CURRENT_STATE](20261107_1358_CURRENT_STATE.md) and the [effective phase plan](20261107_1358_PHASE_PLAN.md) for present disposition. A documentation move creates neither a new test result nor execution permission.
 
 Original section order, evidence identities and prose are retained; relative links are relocated to their destinations. Code-form paths such as `.local/...` remain repository-root provenance, not paths relative to this file. The entry byte copies and relocation map are preserved under `.local/docs-reorganization-2026-10-30-run1/`. The record can support understanding older decisions without loading it for every continuation.
 
@@ -224,7 +224,7 @@ Use the [F / R / H / CTX navigator](../reviews/RUNTIME_FINDINGS.md#issue-navigat
 - [H01–H05: hygiene and maintainability](../reviews/RUNTIME_FINDINGS.md#h01-through-h05--hygiene-and-maintainability), including the superseded H01 claim and separate remaining candidates.
 - [CTX-01–CTX-08: complete context agenda](../discussions/REQUEST_CAPACITY.md#complete-agenda), with links there to subsequent dispositions and evidence. These are discussion topics, not eight new implementation prerequisites.
 
-The owners hold status, rationale and revisit conditions; this entry only routes readers. [PHASE_PLAN](../PHASE_PLAN.md) owns ordering and selected work. Canonical maintained IDs are `F01`–`F06`, `R01`–`R13`, `H01`–`H05`, `CTX-01`–`CTX-08`, and the later `SC01`–`SC04`; legacy `F-01`–`F-06` in original source material are aliases, not separate findings. Navigation/ID normalization on 2026-10-29 changes no finding disposition or implementation authority and preserves the newer uncommitted F01/F02 implementation below.
+The owners hold status, rationale and revisit conditions; this entry only routes readers. [PHASE_PLAN](20261107_1358_PHASE_PLAN.md) owns ordering and selected work. Canonical maintained IDs are `F01`–`F06`, `R01`–`R13`, `H01`–`H05`, `CTX-01`–`CTX-08`, and the later `SC01`–`SC04`; legacy `F-01`–`F-06` in original source material are aliases, not separate findings. Navigation/ID normalization on 2026-10-29 changes no finding disposition or implementation authority and preserves the newer uncommitted F01/F02 implementation below.
 
 Navigation validation: repository documentation checks passed for 36 Markdown files and 2,459 local links/destinations, with no errors; whitespace checks passed. The path/content fingerprint of all 667 non-Markdown tracked/unignored files, including the inherited implementation/tests and scratch, remained unchanged. No runtime tests, Git mutations or model/task actions ran in this documentation-only update. Original source bundles and verbatim reviewer text retain their historical identifiers; the navigator explains their aliases.
 
@@ -407,7 +407,7 @@ That documentation-only checkpoint left the scope/order of [bounded follow-up ca
 
 Updated 2026-10-27, Asia/Hong_Kong (UTC+08:00). Complete context coordination is recorded at `551ea9c8351b60c32cbcec657eedd87bb4356c43`, following application baseline `a484b9b` and design checkpoint `c1e6fcc`. The subsequent human instruction starts Stage B and selects the complete 14-page Nursing input with the existing Nexus route. The user then explicitly removed this validation's original 40-request/1,200-active-second ceiling. No push, dependency upgrade, old-repository modification or release/packaging work is authorized by this run.
 
-The [product phase plan](../PHASE_PLAN.md) retains the completed numbered phases. [Complete coordination evidence](#complete-context-update-coordination) records Stage A local acceptance. Stage B now evaluates actual autonomous conversion, with its source identity, interventions and content acceptance separate from those mechanism tests.
+The [product phase plan](20261107_1358_PHASE_PLAN.md) retains the completed numbered phases. [Complete coordination evidence](#complete-context-update-coordination) records Stage A local acceptance. Stage B now evaluates actual autonomous conversion, with its source identity, interventions and content acceptance separate from those mechanism tests.
 
 **Preceding local increment, completed 2026-10-27:** option A is implemented and locally verified: a stopped existing task may explicitly change the deadline for future newly frozen normal and compaction requests. Bounded receive/stop observations distinguish local deadline, HTTP and transport outcomes. Original frozen requests, recovery decisions, consumed work and useful output remain unchanged. A 600-second live recovery remains a proposed subsequent experiment, not a new default or current model-call authorization. The Nursing task remains stopped; CTX-01 through CTX-08 remain tracked in the [discussion](../discussions/REQUEST_CAPACITY.md#selected-task-deadline-increment).
 
@@ -746,7 +746,7 @@ Limits: no live Nexus call, model-quality/cost measurement, migration of already
 
 ## Implemented application
 
-The first increment implements an Electron/TypeScript/React workbench, one Python LangGraph controller, native Nexus requests, PDF/OCR/preview/script tools, transient context assembly, immutable documents and explicit-version ZIP export. [ARCHITECTURE](../ARCHITECTURE.md#implementation-map-and-selected-dependencies) maps modules and pins. [CONTRACTS](../CONTRACTS.md#implemented-first-version-contracts) specifies executable Q1–Q3 choices. [OPEN_QUESTIONS](../decisions/INITIAL_CONTRACTS.md) records design closure without claiming universal runtime or content acceptance.
+The first increment implements an Electron/TypeScript/React workbench, one Python LangGraph controller, native Nexus requests, PDF/OCR/preview/script tools, transient context assembly, immutable documents and explicit-version ZIP export. [ARCHITECTURE](../ARCHITECTURE.md#implementation-map-and-selected-dependencies) maps modules and pins. [CONTRACTS](20261107_1358_CONTRACTS.md#implemented-first-version-contracts) specifies executable Q1–Q3 choices. [OPEN_QUESTIONS](../decisions/INITIAL_CONTRACTS.md) records design closure without claiming universal runtime or content acceptance.
 
 The desktop imports an unchanged PDF and scope, shows source pixels and saved Markdown/HTML/evidence, runs or stops the agent, accepts later instructions, edits saved blocks locally, selects versions and exports partial or complete work. Reopening loads persisted state without starting inference. Nexus uses native Chat Completions or Responses, with streaming progress waiting for explicitly configured routes and preserved legacy non-streaming routes. Credentials stay outside task journals and can be remembered with Windows encryption. Trusted scripts are off by default and run with host-user permissions when enabled.
 
@@ -773,7 +773,7 @@ Independent re-review of that snapshot is complete. Its findings and the accepte
 
 ## Continuation and integration increment
 
-Batches 2 and 3 are implemented on the same working-tree baseline `2d60c68`, including the preceding document-editing changes. [REVIEW_HANDOFF](../REVIEW_HANDOFF.md) provides code navigation, reproducible checks, evidence boundaries and the accepted follow-up plan. Snapshot manifests identify the actual uncommitted source; HEAD alone does not identify this revision.
+Batches 2 and 3 are implemented on the same working-tree baseline `2d60c68`, including the preceding document-editing changes. [REVIEW_HANDOFF](20261107_1358_REVIEW_HANDOFF.md) provides code navigation, reproducible checks, evidence boundaries and the accepted follow-up plan. Snapshot manifests identify the actual uncommitted source; HEAD alone does not identify this revision.
 
 - New amendments supersede unstarted calls in an accepted pending batch. The dispatcher preserves original candidates and emits paired unexecuted receipts. Completed document/tool/context effects are reconciled; started unknown effects remain unknown. An old completion report cannot terminate the new instruction. Continue without new instructions keeps the original pending plan.
 - Continue after an HTTP error or rejected/truncated native reply records a distinct request transition with diagnostics and an original-response reference when available. The latest amendments reach the next normal or compaction request. A prepared request that was never sent can similarly be superseded by an amendment. Accepted saved bytes always take precedence. Unknown remote outcomes keep their request identity, frozen bytes and replay limit.
@@ -820,7 +820,7 @@ Purpose: remove two evidenced barriers to autonomous continuation in baseline `7
 - `max_response_repairs` is configurable for new tasks in the desktop connection dialog, default 2, zero disables. Separate normal and compaction counts persist across restart and ordinary Continue. A new user amendment or document head starts a new episode; consumed task attempts/time remain intact. This is a tunable starting policy, not a demonstrated optimum or a semantic-progress detector for arbitrary tool loops.
 - Feedback and handoff identities are stable. Transactional event receipts prevent duplicate correction/application events at the tested persistence-before-checkpoint gaps. Full model replies, evidence, useful candidates and saved versions remain available.
 
-Implementation: `runtime.py`, `context.py`, `storage.py`, `schema.py`, and the desktop limit control. No dependency/framework replacement or upgrade was needed: explicit graph transitions and immutable receipts fit this problem. [CONTRACTS Q2/Q3](../CONTRACTS.md#implemented-first-version-contracts) owns the effective behavior; the execution/context guides explain it.
+Implementation: `runtime.py`, `context.py`, `storage.py`, `schema.py`, and the desktop limit control. No dependency/framework replacement or upgrade was needed: explicit graph transitions and immutable receipts fit this problem. [CONTRACTS Q2/Q3](20261107_1358_CONTRACTS.md#implemented-first-version-contracts) owns the effective behavior; the execution/context guides explain it.
 
 Verification:
 
@@ -886,15 +886,15 @@ Find a recorded issue through the [F / R / H / CTX navigator](../reviews/RUNTIME
 
 New unfrozen capacity decisions use a complete native-request BPE proxy with explicit text/native reserves and separately configured images/output. The pinned public vocabulary is bundled; conversion does not download tokenizer data. Counter failure has a named byte fallback, and uncertain mandatory-content estimates are distinct from confirmed excess. Existing frozen requests, receipts and consumption retain their original identity. See [the counting and uncertainty mechanism](../guides/CONTEXT_AND_EVIDENCE.md#capacity-accounting) and CURRENT_STATE for local evidence and uncalibrated routes.
 
-Read [the working agreement](../../AGENTS.md). Read [current state](../CURRENT_STATE.md). Then read the owner relevant to the task:
+Read [the working agreement](../../AGENTS.md). Read [current state](20261107_1358_CURRENT_STATE.md). Then read the owner relevant to the task:
 
 | Owner | What it establishes |
 | --- | --- |
 | [Product requirements](../PRODUCT_REQUIREMENTS.md) | User outcomes, fidelity, autonomy and observable acceptance |
-| [Product phase plan](../PHASE_PLAN.md) | Delivery stages, completion conditions, existing milestone anchors and proposed next work |
+| [Product phase plan](20261107_1358_PHASE_PLAN.md) | Delivery stages, completion conditions, existing milestone anchors and proposed next work |
 | [Runtime review findings](../reviews/RUNTIME_FINDINGS.md) | Complete independent review, reconciliation, user clarifications, evidence strength and unresolved next questions; not an authorized patch queue |
 | [Architecture](../ARCHITECTURE.md) | Settled responsibilities and the preferred implementation baseline |
-| [Contracts](../CONTRACTS.md) | Document, context and recovery boundaries and the implemented first-version schemas |
+| [Contracts](20261107_1358_CONTRACTS.md) | Document, context and recovery boundaries and the implemented first-version schemas |
 | [Decisions](../INDEX.md) | Effective choices, rationale and consequential alternatives |
 | [Design options](../PROPOSED_CHANGES.md) | Candidate approaches, tradeoffs and conditions for later evaluation; not an implementation queue |
 | [Observability and Langfuse](../discussions/OBSERVABILITY.md) | Diagnostic evidence, external-review reconciliation, alternatives and candidate design; no integration or trial selected |

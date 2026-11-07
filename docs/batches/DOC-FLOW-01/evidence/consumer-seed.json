@@ -1,0 +1,16 @@
+[
+  {
+    "file": "src/desktop/connection.ts",
+    "old": "join(root, 'private', 'api-key.txt')",
+    "new": "join(root, 'private', 'development-key.txt')",
+    "before_sha256": "6f149727d4f9dd39a18a0fa6c3e9213e3abba5b743f592c98da0445254071cd0",
+    "after_sha256": "1b9efa8be737954bc713b92f4bdc89c7bcdd4c71a745bd35387447651cf04c18"
+  },
+  {
+    "file": "tests/desktop/support/credential-host.cjs",
+    "old": "resolve('private/api-key.txt')",
+    "new": "resolve('private/development-key.txt')",
+    "before_sha256": "0301108d6bb107a35c3faa0a0efd119427a7b967b6d4a77132367b1708e5eb15",
+    "after_sha256": "862e4f1f75280ce0d52aa8e217980bfe41292100a7f05be23dcdf48f3cb82740"
+  }
+]

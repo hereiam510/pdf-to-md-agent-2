@@ -1,6 +1,6 @@
 # Proposed changes and reconsideration conditions
 
-This is a retained-options record, not an execution queue. Inclusion establishes neither superiority, adoption nor scheduling. Current rules belong to the [topic designs](INDEX.md#topics); current delivery belongs to [the phase plan](PHASE_PLAN.md). The earlier mixed [options edition](history/discussions/20261031_0157_DESIGN_OPTIONS.md) remains retrievable.
+This is a retained-options record, not an execution queue. Inclusion establishes neither superiority, adoption nor scheduling. Current rules belong to the [topic designs](INDEX.md#find-by-topic); current delivery belongs to [the phase plan](PHASE_PLAN.md). The earlier mixed [options edition](history/discussions/20261031_0157_DESIGN_OPTIONS.md) remains retrievable.
 
 Current cross-topic dispositions are in [WORK_ITEMS](WORK_ITEMS.md); this owner retains substantive alternatives and rationale.
 
@@ -27,7 +27,7 @@ If a selected detail proves slow/busy or profiling shows repeated work matters, 
 
 ## Explicit request preparation and execution stop controls
 
-On 2026-10-30 the human selected the existing baseline/zero-dispatch preparation stage for a future execution prompt after D03 review. This selects use of existing controls, not implementation of the interface alternatives below; [Stage B](history/discussions/20261031_0157_STAGE_B_CONVERSION.md#baseline-and-zero-dispatch-preparation-selected-2026-10-30) retains that closed preparation scope and stops; [CURRENT_STATE](CURRENT_STATE.md#nursing-boundary-and-next-product-decision) owns the next real-task decision.
+On 2026-10-30 the human selected the existing baseline/zero-dispatch preparation stage for a future execution prompt after D03 review. This selects use of existing controls, not implementation of the interface alternatives below; [Stage B](history/discussions/20261031_0157_STAGE_B_CONVERSION.md#baseline-and-zero-dispatch-preparation-selected-2026-10-30) retains that closed preparation scope and stops; [CURRENT_STATE](decisions/NURSING.md#historical-fourteen-page-task-closeout-2026-11-01) owns the next real-task decision.
 
 Recorded 2026-10-29 after the human accepted the Nursing planning review and asked to retain the design consideration. **Disposition:** retain for later selection; no interface or controller implementation selected. The [historical decision](decisions/NURSING.md#staged-nursing-continuation-and-control-interface-deferral-2026-10-29) selected existing exact recovery plus the cumulative request guard for one bounded preparation. [Stage B](history/discussions/20261031_0157_STAGE_B_CONVERSION.md#nursing-planning-reviewed-and-staged-direction-agreed-2026-10-29) retains that operational sequence as understood then. The [later actual dispatch](verification/20261031_0157_NURSING_BASELINE_AND_DISPATCH.md#actual-single-dispatch-result-2026-10-30) supersedes the old unexecuted status; interface alternatives remain unselected.
 
