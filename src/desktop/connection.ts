@@ -23,16 +23,21 @@ export class ConnectionState {
     if (packaged || process.env.PDFMD_SKIP_CREDENTIAL_FILE === '1') return undefined
     const explicit = process.env.PDFMD_CREDENTIAL_FILE
     const filename = explicit || join(root, 'private', 'api-key.txt')
+    const metadata = await fs.stat(filename).catch((error: NodeJS.ErrnoException) => {
+      // Only initial discovery can establish benign default-file absence. Once
+      // selected, a disappearing/unreadable file must never enable fallback.
+      if (!explicit && error.code === 'ENOENT') return undefined
+      throw new Error(fileError)
+    })
+    if (metadata === undefined) return undefined
     try {
-      const metadata = await fs.stat(filename)
       if (!metadata.isFile() || metadata.size > 65536) throw new Error()
       const bytes = await fs.readFile(filename)
       if (bytes.length > 65536) throw new Error()
       const value = new TextDecoder('utf-8', { fatal: true }).decode(bytes).trim()
       if (!value || /\s|[\x00-\x20\x7f]/u.test(value)) throw new Error()
       return value
-    } catch (error) {
-      if (!explicit && (error as NodeJS.ErrnoException).code === 'ENOENT') return undefined
+    } catch {
       throw new Error(fileError)
     }
   }

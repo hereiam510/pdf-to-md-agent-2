@@ -36,11 +36,19 @@ function owned(path) {
 fs.promises.stat = async path => {
   await gate('fileStat')
   if (options.unreadable) throw new Error('Synthetic private error withheld')
-  return original.stat(owned(path))
+  if (options.fileStatError) throw Object.assign(new Error('Synthetic private stat error withheld'), { code: options.fileStatError })
+  const metadata = await original.stat(owned(path))
+  state.calls.fileDiscovered = (state.calls.fileDiscovered || 0) + 1
+  return metadata
 }
 fs.promises.readFile = async (path, encoding) => {
   const target = owned(path)
-  await gate(target === join(directory, 'connection.json') ? 'raw' : 'file')
+  const credential = target !== join(directory, 'connection.json')
+  await gate(credential ? 'file' : 'raw')
+  if (credential && options.fileReadError) {
+    state.calls.fileReadFailure = (state.calls.fileReadFailure || 0) + 1
+    throw Object.assign(new Error('Synthetic private read error withheld'), { code: options.fileReadError })
+  }
   return original.readFile(target, encoding)
 }
 fs.promises.mkdir = (path, options) => original.mkdir(owned(path), options)

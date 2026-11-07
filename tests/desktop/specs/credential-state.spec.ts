@@ -8,6 +8,7 @@ import { testRunRoot } from '../support/artifacts'
 const fileKey = 'synthetic-file-key-CRED'
 const manualKey = 'synthetic-replacement-key-CRED'
 const rememberedKey = 'synthetic-remembered-key-CRED'
+const fileError = 'Cannot load the development credential file. Use a nonempty UTF-8 file containing one credential, or disable file loading.'
 const digest = (key: string) => createHash('sha256').update(key).digest('hex')
 const route = { endpoint: 'http://127.0.0.1:1/v1/chat/completions', model: 'synthetic-offline', protocol: 'chat_completions',
   context_tokens: 131072, output_tokens: 8192, image_tokens: 4096, vision: true, timeout_seconds: 180, parameters: {} }
@@ -211,6 +212,48 @@ for (const invalid of ['missing', 'empty', 'malformed', 'unicode-space', 'utf8',
   })
 }
 
+for (const scenario of [
+  { name: 'default read ENOENT after discovery', file: '', fileReadError: 'ENOENT', discovered: true },
+  { name: 'explicit read ENOENT after discovery', file: 'key.txt', fileReadError: 'ENOENT', discovered: true },
+  { name: 'default read EACCES after discovery', file: '', fileReadError: 'EACCES', discovered: true },
+  { name: 'default invalid UTF-8 after discovery', file: '', invalid: true, discovered: true },
+  { name: 'default discovery EACCES', file: '', fileStatError: 'EACCES', discovered: false },
+  { name: 'explicit discovery ENOENT', file: 'missing-key.txt', discovered: false },
+]) {
+  test(`CRED-03 ${scenario.name} blocks startup without remembered fallback`, async () => {
+    const directory = await fixture(); await seed(directory)
+    await fs.writeFile(join(directory, 'default-key.txt'), scenario.invalid ? Buffer.from([255]) : fileKey)
+    const original = await fs.readFile(join(directory, 'connection.json'))
+    const { app, page } = await open(directory, scenario, scenario.file)
+    const logs: string[] = []
+    app.process().stdout?.on('data', chunk => logs.push(String(chunk)))
+    app.process().stderr?.on('data', chunk => logs.push(String(chunk)))
+    try {
+      for (let i = 0; i < 3; i++) expect(await invoke(app, 'settings')).toEqual({
+        route, limits, remember: true, hasKey: false, encryptionAvailable: true,
+        revision: 0, credentialState: 'failed', error: fileError,
+      })
+      await expect(page.locator('body')).toContainText(fileError)
+      await expect.poll(async () => (await invoke(app, 'health')).error).toBe(fileError)
+      await expect(invoke(app, 'start', { job: 'credential-job' })).rejects.toThrow(fileError)
+      const state = await inspect(app)
+      expect(state.calls.fileStat).toBe(1)
+      expect(state.calls.fileDiscovered || 0).toBe(scenario.discovered ? 1 : 0)
+      expect(state.calls.file || 0).toBe(scenario.discovered ? 1 : 0)
+      expect(state.calls.fileReadFailure || 0).toBe(scenario.fileReadError ? 1 : 0)
+      expect(state.calls.decrypt || 0).toBe(0)
+      expect(state.spawned).toBe(0)
+      expect(state.starts).toEqual([])
+      expect(await fs.readFile(join(directory, 'connection.json'))).toEqual(original)
+      expect(await fs.readdir(join(directory, 'workspace'))).toEqual([])
+      const visible = JSON.stringify(state) + logs.join('') + await page.locator('body').innerText()
+      expect(visible).not.toMatch(/Synthetic private|ENOENT|EACCES/)
+      for (const key of [fileKey, rememberedKey]) expect(visible).not.toContain(key)
+      await expect(page.locator('.connection-button')).toBeEnabled()
+    } finally { await app.close() }
+  })
+}
+
 for (const mode of ['unavailable', 'decryptFailure', 'reencrypt']) {
   test(`remembered storage ${mode} preserves safe settings and newer choices`, async () => {
     const directory = await fixture(); await seed(directory)
@@ -322,6 +365,9 @@ test('missing default restores remembered key without rewriting connection bytes
   const { app } = await open(directory, {}, '')
   try {
     await capture(app, rememberedKey)
+    expect((await inspect(app)).calls.fileStat).toBe(1)
+    expect((await inspect(app)).calls.fileDiscovered || 0).toBe(0)
+    expect((await inspect(app)).calls.file || 0).toBe(0)
     expect((await inspect(app)).calls.decrypt).toBe(1)
     for (let i = 0; i < 3; i++) await invoke(app, 'settings')
     expect((await inspect(app)).calls.decrypt).toBe(1)
