@@ -2,10 +2,10 @@
 
 ## Focus and resume route
 
-Current focus: CRED-04 implementation closeout and combined integration continuation.
-Resume at: [integration ticket](batches/CRED-03-04/tickets.md#cred-03-04-integration), after reconciling the [CRED-04 execution evidence](batches/CRED-03-04/verification.md#cred-04-offline-execution-2026-11-07), preceding CRED-03 evidence and actual Git state. The [spec](batches/CRED-03-04/spec.md) supplies the batch boundary and substantive reading route.
-Next activity: stop at this handoff. When integration is selected, review the combined source/main/renderer path against both acceptance matrices, execute the scoped offline integration checks and assess combined acceptance in the verification owner. Detailed tasks and evidence stay in the linked owners.
-Instruction basis: the user's subsequent 2026-11-07 vibe-coding request selects CRED-04 only, prerequisite reconciliation, focused offline checks, affected records and a scoped local checkpoint, explicitly leaving combined acceptance for integration. It preserves inherited work and excludes provider/conversion/real-task/private-credential/global-settings/packaging/publication/cleanup/subagent operations.
+Current focus: CRED-03-04 batch closeout.
+Resume at: [combined acceptance](batches/CRED-03-04/verification.md#combined-acceptance) and [integration review/evidence](batches/CRED-03-04/verification.md#integration-review-and-execution-2026-11-07); [tickets](batches/CRED-03-04/tickets.md) own execution details. Reconcile actual Git state before any later work.
+Next activity: no further work is selected. The existing [work sequence](WORK_ITEMS.md#selection-now) recommends discussing/scoping an offline R01CAL-A01 complete-section/page-classification diagnosis before another provider interval; its [residual owner](WORK_ITEMS.md#production-estimation-residuals) retains the unresolved questions. This recommendation does not start the investigation, numerical calibration or another conversion.
+Instruction basis: the user's subsequent 2026-11-07 vibe-coding request selects integration review, scoped fixes, combined acceptance, affected records and a scoped local checkpoint, then requires a stop after batch closeout and a recommendation only. It preserves inherited work and excludes provider/conversion/real-task/private-credential/global-settings/packaging/publication/cleanup/subagent operations.
 
 ## Return routes
 

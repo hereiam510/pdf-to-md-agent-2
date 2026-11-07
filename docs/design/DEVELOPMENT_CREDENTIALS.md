@@ -57,7 +57,7 @@ Primary code is `src/desktop/connection.ts`; production-path regressions belong 
 
 ### Credential follow-up acceptance
 
-These checks are planned, not executed by the handoff. Use the production build with synthetic credentials, isolated fixture-owned profiles/settings/stores and the existing local Start capture, which stops before controller/model dispatch. Retain the [original matrix](#credential-repair-acceptance) as regression scope; add the transitions that distinguish d370082 from the corrected version.
+The handoff planned the checks below; actual integrated execution, acceptance and limits belong to [combined batch verification](../batches/CRED-03-04/verification.md#combined-acceptance). Use the production build with synthetic credentials, isolated fixture-owned profiles/settings/stores and the existing local Start capture, which stops before controller/model dispatch. Retain the [original matrix](#credential-repair-acceptance) as regression scope; add the transitions that distinguish d370082 from the corrected version.
 
 | Condition | Required observation |
 | --- | --- |
