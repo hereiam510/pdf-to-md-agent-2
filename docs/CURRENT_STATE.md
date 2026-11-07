@@ -2,10 +2,10 @@
 
 ## Focus and resume route
 
-Current focus: CRED-03 implementation closeout and bounded CRED-04 continuation.
-Resume at: [CRED-04 ticket](batches/CRED-03-04/tickets.md#cred-04), after reconciling the [CRED-03 execution evidence](batches/CRED-03-04/verification.md#cred-03-offline-execution-2026-11-07) and actual Git state. The [spec](batches/CRED-03-04/spec.md) supplies the batch boundary and substantive reading route.
-Next activity: stop at this handoff. When CRED-04 is selected, implement Remember capability recovery within the existing state owner/serialized save lifecycle, then perform the remaining combined integration. Detailed requirements and execution state stay in the linked owners.
-Instruction basis: the user's 2026-11-07 vibe-coding request selects CRED-03 only, focused offline checks, affected records and a scoped local checkpoint, explicitly stopping before CRED-04. It preserves inherited work and excludes provider/conversion/real-task/private-credential/global-settings/packaging/publication/cleanup/subagent operations.
+Current focus: CRED-04 implementation closeout and combined integration continuation.
+Resume at: [integration ticket](batches/CRED-03-04/tickets.md#cred-03-04-integration), after reconciling the [CRED-04 execution evidence](batches/CRED-03-04/verification.md#cred-04-offline-execution-2026-11-07), preceding CRED-03 evidence and actual Git state. The [spec](batches/CRED-03-04/spec.md) supplies the batch boundary and substantive reading route.
+Next activity: stop at this handoff. When integration is selected, review the combined source/main/renderer path against both acceptance matrices, execute the scoped offline integration checks and assess combined acceptance in the verification owner. Detailed tasks and evidence stay in the linked owners.
+Instruction basis: the user's subsequent 2026-11-07 vibe-coding request selects CRED-04 only, prerequisite reconciliation, focused offline checks, affected records and a scoped local checkpoint, explicitly leaving combined acceptance for integration. It preserves inherited work and excludes provider/conversion/real-task/private-credential/global-settings/packaging/publication/cleanup/subagent operations.
 
 ## Return routes
 

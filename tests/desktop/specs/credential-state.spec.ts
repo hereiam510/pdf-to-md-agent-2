@@ -8,6 +8,7 @@ import { testRunRoot } from '../support/artifacts'
 const fileKey = 'synthetic-file-key-CRED'
 const manualKey = 'synthetic-replacement-key-CRED'
 const rememberedKey = 'synthetic-remembered-key-CRED'
+const newestKey = 'synthetic-newest-key-CRED'
 const fileError = 'Cannot load the development credential file. Use a nonempty UTF-8 file containing one credential, or disable file loading.'
 const digest = (key: string) => createHash('sha256').update(key).digest('hex')
 const route = { endpoint: 'http://127.0.0.1:1/v1/chat/completions', model: 'synthetic-offline', protocol: 'chat_completions',
@@ -374,3 +375,140 @@ test('missing default restores remembered key without rewriting connection bytes
     expect(await fs.readFile(join(directory, 'connection.json'))).toEqual(original)
   } finally { await app.close() }
 })
+
+for (const initial of ['false', 'rejected']) {
+  test(`CRED-04 recovers from ${initial} availability through ordinary Remember Save and restart`, async () => {
+    const directory = await fixture(); await seed(directory)
+    const original = await fs.readFile(join(directory, 'connection.json'), 'utf8')
+    const intendedKey = initial === 'false' ? manualKey : fileKey
+    let { app, page } = await open(directory, { unavailable: initial === 'false', availabilityFailure: initial === 'rejected' })
+    try {
+      expect(await invoke(app, 'settings')).toMatchObject({ hasKey: true, encryptionAvailable: false })
+      await page.locator('.connection-button').click()
+      await expect(page.getByText('Encryption is unavailable. The credential stays in memory for this session.')).toBeVisible()
+      if (initial === 'false') await page.getByLabel('Nexus credential', { exact: true }).fill(intendedKey)
+      await page.getByLabel('Remember with operating-system encryption').check()
+      await page.getByLabel('Model alias').fill('capability-recovered')
+      await app.evaluate(() => {
+        const s = (globalThis as any).credentialsTest; s.unavailable = false; s.availabilityFailure = false
+      })
+      await page.getByRole('button', { name: 'Save connection' }).click()
+      await expect(page.locator('.overlay')).toHaveCount(0)
+      expect(await invoke(app, 'settings')).toMatchObject({ hasKey: true, encryptionAvailable: true, remember: true, route: { model: 'capability-recovered' } })
+      await capture(app, intendedKey)
+      const state = await inspect(app)
+      expect(state.calls).toMatchObject({ availability: 2, encrypt: 1, raw: 1, file: 1, fileStat: 1 })
+      expect(state.calls.decrypt || 0).toBe(0)
+      const disk = await fs.readFile(join(directory, 'connection.json'), 'utf8')
+      expect(JSON.parse(disk).secret).toBeTruthy()
+      expect(disk).not.toBe(original)
+      for (const key of [fileKey, manualKey, rememberedKey]) expect(disk + JSON.stringify(state)).not.toContain(key)
+      await page.locator('.connection-button').click()
+      await expect(page.getByText('Encryption is unavailable. The credential stays in memory for this session.')).toHaveCount(0)
+    } finally { await app.close() }
+    ;({ app } = await open(directory, {}, 'missing-ignored.txt', true))
+    try {
+      await capture(app, intendedKey)
+      expect(await invoke(app, 'settings')).toMatchObject({ remember: true, encryptionAvailable: true, route: { model: 'capability-recovered' } })
+      expect((await inspect(app)).calls.decrypt).toBe(1)
+      expect((await inspect(app)).calls.fileStat || 0).toBe(0)
+    } finally { await app.close() }
+  })
+}
+
+for (const gate of ['availability', 'encrypt']) for (const intent of ['Clear', 'replacement', 'Remember-off']) {
+  test(`CRED-04 newer ${intent} defeats delayed ${gate} and older replies`, async () => {
+    const directory = await fixture(); await seed(directory)
+    const original = await fs.readFile(join(directory, 'connection.json'))
+    const model = `newer-${gate}-${intent}`
+    const expectedKey = intent === 'Clear' ? '' : intent === 'replacement' ? newestKey : manualKey
+    const remember = intent === 'replacement'
+    let { app, page } = await open(directory, { unavailable: true })
+    try {
+      expect(await invoke(app, 'settings')).toMatchObject({ encryptionAvailable: false })
+      await app.evaluate((_, gate) => {
+        const s = (globalThis as any).credentialsTest; s.unavailable = false; s.holds[gate] = true; s.holds.saveReply = true
+      }, gate)
+      await page.locator('.connection-button').click()
+      await page.getByLabel('Nexus credential', { exact: true }).fill(manualKey)
+      await page.getByLabel('Model alias').fill('older-recovery')
+      await page.getByLabel('Remember with operating-system encryption').check()
+      await page.getByRole('button', { name: 'Save connection' }).click()
+      await waitGate(app, gate)
+      await page.getByRole('button', { name: 'Close settings' }).click()
+      await page.locator('.connection-button').click()
+      await page.getByLabel('Model alias').fill(model)
+      if (intent === 'Clear') await page.getByRole('button', { name: 'Clear credential', exact: true }).click()
+      else if (intent === 'replacement') await page.getByLabel('Nexus credential', { exact: true }).fill(newestKey)
+      else await page.getByLabel('Remember with operating-system encryption').uncheck()
+      await page.getByRole('button', { name: 'Save connection' }).click()
+      await expect.poll(async () => (await inspect(app)).saves).toBe(2)
+      expect(await fs.readFile(join(directory, 'connection.json'))).toEqual(original)
+      await release(app, gate)
+      await expect.poll(async () => (await inspect(app)).pending.saveReply).toBe(2)
+      await app.evaluate(() => (globalThis as any).credentialsTest.settle('saveReply', 1))
+      await expect(page.locator('.overlay')).toHaveCount(0)
+      await release(app, 'saveReply')
+      await expect(page.locator('.connection-button')).toContainText(model)
+      await page.locator('.connection-button').click()
+      await expect(page.getByLabel('Nexus credential', { exact: true })).toHaveAttribute('placeholder', expectedKey ? 'Saved credential — leave blank to keep' : 'Enter credential')
+      await expect(page.getByLabel('Remember with operating-system encryption')).toBeChecked({ checked: remember })
+      expect(await invoke(app, 'settings')).toMatchObject({ hasKey: Boolean(expectedKey), remember, revision: 2, route: { model } })
+      await capture(app, expectedKey)
+      const state = await inspect(app)
+      expect(state.calls).toMatchObject({ raw: 1, file: 1, fileStat: 1 })
+      expect(state.calls.decrypt || 0).toBe(0)
+      expect(state.calls.encrypt || 0).toBe((gate === 'encrypt' ? 1 : 0) + (remember ? 1 : 0))
+      expect(state.calls.write).toBe(1)
+      const disk = await fs.readFile(join(directory, 'connection.json'), 'utf8')
+      expect(JSON.parse(disk)).toMatchObject({ remember, route: { model } })
+      expect(Boolean(JSON.parse(disk).secret)).toBe(remember)
+      for (const key of [fileKey, manualKey, rememberedKey, newestKey]) expect(disk + JSON.stringify(state)).not.toContain(key)
+      expect(await fs.readdir(join(directory, 'workspace'))).toEqual([])
+    } finally { await app.close() }
+    const persisted = await fs.readFile(join(directory, 'connection.json'))
+    ;({ app } = await open(directory, {}, 'missing-ignored.txt', true))
+    try {
+      await capture(app, remember ? newestKey : '')
+      expect(await invoke(app, 'settings')).toMatchObject({ hasKey: remember, remember, route: { model } })
+      expect(await fs.readFile(join(directory, 'connection.json'))).toEqual(persisted)
+      expect((await inspect(app)).calls.fileStat || 0).toBe(0)
+    } finally { await app.close() }
+  })
+}
+
+for (const failure of ['unavailable', 'rejected']) {
+  test(`CRED-04 ${failure} capability and encryption failure preserve manual use and retry`, async () => {
+    const directory = await fixture(); await seed(directory)
+    let { app } = await open(directory, { unavailable: true })
+    const logs: string[] = []
+    app.process().stdout?.on('data', chunk => logs.push(String(chunk)))
+    app.process().stderr?.on('data', chunk => logs.push(String(chunk)))
+    try {
+      await invoke(app, 'settings')
+      if (failure === 'rejected') await app.evaluate(() => { (globalThis as any).credentialsTest.availabilityFailure = true })
+      expect(await invoke(app, 'saveSettings', { ...config, key: manualKey, remember: true })).toMatchObject({ hasKey: true, remember: true, encryptionAvailable: false })
+      await capture(app, manualKey)
+      expect((await inspect(app)).calls.availability).toBe(2)
+      expect((await inspect(app)).calls.encrypt || 0).toBe(0)
+      const original = await fs.readFile(join(directory, 'connection.json'))
+      expect(JSON.parse(original.toString()).secret).toBeUndefined()
+      await app.evaluate(() => {
+        const s = (globalThis as any).credentialsTest; s.unavailable = false; s.availabilityFailure = false; s.encryptFailure = true
+      })
+      await expect(invoke(app, 'saveSettings', { ...config, remember: true })).rejects.toThrow('Cannot save connection settings. Please try again.')
+      expect(await fs.readFile(join(directory, 'connection.json'))).toEqual(original)
+      await capture(app, manualKey)
+      await app.evaluate(() => { (globalThis as any).credentialsTest.encryptFailure = false })
+      expect(await invoke(app, 'saveSettings', { ...config, remember: true })).toMatchObject({ hasKey: true, remember: true, encryptionAvailable: true })
+      const state = await inspect(app)
+      expect(state.calls).toMatchObject({ availability: 4, encrypt: 2, raw: 1, file: 1, fileStat: 1 })
+      expect(state.calls.decrypt || 0).toBe(0)
+      const disk = await fs.readFile(join(directory, 'connection.json'), 'utf8')
+      expect(JSON.parse(disk).secret).toBeTruthy()
+      expect(JSON.stringify(state) + disk + logs.join('')).not.toMatch(/Synthetic private|Synthetic secret|synthetic-(?:replacement|file|remembered)-key/)
+    } finally { await app.close() }
+    ;({ app } = await open(directory, {}, 'missing-ignored.txt', true))
+    try { await capture(app, manualKey) } finally { await app.close() }
+  })
+}

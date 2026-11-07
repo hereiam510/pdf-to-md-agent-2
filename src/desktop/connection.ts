@@ -114,11 +114,17 @@ export class ConnectionState {
     const saved = { route: args.route, limits: args.limits, remember: Boolean(args.remember) }
     const write = this.writes.then(async () => {
       await this.initialization
+      if (revision !== this.revision) return
       const data: Record<string, any> = { ...saved }
       const key = chosenKey ?? this.key
       try {
-        if (data.remember && key && this.encryptionAvailable) {
-          data.secret = (await safeStorage.encryptStringAsync(key)).toString('base64')
+        if (data.remember && key) {
+          // Capability can recover within this session. Refresh only for the
+          // current persistence intent; ordinary reads never hydrate again.
+          const available = await safeStorage.isAsyncEncryptionAvailable().catch(() => false)
+          if (revision !== this.revision) return
+          this.encryptionAvailable = available
+          if (available) data.secret = (await safeStorage.encryptStringAsync(key)).toString('base64')
         }
         // Newer accepted settings own persistence; an old encryption completion
         // need not write a secret that Clear has already invalidated.

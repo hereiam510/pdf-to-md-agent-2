@@ -11,7 +11,7 @@ app.setPath('userData', join(directory, 'profile'))
 const options = JSON.parse(process.env.PDFMD_CREDENTIAL_TEST_OPTIONS || '{}')
 const state = globalThis.credentialsTest = {
   holds: { ...options.holds }, pending: {}, calls: {}, starts: [], saves: 0, spawned: 0,
-  configured: false, capturedSettings: [],
+  configured: false, capturedSettings: [], unavailable: Boolean(options.unavailable), availabilityFailure: Boolean(options.availabilityFailure),
   release(name) {
     this.holds[name] = false
     for (const done of this.pending[name] || []) done()
@@ -62,7 +62,8 @@ const decrypt = safeStorage.decryptStringAsync.bind(safeStorage)
 const encrypt = safeStorage.encryptStringAsync.bind(safeStorage)
 safeStorage.isAsyncEncryptionAvailable = async () => {
   await gate('availability')
-  return options.unavailable ? false : available()
+  if (state.availabilityFailure) throw new Error('Synthetic private availability error withheld')
+  return state.unavailable ? false : available()
 }
 safeStorage.decryptStringAsync = async value => {
   await gate('decrypt')
