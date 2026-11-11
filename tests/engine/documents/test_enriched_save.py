@@ -371,6 +371,157 @@ def test_shared_printed_page_correction_rolls_back_reopens_and_links_later(tmp_p
     assert len(d.store.records("version", job)) == 3
 
 
+def test_shared_source_title_correction_preserves_paths_and_history(tmp_path, monkeypatch):
+    from threading import Event
+
+    from fastapi.testclient import TestClient
+    from pdfmd.server import create_app
+
+    source = tmp_path / "Source title correction.pdf"
+    old_title, corrected_title = "Running header", "Exact source title"
+    image_titles = ["Left detail", "Right detail"]
+    with pymupdf.open() as pdf:
+        page = pdf.new_page(width=300, height=220)
+        page.insert_text((20, 22), old_title)
+        page.insert_text((20, 40), corrected_title)
+        xrefs = []
+        for left, color, title in zip([20, 160], [(10, 100, 200), (200, 100, 10)], image_titles):
+            pixmap = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 64, 48), False)
+            pixmap.set_rect(pixmap.irect, color)
+            xrefs.append(page.insert_image(pymupdf.Rect(left, 55, left + 64, 103), stream=pixmap.tobytes("jpeg")))
+            page.insert_text((left, 120), title)
+        pdf.save(source)
+
+    d = Dispatcher(Store(tmp_path / "workspace"))
+    job = d.evidence.create_job(str(source), "Verify a shared source title correction.")["id"]
+    title_evidence = d.evidence.inspect(job, [1])
+    assert all(title in title_evidence["value"]["pages"][0]["content"] for title in [old_title, corrected_title, *image_titles])
+    images = [d.evidence.extract_image(job, 1, xref) for xref in xrefs]
+    assert all(image["representation"] == "embedded_stream" and image["extension"] == "jpeg" for image in images)
+
+    def known(value):
+        return {"state": "known", "value": value, "basis": ev(title_evidence["ref"], f"Visible text: {value}"), "alternatives": []}
+
+    creates = [create(key, image, "Shared image", punctuation="ascii", language="en", full=title)
+               for key, image, title in zip(["later", "shown"], images, image_titles)]
+    for change, title in zip(creates, image_titles):
+        change["facts"]["image_title"] = known(title)
+    request = args("![Shown](asset:new/shown)\n\n[Open shown][shown]\n\n[shown]: asset:new/shown", creates)
+    request["source_update"] = {"kind": "document", "title": known(old_title)}
+    auth = {"Authorization": "Bearer synthetic-only"}
+    job_url = f"/jobs/{job}"
+
+    with TestClient(create_app(d.store.root, "synthetic-only"), headers=auth) as client:
+        created = http_edit(client, job_url, "create", request)
+        assert created["ok"], created
+        old_later, old_shown = created["data"]["asset_changes"]
+        assert old_shown["asset_path"] == "assets/Shared image-i1 (2).jpeg"
+        base = created["data"]["version_id"]
+        original = d.documents.version(job, base)
+        before = http_export_members(client, job_url, base, tmp_path / "before.zip")
+        correction = {"base_version": base, "expected_head": base, "source_update": {"title": known(corrected_title)}}
+        invalid = {**correction, "source_update": {"title": {**known(corrected_title), "basis": ev("missing-evidence")}}}
+        rejected = http_edit(client, job_url, "invalid", invalid)
+        assert not rejected["ok"] and rejected["data"]["error_code"] == "ASSET_NOT_OWNED"
+        assert d.store.json(rejected["candidate_ref"], job) == invalid
+        assert d.store.maybe("asset_preparation", f"manual:{job}:invalid") is None
+        assert d.store.get("job", job)["head"] == base
+
+        first_ready = Event()
+        registered = []
+        real_register, real_enrich = Store.blob_from_file, documents_module.enrich
+
+        def register(self, job_id, kind, path, meta=None, **kwargs):
+            blob = real_register(self, job_id, kind, path, meta, **kwargs)
+            if kind == "enriched_image" and meta["occurrence_id"] == old_later["occurrence_id"]:
+                registered.append(blob["ref"])
+                first_ready.set()
+            return blob
+
+        def fail_after_first(store, ref, job_id, values, folder):
+            if ref == images[1]["ref"]:
+                assert first_ready.wait(30), "first representation was never registered"
+                raise asset_catalog.FactError("Injected failure preparing the second image.", "ASSET_ENRICHMENT_FAILED")
+            return real_enrich(store, ref, job_id, values, folder)
+
+        names_before = d.store.records("asset_name", job)
+        with monkeypatch.context() as patch:
+            patch.setattr(Store, "blob_from_file", register)
+            patch.setattr(documents_module, "enrich", fail_after_first)
+            failed = http_edit(client, job_url, "failed", correction)
+        assert not failed["ok"] and failed["data"]["error_code"] == "ASSET_ENRICHMENT_FAILED"
+        assert d.store.json(failed["candidate_ref"], job) == correction
+        [retained] = registered
+        assert record_from(d.store.bytes(retained, job))["source"]["title"] == known(corrected_title)
+        assert d.store.records("asset_name", job) == names_before
+        assert d.store.get("job", job)["head"] == base and len(d.store.records("version", job)) == 1
+        assert d.documents.version(job, base) == original
+        assert http_export_members(client, job_url, base, tmp_path / "after-failure.zip") == before
+
+        corrected = http_edit(client, job_url, "correct", correction)
+        assert corrected["ok"], corrected
+        version = corrected["data"]["version_id"]
+        changes = {item["occurrence_id"]: item for item in corrected["data"]["asset_changes"]}
+        assert set(changes) == {old_later["occurrence_id"], old_shown["occurrence_id"]}
+        current = d.documents.version(job, version)
+        assert current["source_facts"] == {**original["source_facts"], "title": known(corrected_title)}
+        for old in (old_later, old_shown):
+            occurrence = old["occurrence_id"]
+            change = changes[occurrence]
+            old_entry, current_entry = (saved["asset_catalog"][occurrence] for saved in (original, current))
+            assert change["asset_path"] == change["previous_path"] == old["asset_path"]
+            assert change["asset_uri"] == old["asset_uri"]
+            assert change["representation_id"] != old["representation_id"]
+            assert current_entry["facts"] == old_entry["facts"]
+            prior_rep, rep = (entry["representation"] for entry in (old_entry, current_entry))
+            data = d.store.bytes(rep["enriched_ref"], job)
+            assert sha256(data).hexdigest() == change["enriched_sha256"] != old["enriched_sha256"]
+            assert record_from(data) == rep["provenance_record"] == {
+                **prior_rep["provenance_record"], "representation_id": change["representation_id"],
+                "source": current["source_facts"]}
+            assert decoded(data) == decoded(d.store.bytes(prior_rep["image_ref"], job))
+
+        equivalent = http_edit(client, job_url, "same-title", {**correction, "base_version": version, "expected_head": version})
+        assert equivalent["ok"] and equivalent["data"]["asset_changes"] == []
+        same = equivalent["data"]["version_id"]
+        assert d.documents.version(job, same)["asset_catalog"] == current["asset_catalog"]
+        later = http_edit(client, job_url, "link", {"base_version": same, "expected_head": same,
+                         "operations": [{"kind": "insert", "after_id": "b", "blocks": [{"id": "linked-figure",
+                                         "pages": [1], "markdown": f"[Open later](asset:id/{old_later['occurrence_id']})"}]}]})
+        assert later["ok"] and later["data"]["asset_changes"] == []
+        latest = later["data"]["version_id"]
+
+    with TestClient(create_app(d.store.root, "synthetic-only"), headers=auth) as client:
+        for selected, occurrences in [(base, [old_shown]), (version, [old_shown]), (latest, [old_shown, old_later])]:
+            response = client.get(job_url + "/versions/" + selected)
+            assert response.status_code == 200, response.text
+            saved = response.json()
+            assert saved["version"] == selected and saved["asset_reference_check"]["status"] == "ok"
+            assert set(saved["assets"]) == {item["asset_path"] for item in occurrences}
+            members = http_export_members(client, job_url, selected, tmp_path / f"{selected}.zip")
+            assert set(members) == {"document.json", "document.md", "preview.html", "manifest.json", *saved["assets"], *saved["originals"]}
+            for path, original_stream in saved["originals"].items():
+                assert members[path] == d.store.bytes(original_stream["ref"], job)
+            if selected == base:
+                assert members == before
+                continue
+            assert saved["asset_catalog"] == current["asset_catalog"]
+            for old in occurrences:
+                path = old["asset_path"]
+                assert sha256(members[path]).hexdigest() == changes[old["occurrence_id"]]["enriched_sha256"]
+            assert len(saved["originals"]) == len(occurrences)
+            if selected == version:
+                assert members["document.md"] == before["document.md"]
+                assert members["preview.html"] == before["preview.html"]
+                assert set(saved["originals"]) == set(original["originals"])
+            else:
+                assert f'href="{old_later["asset_uri"]}"' in members["preview.html"].decode()
+        assert http_edit(client, job_url, "correct", correction) == corrected
+        assert http_edit(client, job_url, "failed", correction) == failed
+    assert d.store.get("job", job)["head"] == latest
+    assert len(d.store.records("version", job)) == 4
+
+
 @pytest.mark.parametrize("schema_version", [1, 2])
 def test_edit_streams_every_base_member_even_when_removing_it(jpeg_job, monkeypatch, schema_version):
     d, job, jpeg, png = jpeg_job

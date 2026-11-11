@@ -566,7 +566,7 @@ A schema 1 hash path becomes a schema 2 occurrence only through a create's `lega
 
 `SourceFactsPatch` rejects an explicit null for any field: omission keeps the base value, while a complete `TextFact` (state `unknown` clears a fact) or an empty list replaces it. `validate_source` checks the merged source before preparation. A base saved with an invalid fact therefore fails with the field to repair (`source_update.<field>`), and a valid patch repairs it.
 
-Omitted groups become singles. A range needs consecutive pages and a basis. It may not mix printed and fallback labels, and numeric printed labels must be continuous. The [single-occurrence correction](#single-occurrence-correction) and [shared printed-page correction](#shared-printed-page-correction) apply the same validation to the merged facts. Changes to shared source facts already embedded in the catalog receive `ASSET_FACT_INVALID` pending the shared source correction path.
+Omitted groups become singles. A range needs consecutive pages and a basis. It may not mix printed and fallback labels, and numeric printed labels must be continuous. The [single-occurrence correction](#single-occurrence-correction), [shared printed-page correction](#shared-printed-page-correction) and [shared source correction](#shared-source-correction) apply the same validation to the merged facts.
 
 **Names.** `asset_naming.build` assembles `description-locator[-figure][suffix].ext`. It flattens controls, applies the nine full-width substitutions, trims leading whitespace and trailing whitespace or dots from the label, and falls back to `image` for an empty label. It adds `image-` before a reserved device name, normalizes to NFC with the pinned `unicodedata2==17.0.0`, and checks 180 UTF-8 bytes. On overflow, `NameBudgetError.details` gives the maximum, fixed-component bytes, suffix bytes and remaining description bytes. The label is never shortened.
 
@@ -621,6 +621,12 @@ The preparation pass embeds the updated record into bytes from the pre-enrichmen
 On a schema 2 edit, `page_updates` merges an evidenced printed observation into the selected base's page map. The engine compares that map against the embedded printed observations in the full occurrence catalog. It schedules new representations for every affected occurrence, including occurrences without a current destination. A matching explicit occurrence correction contributes its merged facts to the same preparation. Naming, source evidence validation and guarded destination rewriting use the single-occurrence path.
 
 The writer prepares each representation before the common save transaction publishes the page map, catalog, referenced files and receipt. Failure settlement releases all pending names from that edit while retaining the candidate and staged data. Only referenced files enter the new version's delivery inventory. A later edit can link to an unreferenced occurrence by ID and reuse its corrected representation. See the [rollback, linking and replay evidence](../batches/R01CAL-A03-DELIVERY-01/verification.md#t4-shared-printed-page-correction).
+
+### Shared source correction
+
+On an edit of a schema 2 base, `source_update` replaces the supplied editable source fields. For example, `source_update.title` takes a complete text fact with the visible title and its evidence. The engine validates the merged source record and its pointers before preparing any image. It compares the validated record against each catalog occurrence's embedded source facts, including occurrences with no current destination. An equivalent patch reuses the existing representations.
+
+The same preparation and save transaction as [shared printed-page correction](#shared-printed-page-correction) publishes fresh representations and the new source facts together. The filenames, suffixes and operative destinations for a source-only correction stay the same. The occurrence IDs and pre-enrichment evidence remain stable. The structured record and readable XMP description carry the corrected source title, and `dc:title` carries the separate image title. A failed preparation leaves the previous source facts and selected version available. See the [source correction verification](../batches/R01CAL-A03-DELIVERY-01/verification.md#t4-a-shared-source-correction).
 
 ### CommonMark emphasis and preview language
 

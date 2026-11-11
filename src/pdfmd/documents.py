@@ -570,13 +570,12 @@ class Documents:
             check_pointers(pages, lookup, rects, "Page labels")
         except FactError as exc:
             raise AssetEditError(exc.code, f"{exc}{kept}") from exc
-        # Use the catalog so a page correction also refreshes unreferenced occurrences.
+        # Shared facts are embedded throughout the catalog, including unreferenced occurrences.
         for occurrence_id, entry in catalog.items():
             old = entry["representation"]["provenance_record"]
-            if source != old["source"]:
-                raise AssetEditError("ASSET_FACT_INVALID", f"This edit changes source facts embedded in occurrence {occurrence_id}. "
-                                     "Shared source corrections are not available yet." + kept)
-            if any(location["printed"] != printed_info(pages[str(location["physical_page"])]) for location in old["locations"]):
+            if source != old["source"] or any(
+                location["printed"] != printed_info(pages[str(location["physical_page"])]) for location in old["locations"]
+            ):
                 request_correction(occurrence_id, entry, entry["facts"])
         # Read-or-create in one write transaction: concurrent attempts of the same
         # operation (another thread or engine process) share one set of identities

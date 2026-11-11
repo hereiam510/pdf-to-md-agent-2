@@ -253,13 +253,28 @@ Implementation notes for this increment:
 
 **Execution (2026-11-12).** The user selected the first single-occurrence correction after the local T3b checkpoint. Implemented `asset_changes` with one `correct` item and complete replacement values for supplied facts on the selected schema 2 base. The [single-occurrence verification](verification.md#t4-single-occurrence-correction) owns observed reopen, export and retry results.
 
-The user then selected a local single-occurrence checkpoint and a printed-page correction affecting two images, including an unreferenced occurrence. The [shared-page verification](verification.md#t4-shared-printed-page-correction) owns the checkpoint and observed checks for per-task locking, rollback, later linking, reopen, export and retry. Shared source facts and the remaining T4 acceptance cases are follow-up scope.
+The user then selected a local single-occurrence checkpoint and a printed-page correction affecting two images, including an unreferenced occurrence. The [shared-page verification](verification.md#t4-shared-printed-page-correction) owns the checkpoint and observed checks for per-task locking, rollback, later linking, reopen, export and retry. See the [T4 follow-up tickets](#t4-follow-up-tickets) for the subsequent work.
 
 **Work and completion evidence:** apply explicit occurrence/source/page patches across all affected catalog occurrences, including currently unreferenced registrations. Rebuild changed representations and operative destinations together; preserve unrelated text, valid independent occurrences, prior names' ownership and historical-base mappings. Exercise shared-page/title updates, metadata-only changes, corrected-name collision, exact retry, restart and failed/stale publication. Inspect corrected saved/reopened/exported output alongside the unchanged earlier version.
 
 Use [AR-4](spec.md#ar-4--editing-identity-and-failed-publication), [AR-10](spec.md#ar-10--collision-allocation-retries-and-distinct-occurrences), [AR-11](spec.md#ar-11--synchronized-corrections-and-immutable-history) and affected [AR-12](spec.md#ar-12--enrichment-fidelity-and-complete-delivery-chain) controls. A fresh second occurrence uses the T3b creation path and preserves the independently valid first citation.
 
 **Exit:** identified correction operations cover occurrence-only, shared-fact and non-filename changes; corresponding saved/reopened/exported output is coherent and earlier versions remain exact. Concurrent allocation, failure, restart and replay controls establish the same publication boundary as creation. Hand off the integrated create/correct revision and any remaining whole-matrix observations to T5.
+
+<a id="proposed-t4-follow-up-tickets"></a>
+### T4 follow-up tickets
+
+One document-edit integrator owns the overlapping preparation/publication path and engine tests. See the [completion checks](spec.md#t4-completion-checks) and [T4-A selection](../../discussions/ASSET_REFERENCES.md#t4-a-selected).
+
+| Ticket | Contribution and dependency | Completion evidence |
+| --- | --- | --- |
+| [T4-A — Correct shared source facts](#t4-a--correct-shared-source-facts) | Refresh the catalog from validated `source_update` on the shared-page baseline, and update `edit_document` guidance. | [Shared source correction verification](verification.md#t4-a-shared-source-correction). |
+| T4-B — Apply corrections per occurrence | Proposed. After T4-A, replace the global correction limit with per-occurrence validation in `documents.py`. Compose explicit and shared changes before preparation. | Run the multiple-explicit-corrections case in the [completion checks](spec.md#t4-completion-checks) and verify duplicate rejection and one published representation per affected occurrence. |
+| T4-C — Verify the correction lifecycle | Proposed. After T4-A and T4-B, check the integrated revision on the normal edit route, Windows development desktop and a matching frozen-engine build. Use the existing selected writer and independent reader. | Run the collision, history and recovery case in the [completion checks](spec.md#t4-completion-checks). Verify selected versions through reopen and relocated export, record test/build identities, and hand the integrated revision and coverage limits to T5. |
+
+#### T4-A — Correct shared source facts
+
+Implemented and verified on 2026-11-12 for the selected [shared source metadata case](spec.md#t4-completion-checks). The catalog correction pass in `documents.py` reuses the existing preparation and publication path, and `edit_document` describes the supported patch. The [verification](verification.md#t4-a-shared-source-correction) owns the checkpoint, observed checks and tested identities. Execution stops here per the [selection](../../discussions/ASSET_REFERENCES.md#t4-a-selected).
 
 ## R01CAL-A03-DELIVERY-01-T5
 

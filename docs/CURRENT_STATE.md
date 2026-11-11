@@ -2,12 +2,16 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 T4, next-step advice after the shared printed-page correction.
-Resume at: [next-step recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-shared-page-correction), with the [shared-page verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-shared-printed-page-correction) and [T4 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t4).
-Next activity: awaiting selection of the proposed local checkpoint and shared source correction. The schema 1 retirement and published-suffix choices remain open.
-Instruction basis: on 2026-11-12 the user requested next-step advice after the shared printed-page correction.
+Current focus: R01CAL-A03-DELIVERY-01 T4-A closeout.
+Resume at: [T4 follow-up tickets](batches/R01CAL-A03-DELIVERY-01/tickets.md#t4-follow-up-tickets), with [T4-A verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-a-shared-source-correction).
+Next activity: stopped before T4-B at the user's requested boundary.
+Instruction basis: on 2026-11-12 the user selected the [shared-page checkpoint and T4-A only](discussions/ASSET_REFERENCES.md#t4-a-selected).
 
 ## Return routes
+
+- Previous T4 review: [completion proposal](discussions/ASSET_REFERENCES.md#review-and-proposed-t4-completion) and [review evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-residual-correction-review).
+
+- Previous T4 increment: [shared-page verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-shared-printed-page-correction) and [next-step advice](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-shared-page-correction).
 
 - Previous T4 increment: [single-occurrence verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-single-occurrence-correction) and [next-step advice](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-single-occurrence-correction).
 
