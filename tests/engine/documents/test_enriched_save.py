@@ -81,6 +81,21 @@ def decoded(data: bytes):
     return pix.width, pix.height, pix.n, pix.alpha, sha256(pix.samples).hexdigest()
 
 
+def http_edit(client, job_url, key, body):
+    response = client.post(job_url + "/edit", json=body, headers={"Idempotency-Key": key})
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def http_export_members(client, job_url, version, destination):
+    response = client.post(job_url + "/export", json={"version_id": version, "destination": str(destination)})
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["asset_reference_check"]["status"] == "ok"
+    with zipfile.ZipFile(result["path"]) as package:
+        return {name: package.read(name) for name in package.namelist()}
+
+
 def test_selected_module_is_the_qualified_candidate():
     assert asset_catalog.module_identity() == asset_catalog.SELECTED_XMP_SHA256
     qualified = Path(__file__).parents[3] / "tools" / "qualification" / "primary_xmp.py"
@@ -176,30 +191,17 @@ def test_correct_one_image_reopens_exports_and_replays_with_historical_bytes(jpe
     auth = {"Authorization": "Bearer synthetic-only"}
     job_url = f"/jobs/{job}"
 
-    def edit(client, key, body):
-        response = client.post(job_url + "/edit", json=body, headers={"Idempotency-Key": key})
-        assert response.status_code == 200, response.text
-        return response.json()
-
-    def export_members(client, version, filename):
-        response = client.post(job_url + "/export", json={"version_id": version, "destination": str(tmp_path / filename)})
-        assert response.status_code == 200, response.text
-        result = response.json()
-        assert result["asset_reference_check"]["status"] == "ok"
-        with zipfile.ZipFile(result["path"]) as package:
-            return {name: package.read(name) for name in package.namelist()}
-
     with TestClient(create_app(d.store.root, "synthetic-only"), headers=auth) as client:
-        created = edit(client, "create", request)
+        created = http_edit(client, job_url, "create", request)
         assert created["ok"], created
         [first] = created["data"]["asset_changes"]
         assert first["asset_path"] == old_path
         base = created["data"]["version_id"]
-        original_export = export_members(client, base, "original.zip")
+        original_export = http_export_members(client, job_url, base, tmp_path / "original.zip")
         correction = {"base_version": base, "expected_head": base,
                       "asset_changes": [{"kind": "correct", "occurrence_id": first["occurrence_id"],
                                          "changes": {"description": facts(jpeg, "Corrected 圖")["description"]}}]}
-        corrected = edit(client, "correct", correction)
+        corrected = http_edit(client, job_url, "correct", correction)
         assert corrected["ok"], corrected
         [change] = corrected["data"]["asset_changes"]
         version = corrected["data"]["version_id"]
@@ -207,7 +209,7 @@ def test_correct_one_image_reopens_exports_and_replays_with_historical_bytes(jpe
         assert change["representation_id"] != first["representation_id"]
         assert change["client_key"] is None and change["previous_path"] == old_path
         assert change["asset_path"] == "assets/Corrected 圖-i1.jpeg"
-        newer = edit(client, "newer", {"base_version": version, "expected_head": version, "title": "Later title"})
+        newer = http_edit(client, job_url, "newer", {"base_version": version, "expected_head": version, "title": "Later title"})
         assert newer["ok"], newer
 
     with TestClient(create_app(d.store.root, "synthetic-only"), headers=auth) as client:
@@ -221,7 +223,7 @@ def test_correct_one_image_reopens_exports_and_replays_with_historical_bytes(jpe
             assert f"![Figure]({uri})" in saved["markdown"] and f"[fig]: {uri}" in saved["markdown"]
             assert f"Keep literal `{old_uri}`." in saved["markdown"]
             [resource] = saved["preview_transfer"]["resources"]
-            members = export_members(client, selected, f"{selected}.zip")
+            members = http_export_members(client, job_url, selected, tmp_path / f"{selected}.zip")
             exported_html = members["preview.html"].decode()
             assert f'src="{uri}"' in exported_html and f'href="{uri}"' in exported_html
             assert members["document.md"].decode() == saved["markdown"]
@@ -236,12 +238,137 @@ def test_correct_one_image_reopens_exports_and_replays_with_historical_bytes(jpe
             else:
                 assert old_path not in members
                 assert record_from(members[path])["description"] == correction["asset_changes"][0]["changes"]["description"]
-        assert edit(client, "correct", correction) == corrected
+        assert http_edit(client, job_url, "correct", correction) == corrected
 
     assert d.store.get("job", job)["head"] == newer["data"]["version_id"]
     assert len(d.store.records("version", job)) == 3
     assert {(name["name"], name["status"]) for name in d.store.records("asset_name", job)} == {
         (Path(old_path).name, "assigned"), (Path(change["asset_path"]).name, "assigned")}
+
+
+def test_shared_printed_page_correction_rolls_back_reopens_and_links_later(tmp_path, monkeypatch):
+    from threading import Event
+
+    from fastapi.testclient import TestClient
+    from filelock import FileLock
+    from pdfmd.server import create_app
+
+    source = tmp_path / "Shared page.pdf"
+    with pymupdf.open(FIXTURES / "rgb-jpeg.pdf") as pdf:
+        page = pdf[0]
+        page.insert_text((20, page.rect.height - 10), "59")
+        xref = page.get_images()[0][0]
+        pdf.save(source)
+    with pymupdf.open(source) as pdf:
+        assert "59" in pdf[0].get_text().split()
+    d = Dispatcher(Store(tmp_path / "workspace"))
+    job = d.evidence.create_job(str(source), "Verify a shared printed-page correction.")["id"]
+    png = d.evidence.render_page(job, 1, 72)
+    jpeg = d.evidence.extract_image(job, 1, xref)
+    request = args("![Page](asset:new/page)\n\n[Open page][page]\n\n[page]: asset:new/page",
+                   [create("page", png, "Page view"), create("figure", jpeg, "Source figure")],
+                   printed="58", evidence=png["ref"])
+    auth = {"Authorization": "Bearer synthetic-only"}
+    job_url = f"/jobs/{job}"
+
+    with TestClient(create_app(d.store.root, "synthetic-only"), headers=auth) as client:
+        created = http_edit(client, job_url, "create", request)
+        assert created["ok"], created
+        old_page, old_figure = created["data"]["asset_changes"]
+        base = created["data"]["version_id"]
+        original = d.documents.version(job, base)
+        before = http_export_members(client, job_url, base, tmp_path / "before.zip")
+        correction = {"base_version": base, "expected_head": base,
+                      "page_updates": {"1": {"printed": "59", "printed_basis": ev(png["ref"], "59 at the page foot")}}}
+        with FileLock(d.store.root / f"task-{job}.lock"):
+            blocked = client.post(job_url + "/edit", json=correction, headers={"Idempotency-Key": "locked"})
+            assert blocked.status_code == 409
+        assert d.store.maybe("operation", f"manual:{job}:locked") is None
+
+        first_ready = Event()
+        registered = []
+        real_register, real_enrich = Store.blob_from_file, documents_module.enrich
+
+        def register(self, job_id, kind, path, meta=None, **kwargs):
+            blob = real_register(self, job_id, kind, path, meta, **kwargs)
+            if kind == "enriched_image" and meta["occurrence_id"] == old_page["occurrence_id"]:
+                registered.append(blob["ref"])
+                first_ready.set()
+            return blob
+
+        def fail_after_first(store, ref, job_id, values, folder):
+            if ref == jpeg["ref"]:
+                assert first_ready.wait(30), "first representation was never registered"
+                raise asset_catalog.FactError("Injected failure preparing the second image.", "ASSET_ENRICHMENT_FAILED")
+            return real_enrich(store, ref, job_id, values, folder)
+
+        with monkeypatch.context() as patch:
+            patch.setattr(Store, "blob_from_file", register)
+            patch.setattr(documents_module, "enrich", fail_after_first)
+            failed = http_edit(client, job_url, "failed", correction)
+        assert not failed["ok"] and failed["data"]["error_code"] == "ASSET_ENRICHMENT_FAILED"
+        assert "second image" in failed["data"]["error"]
+        assert d.store.json(failed["candidate_ref"], job) == correction
+        assert len(registered) == 1 and record_from(d.store.bytes(registered[0], job))["locations"][0]["printed"]["value"] == "59"
+        assert d.store.get("job", job)["head"] == base and len(d.store.records("version", job)) == 1
+        assert d.documents.version(job, base) == original
+        assert http_export_members(client, job_url, base, tmp_path / "after-failure.zip") == before
+        assert {(r["name"], r["status"]) for r in d.store.records("asset_name", job)} == {
+            ("Page view-p58.png", "assigned"), ("Source figure-p58.jpeg", "assigned"),
+            ("Page view-p59.png", "released"), ("Source figure-p59.jpeg", "released")}
+
+        corrected = http_edit(client, job_url, "correct", correction)
+        assert corrected["ok"], corrected
+        version = corrected["data"]["version_id"]
+        by_occurrence = {change["occurrence_id"]: change for change in corrected["data"]["asset_changes"]}
+        assert set(by_occurrence) == {old_page["occurrence_id"], old_figure["occurrence_id"]}
+        page, figure = (by_occurrence[old["occurrence_id"]] for old in (old_page, old_figure))
+        assert page["asset_path"] == "assets/Page view-p59.png"
+        assert figure["asset_path"] == "assets/Source figure-p59.jpeg"
+        later = http_edit(client, job_url, "link", {"base_version": version, "expected_head": version,
+                         "operations": [{"kind": "insert", "after_id": "b", "blocks": [{"id": "linked-figure",
+                                         "pages": [1], "markdown": f"[Open figure](asset:id/{figure['occurrence_id']})"}]}]})
+        assert later["ok"], later
+        latest = later["data"]["version_id"]
+
+    with TestClient(create_app(d.store.root, "synthetic-only"), headers=auth) as client:
+        for selected, expected in [(base, [old_page]), (version, [page]), (latest, [page, figure])]:
+            response = client.get(job_url + "/versions/" + selected)
+            assert response.status_code == 200, response.text
+            saved = response.json()
+            assert saved["version"] == selected and saved["asset_reference_check"]["status"] == "ok"
+            assert set(saved["assets"]) == {change["asset_path"] for change in expected}
+            members = http_export_members(client, job_url, selected, tmp_path / f"{selected}.zip")
+            assert set(name for name in members if name.startswith("assets/")) == set(saved["assets"])
+            assert members["document.md"].decode() == saved["markdown"]
+            html = members["preview.html"].decode()
+            assert f'src="{expected[0]["asset_uri"]}"' in html and f'href="{expected[0]["asset_uri"]}"' in html
+            if selected == base:
+                assert members == before
+                continue
+            assert saved["content"]["pages"]["1"]["printed"] == "59"
+            for old, change in [(old_page, page), (old_figure, figure)]:
+                representation = saved["asset_catalog"][change["occurrence_id"]]["representation"]
+                assert change["previous_path"] == old["asset_path"]
+                assert representation["id"] == change["representation_id"] != old["representation_id"]
+                assert representation["asset_path"] == change["asset_path"]
+                data = d.store.bytes(representation["enriched_ref"], job)
+                assert sha256(data).hexdigest() == change["enriched_sha256"]
+                record = record_from(data)
+                assert record == representation["provenance_record"]
+                assert record["locations"][0]["printed"]["value"] == "59"
+                assert record["naming"]["assigned_basename"] == Path(change["asset_path"]).name
+                assert decoded(data) == decoded(d.store.bytes(representation["image_ref"], job))
+                if change in expected:
+                    assert members[change["asset_path"]] == data
+            if selected == latest:
+                assert f'href="{figure["asset_uri"]}"' in html
+                [original_path] = saved["originals"]
+                assert members[original_path] == d.store.bytes(saved["originals"][original_path]["ref"], job)
+        assert http_edit(client, job_url, "correct", correction) == corrected
+        assert http_edit(client, job_url, "failed", correction) == failed
+    assert d.store.get("job", job)["head"] == latest
+    assert len(d.store.records("version", job)) == 3
 
 
 @pytest.mark.parametrize("schema_version", [1, 2])

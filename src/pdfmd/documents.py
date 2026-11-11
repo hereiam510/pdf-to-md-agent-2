@@ -529,6 +529,12 @@ class Documents:
         schema2 = base is not None and base.get("schema_version") == 2
         catalog = deepcopy(base["asset_catalog"]) if schema2 else {}
         requests = {}
+
+        def request_correction(occurrence_id, entry, facts):
+            requests.setdefault(f"correct:{occurrence_id}", {
+                "facts": facts, "client_key": None, "occurrence_id": occurrence_id,
+                "previous_path": entry["representation"]["asset_path"]})
+
         correction_seen = False
         for change in edit.asset_changes:
             if change.kind == "create":
@@ -548,9 +554,7 @@ class Documents:
             except ValueError as exc:
                 raise AssetEditError("ASSET_FACT_INVALID", f"Correct {change.occurrence_id}: {exc}{kept}") from exc
             if facts != entry["facts"]:
-                requests[f"correct:{change.occurrence_id}"] = {
-                    "facts": facts, "client_key": None, "occurrence_id": change.occurrence_id,
-                    "previous_path": entry["representation"]["asset_path"]}
+                request_correction(change.occurrence_id, entry, facts)
         pages = {k: v.model_dump() for k, v in content.pages.items()}
         source_blob = self.store.get("blob", job["source_ref"], job=job_id)
         source = deepcopy(base["source_facts"]) if schema2 else default_source(job["source_ref"], source_blob["sha256"])
@@ -566,14 +570,14 @@ class Documents:
             check_pointers(pages, lookup, rects, "Page labels")
         except FactError as exc:
             raise AssetEditError(exc.code, f"{exc}{kept}") from exc
-        # Shared source/page corrections can affect more than one occurrence.
+        # Use the catalog so a page correction also refreshes unreferenced occurrences.
         for occurrence_id, entry in catalog.items():
             old = entry["representation"]["provenance_record"]
-            fresh = {**old, "source": source,
-                     "locations": [{**loc, "printed": printed_info(pages[str(loc["physical_page"])])} for loc in entry["facts"]["locations"]]}
-            if fresh != old:
-                raise AssetEditError("ASSET_FACT_INVALID", "This edit changes source facts or a page label embedded in existing "
-                                     f"occurrence {occurrence_id}. Shared source and page corrections are not available yet." + kept)
+            if source != old["source"]:
+                raise AssetEditError("ASSET_FACT_INVALID", f"This edit changes source facts embedded in occurrence {occurrence_id}. "
+                                     "Shared source corrections are not available yet." + kept)
+            if any(location["printed"] != printed_info(pages[str(location["physical_page"])]) for location in old["locations"]):
+                request_correction(occurrence_id, entry, entry["facts"])
         # Read-or-create in one write transaction: concurrent attempts of the same
         # operation (another thread or engine process) share one set of identities
         # instead of overwriting each other's record and reservations.

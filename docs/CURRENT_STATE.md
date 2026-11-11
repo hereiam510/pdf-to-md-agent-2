@@ -2,12 +2,14 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 T4, next-step advice after the first single-occurrence correction.
-Resume at: [next-step recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-single-occurrence-correction), with the [single-occurrence verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-single-occurrence-correction) and [T4 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t4).
-Next activity: awaiting selection of the proposed local checkpoint and shared-page correction. The schema 1 retirement and published-suffix choices remain open.
-Instruction basis: on 2026-11-12 the user requested next-step advice after the first single-occurrence correction.
+Current focus: R01CAL-A03-DELIVERY-01 T4, next-step advice after the shared printed-page correction.
+Resume at: [next-step recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-shared-page-correction), with the [shared-page verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-shared-printed-page-correction) and [T4 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t4).
+Next activity: awaiting selection of the proposed local checkpoint and shared source correction. The schema 1 retirement and published-suffix choices remain open.
+Instruction basis: on 2026-11-12 the user requested next-step advice after the shared printed-page correction.
 
 ## Return routes
+
+- Previous T4 increment: [single-occurrence verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-single-occurrence-correction) and [next-step advice](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-single-occurrence-correction).
 
 - Previous T3b closeout: [receipt and preparation correction](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-receipt-and-preparation-correction) and [next-step advice](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-ar-t3b-13-and-ar-t3b-14).
 
