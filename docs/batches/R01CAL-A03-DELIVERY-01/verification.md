@@ -1745,3 +1745,58 @@ The recommended order (checkpoint, recheck, then T3b remaining scope or T4) is r
 **Tested identities (SHA-256).** `documents.py` `ef2952506c05616529f2a462c84ea8431e56f70d6bcad8f59bacf4183aaed0b4`; `test_enriched_save.py` `f3bed9e239e995b71ba15dcc548f7e703effcc1d7869d9d0a0d253968d8534ae`; `allocation_child.py` `5a581af2b4d0bb7e124be27639ab49416e575172ab9ec1cbbd0f1491893f443c`; probe `c2c204e730f641e3e2b8284a1d71ada6f33910652d25c160c2e548ad487a2912`.
 
 **Limits.** The processes shared one Windows NTFS store; network filesystems, where SQLite locking is not dependable, were not tested. Restart of an interrupted attempt keeps its [earlier evidence](#t3b-review-correction). The frozen engine, desktop specs and readback were not rerun for this engine-only change. The published-suffix behavior after a failed concurrent reservation is unchanged and remains for the user to accept or revisit under AR-10.
+
+## T3b cross-process correction review
+
+2026-11-12, Asia/Singapore. Reviewed clean code at `d65a0a4`, using `023ea37` as the comparison base for AR-T3B-12. The transaction around preparation identity lookup and insertion closes the original lost-update window. The publication fallback releases a pending name of the same operation and returns the existing receipt when the receipt is still present. All 195 document-engine tests passed in 119.48 seconds, including the three AR-10 tests. The two process tests coordinate after preparation lookup and cover the recorded end state. The review exercised earlier and later timing windows using two processes on isolated Windows stores, a synthetic one-page MuPDF PDF and real bounded workers. The probe and logs are under ignored `.local/t3b-xproc-review-d2393380/`.
+
+See the [receipt and preparation correction](#t3b-receipt-and-preparation-correction) for the later implementation and rerun of these findings.
+
+**HTTP control.** Two app instances in separate processes opened the same store. While the first same-task edit held the task file lock at name reservation, the other request with the same idempotency key received HTTP 409. The first request returned HTTP 200 and a saved version. A same-key retry after lock release returned HTTP 200 with the identical response. The following findings concern direct overlapping `Dispatcher.execute` calls like the native cross-process test driver uses. The normal HTTP edit and agent runtime acquire the task lock before dispatch.
+
+### AR-T3B-13 — An overlapping dispatch can overwrite the accepted save receipt
+
+**P2 in the unguarded native path, reproduced with two schedules.** In the first probe, pause the second attempt immediately before `Dispatcher.execute` stores `started`. Let the first attempt publish and project its receipt, then release the second attempt. Its unconditional upsert overwrote `done`. The second caller raised an immutable-result conflict and a fresh exact retry reported that the retained result did not match the arguments. The saved head still reopened. The accepted version's result blob already existed, but the operation row was left at `started` and the projection's metadata lacked the arguments hash that recovery expected for a staged result.
+
+In the second probe, pause one attempt before an injected local preparation failure. Let its peer publish, then pause the peer before it projects the successful receipt to the tool-result blob. Release the failing attempt. `Dispatcher.settle` wrote the failure under the same immutable result key and replaced the already committed operation receipt. The successful peer then hit an immutable-result conflict. Exact retry returned the recorded preparation failure even though the saved version existed and reopened. The injected failure represents one possible local preparation failure. Its frequency in ordinary use is unknown.
+
+**Consequence and next check.** Same-task concurrency outside the existing writer lock can break immutable replay across the Dispatcher lifecycle. The atomic preparation fix by itself leaves both of these entry and settlement windows. Keep the existing per-task writer boundary for same-task edits and prove all supported native callers acquire it. If overlapping direct attempts are needed, give the operation one claim and terminal result owner across start, failure settlement, publication and receipt projection. Replay a successful save after both schedules and verify one receipt, one head and identical returned bytes. Different tasks can still save concurrently.
+
+### AR-T3B-14 — A delayed preparation can reset its committed state
+
+**P3 in the unguarded native path, reproduced.** Pause the second attempt after it starts and enters the edit, at the source-page check before the preparation transaction. Let the first attempt publish, then release the second. Both callers and a later retry received the identical successful receipt. The shared `asset_preparation` record ended at `preparing` without its committed version link. `_save_enriched` reads the existing record under the write lock but writes a fresh preparing record even when the operation already committed. The publication fallback returns the receipt without restoring that preparation record. Version visibility and the assigned name survived.
+
+**Consequence and next check.** The lost commit link makes preparation state disagree with the published version. Preserve the committed preparation under the same-task writer boundary or check terminal operation/preparation state before updating it if direct overlap is supported. Verify that a delayed exact attempt leaves the same committed version link and releases only genuinely leftover pending names.
+
+### Cross-process review result and continuation
+
+The AR-T3B-12 correction addresses the original identity overwrite and leaked suffix. Accept that bounded result for the current task-locked app path. The same-operation direct-dispatch evidence covers specific schedules and cannot establish general concurrent replay. Retain the task-writer boundary for T4. Treat support for overlapping same-task direct callers as a separate choice before depending on it. The published suffix after a failed competing reservation remains on its existing AR-10 decision route. The frozen, desktop and standalone reader checks retain their recorded code identities and were not repeated here.
+
+**Documentation impact.** The [engine guide](../../guides/DOCUMENT_ENGINE.md#enriched-creation-path-t3b) now states the task-lock boundary and links the direct-dispatch limits. The [T3b ticket](tickets.md#r01cal-a03-delivery-01-t3b) routes to the review. The [work register](../../WORK_ITEMS.md#context-capability-and-delivery-work) owns the new findings and their selection conditions. The asset design already calls for task-writer ordering, and the README's preview behavior and the phase acceptance conditions do not depend on unrestricted concurrent dispatch. Documentation and Git whitespace checks passed.
+
+## T3b receipt and preparation correction
+
+2026-11-12, Asia/Singapore. The user selected AR-T3B-13 and AR-T3B-14, the focused tests and reproductions, and retention of the per-task lock, with a stop before T4. Tested the local Windows development tree based on `d65a0a4`, using synthetic sources and isolated stores. The [engine guide](../../guides/DOCUMENT_ENGINE.md#enriched-creation-path-t3b) describes the transaction boundaries.
+
+| Reproduction | Observed on the corrected code |
+| --- | --- |
+| [AR-T3B-13 late start](#ar-t3b-13--an-overlapping-dispatch-can-overwrite-the-accepted-save-receipt) | Paused one caller just before the start transaction and let the other save and project its receipt. Both callers and an exact retry returned identical success. One saved version reopened and the operation stayed `done`. |
+| [AR-T3B-13 failure after the peer's commit](#ar-t3b-13--an-overlapping-dispatch-can-overwrite-the-accepted-save-receipt) | Paused the successful caller after commit and before projection. A peer hit an injected local preparation failure. Both callers and a retry returned the committed success, with one version and one assigned name. The result blob matched the committed receipt. |
+| [AR-T3B-14 delayed preparation](#ar-t3b-14--a-delayed-preparation-can-reset-its-committed-state) | Let the peer commit while the other caller waited before the preparation transaction. Both callers and a retry received the same success. Preparation stayed `committed` and kept the published version link. |
+| Failure commits first | Paused a peer after version files were staged. The failing attempt settled and released the reservation. Both callers and an exact retry returned the same failure. The operation published no version, and a new operation obtained the released name. |
+| HTTP task lock | Two processes opened the same synthetic task store. The overlapping HTTP edit received 409 and the exact retry after lock release received 200 with the original response. |
+
+The rerun used the same timing gates as the review, with the late-start gate moved to the entry of the guarded transaction. All 199 tests in `tests/engine/documents` and all 236 in `tests/engine/execution` passed. Four new regression cases exercise late start, delayed preparation, failure after a peer's commit and rollback while writing a failed receipt. In the rollback case the reservation and preparation stayed pending and the exact retry reused the occurrence identity.
+
+**Tested identities (SHA-256).**
+
+| File | Digest |
+| --- | --- |
+| `documents.py` | `6de4ac1e9d9ed7664bf8b6b0d662c2fe910dcfb264095f8c0bdf4f742ddd17c4` |
+| `tools.py` | `6f6bad888b0b92d52edbafe4c404fae9e0dea9b83bf3b28d142167b99de2add4` |
+| `storage.py` | `1da40c7a2fc29bd8860cf3b823d5534467e9ed446878020fc46375f4c95fb02a` |
+| `test_enriched_save.py` | `a7096f70d623a6c5fd51e1d881dd2d9916b02e854d70c683cc46e5d2043e630d` |
+
+The probes, isolated outputs and logs are retained under ignored `.local/t3b-receipt-correction-e6f7c6d4/`. These checks exercise Windows development-engine saves and exact receipt replay. Frozen engine, installed-app and real publisher-source coverage retain their recorded limits. Execution stopped before T4.
+
+**Documentation impact.** The [engine guide](../../guides/DOCUMENT_ENGINE.md#enriched-creation-path-t3b) describes transaction ownership for preparation, publication and failed edits. The [T3b ticket](tickets.md#r01cal-a03-delivery-01-t3b), [work register](../../WORK_ITEMS.md#context-capability-and-delivery-work) and [continuation route](../../CURRENT_STATE.md#focus-and-resume-route) point to the correction. The [asset design](../../design/ASSET_REFERENCES.md#document-edit-api-and-operation-semantics) already requires atomic failed receipt and reservation release. Documentation and Git whitespace checks passed.

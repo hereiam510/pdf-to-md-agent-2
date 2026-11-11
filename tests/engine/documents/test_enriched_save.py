@@ -506,3 +506,91 @@ def test_attempt_finding_its_operation_published_releases_leftover_names(jpeg_jo
     assert d.store.get("asset_name", "stale")["status"] == "released"
     assert {r["status"] for r in d.store.records("asset_name", job)} == {"assigned", "released"}
     assert len(d.store.records("version", job)) == 1
+
+
+def test_failed_attempt_reuses_the_peer_commit_before_projection(jpeg_job, monkeypatch):
+    d, job, _, png = jpeg_job
+    peer = Dispatcher(d.store)
+    request = args("![x](asset:new/x)", [create("x", png, "First commit")])
+    raw = json.dumps(request, ensure_ascii=False)
+    digest, candidate = peer.capture(job, "same", "edit_document", raw)
+
+    def fail_after_peer_commits(*_):
+        peer.documents.edit(job, "same", request, digest, candidate["ref"])
+        assert d.store.maybe("blob", "result:same") is None
+        raise OSError("Writer failed in the second attempt.")
+
+    monkeypatch.setattr(d.documents, "_prepare_images", fail_after_peer_commits)
+    result = call(d, job, "same", request)
+    assert result["ok"], result
+    assert call(peer, job, "same", request) == result
+    assert d.store.get("operation", "same")["result"] == result["data"]
+    assert d.store.json(result["result_ref"], job) == result["data"]
+    assert d.store.get("job", job)["head"] == result["data"]["version_id"]
+    assert len(d.store.records("version", job)) == 1
+
+
+def test_delayed_edit_start_replays_the_completed_operation(jpeg_job, monkeypatch):
+    d, job, _, png = jpeg_job
+    peer = Dispatcher(d.store)
+    request = args("![x](asset:new/x)", [create("x", png, "First commit")])
+    begin = d._begin_edit
+    receipts = []
+
+    def finish_peer_first(*args):
+        receipts.append(call(peer, job, "same", request))
+        return begin(*args)
+
+    monkeypatch.setattr(d, "_begin_edit", finish_peer_first)
+    result = call(d, job, "same", request)
+    assert result["ok"] and receipts == [result]
+    assert d.store.get("operation", "same")["result"] == result["data"]
+    assert len(d.store.records("version", job)) == 1
+
+
+def test_delayed_preparation_keeps_the_committed_version_link(jpeg_job, monkeypatch):
+    d, job, _, png = jpeg_job
+    peer = Dispatcher(d.store)
+    request = args("![x](asset:new/x)", [create("x", png, "First commit")])
+    page_rects = d.documents._page_rects
+    receipts = []
+
+    def finish_peer_first(task):
+        receipts.append(call(peer, job, "same", request))
+        return page_rects(task)
+
+    monkeypatch.setattr(d.documents, "_page_rects", finish_peer_first)
+    result = call(d, job, "same", request)
+    assert result["ok"] and receipts == [result]
+    preparation = d.store.get("asset_preparation", "same")
+    assert preparation["status"] == "committed" and preparation["version"] == result["data"]["version_id"]
+    assert [r["status"] for r in d.store.records("asset_name", job)] == ["assigned"]
+
+
+def test_failed_edit_receipt_and_name_release_roll_back_together(jpeg_job, monkeypatch):
+    d, job, _, png = jpeg_job
+    request = args("![x](asset:new/x)", [create("x", png, "Reserved")])
+    put_tx = d.store.put_tx
+
+    def preparation_failed(*_):
+        raise OSError("Local preparation failed.")
+
+    def interrupt_failure_commit(db, kind, key, owner, value):
+        if kind == "operation" and key == "interrupted" and value["status"] == "done":
+            raise OSError("Interrupted before the failure receipt commits.")
+        return put_tx(db, kind, key, owner, value)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(d.documents, "_prepare_images", preparation_failed)
+        patch.setattr(d.store, "put_tx", interrupt_failure_commit)
+        with pytest.raises(OSError, match="Interrupted before"):
+            call(d, job, "interrupted", request)
+
+    assert d.store.get("operation", "interrupted")["status"] == "started"
+    assert d.store.maybe("blob", "result:interrupted") is None
+    assert d.store.get("asset_preparation", "interrupted")["status"] == "preparing"
+    [reservation] = d.store.records("asset_name", job)
+    assert reservation["status"] == "pending"
+    resumed = call(d, job, "interrupted", request)
+    assert resumed["ok"], resumed
+    assert resumed["data"]["asset_changes"][0]["occurrence_id"] == reservation["occurrence_id"]

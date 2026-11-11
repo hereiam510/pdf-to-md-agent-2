@@ -181,12 +181,23 @@ class Documents:
         return Document(title=job["name"], scope=job["scope"],
                         pages={str(i): {} for i in range(1, job["page_count"] + 1)}).model_dump()
 
-    def edit(self, job_id: str, operation: str, arguments: dict, args_hash: str, candidate_ref: str) -> dict:
-        previous = self.store.maybe("operation", operation)
-        if previous and previous["args_hash"] != args_hash:
+    @staticmethod
+    def _edit_receipt(previous: dict | None, args_hash: str) -> dict | None:
+        if previous is None:
+            return None
+        if previous["args_hash"] != args_hash:
             raise Conflict("The operation ID belongs to different arguments.")
-        if previous and previous["status"] == "done":
-            return previous["result"]
+        if previous["status"] != "done":
+            return None
+        if previous.get("ok") is False:
+            raise Conflict("This edit operation already settled as a failure.")
+        return previous["result"]
+
+    def edit(self, job_id: str, operation: str, arguments: dict, args_hash: str, candidate_ref: str,
+             *, release_on_failure: bool = True) -> dict:
+        previous = self._edit_receipt(self.store.maybe("operation", operation), args_hash)
+        if previous is not None:
+            return previous
         edit = Edit.model_validate(arguments)
         job = self.store.get("job", job_id)
         base = self.version(job_id, edit.base_version) if edit.base_version else None
@@ -244,7 +255,8 @@ class Documents:
         content = Document.model_validate(body)
         self.validate(content, job["page_count"])
         if enriched:
-            return self._save_enriched(job_id, job, operation, args_hash, candidate_ref, edit, base, content)
+            return self._save_enriched(job_id, job, operation, args_hash, candidate_ref, edit, base, content,
+                                       release_on_failure=release_on_failure)
         markdown = self.markdown(content)
         # T3a: collect the same role-aware dependency union that the selected
         # preview interprets (embeds and local hyperlinks) under existing hash
@@ -309,11 +321,9 @@ class Documents:
         result = {"version_id": version_id, "parent": edit.base_version, "claim": content.claim,
                   "edit_mode": edit.mode, "candidate_ref": candidate_ref, "blocks": len(content.blocks), "known_gaps": content.known_gaps}
         with self.store.transaction() as db:
-            prior = self.store.get_tx(db, "operation", operation)
-            if prior and prior["status"] == "done":
-                if prior["args_hash"] != args_hash:
-                    raise Conflict("The operation ID belongs to different arguments.")
-                return prior["result"]
+            prior = self._edit_receipt(self.store.get_tx(db, "operation", operation, job=job_id), args_hash)
+            if prior is not None:
+                return prior
             current = self.store.get_tx(db, "job", job_id)
             if current["head"] != edit.expected_head:
                 raise Conflict(f"Head changed. Expected {edit.expected_head}; found {current['head']}. Candidate retained: {candidate_ref}")
@@ -356,6 +366,17 @@ class Documents:
             if held and (name != held["name"] or rid != held["rid"]):
                 raise AssetEditError("OPERATION_CONFLICT", "The resumed operation no longer produces its reserved name.")
             with self.store.transaction() as db:
+                prior = self.store.get_tx(db, "operation", operation, job=job_id)
+                prep = self.store.get_tx(db, "asset_preparation", operation, job=job_id)
+                reservation = prep["ids"][client_key].get("reservation")
+                if prior and prior["status"] == "done":
+                    if prior.get("ok") is False:
+                        raise Conflict("This edit operation already settled as a failure.")
+                    return reservation["name"], reservation["collision"], reservation["rid"]
+                if reservation != held:
+                    held = reservation
+                    collision = held["collision"] if held else None
+                    continue
                 record = self.store.get_tx(db, "asset_name", rid, job=job_id)
                 free = record is None or record["status"] == "released"
                 own = record is not None and record["occurrence_id"] == occurrence and (
@@ -364,7 +385,6 @@ class Documents:
                     self.store.put_tx(db, "asset_name", rid, job_id, {
                         "id": rid, "job": job_id, "key": key, "name": name, "occurrence_id": occurrence,
                         "operation": operation, "status": "assigned" if own and record["status"] == "assigned" else "pending"})
-                    prep = self.store.get_tx(db, "asset_preparation", operation, job=job_id)
                     prep["ids"][client_key]["reservation"] = {"name": name, "collision": collision, "rid": rid}
                     self.store.put_tx(db, "asset_preparation", operation, job_id, prep)
                     return name, collision, rid
@@ -374,12 +394,16 @@ class Documents:
             collision = 2 if collision is None else collision + 1
 
     def _release(self, job_id: str, operation: str, reservations: list[str] | None = None) -> None:
-        """Settle a failed operation: release every pending name it owns, not only this attempt's."""
+        """Release a failed preparation when called outside the Dispatcher."""
         with self.store.transaction() as db:
+            self.release_preparation_tx(db, job_id, operation)
+
+    def release_preparation_tx(self, db, job_id: str, operation: str) -> None:
+        """Release the operation's pending names in the caller's failure transaction."""
+        prep = self.store.get_tx(db, "asset_preparation", operation, job=job_id)
+        if prep and prep["status"] != "committed":
             self._release_pending_tx(db, job_id, operation)
-            prep = self.store.get_tx(db, "asset_preparation", operation, job=job_id)
-            if prep and prep["status"] != "committed":
-                self.store.put_tx(db, "asset_preparation", operation, job_id, {**prep, "status": "failed"})
+            self.store.put_tx(db, "asset_preparation", operation, job_id, {**prep, "status": "failed"})
 
     def _release_pending_tx(self, db, job_id: str, operation: str) -> None:
         rows = db.execute("SELECT data FROM records WHERE kind='asset_name' AND job=?", (job_id,)).fetchall()
@@ -498,7 +522,7 @@ class Documents:
                              f"create) and reference its asset:new handle instead.{kept}")
 
     def _save_enriched(self, job_id: str, job: dict, operation: str, args_hash: str, candidate_ref: str,
-                       edit: Edit, base: dict | None, content: Document) -> dict:
+                       edit: Edit, base: dict | None, content: Document, *, release_on_failure: bool) -> dict:
         kept = f" Candidate retained: {candidate_ref}"
         schema2 = base is not None and base.get("schema_version") == 2
         if any(change.kind == "correct" for change in edit.asset_changes):
@@ -537,6 +561,10 @@ class Documents:
         # operation (another thread or engine process) share one set of identities
         # instead of overwriting each other's record and reservations.
         with self.store.transaction() as db:
+            prior = self._edit_receipt(self.store.get_tx(db, "operation", operation, job=job_id), args_hash)
+            if prior is not None:
+                self._release_pending_tx(db, job_id, operation)
+                return prior
             prep = self.store.get_tx(db, "asset_preparation", operation, job=job_id)
             if prep and prep["args_hash"] != args_hash:
                 raise AssetEditError("OPERATION_CONFLICT", "The operation ID belongs to different arguments.")
@@ -550,7 +578,8 @@ class Documents:
             return self._prepare_and_publish(job_id, job, operation, args_hash, candidate_ref, edit, base, content,
                                              creates, ids, pages, source, catalog, reservations, kept, rects, lookup)
         except BaseException:
-            self._release(job_id, operation)
+            if release_on_failure:
+                self._release(job_id, operation)
             raise
 
     def _prepare_and_publish(self, job_id, job, operation, args_hash, candidate_ref, edit, base, content,
@@ -690,14 +719,12 @@ class Documents:
                   "edit_mode": edit.mode, "candidate_ref": candidate_ref, "blocks": len(content.blocks),
                   "known_gaps": content.known_gaps, "asset_changes": changes}
         with self.store.transaction() as db:
-            prior = self.store.get_tx(db, "operation", operation)
-            if prior and prior["status"] == "done":
-                if prior["args_hash"] != args_hash:
-                    raise Conflict("The operation ID belongs to different arguments.")
+            prior = self._edit_receipt(self.store.get_tx(db, "operation", operation, job=job_id), args_hash)
+            if prior is not None:
                 # Another attempt of this operation published first. Its names are
                 # assigned; anything still pending for the operation is a leftover.
                 self._release_pending_tx(db, job_id, operation)
-                return prior["result"]
+                return prior
             current = self.store.get_tx(db, "job", job_id)
             if current["head"] != edit.expected_head:
                 raise AssetEditError("HEAD_CONFLICT", f"Head changed. Expected {edit.expected_head}; found {current['head']}.{kept}")

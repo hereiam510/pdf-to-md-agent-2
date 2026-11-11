@@ -2,12 +2,14 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 T3b, cross-process allocation (AR-10) and its AR-T3B-12 correction.
-Resume at: [cross-process allocation evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-cross-process-allocation) and the [T3b ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t3b) for remaining scope.
-Next activity: awaiting selection. Per the [recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-ar-t3b-09-to-11-correction), T4 is next; the schema 1 retirement choice and the published-suffix behavior after a failed concurrent reservation await the user. Work is committed locally on `codex/r01cal-a03-delivery-01`; push and PR remain unselected.
-Instruction basis: on 2026-11-11 the user selected the cross-process allocation work after the local checkpoint and the [frozen, desktop and readback recheck](batches/R01CAL-A03-DELIVERY-01/verification.md#frozen-desktop-and-readback-recheck-after-the-correction).
+Current focus: R01CAL-A03-DELIVERY-01, next-step advice after the T3b receipt and preparation correction.
+Resume at: [next-step recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-ar-t3b-13-and-ar-t3b-14), with the [T3b verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-receipt-and-preparation-correction) and [T4 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t4).
+Next activity: awaiting selection of the proposed local checkpoint and T4 work. The schema 1 retirement and published-suffix choices remain open.
+Instruction basis: on 2026-11-12 the user requested next-step advice after directing the repair to stop before T4.
 
 ## Return routes
+
+- Reviewed correction: [cross-process allocation evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-cross-process-allocation), [subsequent review](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-cross-process-correction-review) and [earlier frozen, desktop and readback checks](batches/R01CAL-A03-DELIVERY-01/verification.md#frozen-desktop-and-readback-recheck-after-the-correction).
 
 - Reviewed increment: [streaming and writer pool implementation](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-streaming-and-writer-pool), [standalone review](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-streaming-and-writer-pool-review) and [host defaults](discussions/ASSET_REFERENCES.md#concurrency-engine-copies-and-host-memory-discussion-2026-11-11).
 

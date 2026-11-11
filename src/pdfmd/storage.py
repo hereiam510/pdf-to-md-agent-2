@@ -153,13 +153,7 @@ class Store:
 
     def blob(self, job: str, kind: str, data: bytes | Any, meta: dict | None = None,
              *, key: str | None = None) -> dict:
-        raw = data if isinstance(data, bytes) else encode(data)
-        digest = sha256(raw).hexdigest()
-        target = self.root / "objects" / digest
-        if not self._object_intact(target, digest, len(raw)):
-            self._restore(target, raw, digest)
-        record = {"ref": key or uid(), "job": job, "kind": kind, "sha256": digest,
-                  "bytes": len(raw), "meta": meta or {}}
+        record = self.stage_blob(job, kind, data, meta, key=key)
         with self.transaction() as db:
             previous = self.get_tx(db, "blob", record["ref"])
             if previous:
@@ -168,6 +162,17 @@ class Store:
                 return previous
             self.put_tx(db, "blob", record["ref"], job, record)
         return record
+
+    def stage_blob(self, job: str, kind: str, data: bytes | Any, meta: dict | None = None,
+                   *, key: str | None = None) -> dict:
+        """Write immutable object bytes before the caller's catalog transaction."""
+        raw = data if isinstance(data, bytes) else encode(data)
+        digest = sha256(raw).hexdigest()
+        target = self.root / "objects" / digest
+        if not self._object_intact(target, digest, len(raw)):
+            self._restore(target, raw, digest)
+        return {"ref": key or uid(), "job": job, "kind": kind, "sha256": digest,
+                "bytes": len(raw), "meta": meta or {}}
 
     def _restore(self, target: Path, raw: bytes, digest: str) -> None:
         """Write a missing/corrupt content-addressed object from verified identical bytes.

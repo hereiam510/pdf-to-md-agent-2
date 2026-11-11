@@ -79,6 +79,10 @@ class Dispatcher:
     def reconcile(self, job: str, operation: str, name: str, raw_arguments: str) -> dict | None:
         """Recover a durable result without starting or repeating the tool."""
         digest = sha256(encode([name, raw_arguments])).hexdigest()
+        if name == "edit_document":
+            with self.store.transaction() as db:
+                previous = self._edit_operation_tx(db, job, operation, digest)
+            return self.envelope(job, operation, previous) if previous and previous["status"] == "done" else None
         previous = self.store.maybe("operation", operation)
         if previous:
             if previous["args_hash"] != digest:
@@ -93,6 +97,31 @@ class Dispatcher:
                 self.store.put("operation", operation, job, recovered)
                 return self.envelope(job, operation, recovered)
         return None
+
+    def _edit_operation_tx(self, db, job: str, operation: str, digest: str) -> dict | None:
+        previous = self.store.get_tx(db, "operation", operation, job=job)
+        if previous is None:
+            return None
+        if previous["args_hash"] != digest:
+            raise Conflict("An operation ID cannot be reused with different arguments.")
+        if previous["status"] != "done":
+            # Older settlements could stage the result before marking the edit done.
+            staged = self.store.get_tx(db, "blob", f"result:{operation}", job=job)
+            if staged:
+                if staged["meta"].get("args_hash") != digest:
+                    raise Conflict("The retained result does not match this operation's arguments.")
+                previous = {**previous, "status": "done", "result_ref": staged["ref"], "ok": staged["meta"]["ok"]}
+                self.store.put_tx(db, "operation", operation, job, previous)
+        return previous
+
+    def _begin_edit(self, job: str, operation: str, digest: str, candidate_ref: str) -> dict | None:
+        with self.store.transaction() as db:
+            previous = self._edit_operation_tx(db, job, operation, digest)
+            if previous is None:
+                self.store.put_tx(db, "operation", operation, job,
+                                  {"id": operation, "args_hash": digest, "status": "started",
+                                   "tool": "edit_document", "candidate_ref": candidate_ref})
+        return previous
 
     def skip(self, job: str, operation: str, name: str, raw_arguments: str) -> dict:
         digest, candidate = self.capture(job, operation, name, raw_arguments)
@@ -112,24 +141,33 @@ class Dispatcher:
 
     def execute(self, job: str, operation: str, name: str, raw_arguments: str) -> dict:
         digest, candidate = self.capture(job, operation, name, raw_arguments)
-        recovered = self.reconcile(job, operation, name, raw_arguments)
-        if recovered is not None:
-            return recovered
-        previous = self.store.maybe("operation", operation)
+        is_edit = name == "edit_document"
+        if is_edit:
+            previous = self._begin_edit(job, operation, digest, candidate["ref"])
+            if previous and previous["status"] == "done":
+                return self.envelope(job, operation, previous)
+        else:
+            recovered = self.reconcile(job, operation, name, raw_arguments)
+            if recovered is not None:
+                return recovered
+            previous = self.store.maybe("operation", operation)
         if previous:
             if previous["status"] == "skipping":
                 return self.skip(job, operation, name, raw_arguments)
             if name in {"run_script", "ocr_page"}:
                 raise UnknownEffect("The previous local process has no settled receipt. Its files are preserved; automatic replay is disabled.")
-        self.store.put("operation", operation, job,
-                       {"id": operation, "args_hash": digest, "status": "started", "tool": name, "candidate_ref": candidate["ref"]})
+        if not is_edit:
+            self.store.put("operation", operation, job,
+                           {"id": operation, "args_hash": digest, "status": "started", "tool": name, "candidate_ref": candidate["ref"]})
         try:
             arguments = json.loads(raw_arguments)
             if not isinstance(arguments, dict):
                 raise ValueError("Tool arguments must be one complete JSON object.")
             result = self.dispatch(job, operation, name, arguments, digest, candidate["ref"])
-            saved = self.store.maybe("operation", operation)
-            if name == "edit_document" and saved and saved["status"] == "done":
+            if is_edit:
+                saved = self.store.get("operation", operation, job=job)
+                if saved["status"] != "done":
+                    raise RuntimeError("The edit returned without a settled receipt.")
                 return self.envelope(job, operation, saved)
             success = not result.get("context_rejected", False)
         except UnknownEffect:
@@ -139,7 +177,29 @@ class Dispatcher:
             if getattr(exc, "error_code", None):
                 result.update(error_code=exc.error_code, issues=exc.issues)
             success = False
+        if is_edit:
+            return self._settle_edit(job, operation, digest, candidate["ref"], result)
         return self.settle(job, operation, name, digest, candidate["ref"], result, success)
+
+    def _settle_edit(self, job: str, operation: str, digest: str, candidate_ref: str, failure: dict) -> dict:
+        # A successful edit settles inside document publication. A failing peer
+        # must not occupy the result key or release names after that commit.
+        result = self.store.stage_blob(job, "tool_result", failure,
+                                       {"operation": operation, "args_hash": digest, "ok": False},
+                                       key=f"result:{operation}")
+        with self.store.transaction() as db:
+            previous = self._edit_operation_tx(db, job, operation, digest)
+            settled = previous is None or previous["status"] != "done"
+            if settled:
+                self.documents.release_preparation_tx(db, job, operation)
+                self.store.put_tx(db, "blob", result["ref"], job, result)
+                previous = {"id": operation, "args_hash": digest, "status": "done", "tool": "edit_document",
+                            "candidate_ref": candidate_ref, "result_ref": result["ref"], "ok": False}
+                self.store.put_tx(db, "operation", operation, job, previous)
+        if settled:
+            self.store.event(job, "tool_settled", {"operation": operation, "tool": "edit_document",
+                                                  "ok": False, "result_ref": result["ref"]})
+        return self.envelope(job, operation, previous)
 
     def settle(self, job: str, operation: str, name: str, digest: str, candidate_ref: str, result: dict, success: bool) -> dict:
         result_blob = self.store.blob(job, "tool_result", result, {"operation": operation, "args_hash": digest, "ok": success}, key=f"result:{operation}")
@@ -185,7 +245,7 @@ class Dispatcher:
                 raise ValueError("Context inspection requires an active runtime response with a frozen input.")
             return self.context_inspector(**args)
         if name == "edit_document":
-            return self.documents.edit(job, operation, args, digest, candidate)
+            return self.documents.edit(job, operation, args, digest, candidate, release_on_failure=False)
         if name == "preview_document":
             return self.preview(job, operation, **args)
         if name == "context_update":
