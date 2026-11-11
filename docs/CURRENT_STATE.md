@@ -2,10 +2,10 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 T3b, closeout of the AR-T3B-09 through 11 corrections.
-Resume at: [correction and rerun](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-streaming-and-writer-pool-correction) and the [T3b ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t3b) for remaining scope.
-Next activity: awaiting selection of further work; see the [recommendation after the correction](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-ar-t3b-09-to-11-correction) (cross-process allocation before T4). The work is checkpointed locally on `codex/r01cal-a03-delivery-01`; see the [checkpoint note](batches/R01CAL-A03-DELIVERY-01/verification.md#orientation-after-the-ar-t3b-09-to-11-correction). The [frozen, desktop and readback recheck](batches/R01CAL-A03-DELIVERY-01/verification.md#frozen-desktop-and-readback-recheck-after-the-correction) passed on that code. Push and PR remain unselected.
-Instruction basis: on 2026-11-11 the user selected the three repairs, the focused tests and the reproductions, then instructed work to stop before T4.
+Current focus: R01CAL-A03-DELIVERY-01 T3b, cross-process allocation (AR-10) and its AR-T3B-12 correction.
+Resume at: [cross-process allocation evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-cross-process-allocation) and the [T3b ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t3b) for remaining scope.
+Next activity: awaiting selection. Per the [recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-ar-t3b-09-to-11-correction), T4 is next; the schema 1 retirement choice and the published-suffix behavior after a failed concurrent reservation await the user. Work is committed locally on `codex/r01cal-a03-delivery-01`; push and PR remain unselected.
+Instruction basis: on 2026-11-11 the user selected the cross-process allocation work after the local checkpoint and the [frozen, desktop and readback recheck](batches/R01CAL-A03-DELIVERY-01/verification.md#frozen-desktop-and-readback-recheck-after-the-correction).
 
 ## Return routes
 

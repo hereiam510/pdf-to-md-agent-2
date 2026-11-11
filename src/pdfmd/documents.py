@@ -376,14 +376,17 @@ class Documents:
     def _release(self, job_id: str, operation: str, reservations: list[str] | None = None) -> None:
         """Settle a failed operation: release every pending name it owns, not only this attempt's."""
         with self.store.transaction() as db:
-            rows = db.execute("SELECT data FROM records WHERE kind='asset_name' AND job=?", (job_id,)).fetchall()
-            for row in rows:
-                record = json.loads(row[0])
-                if record["status"] == "pending" and record["operation"] == operation:
-                    self.store.put_tx(db, "asset_name", record["id"], job_id, {**record, "status": "released"})
+            self._release_pending_tx(db, job_id, operation)
             prep = self.store.get_tx(db, "asset_preparation", operation, job=job_id)
             if prep and prep["status"] != "committed":
                 self.store.put_tx(db, "asset_preparation", operation, job_id, {**prep, "status": "failed"})
+
+    def _release_pending_tx(self, db, job_id: str, operation: str) -> None:
+        rows = db.execute("SELECT data FROM records WHERE kind='asset_name' AND job=?", (job_id,)).fetchall()
+        for row in rows:
+            record = json.loads(row[0])
+            if record["status"] == "pending" and record["operation"] == operation:
+                self.store.put_tx(db, "asset_name", record["id"], job_id, {**record, "status": "released"})
 
     def _prepare_images(self, job_id: str, pending: list[dict], kept: str) -> list[dict]:
         """Enrich every image of one save concurrently; the shared writer pool admits the workers.
@@ -530,14 +533,18 @@ class Documents:
             if fresh != old:
                 raise AssetEditError("ASSET_FACT_INVALID", "This edit changes source facts or a page label embedded in existing "
                                      f"occurrence {occurrence_id}. Synchronized correction is not available yet (T4)." + kept)
-        prep = self.store.maybe("asset_preparation", operation)
-        if prep and prep["args_hash"] != args_hash:
-            raise AssetEditError("OPERATION_CONFLICT", "The operation ID belongs to different arguments.")
-        ids = dict(prep["ids"]) if prep else {}
-        for key in keys:
-            ids.setdefault(key, {"occurrence_id": uid(), "representation_id": uid()})
-        self.store.put("asset_preparation", operation, job_id,
-                       {"id": operation, "args_hash": args_hash, "ids": ids, "status": "preparing"})
+        # Read-or-create in one write transaction: concurrent attempts of the same
+        # operation (another thread or engine process) share one set of identities
+        # instead of overwriting each other's record and reservations.
+        with self.store.transaction() as db:
+            prep = self.store.get_tx(db, "asset_preparation", operation, job=job_id)
+            if prep and prep["args_hash"] != args_hash:
+                raise AssetEditError("OPERATION_CONFLICT", "The operation ID belongs to different arguments.")
+            ids = dict(prep["ids"]) if prep else {}
+            for key in keys:
+                ids.setdefault(key, {"occurrence_id": uid(), "representation_id": uid()})
+            self.store.put_tx(db, "asset_preparation", operation, job_id,
+                              {"id": operation, "args_hash": args_hash, "ids": ids, "status": "preparing"})
         reservations: list[str] = []
         try:
             return self._prepare_and_publish(job_id, job, operation, args_hash, candidate_ref, edit, base, content,
@@ -687,6 +694,9 @@ class Documents:
             if prior and prior["status"] == "done":
                 if prior["args_hash"] != args_hash:
                     raise Conflict("The operation ID belongs to different arguments.")
+                # Another attempt of this operation published first. Its names are
+                # assigned; anything still pending for the operation is a leftover.
+                self._release_pending_tx(db, job_id, operation)
                 return prior["result"]
             current = self.store.get_tx(db, "job", job_id)
             if current["head"] != edit.expected_head:

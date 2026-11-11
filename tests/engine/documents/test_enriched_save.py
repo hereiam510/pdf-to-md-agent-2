@@ -402,3 +402,107 @@ def test_http_edit_idempotency_key_returns_the_original_receipt(jpeg_job):
         assert conflict.status_code >= 400
         assert client.post(f"/jobs/{job}/edit", json=body, headers={"Idempotency-Key": "bad key!"}).status_code >= 400
     assert len(d.store.records("version", job)) == 1
+
+
+# ---------------------------------------------------------------- AR-10 across engine processes
+def _two_engines(tmp_path, d, job, specs: dict[str, dict]) -> dict[str, dict]:
+    """Run two engine processes on one store; A reserves first, B after A holds its name."""
+    import time
+    sync = tmp_path / "sync"
+    sync.mkdir()
+    root = Path(__file__).parents[3]
+    processes = {}
+    for role, spec in specs.items():
+        path = sync / f"{role}.spec.json"
+        path.write_text(json.dumps({"root": str(d.store.root), "job": job, "role": role, "sync": str(sync), **spec},
+                                   ensure_ascii=False), encoding="utf-8")
+        processes[role] = subprocess.Popen([sys.executable, "-B", "-m", "tests.engine.documents.allocation_child", str(path)],
+                                           cwd=root)
+
+    def wait_for(name):
+        for _ in range(6000):
+            if (sync / name).exists():
+                return
+            assert all(p.poll() is None for p in processes.values()), f"an engine exited before {name}"
+            time.sleep(0.02)
+        raise AssertionError(f"timed out waiting for {name}")
+    try:
+        wait_for("A.ready")
+        wait_for("B.ready")  # both loaded the operation's preparation record before either reserved
+        (sync / "A.go").write_text("go")
+        wait_for("A.reserved")
+        (sync / "B.go").write_text("go")
+        for role, process in processes.items():
+            assert process.wait(180) == 0, role
+    finally:
+        for process in processes.values():
+            if process.poll() is None:
+                process.kill()
+    return {role: json.loads((sync / f"{role}.json").read_text(encoding="utf-8")) for role in specs}
+
+
+def test_engines_in_separate_processes_never_share_a_name(jpeg_job, tmp_path):
+    d, job, jpeg, png = jpeg_job
+    body = args("![x](asset:new/x)", [create("x", png, "Same label")], printed="58", evidence=png["ref"])
+    results = _two_engines(tmp_path, d, job, {"A": {"operation": "op-a", "arguments": body},
+                                              "B": {"operation": "op-b", "arguments": body}})
+    # Held concurrently: the second process saw a real pending conflict and took the next suffix.
+    pending_names = {"A": "Same label-p58.png", "B": "Same label-p58（2）.png"}
+    winner = [role for role, result in results.items() if result["ok"]]
+    assert len(winner) == 1, results
+    [winner], loser = winner, ({"A", "B"} - set(winner)).pop()
+    assert results[loser]["data"]["error_code"] == "HEAD_CONFLICT"
+    assert results[winner]["data"]["asset_changes"][0]["asset_path"] == "assets/" + pending_names[winner]
+    names = {r["name"]: r for r in d.store.records("asset_name", job)}
+    assert names[pending_names[winner]]["status"] == "assigned"
+    assert names[pending_names[loser]]["status"] == "released"  # the failed save gives its name back
+    assert d.store.get("job", job)["head"] == results[winner]["data"]["version_id"]
+    # A new occurrence after the race gets the first name no current binding holds.
+    head = d.store.get("job", job)["head"]
+    later = call(d, job, "op-later", args("![x](asset:id/%s) ![y](asset:new/y)" % results[winner]["data"]["asset_changes"][0]["occurrence_id"],
+                                          [create("y", png, "Same label")], base=head, printed="58", evidence=png["ref"]))
+    assert later["ok"], later
+    assert later["data"]["asset_changes"][0]["asset_path"] == "assets/" + pending_names[loser]
+
+
+def test_attempts_of_one_operation_in_two_processes_share_one_identity(jpeg_job, tmp_path):
+    d, job, jpeg, png = jpeg_job
+    body = args("![x](asset:new/x)", [create("x", png, "Same label")], printed="58", evidence=png["ref"])
+    results = _two_engines(tmp_path, d, job, {"A": {"operation": "op-same", "arguments": body},
+                                              "B": {"operation": "op-same", "arguments": body}})
+    assert results["A"]["ok"] and results["B"]["ok"], results
+    assert results["A"]["data"] == results["B"]["data"]  # one receipt, not two versions
+    [change] = results["A"]["data"]["asset_changes"]
+    assert change["asset_path"] == "assets/Same label-p58.png"
+    assert len(d.store.records("version", job)) == 1
+    assert [(r["name"], r["status"]) for r in d.store.records("asset_name", job)] == [("Same label-p58.png", "assigned")]
+    assert d.store.get("asset_preparation", "op-same")["ids"]["x"]["occurrence_id"] == change["occurrence_id"]
+    later = call(d, job, "op-later", args("![y](asset:new/y)", [create("y", png, "Same label")],
+                                          base=results["A"]["data"]["version_id"], printed="58", evidence=png["ref"]))
+    assert later["data"]["asset_changes"][0]["asset_path"] == "assets/Same label-p58（2）.png"
+
+
+def test_attempt_finding_its_operation_published_releases_leftover_names(jpeg_job, monkeypatch):
+    d, job, jpeg, png = jpeg_job
+    request = args("![x](asset:new/x)", [create("x", png, "Late")], printed="58", evidence=png["ref"])
+    raw = json.dumps(request, ensure_ascii=False)
+    digest = sha256(json.dumps(["edit_document", raw]).encode()).hexdigest()
+    original = documents_module.Documents._prepare_images
+    state = {"nested": False}
+
+    def prepare(self, job_id, pending, kept):
+        if not state["nested"]:
+            # Another attempt of the same operation publishes first and a stale
+            # pending name of this operation remains, as before the shared record.
+            state["nested"] = True
+            first = self.edit(job_id, "op-late", request, digest, "candidate:none")
+            d.store.put("asset_name", "stale", job_id, {"id": "stale", "job": job_id, "key": "stale", "name": "Late-p58（2）.png",
+                                                         "occurrence_id": "other", "operation": "op-late", "status": "pending"})
+            state["first"] = first
+        return original(self, job_id, pending, kept)
+    monkeypatch.setattr(documents_module.Documents, "_prepare_images", prepare)
+    late = d.documents.edit(job, "op-late", request, digest, "candidate:none")
+    assert late == state["first"]
+    assert d.store.get("asset_name", "stale")["status"] == "released"
+    assert {r["status"] for r in d.store.records("asset_name", job)} == {"assigned", "released"}
+    assert len(d.store.records("version", job)) == 1

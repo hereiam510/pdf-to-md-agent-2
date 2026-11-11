@@ -226,8 +226,10 @@ On 2026-11-11 the user selected fixing the worker lifecycle findings AR-T3B-05 t
 
 On 2026-11-11 the user selected correction of AR-T3B-09 through 11 and a stop before T4. That increment is complete at the scope of the [correction and focused rerun](verification.md#t3b-streaming-and-writer-pool-correction).
 
+On 2026-11-11 the user then selected the cross-process allocation control. Its [evidence](verification.md#t3b-cross-process-allocation) covers controlled concurrent allocation by two engine processes on one Windows store and the AR-T3B-12 correction.
+
 Remaining T3b scope:
-- AR-9/AR-10 boundary controls beyond the engine tests, including controlled concurrent allocation across processes;
+- AR-9/AR-10 boundary controls on actual destinations (part of the T5 matrix); the suffix that a published name keeps after a concurrent reservation fails is recorded for the user's AR-10 review;
 - unknown labels with real publisher PDFs, and an eligible publisher JPEG check for stale values;
 - the agent-facing flow from evidence to `asset_changes` in an actual conversion;
 - the open choice on retiring schema 1 saves;
