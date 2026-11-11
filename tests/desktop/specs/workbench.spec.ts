@@ -9,6 +9,12 @@ test('desktop imports, converts through a local fixture, previews, edits, export
   const local = resolve(testRunRoot)
   await fs.mkdir(local, { recursive: true })
   const directory = await fs.mkdtemp(join(local, 'desktop-'))
+  const readSaved = (job: string, version: string) => JSON.parse(execFileSync(resolve('.venv/Scripts/python.exe'),
+    ['-X', 'utf8', '-c', `import json,sys
+from pdfmd.documents import Documents
+from pdfmd.storage import Store
+print(json.dumps(Documents(Store(sys.argv[1])).version(sys.argv[2], sys.argv[3])))`,
+      join(directory, 'workspace'), job, version], { windowsHide: true, encoding: 'utf-8' }))
   const source = join(directory, 'Field notes.pdf')
   const destination = join(directory, 'delivery.zip')
   execFileSync(resolve('.venv/Scripts/python.exe'), ['tools/dev/make-smoke-pdf.py', source], { windowsHide: true })
@@ -46,9 +52,9 @@ test('desktop imports, converts through a local fixture, previews, edits, export
   })
   await new Promise<void>(done => server.listen(0, '127.0.0.1', done))
   const address = server.address() as { port: number }
-  const env = { ...process.env, PDFMD_DATA: join(directory, 'workspace'), PDFMD_PYTHON: resolve('.venv/Scripts/python.exe') }
+  const env = { ...process.env, PDFMD_DATA: join(directory, 'workspace'), PDFMD_PYTHON: resolve('.venv/Scripts/python.exe'), PDFMD_UI_PROFILE: join(directory, 'profile') }
   const launch = () => electron.launch({ executablePath: process.env.PDFMD_PACKAGED_EXE,
-    args: process.env.PDFMD_PACKAGED_EXE ? [] : [resolve('out/main/index.js')], env })
+    args: process.env.PDFMD_PACKAGED_EXE ? [] : [resolve('tests/desktop/support/isolated-workbench.cjs')], env })
   let app = await launch()
   try {
     let window = await app.firstWindow()
@@ -81,8 +87,9 @@ test('desktop imports, converts through a local fixture, previews, edits, export
       const jobs = await globalThis.window.workbench.invoke('jobs')
       return globalThis.window.workbench.invoke('job', { job: jobs[0].id })
     })
-    const saved = await window.evaluate(async ({ job, version }) => globalThis.window.workbench.invoke('version', { job, version }),
-      { job: job.id, version: job.delivery })
+    // Read canonical evidence without starting a second preview selection or
+    // revoking the real renderer's generation-owned lease.
+    const saved = readSaved(job.id, job.delivery)
     const sourcePages = JSON.parse(payloads[2].messages.find((m: any) => m.role === 'tool').content).data.value.pages
     expect(saved.content.blocks[0].markdown).toBe('# A small, complete section\n\n' + sourcePages[0].content)
     expect(saved.content.blocks[2].markdown).toBe('## The section continues\n\n' + sourcePages[1].content)
@@ -115,8 +122,7 @@ test('desktop imports, converts through a local fixture, previews, edits, export
     await window.getByRole('button', { name: 'Save new version' }).click()
     await expect(window.locator('.toast.success')).toContainText('Saved your edits')
     const rebuiltJob = await window.evaluate(async (id) => globalThis.window.workbench.invoke('job', { job: id }), job.id)
-    const rebuilt = await window.evaluate(async ({ job, version }) => globalThis.window.workbench.invoke('version', { job, version }),
-      { job: job.id, version: rebuiltJob.head })
+    const rebuilt = readSaved(job.id, rebuiltJob.head)
     expect(rebuilt.edit_mode).toBe('rebuild')
     expect(rebuilt.parent).toBe(job.delivery)
     expect(rebuilt.content.blocks).toEqual(saved.content.blocks)

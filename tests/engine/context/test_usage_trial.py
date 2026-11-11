@@ -409,7 +409,11 @@ def test_decisive_send_final_feedback_and_atomic_settlement(setup, protocol):
 
 @pytest.mark.parametrize("veto", ["A", "C"])
 def test_veto_commits_once_and_survives_reopen(setup, veto):
-    store, job, rt, trial, state, sent, _ = fixture(setup, context=10000, body=120, measured=8000, veto=veto)
+    # Scenario geometry: the proxy request fits while the usage-anchored
+    # reservation (measured > proxy) triggers the veto. Capacity and measured
+    # usage were 10000/8000 before T3b enlarged the edit_document schema
+    # (~1,300 proxy tokens); both were rescaled to keep the same geometry.
+    store, job, rt, trial, state, sent, _ = fixture(setup, context=11500, body=120, measured=9600, veto=veto)
     try:
         pf, f = rt.context.normal(job, state, capacity_deferral=False)
         assert f["fits"]
@@ -871,8 +875,8 @@ def test_review_gate_denominators_are_separate_and_passing_only_invites_review(s
 @pytest.mark.parametrize("gate", ["cancel", "requests", "active_time"])
 @pytest.mark.parametrize("veto", [False,True])
 def test_ordinary_task_guards_apply_without_consuming_trial_budget(setup, gate, veto):
-    store,job,rt,trial,state,sent,_=fixture(setup,context=10000 if veto else 12000,
-        body=120 if veto else 8000, measured=8000 if veto else 500)
+    store,job,rt,trial,state,sent,_=fixture(setup,context=11500 if veto else 12000,
+        body=120 if veto else 8000, measured=9600 if veto else 500)
     try:
         state.update(rt.prepare(state));current=store.get("job",job["id"])
         if gate=="cancel": store.update_job(job["id"],cancel_requested=True)

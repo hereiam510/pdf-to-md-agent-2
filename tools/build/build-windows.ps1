@@ -4,7 +4,8 @@ $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Push-Location -LiteralPath $projectRoot
 try {
     $engineData = @()
-    $engineData += @('--add-data', 'src/pdfmd/data;pdfmd/data')
+    # PyInstaller resolves a relative --add-data source against --specpath (build/), so pass an absolute path.
+    $engineData += @('--add-data', "$((Resolve-Path -LiteralPath 'src/pdfmd/data').Path);pdfmd/data")
     # Some managed Python distributions ship an SSL distrust resource beside ssl.py.
     # Preserve that resource when freezing; never bypass certificate verification.
     $sslResource = & '.venv/Scripts/python.exe' -c "import pathlib, ssl; print(pathlib.Path(ssl.__file__).with_name('codex-rejected-cas.pem'))"

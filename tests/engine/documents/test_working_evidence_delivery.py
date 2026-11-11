@@ -84,8 +84,13 @@ def run_working_delivery(directory, route, protocol):
         summary = feedback(payload)
         computed = estimate(payload, Route.model_validate(job["route"]))
         assert computed["fits"]
-        assert summary["input_estimate"] == computed["input_estimate"]
-        assert summary["remaining"] == job["route"]["context_tokens"] - job["route"]["output_tokens"] - computed["input_estimate"]
+        # The feedback reports a monotonic self-inclusive upper reservation
+        # (working_context.with_feedback): never below the exact proxy of the
+        # transmitted payload and at most a few BPE boundary tokens above it.
+        # Exact equality held only for particular payload sizes.
+        assert summary["feedback_estimate"] == "self_inclusive_upper_reservation"
+        assert computed["input_estimate"] <= summary["input_estimate"] <= computed["input_estimate"] + 8
+        assert summary["remaining"] == job["route"]["context_tokens"] - job["route"]["output_tokens"] - summary["input_estimate"]
         retained.setdefault("summaries", []).append(summary)
         current_outputs = outputs(payload)
         if len(seen) == 1:

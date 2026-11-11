@@ -28,8 +28,14 @@ export type Job = {
   evidence?: { ref: string; kind: string; bytes: number; meta: Record<string, unknown> }[]
 }
 export type Block = { id: string; markdown: string; pages: number[]; source_note: string }
-export type Saved = { job: string; version: string; markdown: string; preview: string; content: { title: string; scope: string; blocks: Block[]; claim: string; known_gaps: string[] } }
-export type EditSession = { job: string; baseVersion: string; expectedHead: string | null; mode: 'edit' | 'rebuild'; blocks: Block[] }
+export type SourceSpan = { block_id: string; start: number; end: number; expected: string }
+export type AssetReferenceCheck = { status: 'ok' | 'incomplete' | 'unavailable'; issues: {
+  code: string; message: string; destination: string | null; role: 'image' | 'hyperlink' | null; span: SourceSpan | null
+}[] }
+export type Saved = { job: string; version: string; markdown: string; preview: string; asset_reference_check: AssetReferenceCheck;
+  preview_generation?: string; preview_lease?: string; preview_error?: string;
+  content: { title: string; scope: string; blocks: Block[]; claim: string; known_gaps: string[] } }
+export type EditSession = { job: string; baseVersion: string; expectedHead: string | null; mode: 'edit' | 'rebuild'; blocks: Block[]; submissionKey: string }
 
 export type DiagnosticPage = {
   status: string; reason?: string; view: string; job: string; captured_at: number; graph: string; consistency: string;

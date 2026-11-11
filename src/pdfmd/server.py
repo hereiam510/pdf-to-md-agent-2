@@ -8,6 +8,7 @@ import hmac
 import json
 import logging
 import os
+import re
 from pathlib import Path
 import socket
 import sqlite3
@@ -336,16 +337,7 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
 
     @app.get("/jobs/{job}/versions/{version}")
     def version(job: str, version: str):
-        saved = engine.documents.version(job, version)
-        directory = engine.documents.root / version
-        preview = (directory / "preview.html").read_text(encoding="utf-8")
-        for path, asset in saved["assets"].items():
-            extension = path.rsplit(".", 1)[-1]
-            mime = "image/jpeg" if extension in {"jpg", "jpeg"} else f"image/{extension}"
-            url = f"data:{mime};base64," + base64.b64encode(engine.store.bytes(asset["ref"], job)).decode()
-            preview = preview.replace(f'src="{path}"', f'src="{url}"')
-        return {**saved, "markdown": (directory / "document.md").read_bytes().decode("utf-8"),
-                "preview": preview}
+        return engine.documents.selected(job, version)
 
     @app.get("/jobs/{job}/page/{page}")
     def page(job: str, page: int):
@@ -363,17 +355,24 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
         return result
 
     @app.post("/jobs/{job}/edit")
-    def edit(job: str, body: dict):
+    def edit(job: str, body: dict, idempotency_key: str | None = Header(default=None)):
+        # A caller-created Idempotency-Key makes transport retries return the
+        # original receipt; without one each request is a new operation.
+        if idempotency_key is not None and not re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", idempotency_key):
+            raise ValueError("Idempotency-Key must be 1-128 ASCII letters, digits or ._:-")
+        # Scoped by task: candidate/result/operation records use store-wide keys.
+        operation = f"manual:{job}:{idempotency_key}" if idempotency_key else f"manual:{uid()}"
         lock = FileLock(str(engine.store.root / f"task-{job}.lock"))
         try:
             with lock.acquire(timeout=0):
-                return Dispatcher(engine.store).execute(job, f"manual:{uid()}", "edit_document", json.dumps(body, ensure_ascii=False))
+                return Dispatcher(engine.store).execute(job, operation, "edit_document", json.dumps(body, ensure_ascii=False))
         except Timeout as exc:
             raise Conflict("Pause the agent before editing a saved document.") from exc
 
     @app.post("/jobs/{job}/export")
     def export(job: str, body: dict):
-        return engine.documents.export(job, body["version_id"], body["destination"])
+        result = engine.documents.export(job, body["version_id"], body["destination"])
+        return {**result, "asset_reference_check": engine.documents.reference_check(job, body["version_id"])}
 
     return app
 

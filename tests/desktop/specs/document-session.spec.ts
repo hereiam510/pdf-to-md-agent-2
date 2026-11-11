@@ -34,6 +34,7 @@ test('loading blocks editing/export and the draft binds to the loaded version', 
     await window.getByRole('button', { name: 'Export ZIP' }).click()
     await window.getByRole('button', { name: 'Edit content', exact: true }).click()
     await expect(window.locator('.block-editor textarea')).toHaveCount(2)
+    await expect(window.getByRole('button', { name: 'Export ZIP' })).toBeEnabled()
     await expect(window.getByLabel('Saved version')).toBeDisabled()
     await window.locator('.block-editor textarea').first().fill('Edited first page.')
     await window.getByRole('button', { name: 'Save new version' }).click()
@@ -44,6 +45,7 @@ test('loading blocks editing/export and the draft binds to the loaded version', 
       base_version: 'v2', expected_head: 'v2', mode: 'edit',
       replace_blocks: [{ markdown: 'Edited first page.' }, { markdown: 'Retained second page.' }]
     } })
+    expect(recorded[1].idempotencyKey).toMatch(/^desktop:[0-9a-f-]{36}$/)
   } finally { await app.close() }
 })
 
@@ -80,10 +82,17 @@ test('head advancement retains the original edit session and conflict keeps the 
     await expect(window.getByRole('alert')).toContainText('Head changed')
     await expect(window.locator('.block-editor textarea').first()).toHaveValue('Keep this unsaved work.')
     expect((await captures(app))[0].edit).toMatchObject({ base_version: 'v2', expected_head: 'v2', mode: 'edit' })
+    // Resubmitting the unchanged draft is the same logical submission and keeps its key.
+    await window.getByRole('button', { name: 'Save new version' }).click()
+    await expect.poll(async () => (await captures(app)).length).toBe(2)
+    const [failed, resubmitted] = await captures(app)
+    expect(resubmitted.idempotencyKey).toBe(failed.idempotencyKey)
     await window.getByRole('button', { name: 'Discard edits' }).click()
     await window.getByRole('button', { name: 'Rebuild from this version' }).click()
     await window.getByRole('button', { name: 'Save new version' }).click()
     await expect(window.getByRole('status')).toContainText('Saved your edits')
-    expect((await captures(app))[1].edit).toMatchObject({ base_version: 'v2', expected_head: 'v3', mode: 'rebuild' })
+    const rebuilt = (await captures(app))[2]
+    expect(rebuilt.edit).toMatchObject({ base_version: 'v2', expected_head: 'v3', mode: 'rebuild' })
+    expect(rebuilt.idempotencyKey).not.toBe(failed.idempotencyKey)
   } finally { await app.close() }
 })

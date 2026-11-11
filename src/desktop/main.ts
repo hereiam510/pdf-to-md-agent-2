@@ -1,5 +1,6 @@
-import { app, BrowserWindow, dialog, ipcMain, session } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, protocol, session } from 'electron'
 import { ConnectionState } from './connection'
+import { PreviewResources, previewScheme } from './preview'
 import { spawn, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { promises as fs, existsSync } from 'node:fs'
@@ -13,6 +14,8 @@ let connection: ConnectionState
 let selectedPdf = ''
 let startupError = ''
 let stopping = false
+let previews: PreviewResources
+protocol.registerSchemesAsPrivileged([{ scheme: previewScheme, privileges: { standard: true, secure: true, corsEnabled: true } }])
 const token = randomBytes(32).toString('hex')
 const root = resolve(__dirname, '../..')
 const dataRoot = process.env.PDFMD_DATA || join(app.getPath('userData'), 'workspace')
@@ -21,10 +24,10 @@ if (process.argv.includes('--preview-worker')) {
   app.setPath('userData', join(app.getPath('temp'), `pdfmd-preview-${randomBytes(12).toString('hex')}`))
 }
 
-async function call(path: string, method = 'GET', body?: unknown) {
+async function call(path: string, method = 'GET', body?: unknown, extraHeaders: Record<string, string> = {}) {
   if (!origin) throw new Error(startupError || 'The local engine is starting. Try again in a moment.')
   const response = await fetch(origin + path, {
-    method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...extraHeaders },
     body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(30000)
   })
   const value = await response.json()
@@ -120,7 +123,7 @@ app.whenReady().then(async () => {
   app.on('second-instance', () => { window?.show(); window?.focus() })
   connection = new ConnectionState(settingsPath, root, app.isPackaged)
   ipcMain.handle('workbench', async (event, action: string, args: Record<string, any>) => {
-    if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame) throw new Error('Untrusted IPC sender.')
+    if (!window || window.isDestroyed() || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame) throw new Error('Untrusted IPC sender.')
     switch (action) {
       case 'health': return origin ? call('/health') : { ready: false, error: startupError }
       case 'settings': return connection.settings()
@@ -145,7 +148,17 @@ app.whenReady().then(async () => {
         Object.entries({ view: args.view, ref: args.ref, mode: args.mode || 'full', pointer: args.pointer || '', start: args.start, end: args.end }).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]))))
       case 'closeDiagnostics': return call(`/jobs/${id(args.job)}/diagnostics/${id(args.view)}`, 'DELETE')
       case 'page': return call(`/jobs/${id(args.job)}/page/${Number(args.page)}`)
-      case 'version': return call(`/jobs/${id(args.job)}/versions/${id(args.version)}`)
+      case 'version': {
+        previews.begin(args.generation)
+        try {
+          const value = await call(`/jobs/${id(args.job)}/versions/${id(args.version)}`)
+          return previews.prepare(value, args.job, args.version, args.generation)
+        } catch (error) { previews.release(args.generation); throw error }
+      }
+      case 'activatePreview': return previews.activate(args.job, args.version, args.generation, args.lease)
+      case 'mountPreview': return previews.mount(args.generation, args.lease, args.mount)
+      case 'unmountPreview': previews.unmount(args.generation, args.lease, args.mount); return true
+      case 'releasePreview': previews.release(args.generation); return true
       case 'evidence': return call(`/jobs/${id(args.job)}/evidence/${id(args.ref)}${args.view === 'raw' ? '?view=raw' : ''}`)
       case 'diagnoseConflict': return call(`/jobs/${id(args.job)}/accepted-evidence-diagnosis`)
       case 'resolveConflict': return call(`/jobs/${id(args.job)}/accepted-evidence-resolution`, 'POST', {
@@ -161,7 +174,11 @@ app.whenReady().then(async () => {
       }
       case 'taskSettings': return call(`/jobs/${id(args.job)}/settings`, 'POST', { route: args.route, limits: args.limits })
       case 'cancel': return call(`/jobs/${id(args.job)}/cancel`, 'POST', {})
-      case 'edit': return call(`/jobs/${id(args.job)}/edit`, 'POST', args.edit)
+      case 'edit': {
+        // One key per logical submission, kept across a retry, so the engine returns the original receipt.
+        const key = typeof args.idempotencyKey === 'string' && /^[A-Za-z0-9._:-]{1,128}$/.test(args.idempotencyKey) ? args.idempotencyKey : undefined
+        return call(`/jobs/${id(args.job)}/edit`, 'POST', args.edit, key ? { 'Idempotency-Key': key } : {})
+      }
       case 'export': {
         const destination = await dialog.showSaveDialog(window, { defaultPath: `${String(args.name || 'document').replace(/[<>:"/\\|?*]/g, '_')}.zip`,
           filters: [{ name: 'Portable Markdown package', extensions: ['zip'] }] })
@@ -176,6 +193,7 @@ app.whenReady().then(async () => {
     webPreferences: { preload: join(__dirname, '../preload/index.js'), nodeIntegration: false, contextIsolation: true, sandbox: true } })
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   window.webContents.on('will-navigate', (event) => event.preventDefault())
+  previews = new PreviewResources(window)
   window.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))
   window.webContents.session.on('will-download', (event) => event.preventDefault())
   if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) await window.loadURL(process.env.ELECTRON_RENDERER_URL)

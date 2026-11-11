@@ -38,6 +38,10 @@ Images support native display-pixel reads and exact `view='raw'` byte ranges. En
 
 Saving a document includes only its referenced display assets and their associated original image/mask streams. The version's `originals` map records their provenance and portable paths, `originals/<xref>-<hash>.<extension>`. Xref preserves source-object identity even when distinct streams have identical bytes. The manifest covers these files, and reopening and ZIP export verify them with the same immutable-version machinery as Markdown and images. Original streams are not inserted as broken preview images. The complete source PDF remains in the task store; it is not automatically copied into the delivery ZIP.
 
+### Selected delivery extension awaiting implementation
+
+The later [consolidated asset-naming and standalone-metadata agreement](ASSET_REFERENCES.md#consolidated-discussion-agreement) and [correction-versus-occurrence rules](ASSET_REFERENCES.md#synchronized-corrections-and-distinct-occurrences) own the selected R01CAL-A03-DELIVERY-01 extension. Its [versioned provenance schema](ASSET_REFERENCES.md#versioned-data-and-embedded-schema) distinguishes a metadata-enriched deliverable from retained source evidence; [readiness](../batches/R01CAL-A03-DELIVERY-01/spec.md#readiness-and-continuation) owns outstanding integration/evidence boundaries. The mechanism descriptions and bounded evidence in this owner still describe the existing implementation; they do not establish that extension's acceptance.
+
 ## Acceptance and evidence correspondence
 
 The [evidence core](../../src/pdfmd/evidence.py) owns extraction, coordinates and display derivation; the [document core](../../src/pdfmd/documents.py) owns immutable asset/original membership and export. [The engineering explanation](../guides/CONTEXT_AND_EVIDENCE.md#implemented-pdf-coordinates-and-image-delivery) retains the source/display distinction and rationale.

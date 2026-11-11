@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.20)
+project(pdfmd_xmp_qualification LANGUAGES C CXX)
+if(NOT WIN32 OR NOT DEFINED XMP_SDK_ROOT)
+  message(FATAL_ERROR "Select Windows and an isolated, pinned XMP_SDK_ROOT")
+endif()
+set(XMP_BUILD_STATIC OFF CACHE BOOL "" FORCE)
+set(CMAKE_CL_64 ON CACHE BOOL "" FORCE)
+set(XMP_CMAKEFOLDER_NAME qualification CACHE STRING "" FORCE)
+add_subdirectory("${XMP_SDK_ROOT}/build" sdk)
+add_executable(xmp_read xmp_read.cpp)
+target_compile_features(xmp_read PRIVATE cxx_std_17)
+target_compile_definitions(xmp_read PRIVATE WIN_ENV=1 XMP_DynamicBuild=1)
+target_include_directories(xmp_read PRIVATE "${XMP_SDK_ROOT}/public/include")
+target_link_libraries(xmp_read PRIVATE XMPFiles XMPCore)
+add_custom_command(TARGET xmp_read POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:XMPCore>" "$<TARGET_FILE_DIR:xmp_read>"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:XMPFiles>" "$<TARGET_FILE_DIR:xmp_read>")

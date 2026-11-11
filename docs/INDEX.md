@@ -21,6 +21,10 @@ Read complete applicable sections, including exceptions and dependent rules. Hea
 
 | Batch | Scope and planned acceptance | Execution owner | Actual evidence and verdict |
 | --- | --- | --- | --- |
+| R01CAL-A03-DELIVERY-01 | [spec.md](batches/R01CAL-A03-DELIVERY-01/spec.md) | [tickets.md](batches/R01CAL-A03-DELIVERY-01/tickets.md) | [verification.md](batches/R01CAL-A03-DELIVERY-01/verification.md) |
+| R01CAL-A03 | [spec.md](batches/R01CAL-A03/spec.md) | [tickets.md](batches/R01CAL-A03/tickets.md) | [verification.md](batches/R01CAL-A03/verification.md) |
+| R01CAL-A02 | [spec.md](batches/R01CAL-A02/spec.md) | [tickets.md](batches/R01CAL-A02/tickets.md) | [verification.md](batches/R01CAL-A02/verification.md) |
+| R01CAL-A01 | [spec.md](batches/R01CAL-A01/spec.md) | [tickets.md](batches/R01CAL-A01/tickets.md) | [verification.md](batches/R01CAL-A01/verification.md) |
 | DOC-FLOW-01 | [spec.md](batches/DOC-FLOW-01/spec.md) | [tickets.md](batches/DOC-FLOW-01/tickets.md) | [verification.md](batches/DOC-FLOW-01/verification.md) |
 | CRED-03-04 | [spec.md](batches/CRED-03-04/spec.md) | [tickets.md](batches/CRED-03-04/tickets.md) | [verification.md](batches/CRED-03-04/verification.md) |
 | DOC-ORG-R1 | [spec.md](batches/DOC-ORG-R1/spec.md) | [tickets.md](batches/DOC-ORG-R1/tickets.md) | [verification.md](batches/DOC-ORG-R1/verification.md) |
@@ -32,8 +36,9 @@ Read complete applicable sections, including exceptions and dependent rules. Hea
 | --- | --- | --- |
 | Development credentials, file discovery/read failure, Remember/Clear | [DEVELOPMENT_CREDENTIALS](design/DEVELOPMENT_CREDENTIALS.md#basis-and-reading-route) | [Implementation guide](guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-implementation-and-checks), [CRED-03-04](batches/CRED-03-04/spec.md), [selection](discussions/REQUEST_CAPACITY.md#credential-follow-up-repair-selection-and-handoff-2026-11-06), [counterexamples](reviews/RUNTIME_FINDINGS.md#credential-repair-follow-up-review-2026-11-06). Read original and follow-up matrices for changes to this owner. |
 | Documents, candidates, exact saved versions, field/range reads | [DOCUMENT_MODEL](design/DOCUMENT_MODEL.md) | [DOCUMENT_ENGINE](guides/DOCUMENT_ENGINE.md), [Q1 decision](decisions/INITIAL_CONTRACTS.md#q1-document-update-and-candidate-reference-contract), [implementation evidence](history/IMPLEMENTATION_HISTORY.md#document-editing-increment). |
+| Asset references, readable filenames, embedded provenance and synchronized delivery | [Adopted asset design](design/ASSET_REFERENCES.md#design-basis-and-ownership), [discussion and investigation](discussions/ASSET_REFERENCES.md#current-question-and-authority), [repair specification](batches/R01CAL-A03-DELIVERY-01/spec.md) | [Document rules](design/DOCUMENT_MODEL.md#q1-document-schema-and-commit), [image/original preservation](design/PDF_EVIDENCE.md#pdf-coordinates-and-image-delivery), [A03 finding](batches/R01CAL-A03/verification.md#r01cal-a03-delivery-01--linked-page-renders-are-absent-from-the-saved-version-and-zip), [work selection](WORK_ITEMS.md#context-capability-and-delivery-work). |
 | Context capacity, pins, handoff and coordinated updates | [CONTEXT_MANAGEMENT](design/CONTEXT_MANAGEMENT.md), [CONTEXT_UPDATE_COORDINATION](design/CONTEXT_UPDATE_COORDINATION.md) | [Discussion](discussions/CONTEXT_COORDINATION.md#current-view-and-authority), [decisions](decisions/CONTEXT_MANAGEMENT.md), [engineering](guides/CONTEXT_AND_EVIDENCE.md), [coordination evidence](history/IMPLEMENTATION_HISTORY.md#complete-context-update-coordination). |
-| R01 calibration, route limits and complete-section delivery | [REQUEST_CAPACITY](discussions/REQUEST_CAPACITY.md#current-question-and-discussion-status), [work selection](WORK_ITEMS.md#production-estimation-residuals) | [Task A evidence/R01CAL-A01](verification/20261106_1408_R01CAL_TASK_A.md), [runtime finding index](reviews/RUNTIME_FINDINGS.md#finding-index). Follow the specific study/selection entries from those owners rather than every earlier exchange. |
+| R01 calibration, route limits and complete-section delivery | [REQUEST_CAPACITY](discussions/REQUEST_CAPACITY.md#current-question-and-discussion-status), [work selection](WORK_ITEMS.md#production-estimation-residuals) | [R01CAL-A01 diagnosis scope](batches/R01CAL-A01/spec.md), [R01CAL-A02 metadata-only exercise](batches/R01CAL-A02/spec.md), [R01CAL-A03 fresh-conversion scope and transition](batches/R01CAL-A03/spec.md), [Task A evidence](verification/20261106_1408_R01CAL_TASK_A.md), [runtime finding index](reviews/RUNTIME_FINDINGS.md#finding-index). Follow the specific study/selection entries from those owners rather than every earlier exchange. |
 | Usage observer, anchoring trial and coordinator | [Usage-anchoring design](design/CONTEXT_MANAGEMENT.md#usage-anchoring-v1-first-bounded-trial-2026-11-05) | [Observer evidence](verification/20261105_0220_USAGE_OBSERVATION.md), [UA-01 evidence](reviews/RUNTIME_FINDINGS.md#ua-01-repair-implementation-increment-2026-11-06), [work/revisit decisions](WORK_ITEMS.md#observer-findings). |
 | Durable effects, Continue/Stop, task settings, export | [RUNTIME_AND_DELIVERY](design/RUNTIME_AND_DELIVERY.md) | [EXECUTION_AND_DELIVERY](guides/EXECUTION_AND_DELIVERY.md), [Q3 decision](decisions/INITIAL_CONTRACTS.md#q3-persistence-recovery-and-stop-contract), [publication evidence](verification/20261031_2220_VERSION_PUBLICATION.md). |
 | R03 local OCR/scripts interrupted with unknown effects | [Runtime rules](design/RUNTIME_AND_DELIVERY.md#3-persistence-recovery-and-stop-behavior), [R03 evidence](reviews/RUNTIME_FINDINGS.md#r03--local-process-stop-can-leave-no-supported-continuation) | [Work disposition](WORK_ITEMS.md#runtime-and-engineering-inventory), [Stage C conditions](PHASE_PLAN.md#c-continue-through-ordinary-interruptions). Do not infer a selected recovery batch from a discussion example. |
@@ -56,7 +61,7 @@ The first-version Q1/Q2/Q3 forms refine, rather than replace, their original res
 | Owner | Maintains | Update trigger |
 | --- | --- | --- |
 | CURRENT_STATE | Interaction focus, exact resume route, next activity/instruction basis, parked-work links | Activity/focus/authority changes; save substantive content before updating the pointer. |
-| WORK_ITEMS | Work selection, priority/deferral reasons, residual scope and revisit conditions | These planning facts change; do not copy a task or batch verdict as a second disposition. |
+| WORK_ITEMS | Problem/event identities and evidence links; work selection, priority/deferral reasons, residual scope and revisit conditions | A missing identity/link or reached revisit condition needs recording, or these planning facts change; do not copy a task or batch verdict as a second disposition. |
 | PHASE_PLAN | Phase outcomes, ordering and phase-level acceptance | Outcome, dependency, scope or acceptance basis changes; no per-ticket status update. |
 | Topic design / discussion / decision | Effective rules / unresolved positions / adopted choices and reasons | Meaningful evidence or choice changes; preserve the distinction between proposed and adopted. |
 | Batch spec / tickets / verification | Agreement and criteria / execution / observed evidence and verdict | Their own facts change; prior evidence keeps its tested identity and limits. |
@@ -69,7 +74,7 @@ Preserve exact applicable design/source versions before material replacement. Gi
 
 ## Complete maintained-document catalogue
 
-The following lists maintained documents, root guidance, fixture documentation and preserved editions. Original source collections are represented by their entry points and complete manifests; the hundreds of verbatim messages/attachments/images are not duplicated as catalogue rows. The original [rebuild bundle manifest](sources/rebuild/bundle-manifest.json), [source inventory](sources/source-inventory.json) and [context-evidence manifest](sources/context-coordination/manifest.json) enumerate them.
+Batch specifications, local tickets and verification owners are catalogued once in [Batch documents](#batch-documents). The categories below list the other maintained documents, root guidance, fixture documentation and preserved editions. Original source collections are represented by their entry points and complete manifests; the hundreds of verbatim messages/attachments/images are not duplicated as catalogue rows. The original [rebuild bundle manifest](sources/rebuild/bundle-manifest.json), [source inventory](sources/source-inventory.json) and [context-evidence manifest](sources/context-coordination/manifest.json) enumerate them.
 
 ### Project entry and current owners
 
@@ -94,6 +99,7 @@ The following lists maintained documents, root guidance, fixture documentation a
 | Document | Purpose / role |
 | --- | --- |
 | [docs/design/ACCEPTED_EVIDENCE_RECOVERY.md](design/ACCEPTED_EVIDENCE_RECOVERY.md) | Accepted-evidence conflict diagnosis and recovery |
+| [docs/design/ASSET_REFERENCES.md](design/ASSET_REFERENCES.md) | Adopted portable asset naming/provenance, schema/API, reference/save/view/export and dependency design, with rationale and implementation/evidence routes; [design versions](design/ASSET_REFERENCES.md#design-versions) locate preserved editions. |
 | [docs/design/CONTEXT_MANAGEMENT.md](design/CONTEXT_MANAGEMENT.md) | Context management and capacity contract |
 | [docs/design/CONTEXT_UPDATE_COORDINATION.md](design/CONTEXT_UPDATE_COORDINATION.md) | Context update coordination: consolidated target design |
 | [docs/design/DEVELOPMENT_CREDENTIALS.md](design/DEVELOPMENT_CREDENTIALS.md) | Credential-file policy, state ownership and acceptance matrices |
@@ -113,12 +119,14 @@ The following lists maintained documents, root guidance, fixture documentation a
 | [docs/guides/EXECUTION_AND_DELIVERY.md](guides/EXECUTION_AND_DELIVERY.md) | Execution, recovery, and delivery engineering handoff |
 | [docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md](guides/INTEGRATION_AND_MODEL_BOUNDARY.md) | Integration and model-boundary engineering guide |
 | [docs/guides/PROJECT_LAYOUT.md](guides/PROJECT_LAYOUT.md) | Code/test/tool ownership, development routes and earlier-location lookup. |
+| [tools/qualification/README.md](../tools/qualification/README.md) | Acceptance-only Windows metadata harness, isolated reader build and reproduction instructions; qualification results stay in the batch verification. |
 
 ### Discussions
 
 | Document | Purpose / role |
 | --- | --- |
 | [docs/discussions/ACCEPTED_EVIDENCE_RECOVERY.md](discussions/ACCEPTED_EVIDENCE_RECOVERY.md#current-position) | Accepted-evidence recovery: discussion and alternatives |
+| [docs/discussions/ASSET_REFERENCES.md](discussions/ASSET_REFERENCES.md#current-question-and-authority) | Portable asset references: offline investigation, alternatives and specification basis |
 | [docs/discussions/CONTEXT_COORDINATION.md](discussions/CONTEXT_COORDINATION.md#current-view-and-authority) | Context management: discussion and design convergence |
 | [docs/discussions/NURSING.md](discussions/NURSING.md#current-question-and-boundary) | Nursing conversion: current discussion |
 | [docs/discussions/OBSERVABILITY.md](discussions/OBSERVABILITY.md#current-position) | Observability and Langfuse: discussion |
@@ -186,6 +194,13 @@ The following lists maintained documents, root guidance, fixture documentation a
 
 | Document | Purpose / role |
 | --- | --- |
+| [Asset-reference design and acceptance editions](design/ASSET_REFERENCES.md#design-versions) | Topic-owned version list locates the paired pre-protocol and pre-primary-XMP captures and their preserved rule/acceptance basis. |
+| [AR-S4.2 before design filing](batches/R01CAL-A03-DELIVERY-01/20261108_1652_spec_AR_S4_2.md) | Preserved complete pre-filing layout; adopted rule bodies subsequently live in the design owner with batch acceptance retained in the spec. |
+| [AR-S4.1 before dependency applicability audit](batches/R01CAL-A03-DELIVERY-01/20261108_1634_spec_AR_S4_1.md) | Inactive production-pin edition before the wider release-channel and later-fix assessment; original body preserved. |
+| [AR-S4 before production-release correction](batches/R01CAL-A03-DELIVERY-01/20261108_1616_spec_AR_S4.md) | Inactive technical specification before reconsidering the ExifTool development-release pin; original body preserved. |
+| [AR-S3 before technical completion](batches/R01CAL-A03-DELIVERY-01/20261108_1555_spec_AR_S3.md) | Inactive edition before concrete schema/API/dependency selection; original body and relative-link base preserved. |
+| [AR-S2 before technical-choice adoption](batches/R01CAL-A03-DELIVERY-01/20261108_1536_spec_AR_S2.md) | Inactive product-spec edition before selection of the four approaches and ampersand locator correction; original body preserved. |
+| [AR-S1 draft and naming-discussion amendments](batches/R01CAL-A03-DELIVERY-01/20261108_1152_spec_AR_S1.md) | Captured before AR-S2 consolidation; original body preserved in the same relative-link directory. Inactive specification history, not a competing current target. |
 | [docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md](history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md) | Captured assignment before fixed batch-file migration |
 | [docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md](history/20261107_BATCH_LAYOUT_WORK_ITEMS.md) | Captured register before fixed batch-file migration |
 | [docs/history/20261107_1358_CURRENT_STATE.md](history/20261107_1358_CURRENT_STATE.md) | Captured preceding docs/CURRENT_STATE.md; original scope retained with locator adjustments |

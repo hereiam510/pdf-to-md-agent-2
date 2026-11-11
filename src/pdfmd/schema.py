@@ -69,10 +69,151 @@ class Block(Strict):
     source_note: str = ""
 
 
+def _compact(schema: dict) -> None:
+    """Shrink the published tool schema (sent with every request); validation is unchanged.
+
+    Drops generated titles and renders an optional ``X | None = None`` patch field
+    as plain ``X`` (omission means unchanged; null is not a meaningful value).
+    """
+    schema.pop("title", None)
+    for prop in schema.get("properties", {}).values():
+        prop.pop("title", None)
+        options = prop.get("anyOf")
+        if options and prop.get("default", 0) is None and len(options) == 2 and {"type": "null"} in options:
+            prop.pop("anyOf")
+            prop.pop("default")
+            prop.update(next(o for o in options if o != {"type": "null"}))
+
+
+class Compact(Strict):
+    model_config = ConfigDict(extra="forbid", json_schema_extra=_compact)
+
+
+class EvidencePointer(Compact):
+    ref: str = Field(min_length=1, description="Task evidence ref (tool result, image or stream), not a path.")
+    physical_page: int | None = Field(default=None, ge=1)
+    region: list[float] | None = Field(default=None, min_length=4, max_length=4, description="[x0,y0,x1,y1], unrotated page frame.")
+    note: str = Field(description="What it shows.")
+
+    @model_validator(mode="after")
+    def region_needs_page(self):
+        if self.region is not None and self.physical_page is None:
+            raise ValueError("An evidence region requires its physical_page.")
+        return self
+
+
+class Alternative(Compact):
+    value: str
+    basis: list[EvidencePointer] = Field(min_length=1)
+
+
+class TextFact(Compact):
+    state: Literal["known", "none", "unknown", "conflicting"] = "unknown"
+    value: str | None = None
+    basis: list[EvidencePointer] = Field(default_factory=list)
+    alternatives: list[Alternative] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def consistent(self):
+        if self.state == "known":
+            if not self.value or not self.basis or self.alternatives:
+                raise ValueError("A known fact needs a nonempty exact value and basis, and no alternatives.")
+        elif self.value is not None:
+            raise ValueError(f"A {self.state} fact uses value null.")
+        if self.state == "none" and (not self.basis or self.alternatives):
+            raise ValueError("A none fact needs evidence of absence and no alternatives.")
+        if self.state == "unknown" and self.alternatives:
+            raise ValueError("An unknown fact has no alternatives; keep unresolved hints in a basis note.")
+        if self.state == "conflicting" and len(self.alternatives) < 2:
+            raise ValueError("A conflicting fact needs at least two evidenced alternatives.")
+        return self
+
+
+class Creator(Compact):
+    name: TextFact
+    role: str = Field(min_length=1)
+
+
+class Identifier(Compact):
+    scheme: str = Field(min_length=1)
+    value: str = Field(min_length=1)
+    basis: list[EvidencePointer] = Field(min_length=1)
+
+
+class SourceFactsPatch(Compact):
+    """Supplied fields replace values in full."""
+    kind: Literal["book", "article", "document", "unknown"] | None = None
+    title: TextFact | None = None
+    container_title: TextFact | None = None
+    publication_date: TextFact | None = None
+    publisher: TextFact | None = None
+    full_citation: TextFact | None = None
+    creators: list[Creator] | None = None
+    identifiers: list[Identifier] | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def no_null(cls, data):
+        # Omission keeps the base value; null is not a fact. Use an explicit
+        # unknown TextFact or an empty list instead.
+        if isinstance(data, dict):
+            nulls = sorted(key for key, value in data.items() if value is None)
+            if nulls:
+                raise ValueError(f"source_update fields cannot be null: {', '.join(nulls)}. Omit a field to keep it, or supply "
+                                 "a complete TextFact (state 'unknown' clears a fact) or an empty list.")
+        return data
+
+
+class Description(Compact):
+    full: str = Field(description="Complete agent-authored description.")
+    filename: str = Field(description="Faithful filename label within 180 UTF-8 bytes; never shortened by the app.")
+    language: str = Field(min_length=1, description="BCP 47 tag or und.")
+    punctuation: Literal["fullwidth", "ascii"]
+    basis: list[EvidencePointer] = Field(default_factory=list)
+
+
+class Location(Compact):
+    physical_page: int = Field(ge=1)
+    region: list[float] | None = Field(default=None, min_length=4, max_length=4)
+    basis: list[EvidencePointer] = Field(min_length=1)
+
+
+class LocatorGroup(Compact):
+    kind: Literal["single", "range"]
+    pages: list[int] = Field(min_length=1)
+    basis: list[EvidencePointer] = Field(default_factory=list)
+
+
+class OccurrenceFacts(Compact):
+    image_ref: str = Field(min_length=1, description="render_page/extract_image ref.")
+    description: Description
+    caption: TextFact = Field(default_factory=TextFact)
+    image_title: TextFact = Field(default_factory=TextFact)
+    figure: TextFact = Field(default_factory=TextFact, description="Source figure label; never invented.")
+    locations: list[Location] = Field(min_length=1)
+    locator_groups: list[LocatorGroup] = Field(default_factory=list, description="Omit for one single group per page.")
+
+
+class AssetCreate(Compact):
+    kind: Literal["create"]
+    client_key: str = Field(pattern=r"^[A-Za-z0-9_-]{1,64}$", description="Markdown destination asset:new/<client_key>.")
+    facts: OccurrenceFacts
+    legacy_path: str | None = Field(default=None, description="Adopt a schema 1 assets/<sha256> path.")
+
+
+class AssetCorrect(Compact):
+    kind: Literal["correct"]
+    occurrence_id: str
+    changes: dict[str, Any]
+
+
 class Page(Strict):
     printed: str = "unknown"
     disposition: Literal["unprocessed", "included", "outside_scope", "omitted_non_content"] = "unprocessed"
     note: str = ""
+    printed_state: Literal["known", "none", "unknown"] | None = None
+    printed_basis: list[EvidencePointer] = Field(default_factory=list)
+    printed_alternatives: list[Alternative] = Field(default_factory=list)
 
 
 class Document(Strict):
@@ -135,6 +276,8 @@ class Edit(Strict):
     page_updates: dict[str, Page] = Field(default_factory=dict, description="Partial page metadata by one-based physical-page key. Only explicitly supplied fields change. Use printed for the source label; use unknown when unread. A complete claim needs all pages classified, with a note for outside_scope or omitted_non_content.")
     claim: Literal["partial", "complete"] | None = None
     known_gaps: list[str] | None = None
+    asset_changes: list[AssetCreate | AssetCorrect] = Field(default_factory=list, description="Create source-image occurrences; the save replaces asset:new/<client_key> with the assigned URI.")
+    source_update: SourceFactsPatch = Field(default_factory=SourceFactsPatch)
 
     @model_validator(mode="after")
     def one_source(self):
