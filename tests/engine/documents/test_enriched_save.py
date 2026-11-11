@@ -19,7 +19,7 @@ import pytest
 import pdfmd.documents as documents_module
 from pdfmd import asset_catalog, primary_xmp
 from pdfmd.asset_naming import NameBudgetError, build, comparison_key
-from pdfmd.asset_references import analyze, classify
+from pdfmd.asset_references import analyze, asset_uri, classify
 from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
 
@@ -161,6 +161,87 @@ def test_create_png_and_dct_jpeg_with_readable_names_and_standalone_records(jpeg
     (alone / "renamed copy.jpeg").write_bytes((moved / changes["fig"]["asset_path"]).read_bytes())
     assert record_from((alone / "renamed copy.jpeg").read_bytes())["source"]["source_sha256"] == d.store.get(
         "blob", d.store.get("job", job)["source_ref"], job=job)["sha256"]
+
+
+def test_correct_one_image_reopens_exports_and_replays_with_historical_bytes(jpeg_job, tmp_path):
+    from fastapi.testclient import TestClient
+    from pdfmd.server import create_app
+
+    d, job, jpeg, _ = jpeg_job
+    old_path = "assets/Source figure-i1.jpeg"
+    old_uri = asset_uri(old_path)
+    request = args(f"![Figure](asset:new/fig)\n\n[Open figure][fig]\n\nKeep literal `{old_uri}`.",
+                   [create("fig", jpeg, "Source figure")])
+    request["replace_blocks"].append({"id": "references", "pages": [1], "markdown": "[fig]: asset:new/fig"})
+    auth = {"Authorization": "Bearer synthetic-only"}
+    job_url = f"/jobs/{job}"
+
+    def edit(client, key, body):
+        response = client.post(job_url + "/edit", json=body, headers={"Idempotency-Key": key})
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    def export_members(client, version, filename):
+        response = client.post(job_url + "/export", json={"version_id": version, "destination": str(tmp_path / filename)})
+        assert response.status_code == 200, response.text
+        result = response.json()
+        assert result["asset_reference_check"]["status"] == "ok"
+        with zipfile.ZipFile(result["path"]) as package:
+            return {name: package.read(name) for name in package.namelist()}
+
+    with TestClient(create_app(d.store.root, "synthetic-only"), headers=auth) as client:
+        created = edit(client, "create", request)
+        assert created["ok"], created
+        [first] = created["data"]["asset_changes"]
+        assert first["asset_path"] == old_path
+        base = created["data"]["version_id"]
+        original_export = export_members(client, base, "original.zip")
+        correction = {"base_version": base, "expected_head": base,
+                      "asset_changes": [{"kind": "correct", "occurrence_id": first["occurrence_id"],
+                                         "changes": {"description": facts(jpeg, "Corrected 圖")["description"]}}]}
+        corrected = edit(client, "correct", correction)
+        assert corrected["ok"], corrected
+        [change] = corrected["data"]["asset_changes"]
+        version = corrected["data"]["version_id"]
+        assert change["occurrence_id"] == first["occurrence_id"]
+        assert change["representation_id"] != first["representation_id"]
+        assert change["client_key"] is None and change["previous_path"] == old_path
+        assert change["asset_path"] == "assets/Corrected 圖-i1.jpeg"
+        newer = edit(client, "newer", {"base_version": version, "expected_head": version, "title": "Later title"})
+        assert newer["ok"], newer
+
+    with TestClient(create_app(d.store.root, "synthetic-only"), headers=auth) as client:
+        for selected, expected in [(base, first), (version, change)]:
+            response = client.get(job_url + "/versions/" + selected)
+            assert response.status_code == 200, response.text
+            saved = response.json()
+            assert saved["version"] == selected and saved["asset_reference_check"]["status"] == "ok"
+            path, uri = expected["asset_path"], expected["asset_uri"]
+            assert set(saved["assets"]) == {path}
+            assert f"![Figure]({uri})" in saved["markdown"] and f"[fig]: {uri}" in saved["markdown"]
+            assert f"Keep literal `{old_uri}`." in saved["markdown"]
+            [resource] = saved["preview_transfer"]["resources"]
+            members = export_members(client, selected, f"{selected}.zip")
+            exported_html = members["preview.html"].decode()
+            assert f'src="{uri}"' in exported_html and f'href="{uri}"' in exported_html
+            assert members["document.md"].decode() == saved["markdown"]
+            assert resource["sha256"] == expected["enriched_sha256"] == sha256(members[path]).hexdigest()
+            assert record_from(members[path]) == saved["assets"][path]["provenance"]
+            assert record_from(members[path])["naming"]["assigned_basename"] == Path(path).name
+            assert decoded(members[path]) == decoded(original_export[old_path])
+            [original] = saved["originals"]
+            assert members[original] == original_export[original]
+            if selected == base:
+                assert members == original_export
+            else:
+                assert old_path not in members
+                assert record_from(members[path])["description"] == correction["asset_changes"][0]["changes"]["description"]
+        assert edit(client, "correct", correction) == corrected
+
+    assert d.store.get("job", job)["head"] == newer["data"]["version_id"]
+    assert len(d.store.records("version", job)) == 3
+    assert {(name["name"], name["status"]) for name in d.store.records("asset_name", job)} == {
+        (Path(old_path).name, "assigned"), (Path(change["asset_path"]).name, "assigned")}
 
 
 @pytest.mark.parametrize("schema_version", [1, 2])

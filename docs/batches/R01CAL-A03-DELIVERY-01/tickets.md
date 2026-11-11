@@ -27,7 +27,7 @@ The 2026-11-09 [AR-S4.4 adoption](../../discussions/ASSET_REFERENCES.md#primary-
 | [T2](#r01cal-a03-delivery-01-t2) | Resolve references and view/diagnose the selected saved version | Use the adopted shared interpretation and selected-version interfaces | Scoped contribution completed. [Protocol evidence and limits](verification.md#final-t2-protocol-evidence-and-scoped-assessment) |
 | [T3a](#r01cal-a03-delivery-01-t3a) | Save and export portable links under existing registered hash paths | T2's shared reference and preview contribution | Scoped contribution completed. [Implementation evidence and limits](verification.md#t3a-portable-link-save-implementation-and-verification) |
 | [T3b](#r01cal-a03-delivery-01-t3b) | Create readable, independently informative source-image deliverables | T3a's shared save path, positive T1-F06 qualification and explicit product selection of the candidate | In progress: selected 2026-11-10; [first increment](verification.md#t3b-first-increment-enriched-creation) implemented |
-| [T4](#r01cal-a03-delivery-01-t4) | Correct source facts and synchronize assets and references atomically | T3b's enriched creation and publication path | Planned |
+| [T4](#r01cal-a03-delivery-01-t4) | Correct source facts and synchronize assets and references atomically | T3b's enriched creation and publication path | In progress |
 | [T5](#r01cal-a03-delivery-01-t5) | Establish combined save/reopen/export and declared-platform acceptance | Integrated T2, T3a, T3b and T4, with matching qualified and selected T1-F06 artifacts and invocation | Planned |
 
 T3a addresses P2 first when authorized. T1-F06 may be selected independently. One integrator owns the overlapping document publication path across T3a, T3b and T4. A scoped repair or qualification is distinct from the combined acceptance.
@@ -238,7 +238,7 @@ Remaining T3b scope:
 - the T5 destination matrix.
 
 Implementation notes for this increment:
-- `create` asset changes only; `correct` stays with T4 and rejects with a pointer to it;
+- T3b introduced `create` asset changes. See [T4](#r01cal-a03-delivery-01-t4) for correction support;
 - the selected `primary_xmp.py` copied byte-identically into `src/pdfmd/`, with a test pinning SHA-256 `74c30f2b…d6a2`. See the [engine guide](../../guides/DOCUMENT_ENGINE.md#enriched-creation-path-t3b) for child-process invocation and the [integration decision](../../discussions/ASSET_REFERENCES.md#t3b-review-and-open-integration-choices) for its basis;
 - readable naming, portable comparison keys and task-local SQLite name reservations with the 180-byte check;
 - a schema 2 save when an edit creates an occurrence, updates source facts or builds on a schema 2 base. A create can adopt a matching schema 1 asset via `legacy_path`. Schema 1 saves still use hash paths. This transitional rule is a proposal, not an adopted design change.
@@ -250,6 +250,8 @@ Implementation notes for this increment:
 **Responsible role:** the same edit/publication integrator as T3b. Reuse its operation identities, reservations, prepared representations and atomic visibility boundary; use T2's guarded spans. Avoid separate rename/publication lifecycles.
 
 **Prerequisite and interface:** T3b's complete creation path. Use [correction versus genuine occurrence](../../design/ASSET_REFERENCES.md#synchronized-corrections-and-distinct-occurrences) and [operation semantics](../../design/ASSET_REFERENCES.md#document-edit-api-and-operation-semantics).
+
+**Execution (2026-11-12).** The user selected the first single-occurrence correction after the local T3b checkpoint. Implemented `asset_changes` with one `correct` item and complete replacement values for supplied facts on the selected schema 2 base. The [single-occurrence verification](verification.md#t4-single-occurrence-correction) owns observed reopen, export and retry results. Shared source/page correction, multiple affected occurrences and the remaining T4 acceptance cases are follow-up scope.
 
 **Work and completion evidence:** apply explicit occurrence/source/page patches across all affected catalog occurrences, including currently unreferenced registrations. Rebuild changed representations and operative destinations together; preserve unrelated text, valid independent occurrences, prior names' ownership and historical-base mappings. Exercise shared-page/title updates, metadata-only changes, corrected-name collision, exact retry, restart and failed/stale publication. Inspect corrected saved/reopened/exported output alongside the unchanged earlier version.
 

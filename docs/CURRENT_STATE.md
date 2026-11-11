@@ -2,12 +2,14 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01, next-step advice after the T3b receipt and preparation correction.
-Resume at: [next-step recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-ar-t3b-13-and-ar-t3b-14), with the [T3b verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-receipt-and-preparation-correction) and [T4 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t4).
-Next activity: awaiting selection of the proposed local checkpoint and T4 work. The schema 1 retirement and published-suffix choices remain open.
-Instruction basis: on 2026-11-12 the user requested next-step advice after directing the repair to stop before T4.
+Current focus: R01CAL-A03-DELIVERY-01 T4, next-step advice after the first single-occurrence correction.
+Resume at: [next-step recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-single-occurrence-correction), with the [single-occurrence verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-single-occurrence-correction) and [T4 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t4).
+Next activity: awaiting selection of the proposed local checkpoint and shared-page correction. The schema 1 retirement and published-suffix choices remain open.
+Instruction basis: on 2026-11-12 the user requested next-step advice after the first single-occurrence correction.
 
 ## Return routes
+
+- Previous T3b closeout: [receipt and preparation correction](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-receipt-and-preparation-correction) and [next-step advice](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-ar-t3b-13-and-ar-t3b-14).
 
 - Reviewed correction: [cross-process allocation evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-cross-process-allocation), [subsequent review](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-cross-process-correction-review) and [earlier frozen, desktop and readback checks](batches/R01CAL-A03-DELIVERY-01/verification.md#frozen-desktop-and-readback-recheck-after-the-correction).
 

@@ -203,8 +203,8 @@ class AssetCreate(Compact):
 
 class AssetCorrect(Compact):
     kind: Literal["correct"]
-    occurrence_id: str
-    changes: dict[str, Any]
+    occurrence_id: str = Field(description="Existing occurrence in the selected schema 2 base.")
+    changes: dict[str, Any] = Field(description="Complete replacement values for supplied OccurrenceFacts fields. Omitted facts stay as saved.")
 
 
 class Page(Strict):

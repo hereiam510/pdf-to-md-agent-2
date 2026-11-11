@@ -9,7 +9,7 @@ import re
 import zipfile
 import base64
 
-from .schema import Block, CandidateRef, Document, Edit, Page, pointer
+from .schema import Block, CandidateRef, Document, Edit, OccurrenceFacts, Page, pointer
 from .storage import Conflict, Store, encode, file_digest, uid
 from .asset_references import (POLICY, ReferenceError, analyze, assess, asset_uri, bind_preview, classify, dependencies,
                                display_mime, parser, rewrite, safe_fragment)
@@ -347,7 +347,8 @@ class Documents:
         with PDF_LOCK, pymupdf.open(str(path), filetype="pdf") as document:
             return {i + 1: list(page.rect * page.derotation_matrix) for i, page in enumerate(document)}
 
-    def _reserve(self, job_id: str, operation: str, occurrence: str, make, client_key: str) -> tuple[str, int | None, str]:
+    def _reserve(self, job_id: str, operation: str, occurrence: str, make, preparation_key: str,
+                 *, initial_collision: int | None = None) -> tuple[str, int | None, str]:
         """Allocate the first free complete name; only a real registered conflict adds a suffix.
 
         One (job, comparison policy, portable key) record owns each name. An assigned
@@ -357,8 +358,8 @@ class Documents:
         transaction, and a resumed operation reclaims exactly that allocation, even
         if a lower-numbered name has since become free (AR-T3B-03).
         """
-        held = (self.store.get("asset_preparation", operation, job=job_id)["ids"][client_key].get("reservation"))
-        collision = held["collision"] if held else None
+        held = self.store.get("asset_preparation", operation, job=job_id)["ids"][preparation_key].get("reservation")
+        collision = held["collision"] if held else initial_collision
         while True:
             name = make(collision)
             key = comparison_key(name)
@@ -368,24 +369,25 @@ class Documents:
             with self.store.transaction() as db:
                 prior = self.store.get_tx(db, "operation", operation, job=job_id)
                 prep = self.store.get_tx(db, "asset_preparation", operation, job=job_id)
-                reservation = prep["ids"][client_key].get("reservation")
+                reservation = prep["ids"][preparation_key].get("reservation")
                 if prior and prior["status"] == "done":
                     if prior.get("ok") is False:
                         raise Conflict("This edit operation already settled as a failure.")
                     return reservation["name"], reservation["collision"], reservation["rid"]
                 if reservation != held:
                     held = reservation
-                    collision = held["collision"] if held else None
+                    collision = held["collision"] if held else initial_collision
                     continue
                 record = self.store.get_tx(db, "asset_name", rid, job=job_id)
                 free = record is None or record["status"] == "released"
                 own = record is not None and record["occurrence_id"] == occurrence and (
                     record["status"] == "assigned" or record["operation"] == operation)
                 if free or own:
-                    self.store.put_tx(db, "asset_name", rid, job_id, {
-                        "id": rid, "job": job_id, "key": key, "name": name, "occurrence_id": occurrence,
-                        "operation": operation, "status": "assigned" if own and record["status"] == "assigned" else "pending"})
-                    prep["ids"][client_key]["reservation"] = {"name": name, "collision": collision, "rid": rid}
+                    if free or record["status"] == "pending":
+                        self.store.put_tx(db, "asset_name", rid, job_id, {
+                            "id": rid, "job": job_id, "key": key, "name": name, "occurrence_id": occurrence,
+                            "operation": operation, "status": "pending"})
+                    prep["ids"][preparation_key]["reservation"] = {"name": name, "collision": collision, "rid": rid}
                     self.store.put_tx(db, "asset_preparation", operation, job_id, prep)
                     return name, collision, rid
                 if held:
@@ -459,7 +461,7 @@ class Documents:
                     failures.append((pending[index], exc))
         if failures:
             item, exc = failures[0]
-            raise AssetEditError(exc.code, f"Create {item['key']}: {exc}{kept}", details=exc.details) from exc
+            raise AssetEditError(exc.code, f"{item['label']}: {exc}{kept}", details=exc.details) from exc
         return results
 
     def _write_version(self, job_id: str, prepared: Path, version_id: str, content: Document, envelope: dict,
@@ -525,13 +527,30 @@ class Documents:
                        edit: Edit, base: dict | None, content: Document, *, release_on_failure: bool) -> dict:
         kept = f" Candidate retained: {candidate_ref}"
         schema2 = base is not None and base.get("schema_version") == 2
-        if any(change.kind == "correct" for change in edit.asset_changes):
-            raise AssetEditError("ASSET_FACT_INVALID", "Occurrence correction is not available yet (it belongs to the T4 "
-                                 "synchronized-correction increment). Create a new occurrence instead." + kept)
-        creates = [change for change in edit.asset_changes if change.kind == "create"]
-        keys = [change.client_key for change in creates]
-        if len(set(keys)) != len(keys):
-            raise AssetEditError("ASSET_FACT_INVALID", "Each create needs a unique client_key in this edit." + kept)
+        catalog = deepcopy(base["asset_catalog"]) if schema2 else {}
+        requests = {}
+        correction_seen = False
+        for change in edit.asset_changes:
+            if change.kind == "create":
+                if change.client_key in requests:
+                    raise AssetEditError("ASSET_FACT_INVALID", "Each create needs a unique client_key in this edit." + kept)
+                requests[change.client_key] = {"facts": change.facts.model_dump(), "client_key": change.client_key,
+                                               "occurrence_id": None, "previous_path": change.legacy_path}
+                continue
+            if correction_seen:
+                raise AssetEditError("ASSET_FACT_INVALID", "This edit supports one occurrence correction at a time." + kept)
+            correction_seen = True
+            entry = catalog.get(change.occurrence_id)
+            if entry is None:
+                raise AssetEditError("ASSET_FACT_INVALID", "Select a schema 2 base containing the occurrence to correct." + kept)
+            try:
+                facts = OccurrenceFacts.model_validate({**entry["facts"], **change.changes}).model_dump()
+            except ValueError as exc:
+                raise AssetEditError("ASSET_FACT_INVALID", f"Correct {change.occurrence_id}: {exc}{kept}") from exc
+            if facts != entry["facts"]:
+                requests[f"correct:{change.occurrence_id}"] = {
+                    "facts": facts, "client_key": None, "occurrence_id": change.occurrence_id,
+                    "previous_path": entry["representation"]["asset_path"]}
         pages = {k: v.model_dump() for k, v in content.pages.items()}
         source_blob = self.store.get("blob", job["source_ref"], job=job_id)
         source = deepcopy(base["source_facts"]) if schema2 else default_source(job["source_ref"], source_blob["sha256"])
@@ -547,16 +566,14 @@ class Documents:
             check_pointers(pages, lookup, rects, "Page labels")
         except FactError as exc:
             raise AssetEditError(exc.code, f"{exc}{kept}") from exc
-        catalog = deepcopy(base["asset_catalog"]) if schema2 else {}
-        # Changing facts embedded in existing occurrences needs synchronized
-        # regeneration and reference updates (T4). Refuse rather than leave stale XMP.
+        # Shared source/page corrections can affect more than one occurrence.
         for occurrence_id, entry in catalog.items():
             old = entry["representation"]["provenance_record"]
             fresh = {**old, "source": source,
                      "locations": [{**loc, "printed": printed_info(pages[str(loc["physical_page"])])} for loc in entry["facts"]["locations"]]}
             if fresh != old:
                 raise AssetEditError("ASSET_FACT_INVALID", "This edit changes source facts or a page label embedded in existing "
-                                     f"occurrence {occurrence_id}. Synchronized correction is not available yet (T4)." + kept)
+                                     f"occurrence {occurrence_id}. Shared source and page corrections are not available yet." + kept)
         # Read-or-create in one write transaction: concurrent attempts of the same
         # operation (another thread or engine process) share one set of identities
         # instead of overwriting each other's record and reservations.
@@ -569,45 +586,49 @@ class Documents:
             if prep and prep["args_hash"] != args_hash:
                 raise AssetEditError("OPERATION_CONFLICT", "The operation ID belongs to different arguments.")
             ids = dict(prep["ids"]) if prep else {}
-            for key in keys:
-                ids.setdefault(key, {"occurrence_id": uid(), "representation_id": uid()})
+            for key, request in requests.items():
+                if key not in ids:
+                    ids[key] = {"occurrence_id": request["occurrence_id"] or uid(), "representation_id": uid()}
             self.store.put_tx(db, "asset_preparation", operation, job_id,
                               {"id": operation, "args_hash": args_hash, "ids": ids, "status": "preparing"})
         reservations: list[str] = []
         try:
             return self._prepare_and_publish(job_id, job, operation, args_hash, candidate_ref, edit, base, content,
-                                             creates, ids, pages, source, catalog, reservations, kept, rects, lookup)
+                                             requests, ids, pages, source, catalog, reservations, kept, rects, lookup)
         except BaseException:
             if release_on_failure:
                 self._release(job_id, operation)
             raise
 
     def _prepare_and_publish(self, job_id, job, operation, args_hash, candidate_ref, edit, base, content,
-                             creates, ids, pages, source, catalog, reservations, kept, rects, lookup) -> dict:
-        legacy: dict[str, str] = {}
+                             requests, ids, pages, source, catalog, reservations, kept, rects, lookup) -> dict:
+        renamed: dict[str, str] = {}
         changes, pending = [], []
-        for change in creates:
-            facts = change.facts.model_dump()
-            key, occurrence_id = change.client_key, ids[change.client_key]["occurrence_id"]
+        for key, request in requests.items():
+            facts = request["facts"]
+            occurrence_id = ids[key]["occurrence_id"]
             representation_id = ids[key]["representation_id"]
+            previous_path = request["previous_path"]
+            correct = request["occurrence_id"] is not None
+            label = f"Correct {occurrence_id}" if correct else f"Create {key}"
             try:
                 image = self.store.get("blob", facts["image_ref"], job=job_id)
             except ValueError:
-                raise AssetEditError("ASSET_NOT_OWNED", f"Create {key}: image_ref is not an image of this task." + kept) from None
+                raise AssetEditError("ASSET_NOT_OWNED", f"{label}: image_ref is not an image of this task." + kept) from None
             try:
                 facts = validate_occurrence(facts, image, pages, rects, lookup)
             except FactError as exc:
-                raise AssetEditError(exc.code, f"Create {key}: {exc}{kept}") from exc
-            if change.legacy_path is not None:
-                if base is None or base.get("schema_version") != 1 or change.legacy_path not in base["assets"]:
+                raise AssetEditError(exc.code, f"{label}: {exc}{kept}") from exc
+            if previous_path is not None and not correct:
+                if base is None or base.get("schema_version") != 1 or previous_path not in base["assets"]:
                     raise AssetEditError("ASSET_REFERENCE_INVALID", f"Create {key}: legacy_path must be a registered asset of "
                                          "the selected schema 1 base." + kept)
-                if base["assets"][change.legacy_path]["ref"] != image["ref"] or change.legacy_path in legacy:
+                if base["assets"][previous_path]["ref"] != image["ref"] or previous_path in renamed:
                     raise AssetEditError("ASSET_REFERENCE_INVALID", f"Create {key}: legacy_path must match image_ref and be adopted once." + kept)
             try:
                 self.store.verify_object(image["ref"], job_id)  # streamed; the engine never loads the image
             except (OSError, ValueError) as exc:
-                raise AssetEditError("ASSET_INTEGRITY_FAILED", f"Create {key}: the image failed its integrity check. {RECOVERY}{kept}") from exc
+                raise AssetEditError("ASSET_INTEGRITY_FAILED", f"{label}: the image failed its integrity check. {RECOVERY}{kept}") from exc
             extension = image["meta"]["extension"]
             display_mime(f"x.{extension}", self.store.head(image["ref"], job_id))
             groups = facts["locator_groups"]
@@ -618,15 +639,28 @@ class Documents:
             def make(collision, description=description, groups=groups, printed=printed, figure=figure, extension=extension):
                 return build(description["filename"], groups, printed, figure, extension, description["punctuation"], collision)
             try:
-                name, collision, rid = self._reserve(job_id, operation, occurrence_id, make, key)
+                initial_collision = None
+                if correct:
+                    previous_record = catalog[occurrence_id]["representation"]["provenance_record"]
+                    previous_suffix = previous_record["naming"]["collision_suffix"]
+                    if previous_suffix is not None:
+                        try:
+                            if "assets/" + make(previous_suffix) == previous_path:
+                                initial_collision = previous_suffix
+                        except NameBudgetError:
+                            pass  # A changed basename may still fit without the old suffix.
+                name, collision, rid = self._reserve(job_id, operation, occurrence_id, make, key,
+                                                     initial_collision=initial_collision)
             except NameBudgetError as exc:
-                raise AssetEditError("ASSET_NAME_BUDGET", f"Create {key}: {exc}{kept}", details=exc.details) from exc
+                raise AssetEditError("ASSET_NAME_BUDGET", f"{label}: {exc}{kept}", details=exc.details) from exc
             except FactError as exc:
                 raise AssetEditError(exc.code, f"Create {key}: {exc}{kept}") from exc
             except ValueError as exc:
-                raise AssetEditError("ASSET_FACT_INVALID", f"Create {key}: {exc}{kept}") from exc
+                raise AssetEditError("ASSET_FACT_INVALID", f"{label}: {exc}{kept}") from exc
             reservations.append(rid)
             path = "assets/" + name
+            if previous_path is not None and previous_path != path:
+                renamed[previous_path] = path
             originals = []
             for original in image["meta"].get("originals", []):
                 blob = self.store.get("blob", original["ref"], job=job_id)
@@ -634,9 +668,10 @@ class Documents:
             record = provenance_record(occurrence_id=occurrence_id, representation_id=representation_id, source=source,
                                        facts=facts, pages=pages, image=image, image_sha256=image["sha256"],
                                        originals=originals, basename=name, collision=collision)
-            pending.append({"key": key, "occurrence_id": occurrence_id, "representation_id": representation_id,
+            pending.append({"client_key": request["client_key"], "label": label,
+                            "occurrence_id": occurrence_id, "representation_id": representation_id,
                             "image": image, "facts": facts, "record": record, "path": path, "extension": extension,
-                            "legacy_path": change.legacy_path,
+                            "previous_path": previous_path,
                             "folder": self.store.root / "preparation" / sha256(operation.encode()).hexdigest()[:24] / representation_id})
         # Run every image of this save through the shared writer pool at once; register in request order.
         for item, blob in zip(pending, self._prepare_images(job_id, pending, kept)):
@@ -646,14 +681,12 @@ class Documents:
                 "enriched_ref": blob["ref"], "enriched_sha256": blob["sha256"], "extension": item["extension"],
                 "mime": EXTENSIONS[item["extension"]], "asset_path": path, "asset_uri": asset_uri(path),
                 "provenance_record": item["record"]}}
-            if item["legacy_path"] is not None:
-                legacy[item["legacy_path"]] = path
-            changes.append({"occurrence_id": occurrence_id, "client_key": item["key"], "previous_path": item["legacy_path"],
+            changes.append({"occurrence_id": occurrence_id, "client_key": item["client_key"], "previous_path": item["previous_path"],
                             "asset_path": path, "asset_uri": asset_uri(path), "representation_id": representation_id,
                             "enriched_sha256": blob["sha256"]})
-        # Resolve handles and adopted legacy paths through guarded span rewrites.
+        # Resolve handles and previous paths through guarded span rewrites.
         by_path = {entry["representation"]["asset_path"]: occurrence_id for occurrence_id, entry in catalog.items()}
-        handles = {f"asset:new/{c['client_key']}": c["asset_path"] for c in changes}
+        handles = {f"asset:new/{c['client_key']}": c["asset_path"] for c in changes if c["client_key"] is not None}
         handles.update({f"asset:id/{occurrence_id}": entry["representation"]["asset_path"] for occurrence_id, entry in catalog.items()})
         blocks = [b.model_dump() for b in content.blocks]
         interpretation = analyze(blocks, pages)
@@ -664,14 +697,14 @@ class Documents:
             return AssetEditError(exc.issue["code"] if exc.issue["code"].startswith("ASSET_") else "ASSET_REFERENCE_INVALID",
                                   f"{exc} {describe(exc.issue)}{hint}{kept}", [issue])
         try:
-            dependencies(interpretation, set(by_path) | set(legacy), handles=handles)
+            dependencies(interpretation, set(by_path) | set(renamed), handles=handles)
             replacements = {}
             for ref in interpretation.references:
                 kind, path = classify(ref.destination, ref.role)
                 if kind == "handle":
                     replacements[ref.destination] = asset_uri(handles[ref.destination])
-                elif kind == "asset" and path in legacy:
-                    replacements[ref.destination] = asset_uri(legacy[path])
+                elif kind == "asset" and path in renamed:
+                    replacements[ref.destination] = asset_uri(renamed[path])
             if replacements:
                 blocks = rewrite(blocks, pages, interpretation, replacements)
             content = Document.model_validate({**content.model_dump(), "blocks": blocks})
