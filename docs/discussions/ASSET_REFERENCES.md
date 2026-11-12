@@ -1068,3 +1068,15 @@ Recommend option 3 now, since it is useful under any later decision, and let the
 ## T5 Windows 10 checkpoint selected
 
 2026-11-12, Asia/Singapore. The user selected a local checkpoint of the Windows 10 results and asked to leave the [three declared destination checks](../batches/R01CAL-A03-DELIVERY-01/verification.md#destination-disposition) open for now.
+
+## Next-step recommendation after the T5 Windows 10 checkpoint
+
+2026-11-12, Asia/Singapore. Recommend settling the [AR-10 published-suffix choice](../batches/R01CAL-A03-DELIVERY-01/verification.md#t5-criterion-evidence-map) and verifying that case locally. The [cross-process evidence](../batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-cross-process-allocation) recorded a save publishing with `（2）` while the unsuffixed name was reserved by a different operation. Recommend retaining the published suffix when that other operation subsequently fails and making its released name available to future saves. A visible suffix can remain even when no published version uses the unsuffixed name. Preserving the published name protects existing links, embedded provenance and exact replay.
+
+After selection, reuse the isolated two-process harness and control the publication order so the suffixed save wins and the unsuffixed reservation settles as a failure. Verify that reopening and exporting the winner preserves its exact binding and bytes, exact retry returns its original receipt, and a later eligible save can take the released unsuffixed name. The existing test allows either operation to win. The controlled race exercises native dispatch. The [HTTP lock control](../batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-receipt-and-preparation-correction) covers ordinary edit serialization. The [AR-10 criterion](../batches/R01CAL-A03-DELIVERY-01/spec.md#ar-10--collision-allocation-retries-and-distinct-occurrences) governs the assessment.
+
+The decision can proceed with the [declared destinations](../batches/R01CAL-A03-DELIVERY-01/verification.md#destination-disposition) open and the [canonical ZIP](../batches/R01CAL-A03-DELIVERY-01/verification.md#t5-local-integration-on-windows-10) retained. The publisher checks can proceed when a suitable source is available. The [work register](../WORK_ITEMS.md#selection-now) retains delivery verification ahead of another provider interval. Schema 1 retirement remains on its [agent evidence-to-save basis](#t3b-review-and-open-integration-choices). This is advice awaiting selection.
+
+## AR-10 published-suffix policy selected
+
+2026-11-12, Asia/Singapore. The user selected the proposed rule to keep the published `（2）` and release the competing unsuffixed name for later saves. The user also selected the focused local check and requested that the three declared destination checks stay open. The [allocation design](../design/ASSET_REFERENCES.md#collision-only-allocation-and-identity) owns the adopted rule.

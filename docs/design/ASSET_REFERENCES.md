@@ -103,6 +103,8 @@ An unchanged occurrence can reuse its current path and representation. Corrected
 
 Reserve a target binding durably before publishing its references. Concurrent allocation/retry must not assign the same current path to different occurrences. A correction may create a new representation/path for its own occurrence; ordinary allocation cannot rename unrelated assets, renumber survivors or compact suffixes when a reference/source is omitted or removed. Historical version bindings remain authoritative for their versions. Repeating an accepted operation returns its original receipt, not another suffix.
 
+Another operation's pending reservation counts as a conflict at allocation. After a suffixed binding publishes, it keeps its assigned name when the competing reservation settles as a failure. The failed operation's released name becomes available to future saves under the [task-local allocation rules](#document-edit-api-and-operation-semantics).
+
 A source-supported descriptive refinement can avoid a clash when already available, but collision allocation must not require a provider call, title lookup or bibliographic investigation. This is no global filename-uniqueness promise across independent exports. External keep-both renaming can preserve embedded provenance; it cannot repair accompanying Markdown automatically. Existing destination files must not be silently overwritten.
 
 ## Standalone embedded provenance and faithful image bytes

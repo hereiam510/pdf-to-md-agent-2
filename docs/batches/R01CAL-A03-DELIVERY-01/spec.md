@@ -171,6 +171,8 @@ Check continuous versus nonconsecutive ranges, mixed confirmed/unknown labels, c
 
 **Expected and check:** only actual full-name conflicts receive the next available suffix; existing unrelated names/bytes/provenance never change or get overwritten. Suffix candidates remain within 180 bytes and are compared again after shortening. Durable reservations and replay return coherent identities across restart. Distinct occurrences do not merge citations; removal does not compact survivor suffixes or alter historical snapshots. Save/reopen/export retain the exact assigned path, binding and embedded facts.
 
+Control the order so a suffixed save publishes while the unsuffixed reservation is pending, then the competing save fails. Reopen and export the published version, replay the operation and make a new eligible save. Check each result against the [published-name rule](../../design/ASSET_REFERENCES.md#collision-only-allocation-and-identity).
+
 ### AR-11 — Synchronized corrections and immutable history
 
 **Condition:** correct page/figure/description facts for an occurrence used by multiple embeds, hyperlinks and cross-block definitions; correct a page shared by several assets; collide with an occupied corrected name; change only non-filename metadata; correct one of two genuine repeated occurrences. Exercise historical-base rebuild, stale head, interrupted/failed publication and accepted-operation replay after a newer head.

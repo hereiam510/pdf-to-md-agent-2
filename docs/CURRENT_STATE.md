@@ -2,12 +2,16 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 T5 Windows 10 checkpoint.
-Resume at: [T5 local verification and remaining criteria](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-local-integration-on-windows-10), with the [T5 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-local-execution).
-Next activity: wait for selection of further T5 work. The declared destination checks and published-suffix decision remain open.
-Instruction basis: on 2026-11-12 the user selected the [Windows 10 checkpoint and open destination checks](discussions/ASSET_REFERENCES.md#t5-windows-10-checkpoint-selected).
+Current focus: R01CAL-A03-DELIVERY-01 AR-10 local verification closeout.
+Resume at: [published-suffix verification](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-10-published-suffix-verification), with the [T5 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-local-execution).
+Next activity: await selection of further T5 work. The declared destination checks remain open.
+Instruction basis: on 2026-11-12 the user selected the [published-suffix policy and local check](discussions/ASSET_REFERENCES.md#ar-10-published-suffix-policy-selected).
 
 ## Return routes
+
+- Previous AR-10 advice: [published-suffix recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-t5-windows-10-checkpoint).
+
+- Previous T5 increment: [Windows 10 verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-local-integration-on-windows-10) and [checkpoint selection](discussions/ASSET_REFERENCES.md#t5-windows-10-checkpoint-selected).
 
 - Previous access review: [T5 destination options](discussions/ASSET_REFERENCES.md#t5-access-review-after-t4-c) and [environment check](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-environment-check-after-t4-c).
 

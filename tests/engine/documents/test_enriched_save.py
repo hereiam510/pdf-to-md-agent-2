@@ -914,7 +914,7 @@ def test_http_edit_idempotency_key_returns_the_original_receipt(jpeg_job):
 
 
 # ---------------------------------------------------------------- AR-10 across engine processes
-def _two_engines(tmp_path, d, job, specs: dict[str, dict]) -> dict[str, dict]:
+def _two_engines(tmp_path, d, job, specs: dict[str, dict], *, after_b_publishes=None) -> dict[str, dict]:
     """Run two engine processes on one store; A reserves first, B after A holds its name."""
     import time
     sync = tmp_path / "sync"
@@ -923,8 +923,10 @@ def _two_engines(tmp_path, d, job, specs: dict[str, dict]) -> dict[str, dict]:
     processes = {}
     for role, spec in specs.items():
         path = sync / f"{role}.spec.json"
-        path.write_text(json.dumps({"root": str(d.store.root), "job": job, "role": role, "sync": str(sync), **spec},
-                                   ensure_ascii=False), encoding="utf-8")
+        parameters = {"root": str(d.store.root), "job": job, "role": role, "sync": str(sync), **spec}
+        if role == "A" and after_b_publishes is not None:
+            parameters["pause_after_reserve"] = True
+        path.write_text(json.dumps(parameters, ensure_ascii=False), encoding="utf-8")
         processes[role] = subprocess.Popen([sys.executable, "-B", "-m", "tests.engine.documents.allocation_child", str(path)],
                                            cwd=root)
 
@@ -941,6 +943,10 @@ def _two_engines(tmp_path, d, job, specs: dict[str, dict]) -> dict[str, dict]:
         (sync / "A.go").write_text("go")
         wait_for("A.reserved")
         (sync / "B.go").write_text("go")
+        if after_b_publishes is not None:
+            assert processes["B"].wait(180) == 0, "B"
+            after_b_publishes(json.loads((sync / "B.json").read_text(encoding="utf-8")))
+            (sync / "A.publish").write_text("publish")
         for role, process in processes.items():
             assert process.wait(180) == 0, role
     finally:
@@ -972,6 +978,80 @@ def test_engines_in_separate_processes_never_share_a_name(jpeg_job, tmp_path):
                                           [create("y", png, "Same label")], base=head, printed="58", evidence=png["ref"]))
     assert later["ok"], later
     assert later["data"]["asset_changes"][0]["asset_path"] == "assets/" + pending_names[loser]
+
+
+def test_published_suffix_survives_failed_competing_reservation(jpeg_job, tmp_path):
+    from fastapi.testclient import TestClient
+    from pdfmd.server import create_app
+
+    d, job, _, png = jpeg_job
+    body = args("![Image](asset:new/x)\n\n[Open image](asset:new/x)", [create("x", png, "Same label")])
+    unsuffixed = "Same label-i1.png"
+    suffixed = "Same label-i1（2）.png"
+    published_path = f"assets/{suffixed}"
+    first_export = tmp_path / "before-competing-failure.zip"
+
+    def snapshot_winner(result):
+        assert result["ok"], result
+        [winner] = result["data"]["asset_changes"]
+        assert winner["asset_path"] == published_path
+        names = {item["name"]: item["status"] for item in d.store.records("asset_name", job)}
+        assert names == {unsuffixed: "pending", suffixed: "assigned"}
+        version = result["data"]["version_id"]
+        assert d.store.get("job", job)["head"] == version
+        assert d.documents.export(job, version, str(first_export))["verified"]
+
+    results = _two_engines(tmp_path, d, job, {
+        "A": {"operation": "op-a", "arguments": body},
+        "B": {"operation": "op-b", "arguments": body},
+    }, after_b_publishes=snapshot_winner)
+    failed, published = results["A"], results["B"]
+    assert not failed["ok"] and failed["data"]["error_code"] == "HEAD_CONFLICT"
+    assert d.store.json(failed["candidate_ref"], job) == body
+    version = published["data"]["version_id"]
+    [winner] = published["data"]["asset_changes"]
+    names = {item["name"]: item for item in d.store.records("asset_name", job)}
+    assert names[unsuffixed]["status"] == "released"
+    assert names[suffixed]["status"] == "assigned" and names[suffixed]["occurrence_id"] == winner["occurrence_id"]
+    assert [item["id"] for item in d.store.records("version", job)] == [version]
+
+    reopened = Dispatcher(Store(d.store.root))
+    with zipfile.ZipFile(first_export) as package:
+        before = {name: package.read(name) for name in package.namelist()}
+    job_url = f"/jobs/{job}"
+    with TestClient(create_app(d.store.root, "synthetic-only"), headers={"Authorization": "Bearer synthetic-only"}) as client:
+        response = client.get(job_url + "/versions/" + version)
+        assert response.status_code == 200, response.text
+        selected = response.json()
+        assert selected["version"] == version and selected["asset_reference_check"]["status"] == "ok"
+        assert set(selected["assets"]) == {published_path}
+        assert f'![Image]({winner["asset_uri"]})' in selected["markdown"]
+        assert f'[Open image]({winner["asset_uri"]})' in selected["markdown"]
+        assert http_export_members(client, job_url, version, tmp_path / "after-competing-failure.zip") == before
+        record = record_from(before[published_path])
+        assert record == selected["assets"][published_path]["provenance"]
+        assert record["naming"]["assigned_basename"] == suffixed
+        assert record["naming"]["collision_suffix"] == 2
+        assert record["occurrence_id"] == winner["occurrence_id"]
+        assert record["representation_id"] == winner["representation_id"]
+        assert sha256(before[published_path]).hexdigest() == winner["enriched_sha256"]
+
+        later_body = args(f'![Image](asset:id/{winner["occurrence_id"]})\n\n[New image](asset:new/y)',
+                          [create("y", png, "Same label")], base=version)
+        later = http_edit(client, job_url, "reuse-released-name", later_body)
+        assert later["ok"], later
+        [newcomer] = later["data"]["asset_changes"]
+        assert newcomer["asset_path"] == f"assets/{unsuffixed}"
+        assert newcomer["occurrence_id"] != winner["occurrence_id"]
+        head = later["data"]["version_id"]
+        later_members = http_export_members(client, job_url, head, tmp_path / "later.zip")
+        assert later_members[published_path] == before[published_path]
+        assert http_export_members(client, job_url, version, tmp_path / "winner-after-later-save.zip") == before
+
+    assert call(reopened, job, "op-b", body) == published
+    assert call(reopened, job, "op-a", body) == failed
+    assert reopened.store.get("job", job)["head"] == head
+    assert len(reopened.store.records("version", job)) == 2
 
 
 def test_attempts_of_one_operation_in_two_processes_share_one_identity(jpeg_job, tmp_path):

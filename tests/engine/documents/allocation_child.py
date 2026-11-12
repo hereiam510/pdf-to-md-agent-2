@@ -1,7 +1,7 @@
 """One engine process for the cross-process allocation tests (T3b, AR-10).
 
-Opens an existing task store, pauses at name reservation until the parent
-releases it, then saves one enriched create through its own Dispatcher.
+Opens an existing task store and saves one enriched create through its own
+Dispatcher. The parent controls reservation and can hold the save after it.
 
   python -B -m tests.engine.documents.allocation_child SPEC_JSON
 """
@@ -35,6 +35,8 @@ def main(spec: dict) -> None:
         wait_for(sync / f"{role}.go")
         result = original(self, *args, **kwargs)
         (sync / f"{role}.reserved").write_text(json.dumps(result[:2], ensure_ascii=False), encoding="utf-8")
+        if spec.get("pause_after_reserve"):
+            wait_for(sync / f"{role}.publish")
         return result
     documents.Documents._reserve = reserve
     d = Dispatcher(Store(spec["root"]))

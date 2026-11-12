@@ -231,7 +231,7 @@ On 2026-11-11 the user then selected the cross-process allocation control. Its [
 On 2026-11-12 the user selected the AR-T3B-13 and AR-T3B-14 corrections with the per-task lock and a stop before T4. See the [correction and reruns](verification.md#t3b-receipt-and-preparation-correction) for this increment.
 
 Remaining T3b scope:
-- AR-9/AR-10 boundary controls on actual destinations (part of the T5 matrix); the suffix that a published name keeps after a concurrent reservation fails is recorded for the user's AR-10 review;
+- AR-9/AR-10 boundary controls on actual destinations (part of the T5 matrix). See the [focused published-suffix verification](verification.md#ar-10-published-suffix-verification) for the local reservation case;
 - unknown labels with real publisher PDFs, and an eligible publisher JPEG check for stale values;
 - the agent-facing flow from evidence to `asset_changes` in an actual conversion;
 - the open choice on retiring schema 1 saves;
@@ -300,7 +300,7 @@ Resolve in-scope integration defects and recheck affected criteria when future e
 
 ### T5 local execution
 
-The user selected the [T4-C checkpoint and available local T5 checks](../../discussions/ASSET_REFERENCES.md#t5-local-verification-selected) on 2026-11-12. The local work is complete. Use the same canonical ZIP as each declared destination becomes available. The [open criteria](verification.md#t5-criterion-evidence-map) identify the remaining publisher controls and the policy decision specific to AR-10.
+The user selected the [T4-C checkpoint and available local T5 checks](../../discussions/ASSET_REFERENCES.md#t5-local-verification-selected) on 2026-11-12. The local work is complete, including the [focused published-suffix check](verification.md#ar-10-published-suffix-verification) under the subsequent [AR-10 selection](../../discussions/ASSET_REFERENCES.md#ar-10-published-suffix-policy-selected). Use the same canonical ZIP as each declared destination becomes available. The [open criteria](verification.md#t5-criterion-evidence-map) identify the remaining checks.
 
 ## Coverage and integration discipline
 
