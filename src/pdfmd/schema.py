@@ -276,7 +276,8 @@ class Edit(Strict):
     page_updates: dict[str, Page] = Field(default_factory=dict, description="Partial page metadata by one-based physical-page key. Only explicitly supplied fields change. Use printed for the source label; use unknown when unread. A complete claim needs all pages classified, with a note for outside_scope or omitted_non_content.")
     claim: Literal["partial", "complete"] | None = None
     known_gaps: list[str] | None = None
-    asset_changes: list[AssetCreate | AssetCorrect] = Field(default_factory=list, description="Create source-image occurrences; the save replaces asset:new/<client_key> with the assigned URI.")
+    asset_changes: list[AssetCreate | AssetCorrect] = Field(
+        default_factory=list, description="Create source-image occurrences or correct existing ones. Include at most one correction per occurrence.")
     source_update: SourceFactsPatch = Field(default_factory=SourceFactsPatch)
 
     @model_validator(mode="after")

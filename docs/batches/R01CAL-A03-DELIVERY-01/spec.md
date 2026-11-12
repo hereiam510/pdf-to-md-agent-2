@@ -180,7 +180,7 @@ Check continuous versus nonconsecutive ranges, mixed confirmed/unknown labels, c
 <a id="proposed-t4-completion-checks"></a>
 #### T4 completion checks
 
-Follow-up within AR-S4.4 and the existing [T4 scope](tickets.md#r01cal-a03-delivery-01-t4). Apply the adopted [edit API](../../design/ASSET_REFERENCES.md#document-edit-api-and-operation-semantics) and [correction contract](../../design/ASSET_REFERENCES.md#synchronized-corrections-and-distinct-occurrences) through the existing edit, preparation and publication path. The [T4-A selection](../../discussions/ASSET_REFERENCES.md#t4-a-selected) authorizes the shared source metadata case. The other cases remain proposed.
+Follow-up within AR-S4.4 and the existing [T4 scope](tickets.md#r01cal-a03-delivery-01-t4). Apply the adopted [edit API](../../design/ASSET_REFERENCES.md#document-edit-api-and-operation-semantics) and [correction contract](../../design/ASSET_REFERENCES.md#synchronized-corrections-and-distinct-occurrences) through the existing edit, preparation and publication path. The [T4-A selection](../../discussions/ASSET_REFERENCES.md#t4-a-selected) authorizes the shared source metadata case. The [T4-B selection](../../discussions/ASSET_REFERENCES.md#t4-b-selected) authorizes the multiple explicit corrections case. The broader lifecycle case remains proposed.
 
 | Case | Acceptance check |
 | --- | --- |

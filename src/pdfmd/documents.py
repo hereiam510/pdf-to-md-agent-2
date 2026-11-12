@@ -535,7 +535,7 @@ class Documents:
                 "facts": facts, "client_key": None, "occurrence_id": occurrence_id,
                 "previous_path": entry["representation"]["asset_path"]})
 
-        correction_seen = False
+        corrected_occurrences: set[str] = set()
         for change in edit.asset_changes:
             if change.kind == "create":
                 if change.client_key in requests:
@@ -543,18 +543,19 @@ class Documents:
                 requests[change.client_key] = {"facts": change.facts.model_dump(), "client_key": change.client_key,
                                                "occurrence_id": None, "previous_path": change.legacy_path}
                 continue
-            if correction_seen:
-                raise AssetEditError("ASSET_FACT_INVALID", "This edit supports one occurrence correction at a time." + kept)
-            correction_seen = True
-            entry = catalog.get(change.occurrence_id)
+            occurrence_id = change.occurrence_id
+            if occurrence_id in corrected_occurrences:
+                raise AssetEditError("ASSET_FACT_INVALID", f"Occurrence {occurrence_id} has more than one correction in this edit." + kept)
+            corrected_occurrences.add(occurrence_id)
+            entry = catalog.get(occurrence_id)
             if entry is None:
                 raise AssetEditError("ASSET_FACT_INVALID", "Select a schema 2 base containing the occurrence to correct." + kept)
             try:
                 facts = OccurrenceFacts.model_validate({**entry["facts"], **change.changes}).model_dump()
             except ValueError as exc:
-                raise AssetEditError("ASSET_FACT_INVALID", f"Correct {change.occurrence_id}: {exc}{kept}") from exc
+                raise AssetEditError("ASSET_FACT_INVALID", f"Correct {occurrence_id}: {exc}{kept}") from exc
             if facts != entry["facts"]:
-                request_correction(change.occurrence_id, entry, facts)
+                request_correction(occurrence_id, entry, facts)
         pages = {k: v.model_dump() for k, v in content.pages.items()}
         source_blob = self.store.get("blob", job["source_ref"], job=job_id)
         source = deepcopy(base["source_facts"]) if schema2 else default_source(job["source_ref"], source_blob["sha256"])

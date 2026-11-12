@@ -1875,3 +1875,31 @@ The same synthetic HTTP probe confirmed the known shared-source limitation: a `s
 **Scoped result.** T4-A passed on the Windows development engine and app. Work stopped before T4-B. The broader correction lifecycle, matching frozen build, installed product and declared destination matrix have their existing acceptance boundaries.
 
 **Documentation impact.** The [engine guide](../../guides/DOCUMENT_ENGINE.md#shared-source-correction) describes the implemented patch and the [spec](spec.md#t4-completion-checks), [tickets](tickets.md#t4-follow-up-tickets) and [continuation](../../CURRENT_STATE.md#focus-and-resume-route) record the selection and stopping point. The adopted design already defines the shared source correction. Repository documentation and Git whitespace checks passed.
+
+## T4-B multiple occurrence corrections
+
+2026-11-12, Asia/Singapore. T4-A and its records were checkpointed locally as `f962131` on `codex/r01cal-a03-delivery-01`. The [multiple explicit corrections case](spec.md#t4-completion-checks) then exercised the normal HTTP edit, reopen and export routes. The synthetic PDF uses the same DCT JPEG at two positions on physical page 1 and at a third position on page 2. The regression cites one retained image extraction and separate page evidence for the third placement.
+
+**Atomic corrections and shared facts.** The new regression reproduced [AR-T4-01](#ar-t4-01--one-correction-per-edit-is-stricter-than-one-per-occurrence) on `f962131`. The corrected engine applied both explicit naming changes and the printed-label patch in one version. The two affected images received one fresh representation each, with their own corrected descriptions and the shared printed label `59`. Their operative destinations changed together. The page 2 occurrence kept its binding, embedded record and exported bytes. A following edit composed two explicit image-title patches with a shared source-title patch. It produced exactly one new representation for each affected occurrence, including the page 2 occurrence affected only by the shared source patch. The assigned names, operative destinations, code literal, decoded pixels and retained original bytes were preserved in that edit.
+
+**Duplicate and history controls.** A duplicate left occurrence ID rejected an edit containing a no-op first correction, a valid right correction and a shared page patch. The candidate stayed exact, the edit created no preparation and the head and version count stayed at the base. A fresh engine instance reopened and exported the three selected versions. The original export members remained byte-exact, the saved references and each embedded record agreed with the selected version, and retrying the rejected edit returned its original receipt with the newer head intact.
+
+**Independent readback.** ExifTool 13.55 recovered all three matching structured records and identifiers from renamed standalone JPEGs from the final ZIP. The two explicit image titles and the repeat's derived label stayed distinct in `dc:title`. The readable XMP description and structured record reported the same shared source title in each image.
+
+| Case | Selected version | Engine ZIP SHA-256 |
+| --- | --- | --- |
+| Original | `8bb438fd546349dbbf8fa2d5ac26194a` | `b95fc0c5da0e68b8c8260cb43336a795c4ed5fb2c91caddedd064370ac10c05f` |
+| Two explicit corrections and shared page label | `6346838595b34ec2b0b447caf4ffad2c` | `6c563d6a973e81ead90b4fe4c94c8b7ca72561f33b3abc6030b0ad4539f6bacd` |
+| Two explicit corrections and shared source title | `4c82bd83a60e45bbb74e84f676e5d4fc` | `d7166abb9b7591edc6d46e06a80072fbec755a77037221f3c65fba1800972e4e` |
+
+**Regression checks and tested identities.** The focused regression and the 218 tests in the document-engine and runtime regression set passed on the working tree over `f962131`. The broader engine run was stopped during the context scenarios. SHA-256 identities are `documents.py` `78f44e0bb5a156d1a0d14d9cf478e4a60e5be13bb09578d7f1f36f10af8a46d6`, `schema.py` `fcb1a20879166a8f0b98fbeea0a8b1fea8e03540caa442a415e3c03d8147bced`, `tools.py` `e0796ddb89bd9167df86d2ac1164c98fa278ab75e80f8168d881c250d9a269a7` and `test_enriched_save.py` `877fdd66bf3439d99d4bddeee215bd29b6d87e3fa514b8dd66414779484c31fe`.
+
+**Scoped result.** T4-B passed on the development engine, including reopened and independently read exported artifacts. Execution stopped before T4-C. The integrated lifecycle and desktop/frozen-engine checks retain their planned scope.
+
+**Documentation impact.** The [engine guide](../../guides/DOCUMENT_ENGINE.md#multiple-occurrence-corrections) explains the implemented per-occurrence rule and merge behavior. The [spec](spec.md#t4-completion-checks), [tickets](tickets.md#t4-b--apply-corrections-per-occurrence) and [continuation](../../CURRENT_STATE.md#focus-and-resume-route) reflect the selected scope and stopping point. The adopted edit contract already defines the one-per-occurrence rule. Repository documentation and Git whitespace checks passed.
+
+### AR-T4-02 — Separate extractions of one original stream trigger an inventory warning
+
+Observed on the T4-A checkpoint `f962131` while constructing the fixture, before applying a correction. Extracting the shared image stream separately from pages 1 and 2 produced two original evidence refs for the same export path and bytes. The creation save and ZIP preserved the exact original stream. The saved inventory maps that path to one of those refs, and the [assessment](../../../src/pdfmd/asset_references.py#L523-L529) compares it against each occurrence's declared ref. Reopen and export reported `inventory_mismatch` for the two page 1 citations despite matching paths and SHA-256. The affected version is `6560d9a2144846f284ea83051859127b`; the original's SHA-256 is `2efc958613d00a64a6638bc53a8a39cfa0222995b11ec9981956cc6cf4327b5b`.
+
+The T4-B regression used one retained extraction and separate page-location evidence to verify correction batching. The independent-extraction warning remains open. The [work register](../../WORK_ITEMS.md#context-capability-and-delivery-work) owns its disposition. Both fixtures, the ZIP manifest check and the warning details are retained under ignored `.local/t4-b-multiple-corrections-a4946912/`.

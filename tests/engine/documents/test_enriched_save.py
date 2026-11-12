@@ -522,6 +522,150 @@ def test_shared_source_title_correction_preserves_paths_and_history(tmp_path, mo
     assert len(d.store.records("version", job)) == 4
 
 
+def test_multiple_corrections_publish_together_and_compose_with_shared_facts(tmp_path):
+    from fastapi.testclient import TestClient
+    from pdfmd.server import create_app
+
+    with pymupdf.open(FIXTURES / "rgb-jpeg.pdf") as fixture:
+        jpeg_bytes = fixture.xref_stream_raw(fixture[0].get_images()[0][0])
+    source = tmp_path / "Multiple corrections.pdf"
+    left_bounds, right_bounds = [20, 80, 84, 128], [140, 80, 204, 128]
+    source_title = "Two views of one picture"
+    with pymupdf.open() as pdf:
+        page = pdf.new_page(width=300, height=220)
+        xref = page.insert_image(pymupdf.Rect(left_bounds), stream=jpeg_bytes)
+        page.insert_image(pymupdf.Rect(right_bounds), xref=xref)
+        for point, label in [((20, 25), source_title), ((20, 70), "Left view"),
+                             ((140, 70), "Right view"), ((20, 208), "59")]:
+            page.insert_text(point, label)
+        pdf.new_page(width=300, height=220).insert_image(pymupdf.Rect(left_bounds), xref=xref)
+        pdf.save(source)
+
+    d = Dispatcher(Store(tmp_path / "workspace"))
+    job = d.evidence.create_job(str(source), "Verify corrections to distinct image occurrences.")["id"]
+    page_one = d.evidence.inspect(job, [1])
+    page_text = page_one["value"]["pages"][0]["content"]
+    assert all(label in page_text for label in (source_title, "Left view", "Right view", "59"))
+    image = d.evidence.extract_image(job, 1, xref)
+    page_two = d.evidence.inspect(job, [2])
+    assert page_two["value"]["pages"][0]["images"][0][0] == xref
+    assert d.store.bytes(image["ref"], job) == jpeg_bytes
+    # Cite the same retained extraction and separate page evidence for its third placement.
+    repeated = create("repeat", image, "Repeat", page=2)
+    repeated["facts"]["description"]["basis"] = ev(page_two["ref"], "Repeated picture", page=2)
+    repeated["facts"]["figure"]["basis"] = ev(page_two["ref"], "No figure label", page=2)
+    repeated["facts"]["locations"][0]["basis"] = ev(page_two["ref"], "Repeated placement", page=2)
+    creates = [create("left", image, "Left"), create("right", image, "Right"), repeated]
+    for change, region in zip(creates, [left_bounds, right_bounds, left_bounds]):
+        change["facts"]["locations"][0]["region"] = region
+    repeated_path = "assets/Repeat-i2.jpeg"
+    markdown = ("![Left](asset:new/left)\n\n[Right][right]\n\n[right]: asset:new/right\n\n"
+                "[Repeat](asset:new/repeat)\n\nLiteral `assets/Left-p58.jpeg`.")
+    request = args(markdown, creates, printed="58", evidence=page_one["ref"])
+    request["replace_blocks"][0]["pages"] = [1, 2]
+    request["page_updates"]["2"] = {"disposition": "included"}
+    job_url = f"/jobs/{job}"
+    auth = {"Authorization": "Bearer synthetic-only"}
+
+    def correct(item, changes):
+        return {"kind": "correct", "occurrence_id": item["occurrence_id"], "changes": changes}
+
+    def known(value):
+        return {"state": "known", "value": value, "basis": ev(page_one["ref"], f"Visible text: {value}"), "alternatives": []}
+
+    with TestClient(create_app(d.store.root, "synthetic-only"), headers=auth) as client:
+        created = http_edit(client, job_url, "create", request)
+        assert created["ok"], created
+        left, right, untouched = created["data"]["asset_changes"]
+        assert untouched["asset_path"] == repeated_path
+        base = created["data"]["version_id"]
+        original = d.documents.version(job, base)
+        before = http_export_members(client, job_url, base, tmp_path / "before.zip")
+        left_description, right_description = [change["facts"]["description"] for change in creates[:2]]
+        rename = [
+            correct(left, {"description": {**left_description, "filename": "Left view"}}),
+            correct(right, {"description": {**right_description, "filename": "Right view"}}),
+        ]
+        page_patch = {"base_version": base, "expected_head": base,
+                      "page_updates": {"1": {"printed": "59", "printed_basis": ev(page_one["ref"], "Printed footer")}}}
+        duplicate = {**page_patch, "asset_changes": [correct(left, {"description": left_description}), rename[1], rename[0]]}
+        rejected = http_edit(client, job_url, "duplicate", duplicate)
+        assert not rejected["ok"] and rejected["data"]["error_code"] == "ASSET_FACT_INVALID"
+        assert d.store.json(rejected["candidate_ref"], job) == duplicate
+        assert d.store.maybe("asset_preparation", f"manual:{job}:duplicate") is None
+        assert d.store.get("job", job)["head"] == base and len(d.store.records("version", job)) == 1
+        assert d.documents.version(job, base) == original
+
+        corrected = http_edit(client, job_url, "correct", {**page_patch, "asset_changes": rename})
+        assert corrected["ok"], corrected
+        assert left["occurrence_id"] in rejected["data"]["error"]
+        assert len(d.store.records("version", job)) == 2
+        version = corrected["data"]["version_id"]
+        renamed_left, renamed_right = corrected["data"]["asset_changes"]
+        assert [item["occurrence_id"] for item in (renamed_left, renamed_right)] == [left["occurrence_id"], right["occurrence_id"]]
+        assert [item["asset_path"] for item in (renamed_left, renamed_right)] == [
+            "assets/Left view-p59.jpeg", "assets/Right view-p59.jpeg"]
+        assert all(new["representation_id"] != old["representation_id"]
+                   for new, old in [(renamed_left, left), (renamed_right, right)])
+        selected = d.documents.version(job, version)
+        repeat_id = untouched["occurrence_id"]
+        assert selected["asset_catalog"][repeat_id] == original["asset_catalog"][repeat_id]
+
+        shared_source = http_edit(client, job_url, "source", {
+            "base_version": version, "expected_head": version, "source_update": {"title": known(source_title)},
+            "asset_changes": [correct(left, {"image_title": known("Left view")}),
+                              correct(right, {"image_title": known("Right view")})],
+        })
+        assert shared_source["ok"], shared_source
+        latest = shared_source["data"]["version_id"]
+        source_changes = shared_source["data"]["asset_changes"]
+        assert len(source_changes) == 3
+        assert {item["occurrence_id"] for item in source_changes} == {left["occurrence_id"], right["occurrence_id"], repeat_id}
+        assert all(item["asset_path"] == item["previous_path"] for item in source_changes)
+        changed_by_id = {item["occurrence_id"]: item for item in source_changes}
+        final_bindings = [changed_by_id[item["occurrence_id"]] for item in (renamed_left, renamed_right, untouched)]
+        assert all(new["representation_id"] != old["representation_id"]
+                   for new, old in zip(final_bindings, [renamed_left, renamed_right, untouched]))
+
+    with TestClient(create_app(d.store.root, "synthetic-only"), headers=auth) as client:
+        cases = [
+            (base, [left, right, untouched], "58", None, [None, None, None]),
+            (version, [renamed_left, renamed_right, untouched], "59", None, [None, None, None]),
+            (latest, final_bindings, "59", source_title, ["Left view", "Right view", None]),
+        ]
+        for selected_version, bindings, printed, title, titles in cases:
+            response = client.get(job_url + "/versions/" + selected_version)
+            assert response.status_code == 200, response.text
+            saved = response.json()
+            assert saved["version"] == selected_version and saved["asset_reference_check"]["status"] == "ok"
+            assert set(saved["assets"]) == {item["asset_path"] for item in bindings}
+            members = http_export_members(client, job_url, selected_version, tmp_path / f"{selected_version}.zip")
+            assert set(name for name in members if name.startswith("assets/")) == set(saved["assets"])
+            assert members["document.md"].decode() == saved["markdown"]
+            assert {name: data for name, data in members.items() if name.startswith("originals/")} == {
+                name: data for name, data in before.items() if name.startswith("originals/")}
+            for index, (binding, image_title) in enumerate(zip(bindings, titles)):
+                data = members[binding["asset_path"]]
+                record = record_from(data)
+                assert sha256(data).hexdigest() == binding["enriched_sha256"]
+                assert record["occurrence_id"] == binding["occurrence_id"]
+                assert record["representation_id"] == binding["representation_id"]
+                assert record["source"]["title"]["value"] == title
+                assert record["image_title"]["value"] == image_title
+                assert record["locations"][0]["physical_page"] == (1 if index < 2 else 2)
+                assert record["locations"][0]["printed"]["value"] == (printed if index < 2 else None)
+                assert decoded(data) == decoded(jpeg_bytes)
+                attr = "src" if index == 0 else "href"
+                assert f'{attr}="{binding["asset_uri"]}"' in members["preview.html"].decode()
+            assert "Literal `assets/Left-p58.jpeg`." in members["document.md"].decode()
+            if selected_version == base:
+                assert members == before
+            if selected_version == version:
+                assert members[repeated_path] == before[repeated_path]
+        assert http_edit(client, job_url, "duplicate", duplicate) == rejected
+    assert d.store.get("job", job)["head"] == latest and len(d.store.records("version", job)) == 3
+
+
 @pytest.mark.parametrize("schema_version", [1, 2])
 def test_edit_streams_every_base_member_even_when_removing_it(jpeg_job, monkeypatch, schema_version):
     d, job, jpeg, png = jpeg_job

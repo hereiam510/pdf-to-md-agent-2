@@ -1028,3 +1028,7 @@ The [schema 1 retirement choice](#t3b-review-and-open-integration-choices) still
 ## T4-A selected
 
 2026-11-12, Asia/Singapore. The user selected a local checkpoint of the shared printed-page correction, implementation and verification of [T4-A](../batches/R01CAL-A03-DELIVERY-01/tickets.md#t4-a--correct-shared-source-facts), and record updates. The instruction stops before T4-B. The [shared source metadata case](../batches/R01CAL-A03-DELIVERY-01/spec.md#t4-completion-checks) gives the acceptance basis.
+
+## T4-B selected
+
+2026-11-12, Asia/Singapore. The user selected a local checkpoint of T4-A, implementation and verification of [T4-B](../batches/R01CAL-A03-DELIVERY-01/tickets.md#t4-b--apply-corrections-per-occurrence), and record updates. The instruction stops before T4-C. The [multiple explicit corrections case](../batches/R01CAL-A03-DELIVERY-01/spec.md#t4-completion-checks) gives the acceptance basis.

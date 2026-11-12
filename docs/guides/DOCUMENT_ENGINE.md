@@ -612,9 +612,13 @@ Rejections raise `AssetEditError`. The Dispatcher adds its `error_code` and `iss
 <a id="commonmark-emphasis-and-language"></a>
 ### Single-occurrence correction
 
-`edit_document` accepts one `asset_changes` item with `kind: "correct"`, the occurrence ID from the selected schema 2 base, and the complete replacement value of each supplied fact. The engine validates the merged occurrence against task-owned evidence and allocates a new representation for changed facts under the same occurrence ID. An unchanged fact set reuses the existing representation. If the new naming inputs still produce the currently assigned name with its existing suffix, the allocator starts from that suffix.
+To correct an occurrence, add an `asset_changes` item with `kind: "correct"`, the occurrence ID from the selected schema 2 base, and the complete replacement value of each supplied fact. The engine validates the merged occurrence against task-owned evidence and allocates a new representation for changed facts under the same occurrence ID. An unchanged fact set reuses the existing representation when shared facts also stay the same. If the new naming inputs still produce the currently assigned name with its existing suffix, the allocator starts from that suffix.
 
 The preparation pass embeds the updated record into bytes from the pre-enrichment evidence. The reference interpreter maps the old canonical path to the new path and rewrites operative embeds, hyperlinks and their controlling definitions. Code literals keep their original text. The new catalog, version members, head and receipt use the shared publication transaction under the per-task lock. The receipt returns the previous and current paths. The [T4 evidence](../batches/R01CAL-A03-DELIVERY-01/verification.md#t4-single-occurrence-correction) shows reopen, export and replay of a rename alongside its earlier snapshot.
+
+### Multiple occurrence corrections
+
+An edit can include one explicit correction for each distinct occurrence. A repeated occurrence ID rejects the edit before preparation, even when its first item leaves its facts unchanged. Shared page and source changes use the same preparation request for an explicitly corrected occurrence, so its new representation carries the merged occurrence facts and the final shared facts. The save publishes the affected representations and references in one version. The [T4-B checks](../batches/R01CAL-A03-DELIVERY-01/verification.md#t4-b-multiple-occurrence-corrections) cover both kinds of shared patch and an unaffected placement of the same picture.
 
 ### Shared printed-page correction
 

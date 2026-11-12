@@ -2,12 +2,14 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 T4-A closeout.
-Resume at: [T4 follow-up tickets](batches/R01CAL-A03-DELIVERY-01/tickets.md#t4-follow-up-tickets), with [T4-A verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-a-shared-source-correction).
-Next activity: stopped before T4-B at the user's requested boundary.
-Instruction basis: on 2026-11-12 the user selected the [shared-page checkpoint and T4-A only](discussions/ASSET_REFERENCES.md#t4-a-selected).
+Current focus: R01CAL-A03-DELIVERY-01 T4-B closeout.
+Resume at: [T4 follow-up tickets](batches/R01CAL-A03-DELIVERY-01/tickets.md#t4-follow-up-tickets), with [T4-B verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-b-multiple-occurrence-corrections).
+Next activity: stopped before T4-C at the user's requested boundary.
+Instruction basis: on 2026-11-12 the user selected the [T4-A checkpoint and T4-B only](discussions/ASSET_REFERENCES.md#t4-b-selected).
 
 ## Return routes
+
+- Previous T4 increment: [shared source verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-a-shared-source-correction) and [T4-A selection](discussions/ASSET_REFERENCES.md#t4-a-selected).
 
 - Previous T4 review: [completion proposal](discussions/ASSET_REFERENCES.md#review-and-proposed-t4-completion) and [review evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-residual-correction-review).
 

@@ -264,17 +264,21 @@ Use [AR-4](spec.md#ar-4--editing-identity-and-failed-publication), [AR-10](spec.
 <a id="proposed-t4-follow-up-tickets"></a>
 ### T4 follow-up tickets
 
-One document-edit integrator owns the overlapping preparation/publication path and engine tests. See the [completion checks](spec.md#t4-completion-checks) and [T4-A selection](../../discussions/ASSET_REFERENCES.md#t4-a-selected).
+One document-edit integrator owns the overlapping preparation/publication path and engine tests. See the [completion checks](spec.md#t4-completion-checks).
 
 | Ticket | Contribution and dependency | Completion evidence |
 | --- | --- | --- |
 | [T4-A — Correct shared source facts](#t4-a--correct-shared-source-facts) | Refresh the catalog from validated `source_update` on the shared-page baseline, and update `edit_document` guidance. | [Shared source correction verification](verification.md#t4-a-shared-source-correction). |
-| T4-B — Apply corrections per occurrence | Proposed. After T4-A, replace the global correction limit with per-occurrence validation in `documents.py`. Compose explicit and shared changes before preparation. | Run the multiple-explicit-corrections case in the [completion checks](spec.md#t4-completion-checks) and verify duplicate rejection and one published representation per affected occurrence. |
+| [T4-B — Apply corrections per occurrence](#t4-b--apply-corrections-per-occurrence) | Use the T4-A preparation path to apply distinct explicit corrections together with any shared page or source changes. | [Multiple occurrence correction verification](verification.md#t4-b-multiple-occurrence-corrections). |
 | T4-C — Verify the correction lifecycle | Proposed. After T4-A and T4-B, check the integrated revision on the normal edit route, Windows development desktop and a matching frozen-engine build. Use the existing selected writer and independent reader. | Run the collision, history and recovery case in the [completion checks](spec.md#t4-completion-checks). Verify selected versions through reopen and relocated export, record test/build identities, and hand the integrated revision and coverage limits to T5. |
 
 #### T4-A — Correct shared source facts
 
-Implemented and verified on 2026-11-12 for the selected [shared source metadata case](spec.md#t4-completion-checks). The catalog correction pass in `documents.py` reuses the existing preparation and publication path, and `edit_document` describes the supported patch. The [verification](verification.md#t4-a-shared-source-correction) owns the checkpoint, observed checks and tested identities. Execution stops here per the [selection](../../discussions/ASSET_REFERENCES.md#t4-a-selected).
+Implemented and verified on 2026-11-12 for the selected [shared source metadata case](spec.md#t4-completion-checks). The catalog correction pass in `documents.py` reuses the existing preparation and publication path, and `edit_document` describes the supported patch. The [verification](verification.md#t4-a-shared-source-correction) owns the observed checks and tested identities. The [T4-A selection](../../discussions/ASSET_REFERENCES.md#t4-a-selected) stopped at this ticket before the subsequent T4-B instruction.
+
+#### T4-B — Apply corrections per occurrence
+
+Implemented and verified on 2026-11-12 for the selected [multiple explicit corrections case](spec.md#t4-completion-checks). The edit engine validates duplicate IDs before preparation and the tool guidance describes the per-occurrence rule. The [verification](verification.md#t4-b-multiple-occurrence-corrections) owns the local T4-A checkpoint and observed checks. Execution stops here per the [T4-B selection](../../discussions/ASSET_REFERENCES.md#t4-b-selected).
 
 ## R01CAL-A03-DELIVERY-01-T5
 
