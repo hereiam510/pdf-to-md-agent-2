@@ -28,7 +28,7 @@ The 2026-11-09 [AR-S4.4 adoption](../../discussions/ASSET_REFERENCES.md#primary-
 | [T3a](#r01cal-a03-delivery-01-t3a) | Save and export portable links under existing registered hash paths | T2's shared reference and preview contribution | Scoped contribution completed. [Implementation evidence and limits](verification.md#t3a-portable-link-save-implementation-and-verification) |
 | [T3b](#r01cal-a03-delivery-01-t3b) | Create readable, independently informative source-image deliverables | T3a's shared save path, positive T1-F06 qualification and explicit product selection of the candidate | In progress: selected 2026-11-10; [first increment](verification.md#t3b-first-increment-enriched-creation) implemented |
 | [T4](#r01cal-a03-delivery-01-t4) | Correct source facts and synchronize assets and references atomically | T3b's enriched creation and publication path | In progress |
-| [T5](#r01cal-a03-delivery-01-t5) | Establish combined save/reopen/export and declared-platform acceptance | Integrated T2, T3a, T3b and T4, with matching qualified and selected T1-F06 artifacts and invocation | Planned |
+| [T5](#r01cal-a03-delivery-01-t5) | Establish combined save/reopen/export and declared-platform acceptance | Integrated T2, T3a, T3b and T4, with matching qualified and selected T1-F06 artifacts and invocation | [Local execution and continuation](#t5-local-execution) |
 
 T3a addresses P2 first when authorized. T1-F06 may be selected independently. One integrator owns the overlapping document publication path across T3a, T3b and T4. A scoped repair or qualification is distinct from the combined acceptance.
 
@@ -297,6 +297,10 @@ Completed on 2026-11-12 for the selected [collision, history and recovery case](
 Resolve in-scope integration defects and recheck affected criteria when future execution authority includes implementation. Preserve failed evidence and source limitations. The [verification owner](verification.md) records criterion-level observations, residuals and the combined verdict; ticket completion alone is not that verdict. Broader live conversion, numerical tuning, original A03 repair, installer delivery and cleanup remain outside this batch.
 
 **Exit:** every AR-1–AR-12 criterion has a source-linked observation or explicitly unresolved disposition, and the combined verdict accounts for all required destinations and source-preservation limits. Whole-batch acceptance requires the applicable conditions to pass; an unavailable required platform/check leaves acceptance incomplete. A completed review with unresolved criteria is recorded as such and does not become an accepted delivery. Keep software behavior, source-image fidelity, metadata interoperability and package consistency distinguishable in the verdict.
+
+### T5 local execution
+
+The user selected the [T4-C checkpoint and available local T5 checks](../../discussions/ASSET_REFERENCES.md#t5-local-verification-selected) on 2026-11-12. The local work is complete. Use the same canonical ZIP as each declared destination becomes available. The [open criteria](verification.md#t5-criterion-evidence-map) identify the remaining publisher controls and the policy decision specific to AR-10.
 
 ## Coverage and integration discipline
 

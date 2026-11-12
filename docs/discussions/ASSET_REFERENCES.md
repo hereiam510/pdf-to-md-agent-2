@@ -1060,3 +1060,11 @@ The checkpoint and T5 await selection.
 Recommend option 3 now, since it is useful under any later decision, and let the user decide between options 1 and 2 for the remaining rows.
 
 **Before T5:** checkpoint T4-C locally. With 56 local-only commits, also consider pushing the branch to the GitHub repository (separate authority; the recorded PR destination is GitHub). Decide the [published-suffix question](#next-step-recommendation-after-ar-t3b-13-and-ar-t3b-14) before T5 gives its AR-10 verdict. The [schema 1 transition](#t3b-review-and-open-integration-choices) does not block T5.
+
+## T5 local verification selected
+
+2026-11-12, Asia/Singapore. The user's proceed instruction selects the local T4-C checkpoint and option 3 from the [access review](#t5-access-review-after-t4-c), including acquisition of the pinned browser for the isolated Windows 10 run. The [destination matrix](../design/ASSET_REFERENCES.md#portable-comparison-and-destination-matrix) governs acceptance. Destination access, changes to the declared matrix and the published-suffix policy remain open. The [T5 verification](../batches/R01CAL-A03-DELIVERY-01/verification.md#t5-local-integration-on-windows-10) owns the actual observations.
+
+## T5 Windows 10 checkpoint selected
+
+2026-11-12, Asia/Singapore. The user selected a local checkpoint of the Windows 10 results and asked to leave the [three declared destination checks](../batches/R01CAL-A03-DELIVERY-01/verification.md#destination-disposition) open for now.
