@@ -1080,3 +1080,15 @@ The decision can proceed with the [declared destinations](../batches/R01CAL-A03-
 ## AR-10 published-suffix policy selected
 
 2026-11-12, Asia/Singapore. The user selected the proposed rule to keep the published `（2）` and release the competing unsuffixed name for later saves. The user also selected the focused local check and requested that the three declared destination checks stay open. The [allocation design](../design/ASSET_REFERENCES.md#collision-only-allocation-and-identity) owns the adopted rule.
+
+## Next-step recommendation after the AR-10 checkpoint
+
+2026-11-12, Asia/Singapore. Recommend the offline publisher-source check already identified in [T5's open AR-8 and AR-12 criteria](../batches/R01CAL-A03-DELIVERY-01/verification.md#t5-criterion-evidence-map). It can test real printed labels and publisher metadata on the current delivery path while the [destination checks](../batches/R01CAL-A03-DELIVERY-01/verification.md#destination-disposition) stay open. The [AR-10 checkpoint evidence](../batches/R01CAL-A03-DELIVERY-01/verification.md#continuation-basis-after-the-ar-10-checkpoint) supplies the baseline. The [work register](../WORK_ITEMS.md#selection-now) retains delivery verification ahead of another provider interval.
+
+Select one publisher PDF authorized for local use, ideally with a clear printed label, an absent or unresolved label, and an unchanged PDF DCT JPEG carrying existing XMP. A small page set can establish the exact printed `p` locator, the physical `i` fallback where applicable, and the corresponding label states in the embedded record. Use an isolated save and reopen/export. For a qualifying JPEG, compare the retained original and picture bytes and read a renamed exported image with the qualified independent reader. Check the readable and structured source facts and use the all-documents read to detect stale or competing XMP values. The [source naming criterion](../batches/R01CAL-A03-DELIVERY-01/spec.md#ar-8--source-grounded-naming-and-embedded-standalone-provenance) and [enrichment boundary](../design/ASSET_REFERENCES.md#primary-xmp-enrichment-boundary) govern the checks.
+
+If the selected source yields only label coverage, record that result and leave the publisher-JPEG case open. If a competing value survives readback, record its carrier and affected fields before proposing any writer change. Retain the canonical T5 ZIP for future platform checks. The separate [schema transition question](#t3b-review-and-open-integration-choices) depends on agent-facing evidence-to-save behavior. This recommendation awaits selection of the source and local check.
+
+## T5 offline publisher-source check selected
+
+2026-11-12, Asia/Singapore. The user selected one authorized local publisher PDF for an offline check of printed labels, physical-page fallback and eligible JPEG XMP. The [verification record](../batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-publisher-source-check) owns the chosen source, evidence and limits. The user kept the [Windows 11, Ubuntu and macOS checks](../batches/R01CAL-A03-DELIVERY-01/verification.md#destination-disposition) open.

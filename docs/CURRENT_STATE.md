@@ -2,12 +2,14 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 AR-10 local verification closeout.
-Resume at: [published-suffix verification](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-10-published-suffix-verification), with the [T5 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-local-execution).
-Next activity: await selection of further T5 work. The declared destination checks remain open.
-Instruction basis: on 2026-11-12 the user selected the [published-suffix policy and local check](discussions/ASSET_REFERENCES.md#ar-10-published-suffix-policy-selected).
+Current focus: R01CAL-A03-DELIVERY-01 offline publisher-source verification.
+Resume at: [publisher-source evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-publisher-source-check) and the [T5 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-local-execution).
+Next activity: await selection of further work. Use the [criterion evidence map](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-criterion-evidence-map) for open scope and keep the declared destination checks open.
+Instruction basis: the user's [2026-11-12 selection](discussions/ASSET_REFERENCES.md#t5-offline-publisher-source-check-selected) covered one authorized publisher PDF offline.
 
 ## Return routes
+
+- Previous AR-10 increment: [published-suffix verification](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-10-published-suffix-verification) and [policy selection](discussions/ASSET_REFERENCES.md#ar-10-published-suffix-policy-selected).
 
 - Previous AR-10 advice: [published-suffix recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-t5-windows-10-checkpoint).
 
