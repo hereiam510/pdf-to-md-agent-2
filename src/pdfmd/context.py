@@ -27,7 +27,11 @@ Exclude unrelated prose, headers, and excess surroundings; a genuine full-page f
 Full-page evidence does not substitute for independent figures surrounded by unrelated content.
 Preserve source appearance, original PDFs, applicable encoded originals, and crop/render provenance.
 Do not cosmetically clean, redraw, white out, or introduce lossy recompression.
-Use registered asset_path values in Markdown images or embedded HTML.
+To deliver a new source image, create an occurrence with edit_document asset_changes.
+Set facts.image_ref to the render_page or extract_image result's ref and supply source-grounded facts.
+Use asset:new/<client_key> as the image or link destination. The save assigns the final relative asset URI.
+Use asset:id/<occurrence_id> for an existing enriched occurrence. To adopt an existing schema 1 image explicitly,
+set the create's legacy_path to its registered asset_path.
 Next to each image, write its complete original caption, substantive labels, necessary values, units, symbols,
 legends, and panel explanations as searchable, copyable Markdown text in the source language.
 Organize that text by its actual figure/panel associations; disconnected keyword lists are insufficient.

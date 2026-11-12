@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+from tempfile import NamedTemporaryFile
 import zipfile
 import base64
 
@@ -81,6 +82,24 @@ def describe(issue: dict) -> str:
     span = issue.get("span") or {}
     where = f" in block {span['block_id']}" if span.get("block_id") else ""
     return f"Offending {issue.get('role') or 'resource'} destination{where}: {issue['destination']!r}."
+
+
+NAME_UNITS = 255  # NTFS and ext4 per-component limit (UTF-16 units / bytes)
+
+
+def _destination_error(target: Path, error: OSError) -> str:
+    longest = max(len(part.encode("utf-16-le")) // 2 for part in target.parts)
+    hint = (f" One folder or file name has {longest} characters; the limit is {NAME_UNITS}."
+            if longest > NAME_UNITS else "")
+    return (f"The export destination cannot be written: {target} ({error.strerror or error}).{hint} "
+            "Choose a shorter folder or filename, or another location; existing files are preserved.")
+
+
+def _discard(path: Path) -> None:
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:
+        pass
 
 
 class Documents:
@@ -847,34 +866,56 @@ class Documents:
         if self.store.root == target or self.store.root in target.parents:
             raise ValueError("Choose an export destination outside the private workspace.")
         intent = sha256(encode([job, version, str(target)])).hexdigest()
-        existing = self.store.maybe("export", intent)
+        result = {"id": intent, "version_id": version, "path": str(target), "claim": record["claim"], "verified": False}
 
         def verify(path):
-            with zipfile.ZipFile(path) as archive:
-                return len(archive.namelist()) == len(expected) and set(archive.namelist()) == set(expected) and all(archive.read(name) == data for name, data in expected.items())
+            try:
+                with zipfile.ZipFile(path) as archive:
+                    names = archive.namelist()
+                    return (len(names) == len(expected) and set(names) == set(expected)
+                            and all(archive.read(name) == data for name, data in expected.items()))
+            except zipfile.BadZipFile:
+                return False
 
-        if target.exists():
-            if existing and verify(target):
-                result = {**existing, "verified": True}
-                self.store.put("export", intent, job, result)
-                return result
-            raise Conflict("The destination exists. Choose a different filename; existing files are preserved.")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        result = {"id": intent, "version_id": version, "path": str(target), "claim": record["claim"], "verified": False}
-        self.store.put("export", intent, job, result)
-        temp = target.with_name(f".{target.name}.{intent}.tmp")
-        with zipfile.ZipFile(temp, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-            for name, data in expected.items():
-                archive.writestr(name, data)
-        if not verify(temp):
-            raise ValueError("Prepared ZIP failed its member and byte checks.")
-        # Exclusive publication. A concurrent destination is never replaced.
+        def verified_receipt():
+            receipt = {**result, "verified": True}
+            self.store.put("export", intent, job, receipt)
+            return receipt
+
+        temp = None
         try:
-            os.link(temp, target)
-        except FileExistsError as exc:
-            raise Conflict("The destination appeared during export. Prepared work is retained.") from exc
-        temp.unlink()
-        result["verified"] = verify(target)
-        self.store.put("export", intent, job, result)
-        self.store.event(job, "exported", result)
-        return result
+            if target.exists():
+                if self.store.maybe("export", intent) and verify(target):
+                    return verified_receipt()
+                raise Conflict("The destination exists. Choose a different filename; existing files are preserved.")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with self.store.transaction() as db:
+                if self.store.get_tx(db, "export", intent, job=job) is None:
+                    self.store.put_tx(db, "export", intent, job, result)
+
+            # Each attempt owns its preparation. Close its writer before making
+            # the verified bytes visible at the destination.
+            with NamedTemporaryFile(dir=target.parent, prefix=".pdfmd-export-", suffix=".tmp", delete=False) as prepared:
+                temp = Path(prepared.name)
+                with zipfile.ZipFile(prepared, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                    for name, data in expected.items():
+                        archive.writestr(name, data)
+            if not verify(temp):
+                raise ValueError("Prepared ZIP failed its member and byte checks.")
+            try:
+                os.link(temp, target)
+            except FileExistsError as exc:
+                if verify(target):
+                    return verified_receipt()
+                temp = None  # Keep this verified preparation for a destination conflict.
+                raise Conflict("The destination appeared during export. Prepared work is retained.") from exc
+            if not verify(target):
+                raise ValueError(f"The published ZIP failed its member and byte checks: {target}")
+            receipt = verified_receipt()
+            self.store.event(job, "exported", receipt)
+            return receipt
+        except OSError as exc:
+            raise ValueError(_destination_error(target, exc)) from exc
+        finally:
+            if temp is not None:
+                _discard(temp)

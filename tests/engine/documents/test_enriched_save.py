@@ -768,7 +768,7 @@ def test_unknown_and_legacy_printed_labels_use_physical_locator(jpeg_job):
     assert record["locations"][0]["printed"] == {"state": "unknown", "value": None, "basis": [], "alternatives": [], "legacy_hint": "xii"}
 
 
-def test_legacy_hash_path_adoption_and_unadopted_rejection(jpeg_job):
+def test_legacy_hash_path_adoption_and_unadopted_rejection(jpeg_job, tmp_path):
     d, job, jpeg, png = jpeg_job
     old = {"base_version": None, "expected_head": None,
            "replace_blocks": [{"id": "b", "pages": [1], "markdown": f"![old]({png['asset_path']}) and [link]({png['asset_path']})"}],
@@ -786,6 +786,15 @@ def test_legacy_hash_path_adoption_and_unadopted_rejection(jpeg_job):
     assert change["previous_path"] == png["asset_path"] and change["asset_path"] == "assets/Adopted page-i1.png"
     markdown = d.documents.version(job, adopted["data"]["version_id"])["content"]["blocks"][0]["markdown"]
     assert markdown == f"![old]({change['asset_uri']}) and [link]({change['asset_uri']})"
+
+    documents = documents_module.Documents(Store(d.store.root))
+    original = documents.version(job, v1)
+    assert original["schema_version"] == 1 and list(original["assets"]) == [png["asset_path"]]
+    destination = tmp_path / "legacy.zip"
+    assert documents.export(job, v1, str(destination))["verified"]
+    hashes = d.store.get("version", v1, job=job)["files"]
+    with zipfile.ZipFile(destination) as archive:
+        assert {name: sha256(archive.read(name)).hexdigest() for name in archive.namelist()} == hashes
 
 
 @pytest.mark.parametrize("mutate,code", [

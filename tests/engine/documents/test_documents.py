@@ -1,4 +1,8 @@
+from concurrent.futures import ThreadPoolExecutor
+from hashlib import sha256
 import json
+import os
+from threading import Barrier
 import zipfile
 
 import pytest
@@ -6,7 +10,7 @@ import pymupdf
 
 from pdfmd.documents import Documents
 from pdfmd.evidence import Evidence
-from pdfmd.storage import Store
+from pdfmd.storage import Conflict, Store, encode
 from pdfmd.tools import Dispatcher
 
 
@@ -65,7 +69,7 @@ def test_whole_document_render_export_and_exact_patch(setup, tmp_path):
             assert z.read(name) == (d.documents.root / one / name).read_bytes()
     assert d.documents.export(job["id"], one, str(archive)) == receipt
     archive.write_bytes(b"unrelated")
-    with pytest.raises((ValueError, zipfile.BadZipFile)):
+    with pytest.raises(Conflict, match="destination exists"):
         d.documents.export(job["id"], one, str(archive))
     assert archive.read_bytes() == b"unrelated"
 
@@ -242,3 +246,85 @@ def test_candidate_pointer_escapes_and_sequential_operations_preserve_exact_text
     assert result['ok'], result
     content = d.documents.version(job['id'], result['data']['version_id'])['content']
     assert len(content['blocks']) == 1 and content['blocks'][0]['markdown'] == text
+
+
+def test_export_accepts_long_valid_zip_name_and_names_unwritable_destination(setup, tmp_path):
+    from fastapi.testclient import TestClient
+    from pdfmd.server import create_app
+
+    store, job = setup
+    version = call(Dispatcher(store), job["id"], "save", edit())["data"]["version_id"]
+    documents = Documents(store)
+    long_name = tmp_path / "long" / ("Long export name " * 12)[:196].rstrip()
+    long_name = long_name.with_name(long_name.name + ".zip")
+    assert len(long_name.name) == 200
+    receipt = documents.export(job["id"], version, str(long_name))
+    assert receipt["verified"] and sorted(p.name for p in long_name.parent.iterdir()) == [long_name.name]
+
+    overlong = tmp_path / "overlong" / ("x" * 300 + ".zip")
+    with TestClient(create_app(store.root, "synthetic-only"), headers={"Authorization": "Bearer synthetic-only"}) as client:
+        response = client.post(f"/jobs/{job['id']}/export", json={"version_id": version, "destination": str(overlong)})
+    assert response.status_code == 400
+    message = response.json()["error"]
+    assert str(overlong) in message and "304 characters; the limit is 255" in message
+    assert not any((tmp_path / "overlong").iterdir())
+
+
+def test_concurrent_exports_reconcile_without_sharing_preparation(setup, tmp_path, monkeypatch):
+    store, job = setup
+    job_id = job["id"]
+    version = call(Dispatcher(store), job_id, "save", edit())["data"]["version_id"]
+    destination = tmp_path / "delivery.zip"
+    intent = sha256(encode([job_id, version, str(destination.resolve())])).hexdigest()
+    unrelated = tmp_path / f".pdfmd-export-{intent[:16]}.tmp"
+    unrelated.write_bytes(b"existing file outside the workspace")
+    preparing = Barrier(2, timeout=10)
+    link = os.link
+    preparations = []
+
+    def concurrent_link(source, target):
+        if target == destination:
+            preparations.append(source)
+            preparing.wait()
+        return link(source, target)
+
+    def export():
+        return Documents(Store(store.root)).export(job_id, version, str(destination))
+
+    with monkeypatch.context() as patch:
+        patch.setattr(os, "link", concurrent_link)
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            attempts = [executor.submit(export) for _ in range(2)]
+            first, second = [attempt.result(timeout=20) for attempt in attempts]
+
+    assert first == second == export() == store.get("export", intent, job=job_id)
+    assert first["verified"] and len(set(preparations)) == 2
+    assert unrelated.read_bytes() == b"existing file outside the workspace"
+    assert set(tmp_path.glob(".pdfmd-export-*.tmp")) == {unrelated}
+    hashes = store.get("version", version, job=job_id)["files"]
+    with zipfile.ZipFile(destination) as archive:
+        assert {name: sha256(archive.read(name)).hexdigest() for name in archive.namelist()} == hashes
+
+
+def test_export_preserves_a_destination_that_appears_during_publication(setup, tmp_path, monkeypatch):
+    store, job = setup
+    job_id = job["id"]
+    version = call(Dispatcher(store), job_id, "save", edit())["data"]["version_id"]
+    destination = tmp_path / "delivery.zip"
+    link = os.link
+
+    def competing_link(source, target):
+        if target == destination:
+            target.write_bytes(b"unrelated new destination")
+        return link(source, target)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(os, "link", competing_link)
+        with pytest.raises(Conflict, match="Prepared work is retained"):
+            Documents(store).export(job_id, version, str(destination))
+
+    assert destination.read_bytes() == b"unrelated new destination"
+    [prepared] = tmp_path.glob(".pdfmd-export-*.tmp")
+    hashes = store.get("version", version, job=job_id)["files"]
+    with zipfile.ZipFile(prepared) as archive:
+        assert {name: sha256(archive.read(name)).hexdigest() for name in archive.namelist()} == hashes

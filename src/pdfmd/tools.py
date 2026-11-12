@@ -22,15 +22,18 @@ def object_schema(properties: dict, required=()) -> dict:
 STRING = {"type": "string"}
 INT = {"type": "integer"}
 STRINGS = {"type": "array", "items": STRING}
+SOURCE_IMAGE_DELIVERY = ("To deliver an eligible source image, use this result's ref as facts.image_ref in an "
+                         "edit_document asset_changes create, with asset:new/<client_key> as the image or link destination. "
+                         "The returned asset_path identifies the registered evidence image.")
 
 
 def definitions(scripts: bool = False) -> list[dict]:
     entries = [
         ("inspect_pdf", "Read source pages. Full results are saved. Choose text, layout, words, or metadata without a required reading order.",
          object_schema({"pages": {"type": "array", "items": INT}, "mode": {"enum": ["text", "blocks", "words", "dict", "rawdict", "metadata"]}, "view": {"enum": ["full", "index"]}})),
-        ("render_page", "Read actual page pixels or create a reusable complete figure crop. Select DPI and optional region [x0,y0,x1,y1] in unrotated page points, as returned by inspect_pdf. Include all meaningful panels, edge labels, leader lines, legends, scales and source caption; exclude unrelated content. Omit region for the complete visible page. Output preserves page rotation and records region, DPI and page_to_pixel/pixel_to_page affine mappings. Use the registered asset_path for delivery; pixels do not supply adjacent searchable text automatically.",
+        ("render_page", "Read actual page pixels or create a reusable complete figure crop. Select DPI and optional region [x0,y0,x1,y1] in unrotated page points, as returned by inspect_pdf. Include all meaningful panels, edge labels, leader lines, legends, scales and source caption; exclude unrelated content. Omit region for the complete visible page. Output preserves page rotation and records region, DPI and page_to_pixel/pixel_to_page affine mappings. Pixels do not supply adjacent searchable text automatically. " + SOURCE_IMAGE_DELIVERY,
          object_schema({"page": INT, "dpi": INT, "region": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4}}, ["page"])),
-        ("extract_image", "Extract an embedded source image by page and xref at native dimensions, retaining original streams. An embedded object may omit figure labels, vector content, related panels or captions outside that object; it is not automatically a complete independent figure. Choose render_page(region=...) or another source-led method where needed. A stencil returns a coverage-only mask without asset_path and lists page occurrences. Select occurrence (zero-based) and dpi to render its actual page appearance, including color, background and overlapping content. Original full/raw/range access remains available.",
+        ("extract_image", "Extract an embedded source image by page and xref at native dimensions, retaining original streams. An embedded object may omit figure labels, vector content, related panels or captions outside that object; it is not automatically a complete independent figure. Choose render_page(region=...) or another source-led method where needed. A stencil returns a coverage-only mask without asset_path and lists page occurrences. Select occurrence (zero-based) and dpi to render its actual page appearance, including color, background and overlapping content. Original full/raw/range access remains available. " + SOURCE_IMAGE_DELIVERY,
          object_schema({"page": INT, "xref": INT, "occurrence": INT, "dpi": INT}, ["page", "xref"])),
         ("read_evidence", "Read saved originals, candidates, or native image pixels. JSON Pointer selects any field. Ranges are zero-based and half-open. Full/raw access remains available; a body exceeding input capacity is saved with an explicit deferral receipt.",
          object_schema({"ref": STRING, "view": {"enum": ["full", "index", "raw"]}, "json_pointer": STRING, "start": INT, "end": INT}, ["ref"])),
