@@ -1032,3 +1032,31 @@ The [schema 1 retirement choice](#t3b-review-and-open-integration-choices) still
 ## T4-B selected
 
 2026-11-12, Asia/Singapore. The user selected a local checkpoint of T4-A, implementation and verification of [T4-B](../batches/R01CAL-A03-DELIVERY-01/tickets.md#t4-b--apply-corrections-per-occurrence), and record updates. The instruction stops before T4-C. The [multiple explicit corrections case](../batches/R01CAL-A03-DELIVERY-01/spec.md#t4-completion-checks) gives the acceptance basis.
+
+## T4-C selected
+
+2026-11-12, Asia/Singapore. The user selected the T4-B checkpoint and completion and verification of [T4-C](../batches/R01CAL-A03-DELIVERY-01/tickets.md#t4-c--verify-the-correction-lifecycle), with a stop before T5. The [collision, history and recovery case](../batches/R01CAL-A03-DELIVERY-01/spec.md#t4-completion-checks) gives the acceptance basis. The repeated-stream case exposed [AR-T4-02](../batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t4-02--separate-extractions-of-one-original-stream-trigger-an-inventory-warning). T4-C addressed it in the selected-version assessment using the recorded original path, digest and stream provenance as correspondence between separate extraction records. The existing occurrence and publication contracts govern the correction.
+
+## Next-step recommendation after T4-C
+
+2026-11-12, Asia/Singapore. Recommend a local checkpoint of T4-C, followed by [T5](../batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t5) starting with the evidence review and Windows acceptance. The [continuation evidence](../batches/R01CAL-A03-DELIVERY-01/verification.md#continuation-basis-for-t5-advice) identifies the tested working tree and retained artifacts. T5 addresses the original P2 delivery finding by checking the integrated saved version and portable package. A further live conversion or numerical calibration has a separate outcome and decision basis. See [work selection](../WORK_ITEMS.md#selection-now).
+
+- Map the existing T1-F06, T2, T3 and T4 observations to AR-1–AR-12. Use the T4-C JPEG artifacts for the correction controls. Identify one saved version and one ZIP for the integrated chain with representative PNG/JPEG references, originals and portable names. Use the pinned external browser for the Windows relocation check. Keep targeted publisher label and JPEG readback checks on the T5 evidence route where suitable sources are available.
+- Establish access to the declared Ubuntu/ext4 and macOS/APFS destinations and their pinned viewer and independent reader. Use the same ZIP on all available targets. If a destination is unavailable, complete the available checks and record its criterion as open. The [destination matrix](../design/ASSET_REFERENCES.md#portable-comparison-and-destination-matrix) governs whole-batch acceptance.
+- Keep the [schema 1 transition](#t3b-review-and-open-integration-choices) and [published-suffix choice](#next-step-recommendation-after-ar-t3b-13-and-ar-t3b-14) open. The natural agent evidence-to-save flow remains a separate real-conversion check. An offline tool-path check can establish the application wiring. Revisit the suffix decision if the selected collision controls require a verdict about the published name after a competing reservation fails.
+
+The checkpoint and T5 await selection.
+
+## T5 access review after T4-C
+
+2026-11-12, Asia/Singapore. Advice only; nothing is selected. This review confirms the [recommendation after T4-C](#next-step-recommendation-after-t4-c) and adds the access facts in the [T5 environment check](../batches/R01CAL-A03-DELIVERY-01/verification.md#t5-environment-check-after-t4-c).
+
+**Destination access is T5's critical path.** The matrix needs Windows 11, Ubuntu 24.04 on ext4 and macOS 15 on APFS, each with the pinned Chrome for Testing Stable build and the qualified reader. This host provides none of the three rows. Engineering work cannot remove that gap, and the agreement does not allow installing environments or changing global settings by implication. The choices are the user's:
+
+1. **Provide the declared destinations.** Ubuntu 24.04 on ext4 can run in WSL2 or a VM on this machine once the user installs it. Windows 11 and macOS 15 need another machine or VM the user can reach. The same ZIP and checks then run on each.
+2. **Revise the matrix.** For example, accept Windows 10 build 19045 for the Windows row, or WSL2 Ubuntu for the Linux row. This changes an adopted acceptance target, so it needs an explicit decision. It should name what the substitute does not establish, such as Windows 11 Explorer or file-URL behavior.
+3. **Run T5 on what is available and leave the rest open.** Map AR-1 to AR-12 to existing evidence, run the integrated Windows 10 chain with one saved version and ZIP, and acquire the pinned browser with download permission. The batch then stays incomplete with every unavailable row named.
+
+Recommend option 3 now, since it is useful under any later decision, and let the user decide between options 1 and 2 for the remaining rows.
+
+**Before T5:** checkpoint T4-C locally. With 56 local-only commits, also consider pushing the branch to the GitHub repository (separate authority; the recorded PR destination is GitHub). Decide the [published-suffix question](#next-step-recommendation-after-ar-t3b-13-and-ar-t3b-14) before T5 gives its AR-10 verdict. The [schema 1 transition](#t3b-review-and-open-integration-choices) does not block T5.

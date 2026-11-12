@@ -5,6 +5,7 @@ collision-only names, embeds the provenance record as primary XMP with the
 product-selected module and publishes the dependency union with originals.
 Independent ExifTool readback is part of the integrated check, not these tests.
 """
+from copy import deepcopy
 from hashlib import sha256
 from importlib.resources import files
 import json
@@ -19,7 +20,7 @@ import pytest
 import pdfmd.documents as documents_module
 from pdfmd import asset_catalog, primary_xmp
 from pdfmd.asset_naming import NameBudgetError, build, comparison_key
-from pdfmd.asset_references import analyze, asset_uri, classify
+from pdfmd.asset_references import analyze, asset_uri, assess, classify
 from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
 
@@ -549,13 +550,9 @@ def test_multiple_corrections_publish_together_and_compose_with_shared_facts(tmp
     image = d.evidence.extract_image(job, 1, xref)
     page_two = d.evidence.inspect(job, [2])
     assert page_two["value"]["pages"][0]["images"][0][0] == xref
-    assert d.store.bytes(image["ref"], job) == jpeg_bytes
-    # Cite the same retained extraction and separate page evidence for its third placement.
-    repeated = create("repeat", image, "Repeat", page=2)
-    repeated["facts"]["description"]["basis"] = ev(page_two["ref"], "Repeated picture", page=2)
-    repeated["facts"]["figure"]["basis"] = ev(page_two["ref"], "No figure label", page=2)
-    repeated["facts"]["locations"][0]["basis"] = ev(page_two["ref"], "Repeated placement", page=2)
-    creates = [create("left", image, "Left"), create("right", image, "Right"), repeated]
+    repeated = d.evidence.extract_image(job, 2, xref)
+    assert d.store.bytes(image["ref"], job) == d.store.bytes(repeated["ref"], job) == jpeg_bytes
+    creates = [create("left", image, "Left"), create("right", image, "Right"), create("repeat", repeated, "Repeat", page=2)]
     for change, region in zip(creates, [left_bounds, right_bounds, left_bounds]):
         change["facts"]["locations"][0]["region"] = region
     repeated_path = "assets/Repeat-i2.jpeg"
@@ -581,6 +578,15 @@ def test_multiple_corrections_publish_together_and_compose_with_shared_facts(tmp
         base = created["data"]["version_id"]
         original = d.documents.version(job, base)
         before = http_export_members(client, job_url, base, tmp_path / "before.zip")
+        declared = [asset["provenance"]["image"]["originals"][0] for asset in original["assets"].values()]
+        assert len({item["ref"] for item in declared}) == 2
+        assert len({item["path"] for item in declared}) == len(original["originals"]) == 1
+        damaged = deepcopy(original)
+        [stream] = damaged["originals"].values()
+        stream["provenance"]["xref"] += 1
+        check, _ = assess(damaged, json.loads(before["manifest.json"])["files"])
+        assert check["status"] == "incomplete"
+        assert {issue["code"] for issue in check["issues"]} == {"inventory_mismatch"}
         left_description, right_description = [change["facts"]["description"] for change in creates[:2]]
         rename = [
             correct(left, {"description": {**left_description, "filename": "Left view"}}),

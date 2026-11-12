@@ -1902,4 +1902,44 @@ The same synthetic HTTP probe confirmed the known shared-source limitation: a `s
 
 Observed on the T4-A checkpoint `f962131` while constructing the fixture, before applying a correction. Extracting the shared image stream separately from pages 1 and 2 produced two original evidence refs for the same export path and bytes. The creation save and ZIP preserved the exact original stream. The saved inventory maps that path to one of those refs, and the [assessment](../../../src/pdfmd/asset_references.py#L523-L529) compares it against each occurrence's declared ref. Reopen and export reported `inventory_mismatch` for the two page 1 citations despite matching paths and SHA-256. The affected version is `6560d9a2144846f284ea83051859127b`; the original's SHA-256 is `2efc958613d00a64a6638bc53a8a39cfa0222995b11ec9981956cc6cf4327b5b`.
 
-The T4-B regression used one retained extraction and separate page-location evidence to verify correction batching. The independent-extraction warning remains open. The [work register](../../WORK_ITEMS.md#context-capability-and-delivery-work) owns its disposition. Both fixtures, the ZIP manifest check and the warning details are retained under ignored `.local/t4-b-multiple-corrections-a4946912/`.
+The T4-B regression used one retained extraction and separate page-location evidence to verify correction batching. The independent-extraction warning was open at T4-B closeout. Both fixtures, the ZIP manifest check and the warning details are retained under ignored `.local/t4-b-multiple-corrections-a4946912/`. See the subsequent [T4-C correction](#ar-t4-02-correction).
+
+## T4-C correction lifecycle
+
+2026-11-12, Asia/Singapore. T4-B and its records were checkpointed locally as `28199ab` on `codex/r01cal-a03-delivery-01`. The [collision, history and recovery case](spec.md#t4-completion-checks) ran through the normal HTTP edit route on the development engine and a matching frozen engine. Two occurrences of the same JPEG occupy physical pages 1 and 2, each visibly labelled `59`. The fixture uses two separate image extractions and one verified original ZIP member.
+
+**Collision and restart.** A test-only fault exited the server after the corrected files were prepared and before SQLite publication. The candidate, prepared image, representation ID and pending `Shared view-p59 (2).jpeg` reservation survived. The unpublished version ID never entered the saved-version catalog. After restarting normally, the same request and key published with the reserved suffix, representation ID and exact prepared bytes. The pre-existing `Shared view-p59.jpeg` kept its association, embedded provenance and exact bytes. The corrected occurrence kept its ID. Its inline embed and hyperlink definition resolved to the suffixed image, and the unrelated literal stayed exact.
+
+**Historical base and stale settlement.** An explicit rebuild from the original base used the corrected version as expected head. It recovered the original version's paths, catalog, Markdown, preview, display bytes and originals. A second interruption left a pending correction to `Alternate view-p59.jpeg`. After a later edit advanced head, retry of the interrupted request returned `HEAD_CONFLICT`, released the pending name and retained the candidate and prepared image. Replays of the successful collision correction and the settled stale failure returned their exact envelopes without another publication or head change. The original version's post-restart export matched its pre-correction member bytes.
+
+**Desktop, relocation and picture fidelity.** The Windows Electron 45.0.0 development app reopened the frozen engine's store after close and relaunch. Both native image links opened the selected image bytes and Return restored the selected document for the original, corrected and rebuilt versions. Every desktop ZIP member matched its engine export. In a relocated extraction the corrected HTML opened both relative `file:` links in a separate local Electron window and decoded each image at 64 × 48. ExifTool 13.55 read matching complete structured records and both IDs from independently renamed images. Physical pages stayed distinct under the repeated printed label. The decoded pixels and the JPEG bytes outside the primary XMP group matched the retained DCT original across the three exports.
+
+| Case | Selected frozen-engine version | Desktop ZIP SHA-256 |
+| --- | --- | --- |
+| Original | `5323229245f14a61b581cdb942d7c07e` | `454f722001b69f739463e56971925a8e856778a47fdd3fe952f30897838ebf9c` |
+| Collision correction | `0d815d27c5e2492eb2235f6e437697b2` | `14c935871e6d022f50ec695fc954761fb626b5787b865b427688b61898bda78b` |
+| Historical rebuild | `fbb9be602af548d6bdb8943d97c29310` | `2aa22c005c2f52229a9922ec6370f122dcf63cfcedec309746df6bc150cd6382` |
+
+### AR-T4-02 correction
+
+The separate-extraction regression reproduced the false inventory warning on `28199ab`. The repaired assessment requires the selected member path, registered/declaration digest and complete stream provenance to agree for schema 2. The test changes the recorded stream's xref while retaining its digest and confirms that it still reports `inventory_mismatch`. Both lifecycle runs preserved distinct occurrence and extraction evidence with one byte-exact original. The [historical counterexample](#ar-t4-02--separate-extractions-of-one-original-stream-trigger-an-inventory-warning) reassessed as `ok` using only its ZIP envelope and registered file digests. Its archive SHA-256 stayed `939842dd82f2baf807d022467d30be8d51666092a0fc83d63bc9611d1f7b91bb`.
+
+**Regression checks and tested identities.** All 218 document-engine and runtime tests passed. `pnpm build`, the isolated PyInstaller engine freeze, frozen `--help` and `check-frozen-engine.py` passed. Tested working-tree SHA-256 identities over `28199ab` are `asset_references.py` `ceac2cfb67ee3a617fd3fe419b655a7422b91cdc83ffd84d6dceb1b1f1c15c11` and `test_enriched_save.py` `28836ce1e25cb01b2f7c499dde37876049ed9045efc21073255677e28dfd35a8`. The frozen executable SHA-256 is `86ffb298881eeca933e4a7055be952cf01d0a74095888e6c0dde98a6cef59069`. Synthetic fixtures, fault harnesses, build artifacts, receipts, ZIPs and independent observations are under ignored `.local/t4-c-5b733638/`.
+
+**Scoped result.** T4-C passed on the Windows development and frozen engines and the development desktop. Execution stopped before T5. The declared destination matrix and combined batch assessment remain with [T5](tickets.md#r01cal-a03-delivery-01-t5).
+
+**Documentation impact.** The [engine guide](../../guides/DOCUMENT_ENGINE.md#shared-asset-reference-interpretation-and-selected-version-view) explains the stream identity check under the existing assessment contract. The [spec](spec.md#t4-completion-checks), [ticket](tickets.md#t4-c--verify-the-correction-lifecycle) and [continuation](../../CURRENT_STATE.md#focus-and-resume-route) record selection, execution and the stop boundary. The work register carries the separate AR-T4-02 disposition. Repository documentation and Git whitespace checks passed.
+
+### Continuation basis for T5 advice
+
+2026-11-12, Asia/Singapore. For the next-step assessment, the two working-tree file hashes, retained frozen executable hash and corrected desktop ZIP hash matched the T4-C record above. The local checkout volume reports NTFS. Ubuntu/ext4 and macOS/APFS execution access and the pinned external browser were not established by this assessment. The [recommendation](../../discussions/ASSET_REFERENCES.md#next-step-recommendation-after-t4-c) and [continuation](../../CURRENT_STATE.md#focus-and-resume-route) record the proposed sequence. T5 execution awaits selection.
+
+### T5 environment check after T4-C
+
+2026-11-12, Asia/Singapore. Orientation only; no product code changed. `codex/r01cal-a03-delivery-01` is at `28199ab`, 56 commits ahead of `master` with no upstream; the T4-C code and records are uncommitted. The working-tree `asset_references.py` and `test_enriched_save.py` match the [T4-C identities](#ar-t4-02-correction). The full `tests/engine/documents` group passed (203 tests), and the documentation check reported zero errors.
+
+- `build/engine/pdf-md-engine/pdf-md-engine.exe` (`f688ca86…73a6`) and `release/win-unpacked` are the [pre-T4 recheck build](#frozen-desktop-and-readback-recheck-after-the-correction), not the T4-C frozen engine (`86ffb298…9069`). A T5 run needs a build matching its accepted revision.
+- `wsl.exe --status` and `wsl.exe -l -v` printed only usage text, so no WSL distribution is available on this host. No Ubuntu/ext4 or macOS/APFS destination was found, and Chrome for Testing 157.0.8103.38 has not been acquired.
+- The host is Windows 10 Pro build 19045; the [destination matrix](../../design/ASSET_REFERENCES.md#portable-comparison-and-destination-matrix) declares Windows 11. As earlier records state, Windows 10 results do not establish that row. With current access, none of the three destination rows can pass.
+
+The [discussion](../../discussions/ASSET_REFERENCES.md#t5-access-review-after-t4-c) records the effect on the recommended order.

@@ -270,7 +270,7 @@ One document-edit integrator owns the overlapping preparation/publication path a
 | --- | --- | --- |
 | [T4-A — Correct shared source facts](#t4-a--correct-shared-source-facts) | Refresh the catalog from validated `source_update` on the shared-page baseline, and update `edit_document` guidance. | [Shared source correction verification](verification.md#t4-a-shared-source-correction). |
 | [T4-B — Apply corrections per occurrence](#t4-b--apply-corrections-per-occurrence) | Use the T4-A preparation path to apply distinct explicit corrections together with any shared page or source changes. | [Multiple occurrence correction verification](verification.md#t4-b-multiple-occurrence-corrections). |
-| T4-C — Verify the correction lifecycle | Proposed. After T4-A and T4-B, check the integrated revision on the normal edit route, Windows development desktop and a matching frozen-engine build. Use the existing selected writer and independent reader. | Run the collision, history and recovery case in the [completion checks](spec.md#t4-completion-checks). Verify selected versions through reopen and relocated export, record test/build identities, and hand the integrated revision and coverage limits to T5. |
+| [T4-C — Verify the correction lifecycle](#t4-c--verify-the-correction-lifecycle) | Check the integrated T4-A and T4-B revision through the normal edit route, Windows development desktop and a matching frozen engine. | [Correction lifecycle verification](verification.md#t4-c-correction-lifecycle). |
 
 #### T4-A — Correct shared source facts
 
@@ -278,7 +278,11 @@ Implemented and verified on 2026-11-12 for the selected [shared source metadata 
 
 #### T4-B — Apply corrections per occurrence
 
-Implemented and verified on 2026-11-12 for the selected [multiple explicit corrections case](spec.md#t4-completion-checks). The edit engine validates duplicate IDs before preparation and the tool guidance describes the per-occurrence rule. The [verification](verification.md#t4-b-multiple-occurrence-corrections) owns the local T4-A checkpoint and observed checks. Execution stops here per the [T4-B selection](../../discussions/ASSET_REFERENCES.md#t4-b-selected).
+Implemented and verified on 2026-11-12 for the selected [multiple explicit corrections case](spec.md#t4-completion-checks). The edit engine validates duplicate IDs before preparation and the tool guidance describes the per-occurrence rule. The [verification](verification.md#t4-b-multiple-occurrence-corrections) owns the local T4-A checkpoint and observed checks. The [T4-B selection](../../discussions/ASSET_REFERENCES.md#t4-b-selected) stopped at this ticket before the subsequent T4-C instruction.
+
+#### T4-C — Verify the correction lifecycle
+
+Completed on 2026-11-12 for the selected [collision, history and recovery case](spec.md#t4-completion-checks). The [verification](verification.md#t4-c-correction-lifecycle) owns the T4-B checkpoint, integrated checks and coverage limits. The shared-original diagnostic correction is part of this ticket's repeated-stream control. Execution stops here per the [T4-C selection](../../discussions/ASSET_REFERENCES.md#t4-c-selected).
 
 ## R01CAL-A03-DELIVERY-01-T5
 

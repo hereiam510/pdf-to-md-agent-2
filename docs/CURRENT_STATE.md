@@ -2,12 +2,16 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 T4-B closeout.
-Resume at: [T4 follow-up tickets](batches/R01CAL-A03-DELIVERY-01/tickets.md#t4-follow-up-tickets), with [T4-B verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-b-multiple-occurrence-corrections).
-Next activity: stopped before T4-C at the user's requested boundary.
-Instruction basis: on 2026-11-12 the user selected the [T4-A checkpoint and T4-B only](discussions/ASSET_REFERENCES.md#t4-b-selected).
+Current focus: R01CAL-A03-DELIVERY-01 next-step advice after T4-C.
+Resume at: [next-step recommendation after T4-C](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-t4-c) and its [T5 access review](discussions/ASSET_REFERENCES.md#t5-access-review-after-t4-c).
+Next activity: awaiting selection of the T4-C checkpoint and T5 work, and the user's destination-access choice for the T5 matrix.
+Instruction basis: on 2026-11-12 the user requested advice after the [T4-C stop boundary](discussions/ASSET_REFERENCES.md#t4-c-selected).
 
 ## Return routes
+
+- Previous T4 increment: [correction lifecycle verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-c-correction-lifecycle) and [T4-C selection](discussions/ASSET_REFERENCES.md#t4-c-selected).
+
+- Previous T4 increment: [multiple occurrence verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-b-multiple-occurrence-corrections) and [T4-B selection](discussions/ASSET_REFERENCES.md#t4-b-selected).
 
 - Previous T4 increment: [shared source verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-a-shared-source-correction) and [T4-A selection](discussions/ASSET_REFERENCES.md#t4-a-selected).
 

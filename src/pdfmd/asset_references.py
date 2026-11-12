@@ -525,7 +525,16 @@ def assess(saved: dict, files: dict[str, str]) -> tuple[dict, Analysis | None]:
                 actual = originals.get(original["path"])
                 if actual is None or original["path"] not in files:
                     issues.append(ReferenceError("missing_associated_original", f"Selected asset {path} is missing its declared original: {original['path']}", use).issue)
-                elif actual["ref"] != original["ref"] or files[original["path"]] != actual["sha256"] or ("sha256" in original and original["sha256"] != actual["sha256"]):
+                    continue
+                if saved["schema_version"] == 2:
+                    # Separate extractions can cite one retained stream under distinct refs.
+                    metadata = original.get("metadata")
+                    same_stream = (original.get("sha256") == actual["sha256"] and isinstance(metadata, dict)
+                                   and metadata == actual.get("provenance"))
+                else:
+                    same_stream = (actual["ref"] == original["ref"] and
+                                   ("sha256" not in original or original["sha256"] == actual["sha256"]))
+                if not same_stream or files[original["path"]] != actual["sha256"]:
                     issues.append(ReferenceError("inventory_mismatch", f"Associated original inventory disagrees for: {path}", use).issue)
         for path, original in originals.items():
             if files.get(path) != original["sha256"]:
