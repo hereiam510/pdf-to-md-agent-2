@@ -551,6 +551,8 @@ Image navigation, output-tab changes and Return remounts retain the loaded snaps
 
 The [versioned schema](../design/ASSET_REFERENCES.md#versioned-data-and-embedded-schema), [edit API](../design/ASSET_REFERENCES.md#document-edit-api-and-operation-semantics) and [enriched save flow](../design/ASSET_REFERENCES.md#enriched-save-flow) own the rules. The [T3b first-increment evidence](../batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-first-increment-enriched-creation) owns observations and limits. This section explains the mechanism.
 
+Normal request preparation sends the [conversion system instructions](../../src/pdfmd/context.py) with the [evidence-tool definitions](../../src/pdfmd/tools.py). Both point to enriched creation. The tool result's `ref` identifies the evidence for the create, and the resulting edit receipt supplies the occurrence ID and the URI for the named delivery image. The agent can reuse the ID for later edits. The system and tool text changes apply to newly prepared normal requests under the existing [frozen-request rules](../design/RUNTIME_AND_DELIVERY.md#recovery-boundaries).
+
 **When a save is schema 2.** `Documents.edit` takes the enriched path, `_save_enriched`, when the edit has `asset_changes`, supplies `source_update`, or builds on a schema 2 base. Otherwise the schema 1 hash-path save above is unchanged. On the enriched path, `page_updates` follow `asset_catalog.page_patch`:
 - a `printed` value without a state is read as `unknown`, `none` or known;
 - a changed known or none label needs `printed_basis`;

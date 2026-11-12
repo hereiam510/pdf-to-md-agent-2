@@ -528,6 +528,8 @@ The proposed `export_package(version_id, destination, delivery_label)` named the
 
 The selected version determines Markdown, JSON, HTML, source-derived images/assets, and ZIP. Keep the relevant body/maps/assets consistent across representations. A draft remains labeled draft/partial with known gaps. Selecting/exporting it must not gain a hidden “full task complete” precondition. Likewise export success must not upgrade the content claim.
 
+In [Documents.export](../../src/pdfmd/documents.py), the receipt key covers the task, version and resolved destination. The engine inserts a pending receipt only when the key is absent, so an overlapping attempt cannot downgrade a verified receipt. A separate [named temporary file](https://docs.python.org/3.12/library/tempfile.html#tempfile.NamedTemporaryFile) gives each attempt its own writer and keeps the preparation on the destination filesystem. The engine closes that writer before verification and linking. A crash after linking can be recovered by checking the published ZIP against the same saved version. See the [publication contract](../design/RUNTIME_AND_DELIVERY.md#continuation-feedback-and-delivery-settlement) for retry and destination-conflict behavior.
+
 ### Historical package members
 
 The earlier implementation used the following layout for one saved snapshot. These names illustrate member roles rather than fix the rebuild's filenames.

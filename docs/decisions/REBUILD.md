@@ -49,6 +49,16 @@ The repository is a self-contained technical handoff (LIVE-06/07). [DEVELOPMENT_
 - All-exit auto-packaging, malformed-native-call salvage and fixed module/table counts remain unselected. Bounded continuation feedback is now implemented for the observed text-only stop; its exact policy is in CONTRACTS Q3. The older one-shot proposal remains historical rationale.
 
 
+## Windows-only platform scope (2026-11-12)
+
+2026-11-12, Asia/Singapore. The user limited the app to Windows for now, because several product questions are not yet settled. Cross-platform adaptation reopens after the Windows product is polished.
+
+- Current development, acceptance and delivery target Windows. The Ubuntu 24.04/ext4 and macOS 15/APFS rows of the [asset-reference destination matrix](../design/ASSET_REFERENCES.md#portable-comparison-and-destination-matrix) are deferred and no longer block R01CAL-A03-DELIVERY-01 acceptance. Their criteria remain unverified, not passed.
+- The wider targets in [PRODUCT_REQUIREMENTS](../PRODUCT_REQUIREMENTS.md#outcome-and-product-surface), macOS Apple Silicon and Debian x86_64, remain recorded product intentions (SUP-01). They are deferred, not withdrawn.
+- Implemented portable behavior stays in place: NFC spelling, the conservative case-insensitive comparison key, relative links and Windows reserved-name checks. This decision removes no code and relaxes no naming rule; it only stops requiring non-Windows evidence. Simplifying those rules for Windows-only use would need its own decision.
+- On the same day the user accepted Windows 10 Pro 22H2 build 19045 on local NTFS as the Windows acceptance destination, in place of the declared Windows 11. Windows 11 behavior, including its Explorer and file-URL handling, remains unverified and re-enters with cross-platform adaptation or a concrete Windows 11 delivery need.
+- **Reopen** when the user judges the Windows product polished, or a concrete non-Windows delivery need arises. Then re-establish the destination rows, the pinned viewer and reader artifacts for each platform, and packaging. [XPLAT-01](../WORK_ITEMS.md#context-capability-and-delivery-work) holds the deferred work.
+
 ## Reopening policy
 
 On 2026-10-26 (Asia/Hong_Kong), the user paused Stage B during an in-flight compaction and then requested continuation after quota restoration. Ordinary Continue preserved the unknown request and made no new call because its frozen replay policy was disabled. After that concrete blocker and the risk of duplicate upstream computation were explained, the user explicitly selected bounded compaction recovery and continuation. The selected exception is one manual successor transition for the exact current unknown compaction, with the original request/attempt/payload, work and usage preserved. It reuses the continuation receipt rather than changing the frozen replay gate or enabling automatic unknown retries. [CONTRACTS Q3](../design/RUNTIME_AND_DELIVERY.md#q3-execution-recovery-and-delivery) owns effective semantics; [implementation history](../history/IMPLEMENTATION_HISTORY.md#stage-b-complete-nursing-input) owns verification and live results. General interruption recovery remains a separate scope.

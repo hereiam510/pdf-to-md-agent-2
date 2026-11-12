@@ -2,12 +2,26 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 offline publisher-source verification.
-Resume at: [publisher-source evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-publisher-source-check) and the [T5 ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-local-execution).
-Next activity: await selection of further work. Use the [criterion evidence map](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-criterion-evidence-map) for open scope and keep the declared destination checks open.
-Instruction basis: the user's [2026-11-12 selection](discussions/ASSET_REFERENCES.md#t5-offline-publisher-source-check-selected) covered one authorized publisher PDF offline.
+Current focus: R01CAL-A03-DELIVERY-01 continuation after the offline repairs and Windows checks.
+Resume at: the [same-revision Windows verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-and-same-revision-windows-verification) and the [T5 criterion map](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-criterion-evidence-map).
+Next activity: select a remaining validation scope when the user continues, using the [follow-up discussion](discussions/ASSET_REFERENCES.md#t5-offline-repairs-and-same-revision-checks-selected).
+Instruction basis: the user's 2026-11-12 selection of both offline repairs and the same-revision Windows checks, keeping explicit legacy adoption available.
 
 ## Return routes
+
+- Previous review: [standalone checkpoint review](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-standalone-checkpoint-review) and [offline follow-up proposal](discussions/ASSET_REFERENCES.md#t5-checkpoint-review-and-follow-up-proposal).
+
+- Previous recommendation: [next step after the Windows-row checks](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-windows-row-checks) and the [check record](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-windows-row-and-agent-tool-path-checks).
+
+- Previous selection: [Windows-row and tool-path checks](discussions/ASSET_REFERENCES.md#windows-row-checks-and-agent-tool-path-check-selected).
+
+- Previous advice: [Windows 10 acceptance and remaining checks](discussions/ASSET_REFERENCES.md#windows-10-accepted-for-the-windows-row).
+
+- Previous scope change: [Windows-only platform scope selection](discussions/ASSET_REFERENCES.md#windows-only-platform-scope-selected).
+
+- Previous orientation: [recommendation after the publisher-source check](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-publisher-source-check).
+
+- Previous T5 increment: [publisher-source evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-publisher-source-check) and [selection](discussions/ASSET_REFERENCES.md#t5-offline-publisher-source-check-selected).
 
 - Previous AR-10 increment: [published-suffix verification](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-10-published-suffix-verification) and [policy selection](discussions/ASSET_REFERENCES.md#ar-10-published-suffix-policy-selected).
 
