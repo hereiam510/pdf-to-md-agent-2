@@ -3,8 +3,8 @@
 ## Focus and resume route
 
 Current focus: R01CAL-A03-DELIVERY-01 T5 closing tickets.
-Resume at: [T5-V](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-v--combined-t5-verdict).
-Next activity: record the combined verdict from the [fixed-revision Windows rerun](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-r-windows-rerun-after-the-shared-diagnostic-snapshot-repair).
+Resume at: [combined verdict](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-combined-verdict) and [draft PR #1](https://github.com/hereiam510/pdf-to-md-agent-2/pull/1).
+Next activity: draft review. The [work register](WORK_ITEMS.md#selection-now) retains the questions and revisit conditions for further validation.
 Instruction basis: the user's [2026-11-13 shared snapshot and conditional publication instruction](discussions/ASSET_REFERENCES.md#shared-diagnostic-snapshot-check-selected).
 
 ## Return routes
