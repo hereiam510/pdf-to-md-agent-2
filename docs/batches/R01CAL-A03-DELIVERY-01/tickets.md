@@ -320,17 +320,18 @@ The selected offline work is complete. See the [regression evidence](verificatio
 
 ### T5 closing tickets
 
-The user [selected](../../discussions/ASSET_REFERENCES.md#t5-closing-route-selected) the T5 closing route on 2026-11-13 and asked for tickets before execution. The user will assign these tickets to other models. Each executor reads [AGENTS.md](../../../AGENTS.md), this section, the ticket's linked basis and the [T5 ticket](#r01cal-a03-delivery-01-t5). The [criterion map](verification.md#t5-criterion-evidence-map) owns remaining acceptance, and [verification](verification.md) receives each ticket's observations in a new section named in the ticket.
+The user [selected](../../discussions/ASSET_REFERENCES.md#t5-closing-route-selected) the T5 closing route on 2026-11-13, requested tickets before execution and then asked to start them. Each executor reads [AGENTS.md](../../../AGENTS.md), this section, the ticket's linked basis and the [T5 ticket](#r01cal-a03-delivery-01-t5). The [criterion map](verification.md#t5-criterion-evidence-map) owns remaining acceptance, and [verification](verification.md) receives each ticket's observations in a new section named in the ticket.
 
-| Ticket | Contribution | Depends on | Ready |
+| Ticket | Contribution | Depends on | Execution |
 | --- | --- | --- | --- |
-| [T5-F12](#t5-f12--repair-ar-t5-12) | Keep the verified preparation for any unreadable competing ZIP | None | Yes |
-| [T5-L1](#t5-l1--bounded-live-adoption-run) | Observe whether a real model takes the enriched save path | None. Running after T5-F12 lets T5-R reuse the same revision | Yes |
-| [T5-R](#t5-r--final-windows-chain-on-the-verdict-revision) | Repeat the Windows desktop and frozen-engine chain once | T5-F12 and T5-L1 complete, with no unreviewed code change after them | After both |
+| [T5-F12](#t5-f12--repair-ar-t5-12) | Keep the verified preparation for any unreadable competing ZIP | None | [Repair and document-engine checks complete](verification.md#t5-offline-repair-for-ar-t5-12). Full suite in T5-R |
+| [T5-L1](#t5-l1--bounded-live-adoption-run) | Observe whether a real model takes the enriched save path | None | [Single authorized run and review complete](verification.md#t5-live-adoption-run) |
+| [T5-G1](#t5-g1--clarify-enriched-save-guidance) | Clarify how to carry established source facts and evidence of absence into the first enriched save | T5-L1 | [Offline verification complete](verification.md#t5-enriched-save-guidance-verification) |
+| [T5-R](#t5-r--final-windows-chain-on-the-verdict-revision) | Repeat the Windows desktop and frozen-engine chain once | T5-F12, T5-L1 and T5-G1 complete, with no unreviewed code change after them | After T5-G1 and T5-F12 |
 | [T5-V](#t5-v--combined-t5-verdict) | Record the combined T5 and batch verdict | T5-R | After T5-R |
-| [T5-P](#t5-p--publish-the-batch-branch) | Push the branch and open a PR to `master` | Push: none. PR: T5-V, or a draft PR earlier | Push yes |
+| [T5-P](#t5-p--publish-the-batch-branch) | Push the branch and open a PR to `master` | Push: none. PR: T5-V, or a draft PR earlier | Initial [push verified](verification.md#branch-publication) |
 
-**Recommended order:** T5-P push, T5-F12, T5-L1, T5-R, T5-V, then the PR. Run them one at a time in this checkout. They all edit `verification.md`, this file, [WORK_ITEMS](../../WORK_ITEMS.md) and [CURRENT_STATE](../../CURRENT_STATE.md). Only T5-F12 changes `src/pdfmd/documents.py`. If two tickets run in parallel, give each its own worktree and have one integrator merge the records.
+**Execution order:** T5-P initial push, T5-F12, T5-L1, the selected T5-G1 follow-up, T5-R, T5-V, then the PR. Coordinate shared edits to `verification.md`, this file, [WORK_ITEMS](../../WORK_ITEMS.md) and [CURRENT_STATE](../../CURRENT_STATE.md) through one writer.
 
 **Rules for every ticket.** Commit locally when the ticket is complete, with the attribution the repository uses. Do not push except under T5-P. Do not merge, change global settings or install software globally. Do not read credentials from conversation or authentication logs. Keep runtime stores, logs and outputs in a new uniquely named ignored folder under `.local/`, `workspaces/` or `outputs/`, following [artifact storage](../../ARTIFACT_STORAGE.md#ownership-and-locations). Do not overwrite earlier runs. Preserve failed evidence and say what was not run. If a ticket finds a new defect, record it as the next `AR-T5-NN` finding with a reproduction, severity and impact. Add it to the [work register](../../WORK_ITEMS.md#context-capability-and-delivery-work) and stop for the user. Do not fix it in the same ticket unless it is inside that ticket's stated scope. Update [CURRENT_STATE](../../CURRENT_STATE.md#focus-and-resume-route) when the ticket finishes. Run `python tools/docs/check_docs.py` and `git diff --check` before committing.
 
@@ -406,9 +407,15 @@ Keep this result separate from content fidelity, AR-8 naming and provenance on r
 
 **Records.** Add verification section `## T5 live adoption run`. Update the AR-8 row, and AR-12 where the run applies, in the [criterion map](verification.md#t5-criterion-evidence-map). Add the result to the [selection discussion](../../discussions/ASSET_REFERENCES.md#t5-closing-route-selected) and update the AR-T5-03 row in WORK_ITEMS. Usage evidence follows the [cost rule](../../../AGENTS.md#verification-and-records): keep unknowns unknown.
 
+#### T5-G1 — Clarify enriched save guidance
+
+**Authority and scope.** The user [selected](../../discussions/ASSET_REFERENCES.md#enriched-save-guidance-clarification-selected) guidance and offline verification after T5-L1. Keep the save API, schema 1 transition and source-reading choices under the existing [enriched save contract](../../design/ASSET_REFERENCES.md#enriched-save-flow).
+
+**Work and check.** In the ordinary request's system instructions and `edit_document` description, explain how to use `source_update` for facts already established from evidence, including a visible source title. Explain that an asserted absence of a printed label uses `printed_basis`, and an asserted absence of a caption or figure label uses that fact's `basis`. Keep unresolved facts unknown. Extend the existing scripted agent check to inspect actual wire guidance, make a first enriched save with a visible title and both printed-label states exercised by the script, then verify the exact saved and exported provenance. Preserve controls for unknown values and legacy saves. Recheck context admission tests affected by the guidance size.
+
 #### T5-R — Final Windows chain on the verdict revision
 
-**Purpose:** one Windows desktop and frozen-engine chain on the exact revision that carries the T5 verdict, replacing the `2b8e2ef` run in the [same-revision record](verification.md#t5-offline-repair-and-same-revision-windows-verification). Offline; no provider call. Start only when T5-F12 and T5-L1 are committed and nothing else changed product code. If T5-L1 led to a user-selected code change, run after that change.
+**Purpose:** one Windows desktop and frozen-engine chain on the product revision that carries the T5 verdict, replacing the `2b8e2ef` run in the [same-revision record](verification.md#t5-offline-repair-and-same-revision-windows-verification). Offline. Start after the committed T5-F12, T5-L1 and T5-G1 work. Bind the result to the tested commit and show that the verdict commit carries the same product and test sources.
 
 **Steps.** Repeat that record's chain on the current commit, using the harness scripts retained under ignored `.local/t5-final-c19a72/` and its `chain/` folder (`seed.py`, `desktop.cjs`, `verify-package.py`, `verify-browser.cjs`) as the starting point. Copy them to a new run folder and adjust paths.
 

@@ -3,9 +3,9 @@
 ## Focus and resume route
 
 Current focus: R01CAL-A03-DELIVERY-01 T5 closing tickets.
-Resume at: the [T5 closing tickets](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-closing-tickets), starting with T5-P push and T5-F12.
-Next activity: the user assigns the tickets to other models; each ticket updates this pointer when it finishes.
-Instruction basis: the user's [2026-11-13 selection of the closing route](discussions/ASSET_REFERENCES.md#t5-closing-route-selected), which authorizes the AR-T5-12 repair, one bounded live run on physical pages 1–3 with the A03 route and limits, the final Windows chain, the verdict, a push and a PR. Merge is not authorized.
+Resume at: [T5-R](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-r--final-windows-chain-on-the-verdict-revision).
+Next activity: run the final Windows chain and full engine suite on the fixed product revision, then assess T5 and publish under the closing tickets.
+Instruction basis: the user's [guidance clarification selection](discussions/ASSET_REFERENCES.md#enriched-save-guidance-clarification-selected) after the [selected T5 closing route](discussions/ASSET_REFERENCES.md#t5-closing-route-selected).
 
 ## Return routes
 

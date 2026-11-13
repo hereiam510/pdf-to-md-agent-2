@@ -113,7 +113,7 @@ class ScriptedAgent:
                 {"id": "harbour", "pages": [1], "markdown": f"# {TITLE}\n\n![Harbour map](asset:new/map)\n\n*Figure 1* Harbour map."},
                 {"id": "notes", "pages": [2], "markdown": "Field notes.\n\n[Page 2 image](asset:new/notes)"}],
             "page_updates": {"1": {"disposition": "included", "printed": "7", "printed_basis": ev(r1, 1, "printed 7 lower right")},
-                             "2": {"disposition": "included", "printed": "unknown"}},
+                             "2": {"disposition": "included", "printed": "none", "printed_basis": ev(r2, 2, "no printed page label")}},
             "source_update": {"kind": "book", "title": known(TITLE, r1, 1, "heading")},
             "asset_changes": [
                 {"kind": "create", "client_key": "map", "facts": {
@@ -170,6 +170,11 @@ def test_scripted_agent_creates_and_corrects_enriched_images_from_tool_results(t
         assert all(term in text for term in ("asset_changes", "facts.image_ref", "asset:new/<client_key>"))
     assert "legacy_path" in agent.system
     assert "asset_changes" in agent.guidance["edit_document"] and "legacy_path" in agent.edit_schema
+    for text in (agent.system, agent.guidance["edit_document"]):
+        assert "source_update with evidence" in text
+        assert "printed_basis" in text and "absent printed label" in text
+        assert "basis" in text and "caption" in text and "figure label" in text
+        assert "Keep unresolved facts unknown." in text
     assert [t["calls"] for t in agent.trace] == [["inspect_pdf"], ["render_page", "render_page", "extract_image"],
                                                  ["edit_document"], ["edit_document"], ["report"]]
     current = store.get("job", job)
@@ -180,6 +185,7 @@ def test_scripted_agent_creates_and_corrects_enriched_images_from_tool_results(t
     names = {key: Path(change["asset_path"]).name for key, change in agent.created.items()}
     assert names == {"map": "Harbour map-p7-Figure 1.jpeg", "notes": "Field notes page-i2.png"}
     assert v1["schema_version"] == 2 and set(v1["assets"]) == {c["asset_path"] for c in agent.created.values()}
+    assert all(asset["provenance"]["source"]["title"]["value"] == TITLE for asset in v1["assets"].values())
     [correction] = agent.corrected
     assert Path(correction["asset_path"]).name == "Harbour chart-p7-Figure 1.jpeg"
     assert correction["previous_path"] == agent.created["map"]["asset_path"]
@@ -187,7 +193,10 @@ def test_scripted_agent_creates_and_corrects_enriched_images_from_tool_results(t
     assert record["source"]["title"]["value"] == TITLE
     assert [(l["physical_page"], l["printed"]["state"], l["printed"]["value"]) for l in record["locations"]] == [(1, "known", "7")]
     notes = v2["assets"][agent.created["notes"]["asset_path"]]["provenance"]
-    assert [(l["physical_page"], l["printed"]["state"]) for l in notes["locations"]] == [(2, "unknown")]
+    [location] = notes["locations"]
+    assert (location["physical_page"], location["printed"]["state"], location["printed"]["value"]) == (2, "none", None)
+    assert location["printed"]["basis"] and notes["figure"]["basis"]
+    assert notes["caption"]["state"] == "unknown"
     out = tmp_path / "out" / "harbour.zip"
     receipt = documents.export(job, agent.v2, str(out))
     files = store.get("version", agent.v2, job=job)["files"]
@@ -195,6 +204,8 @@ def test_scripted_agent_creates_and_corrects_enriched_images_from_tool_results(t
         members = {n: archive.read(n) for n in archive.namelist()}
     assert receipt["verified"] and set(members) == set(files)
     assert all(sha256(d).hexdigest() == files[n] for n, d in members.items())
+    exported = json.loads(members["document.json"])
+    assert exported["assets"] == v2["assets"]
     markdown = members["document.md"].decode()
     linked = {unquote(p) for p in re.findall(r"\]\((assets/[^)\s]+)\)", markdown)}
     assert linked == set(v2["assets"]) == {correction["asset_path"], agent.created["notes"]["asset_path"]}

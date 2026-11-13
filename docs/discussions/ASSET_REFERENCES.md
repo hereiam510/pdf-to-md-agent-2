@@ -1175,3 +1175,13 @@ Recommend selecting both for the next offline increment. The changes can proceed
 - **Branch publication.** Pushing `codex/r01cal-a03-delivery-01` and opening a PR to `master` are authorized. Merging is not.
 
 Still open: whether to require enriched saves for new image deliveries. The live run informs that choice but does not settle it.
+
+## T5 live adoption result and open choice
+
+2026-11-13, Asia/Singapore. The [bounded live run](../batches/R01CAL-A03-DELIVERY-01/verification.md#t5-live-adoption-run) used enriched creates from its first attempt and reached schema 2 after two autonomous corrections. [AR-T5-13](../batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5-13--standalone-images-omit-the-visible-source-title) shows that requiring schema 2 alone would still allow the observed source-title omission. [AR-T5-14](../batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5-14--contributor-name-differs-from-the-visible-source) concerns source text fidelity. The run reached the send ceiling with a useful partial draft.
+
+The [closing ticket](../batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-l1--bounded-live-adoption-run) returns the next decision to the user. One scoped option is to clarify the existing guidance for supplying established source facts with the first enriched save, including evidence for `none`, and verify the guidance and save path offline. The other is to keep the current product code and carry these results into the remaining offline chain and an explicitly limited verdict. Whether to require enriched saves for new images remains open. These observations authorize neither a new rule nor another provider run.
+
+### Enriched save guidance clarification selected
+
+2026-11-13, Asia/Singapore. The user chose to clarify the guidance and verify it offline. Address [AR-T5-13](../batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5-13--standalone-images-omit-the-visible-source-title) and the two observed evidence-of-absence rejections through [T5-G1](../batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-g1--clarify-enriched-save-guidance). The existing API supports these facts in the same save. Requiring enriched saves or another live interval needs a separate selection.

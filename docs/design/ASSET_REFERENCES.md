@@ -341,6 +341,8 @@ Use the existing app-authored blob metadata `purpose: "saved-output diagnostic p
 
 For new source-image delivery, model guidance directs `edit_document` to create an occurrence with `asset_changes`, supplying the eligible evidence `ref` as `facts.image_ref` and `asset:new/<client_key>` as the authored image or link destination. The save returns the final relative asset URI. The evidence `asset_path` still identifies the registered source image. A create can explicitly adopt an existing schema 1 hash path through `legacy_path`, as specified in the [edit API](#document-edit-api-and-operation-semantics).
 
+The same edit can carry established shared facts through `source_update`, including a visible title with its evidence. The agent is guided to include these facts with the first enriched save, since the engine uses the typed source record for embedded provenance. Confirmed absence uses `printed_basis` for a printed label and the individual fact's `basis` for a caption or figure label. Unresolved facts stay unknown.
+
 The enriched save flow is:
 
 1. Preserve the received candidate through the existing Dispatcher boundary. Resolve the explicit task/base and apply the requested operations/page changes to the working document.
