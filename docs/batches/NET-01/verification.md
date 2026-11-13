@@ -49,6 +49,7 @@ The focused graph suite passed all 58 cases. The following table maps each accep
 - **NET-01-F01.** An initial retry admission cleared previous response and stream pointers, hiding earlier bytes from the recovery inspector after a later attempt produced no body. Preserve request-level diagnostic pointers and keep attempt pointers attributed only to their owning attempt. The earlier-attempt diagnostic and desktop attribution tests cover this.
 - **NET-01-F02.** A local exception after a stream chunk commit left the reconstructed raw object without its request/attempt pointers. Publish proven pointers while leaving the admission unresolved. The durable-suffix test covers this.
 - **NET-01-F03.** Test fixtures that meant to exercise pre-NET-01 recovery inherited new defaults. Mark their frozen records with the historical policy or explicitly configure the intended new policy. Continue tests now use a configuration error. The legacy deadline tests expect `read=None` and independently check the frozen write/pool timeout and the local deadline under C1.
+- **NET-01-F04.** Actual Windows loopback refusal reached HTTPX through an AnyIO wrapper that suppressed display of the underlying exception context. The classifier now walks both exception links and nested exception groups. A loopback port reserved without a listener reproduced the issue and verified the corrected proxy wording.
 
 ### Documentation impact
 

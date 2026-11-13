@@ -64,6 +64,21 @@ def fail(error, cause=None):
     return reply
 
 
+def test_loopback_refusal_uses_the_real_transport_cause():
+    # Reserve a port without listening. No other process can take it before
+    # the request, and the only connection attempt is on loopback.
+    with socket.socket() as endpoint:
+        endpoint.bind(("127.0.0.1", 0))
+        port = endpoint.getsockname()[1]
+        url = f"http://127.0.0.1:{port}/v1/chat/completions"
+        async def connect():
+            async with httpx.AsyncClient(trust_env=False) as client:
+                with pytest.raises(httpx.ConnectError) as refused:
+                    await client.post(url)
+                return network.classify_transport(refused.value, url, "may_have_been_sent")
+        assert asyncio.run(connect()) == ("unsent", "not_sent", f"Nexus proxy not reachable at 127.0.0.1:{port}.")
+
+
 REFUSED = fail(httpx.ConnectError, ConnectionRefusedError)
 
 

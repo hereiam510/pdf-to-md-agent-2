@@ -33,11 +33,17 @@ def legacy_policy(job: dict) -> dict:
 
 def caused_by(error, kind) -> bool:
     visited = set()
-    while error is not None and id(error) not in visited:
+    pending = [error]
+    while pending:
+        error = pending.pop()
+        if error is None or id(error) in visited:
+            continue
         if isinstance(error, kind):
             return True
         visited.add(id(error))
-        error = error.__cause__ or (None if error.__suppress_context__ else error.__context__)
+        pending.extend((error.__cause__, error.__context__))
+        if isinstance(error, BaseExceptionGroup):
+            pending.extend(error.exceptions)
     return False
 
 
@@ -47,8 +53,8 @@ def classify_transport(error, endpoint: str, send_evidence: str) -> tuple[str, s
     if isinstance(error, httpx.ConnectError) and caused_by(error, ssl.SSLCertVerificationError):
         return "configuration", "not_sent", "Nexus TLS certificate verification failed."
     if isinstance(error, (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout)):
-        url = urlsplit(endpoint)
         refused = isinstance(error, httpx.ConnectError) and caused_by(error, ConnectionRefusedError)
+        url = urlsplit(endpoint)
         if refused and url.hostname in {"localhost", "127.0.0.1", "::1"}:
             port = url.port or (443 if url.scheme == "https" else 80)
             host = "[::1]" if url.hostname == "::1" else url.hostname
