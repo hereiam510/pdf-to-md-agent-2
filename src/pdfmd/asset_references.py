@@ -9,6 +9,7 @@ The indentation adaptation's upstream notices are in data/markdown-it-LICENSE.tx
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 import html
 from html.parser import HTMLParser
@@ -494,11 +495,32 @@ POLICY = {"schema": 1, "naming": "readable-180-v1", "comparison": "nfc-fullfold-
           "uri": "utf8-percent-v1", "provenance": 1}
 
 
-def assess(saved: dict, files: dict[str, str]) -> tuple[dict, Analysis | None]:
+def _shared_schema1_original(original: dict, actual: dict, source_ref: str,
+                             lookup: Callable[[str], dict | None]) -> bool:
+    provenance = actual.get("provenance")
+    if not isinstance(provenance, dict) or not source_ref or provenance.get("source_ref") != source_ref:
+        return False
+    digest = actual["sha256"]
+    stem = f"originals/{provenance.get('xref')}-{digest}"
+    if original["path"] not in {f"{stem}.{ext}" for ext in ("bin", "jpeg", "jpx")}:
+        return False
+    # Each registration must independently attest to the retained stream.
+    # The selected version's verified original supplies the actual bytes.
+    for ref in (original["ref"], actual["ref"]):
+        record = lookup(ref)
+        if (record is None or record.get("ref") != ref or record.get("kind") != "image_stream"
+                or record.get("sha256") != digest or record.get("meta") != provenance):
+            return False
+    return True
+
+
+def assess(
+    saved: dict, files: dict[str, str], *, original_record: Callable[[str], dict | None] | None = None,
+) -> tuple[dict, Analysis | None]:
     """Out-of-band completeness diagnosis, after the caller's byte-integrity gate.
 
-    Only the selected envelope and registered file inventory are inputs. Task
-    blobs, head and other versions cannot fill a historical omission.
+    For a schema 1 ref mismatch, a task-scoped lookup can prove two records
+    describe an already verified original member. It supplies metadata only.
     """
     try:
         if saved.get("schema_version") not in {1, 2} or (saved["schema_version"] == 2 and saved.get("asset_policy") != POLICY):
@@ -548,8 +570,12 @@ def assess(saved: dict, files: dict[str, str]) -> tuple[dict, Analysis | None]:
                     same_stream = (original.get("sha256") == actual["sha256"] and isinstance(metadata, dict)
                                    and metadata == actual.get("provenance"))
                 else:
-                    same_stream = (actual["ref"] == original["ref"] and
-                                   ("sha256" not in original or original["sha256"] == actual["sha256"]))
+                    same_stream = False
+                    if original.get("sha256", actual["sha256"]) == actual["sha256"]:
+                        same_stream = actual["ref"] == original["ref"] or (
+                            original_record is not None and files[original["path"]] == actual["sha256"]
+                            and _shared_schema1_original(original, actual, saved.get("source_ref", ""), original_record)
+                        )
                 if not same_stream or files[original["path"]] != actual["sha256"]:
                     issues.append(ReferenceError("inventory_mismatch", f"Associated original inventory disagrees for: {path}", use).issue)
         for path, original in originals.items():

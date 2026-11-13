@@ -136,7 +136,7 @@ class Documents:
     def selected(self, job: str, version_id: str) -> dict:
         saved, files = self._verified_version(job, version_id)
         record = self.store.get("version", version_id, job=job)
-        check, analysis = assess(saved, record["files"])
+        check, analysis = self._assess(job, saved, record["files"])
         bindings, resources, slots = {}, [], []
         referenced = {path for use in analysis.references for kind, path in [classify(use.destination, use.role)]
                       if kind == "asset"} if analysis is not None else set()
@@ -172,7 +172,16 @@ class Documents:
     def reference_check(self, job: str, version_id: str) -> dict:
         saved = self.version(job, version_id)
         record = self.store.get("version", version_id, job=job)
-        return assess(saved, record["files"])[0]
+        return self._assess(job, saved, record["files"])[0]
+
+    def _assess(self, job: str, saved: dict, files: dict[str, str]):
+        def original_record(ref: str) -> dict | None:
+            try:
+                return self.store.get("blob", ref, job=job)
+            except ValueError:
+                return None
+
+        return assess(saved, files, original_record=original_record)
 
     def index(self, job: str, version_id: str) -> dict:
         """Describe exact saved-version selectors without importing its bodies."""

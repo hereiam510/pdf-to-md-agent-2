@@ -12,7 +12,9 @@ from pdfmd.asset_references import (analyze, asset_uri, assess, classify, depend
                                     ReferenceError, rewrite)
 from pdfmd.documents import Documents
 from pdfmd.server import create_app
+from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
+from tests.engine.context.test_stencil_pins import stencil_source
 from tests.engine.documents.test_documents import edit, call
 
 
@@ -252,6 +254,77 @@ def test_associated_original_inventory_and_analysis_failure_are_distinct(monkeyp
     monkeypatch.setattr("pdfmd.asset_references.analyze", lambda *args: (_ for _ in ()).throw(RuntimeError("injected")))
     check, analysis = assess(saved, {})
     assert check["status"] == "unavailable" and analysis is None and check["issues"][0]["code"] == "analysis_unavailable"
+
+
+def test_schema1_shared_original_uses_verified_version_bytes_and_task_owned_registrations(tmp_path, monkeypatch):
+    source = tmp_path / "stencil.pdf"
+    mask, _ = stencil_source(source)
+    store = Store(tmp_path / "workspace")
+    d = Dispatcher(store)
+    job = d.evidence.create_job(str(source), "Preserve both stencil appearances.")["id"]
+    red, blue = [d.evidence.extract_image(job, 1, mask, occurrence=index) for index in (0, 1)]
+    [red_original], [blue_original] = red["originals"], blue["originals"]
+    assert red_original["path"] == blue_original["path"] and red_original["ref"] != blue_original["ref"]
+    result = call(d, job, "shared-original", edit([{"id": "b", "pages": [1], "markdown":
+        f"![Red]({red['asset_path']})\n\n[Blue]({blue['asset_path']})"}]))
+    assert result["ok"], result
+    version = result["data"]["version_id"]
+    folder = d.documents.root / version
+    files = store.get("version", version, job=job)["files"]
+    snapshot = {path: (folder / path).read_bytes() for path in files}
+    saved = d.documents.version(job, version)
+    [actual] = saved["originals"].values()
+    assert saved["schema_version"] == 1 and actual["ref"] == blue_original["ref"]
+    alias = store.get("blob", red_original["ref"], job=job)
+
+    def reject_payload_read(*args):
+        pytest.fail("Assessment and export must use the verified saved version's bytes")
+
+    monkeypatch.setattr(Store, "bytes", reject_payload_read)
+    monkeypatch.setattr(Store, "verify_object", reject_payload_read)
+    reopened = Documents(Store(store.root))
+    selected = reopened.selected(job, version)
+    ok = {"status": "ok", "issues": []}
+    assert selected["asset_reference_check"] == reopened.reference_check(job, version) == ok
+    assert {item["asset"]: base64.b64decode(item["base64"]) for item in selected["preview_transfer"]["resources"]} == {
+        image["asset_path"]: snapshot[image["asset_path"]] for image in (red, blue)}
+    target = tmp_path / "shared.zip"
+    job_url = f"/jobs/{job}"
+    with TestClient(create_app(store.root, "test-token"), headers={"Authorization": "Bearer test-token"}) as client:
+        response = client.post(f"{job_url}/export", json={"version_id": version, "destination": str(target)})
+        assert response.status_code == 200 and response.json()["verified"], response.text
+        assert response.json()["asset_reference_check"] == ok
+    original_zip = target.read_bytes()
+    with zipfile.ZipFile(target) as archive:
+        assert len(archive.namelist()) == len(snapshot)
+        assert {name: archive.read(name) for name in archive.namelist()} == snapshot
+
+    other_job = d.evidence.create_job(str(source), "Other task.")["id"]
+    controls = [
+        (other_job, alias),  # same bytes and provenance, wrong task
+        (job, {**alias, "kind": "image"}),
+        (job, {**alias, "sha256": "0" * 64}),
+        (job, {**alias, "meta": {**alias["meta"], "xref": mask + 1}}),
+    ]
+    for owner, record in controls:
+        with store.transaction() as db:
+            db.execute("DELETE FROM records WHERE kind = ? AND id = ?", ("blob", alias["ref"]))
+        # No task record means the mismatch cannot be resolved from saved names alone.
+        assert reopened.reference_check(job, version)["status"] == "incomplete"
+        store.put("blob", alias["ref"], owner, record)
+        denied = reopened.selected(job, version)
+        assert [issue["code"] for issue in denied["asset_reference_check"]["issues"]] == ["inventory_mismatch"]
+        assert denied["preview_transfer"]["resources"] == []
+    store.put("blob", alias["ref"], job, alias)
+    assert reopened.reference_check(job, version) == ok
+    assert reopened.export(job, version, str(target))["verified"]
+    assert target.read_bytes() == original_zip
+    assert {p.relative_to(folder).as_posix(): p.read_bytes() for p in folder.rglob("*") if p.is_file()} == snapshot
+    (folder / red_original["path"]).write_bytes(b"corrupt")
+    with pytest.raises(ValueError, match="integrity"):
+        reopened.selected(job, version)
+    with pytest.raises(ValueError, match="integrity"):
+        reopened.export(job, version, str(tmp_path / "corrupt.zip"))
 
 
 def test_host_api_adds_live_check_without_changing_receipts(setup, tmp_path, monkeypatch):

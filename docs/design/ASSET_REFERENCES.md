@@ -361,6 +361,8 @@ Saved-version byte integrity and asset-reference completeness are separate check
 
 For an integrity-valid version, assess its recorded content against **that version's** asset/original/file inventories and recorded naming policy. Historical registered hash paths remain interpretable as historical mappings; the readable-name/XMP requirements are not retroactively invented for old versions. New schema 1 saves follow the [portable-link contract](#portable-link-save-increment), and new schema 2 saves follow the [enriched contract](#enriched-save-flow). Do not satisfy a missing dependency from task blobs, another version, the current head, a source render or a remote location. An older version can be byte-consistent yet have an incomplete inventory, as in A03.
 
+Schema 1 can record two independently registered original refs for one retained PDF stream. For differing refs, verify that both task-owned original-stream records agree with the selected inventory's source identity, canonical stream path, verified digest and complete recorded provenance. A missing or nonmatching registration leaves the association unverified. The lookup supplies evidence for the association. All display and original bytes still come from the verified version. Schema 2 verifies its original associations against the digest and complete provenance recorded in its envelope.
+
 Add an out-of-band `asset_reference_check` to the selected-version API response and the host export response. It is derived response metadata; it is not written into immutable `document.json`, Markdown, HTML, manifests, historical operation receipts or existing persisted export receipts. Required semantics are:
 
 | Field | Meaning |
