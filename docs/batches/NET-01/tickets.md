@@ -1,0 +1,176 @@
+# NET-01 tickets
+
+[Spec](spec.md) · [Register](../../WORK_ITEMS.md#runtime-and-engineering-inventory)
+
+## Planning basis and authority
+
+Planned 2026-11-14 (Asia/Singapore) after the user's "Confirm and plan tickets", which adopted the [NET-01 spec](spec.md) with C1 and C2. Local ticket mode applies. This file owns ticket content, dependencies and progress. The spec owns behavior and acceptance; a `verification.md` will own observed checks and the combined verdict once evidence exists.
+
+Revised the same day after a review of the plan: T5 now includes the Electron bridge, T2's scope is narrowed to classification and reporting, the defect rule follows the authorized work, and shared interfaces have one owner. C1 and C2 are unchanged.
+
+Planning authorizes no implementation, provider call or sleep test. Each ticket below needs an implementation request. Once a request authorizes a set of tickets, the main agent carries them through implementation, checks, scoped corrections and records without asking again at each ticket boundary, within that request's scope.
+
+**Rules for every ticket.**
+
+- Start from `master` at `e60fa00` or a later commit that contains the earlier tickets, on a batch branch (for example `codex/net-01`), never on `master` itself.
+- Use offline fixtures only: httpx `MockTransport`, local fault servers and controllable clocks. No Nexus or provider call.
+- Keep the [preserved guarantees](spec.md#preserved-guarantees). If one cannot be kept, stop and report it rather than weakening it.
+- Engine tests go under `tests/engine/<concern>/` with canonical imports, as described in the [project layout](../../guides/PROJECT_LAYOUT.md#tests-and-fixtures). Desktop specs go under `tests/desktop/specs/`.
+- Update the governing owners named in each ticket in the same change. The spec's [document list](spec.md#documents-to-update-during-implementation) is the full set.
+- Record what was run and observed in `verification.md` under the ticket's heading.
+- A new defect found during the work becomes `NET-01-Fnn` in verification. Defects are judged against the work the user's request authorized, not one ticket's boundary:
+  - a defect that belongs to authorized work, including a later authorized ticket, is fixed within that scope;
+  - an independent finding is recorded with its evidence and deferred to the register;
+  - the work stops for the user only when a finding blocks acceptance of the authorized work or needs a decision beyond its authority.
+
+## Sequence and dependencies
+
+| Ticket | Contribution | Depends on | State |
+| --- | --- | --- | --- |
+| [T1](#t1--windows-clocks-and-active-time) | Windows clock pair, boot identity, suspension detection, sleep-free active time | None | Ready |
+| [T2](#t2--failure-classes-send-evidence-and-diagnostics) | N1 classes, send evidence, truthful interim pauses, bounded diagnostics (no recovery yet) | None | Ready |
+| [T3](#t3--retry-policy-cooldowns-scheduling-and-response-waits) | Frozen retry policy, cooldowns, durable scheduling, retry loop, C1 response waits | T1, T2 | Blocked on T1 and T2 |
+| [T4](#t4--pauses-and-the-retry-action) | Pause reasons, the `retry_request` transition and cooldown carry-over | T3 | Blocked on T3 |
+| [T5](#t5--desktop-activity-recovery-and-settings) | Desktop activity, Retry or Continue, settings, and forwarding `retry_request` through the Electron bridge | T4 | Blocked on T4 |
+| [T6](#t6--integration-and-offline-acceptance) | Whole-batch offline acceptance, local-server desktop check, contract consolidation | T1–T5 | Blocked |
+| [T7](#t7--real-windows-sleep-and-wake-check) | Real sleep and wake against a local scripted server | T6, plus a test window chosen by the user | Blocked; needs the user |
+
+**Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch.
+
+## Shared interfaces
+
+Each interface is defined by the ticket named below, which owns it. A later ticket that needs a change makes it in coordination with that owner's records and tests, rather than redefining it. Frozen request records keep their promised immutability regardless.
+
+- **Clock service (T1).** Working-state time, sleep-inclusive interrupt time, boot identity and detected suspensions, behind an injectable interface so tests can control both clocks. T3 and the request waits use it; nothing calls the Windows APIs directly.
+- **Attempt record fields (T2).** Failure class, `send_evidence` (`may_have_been_sent`, `not_sent`, `response_observed`), HTTP status, validated upstream code and parsed `Retry-After` delay.
+- **Request records (T3).** The frozen retry policy, the `not_before` cooldown and `retry_schedule`, each with an interrupt-time deadline, boot identity and `due_wall`.
+- **Stop reasons and API (T4).** `network_retry_exhausted`, `network_retry_disabled`, `retry_wait_exceeds_limit`, `provider_configuration_error`, and the `retry_request` start parameter, with the job fields the desktop reads.
+
+## T1 — Windows clocks and active time
+
+**Contribution.** Measure active time without sleep, and detect and record suspensions. Basis: [N2 clock meanings](spec.md#n2--retry-policy-delays-and-clocks) and [N5](spec.md#n5--sleep-and-wake-windows).
+
+**Work.**
+
+1. Add a clock module (for example `src/pdfmd/clocks.py`). It reads `QueryInterruptTime` and `QueryUnbiasedInterruptTime` through `ctypes`, provides a boot identity from a documented OS source, and has a portable fallback that keeps `time.monotonic()` and reports no suspension detection.
+2. Choose the boot identity source and record the choice with its documentation link in the engineering guide. If no documented source is reliable, use the spec's conservative fallback everywhere and record why.
+3. Switch `ActiveTime` to working-state time on Windows. Detect suspensions at checkpoints and wait polls, exclude every suspension from active time, and record a `suspended_interval` with an activity event when one lasts 2 seconds or more. Keep `active_time_gap` for unmeasured crash tails only.
+
+**Files.** The new clock module, `active_time.py`, and their tests under `tests/engine/execution/`.
+
+**Checks.**
+
+- The active-time and clock parts of A17, with a controllable clock pair: a 1-second and a 10-second suspension during work are both excluded, and only the 10-second one is recorded.
+- Existing active-time, crash-tail and settings tests still pass.
+- On this Windows machine, read both real clocks and the boot identity once, and record the values and APIs used. This check involves no sleep.
+
+**Owners to update.** The [active-time section](../../design/RUNTIME_AND_DELIVERY.md#active-time-measurement-and-unmeasured-intervals) of the runtime contract.
+
+## T2 — Failure classes, send evidence and diagnostics
+
+**Contribution.** Classify every failed attempt truthfully, record what is known about sending, and capture safe diagnostics. This ticket includes no retries yet. Basis: [N1](spec.md#n1--failure-classes), [N3 send evidence](spec.md#n3--attempt-states-and-durable-scheduling) and [N6](spec.md#n6--diagnostics-r04).
+
+**Work.**
+
+1. In `Nexus.send` and `exchange`, map exceptions and statuses to the five N1 classes, including the TLS-cause check and the explicit transient status list.
+2. Record `send_evidence` at admission (`may_have_been_sent`) and update it only on evidence.
+3. Add the loopback proxy wording.
+4. Read the headers' `Retry-After` and `Date` into a parsed delay without keeping the raw headers.
+5. Add the bounded, isolated diagnostic body read (16 KiB, 5 s, Stop-aware) with the fixed upstream code set.
+6. Route `transient_status` and `unsent` failures to a pause for now, so behavior stays safe until T3 adds retries. A proven unsent attempt pauses with a truthful message (no request reached the provider, no usage) and must not use `unknown_outcome`. Other classes keep accurate interim messages.
+
+This ticket fixes classification and reporting only. It does not yet make a stranded task recoverable: automatic recovery arrives in T3 and the Retry transition in T4.
+
+**Files.** `nexus.py` and tests under `tests/engine/transport/`.
+
+**Checks.** The classification and record parts of A1–A5, plus A13, A18, A18b and A20. Existing transport, streaming and settlement tests still pass.
+
+**Owners to update.** The R04 entry and the [integration guide's failure section](../../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#11-concrete-integration-failures-and-the-retained-response).
+
+## T3 — Retry policy, cooldowns, scheduling and response waits
+
+**Contribution.** Retry automatically within the frozen limit, with durable waits that survive restarts and never retry early. Apply C1 to the response-wait timers. Basis: [N2](spec.md#n2--retry-policy-delays-and-clocks), [N3](spec.md#n3--attempt-states-and-durable-scheduling), [C1 and C2](spec.md#decisions-to-confirm) and [N5 wake rules](spec.md#n5--sleep-and-wake-windows).
+
+**Work.**
+
+1. Extend `Limits` and the frozen `replay_policy` with the retry fields and C2 defaults for new tasks. Requests frozen earlier keep their recorded policy.
+2. Write the `not_before` cooldown for every parsed `Retry-After`. Write `retry_schedule` when a retry remains and is enabled.
+3. Run the wait loop inside `Nexus.send`, polling Stop and the allowances at least once a second.
+4. Implement the restart rules: an interrupt-time deadline in the same boot, and one persisted replacement deadline otherwise.
+5. Pause with `retry_wait_exceeds_limit` without shortening a long server delay.
+6. Move the `RequestWait` timers to working-state time, keeping their start at exchange start. Set the httpx read timeout to none in both the streaming and legacy paths, and leave connect, pool and write as they are.
+7. Apply the same behavior to compaction requests.
+
+**Files.** `nexus.py`, `waiting.py`, `schema.py`, and tests under `tests/engine/transport/` and `tests/engine/execution/`.
+
+**Checks.** The retry parts of A1–A4, plus A6, A7, A10, A11, A12, A14, A16, A19, and the wait and in-flight parts of A17. Existing deadline and streaming-wait tests still pass, or any changed expectation is justified by C1 in verification.
+
+**Owners to update.** The runtime contract's [transport behavior](../../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-transport-behavior) and [Q3 recovery](../../design/RUNTIME_AND_DELIVERY.md#q3-execution-recovery-and-delivery) sections, and the [streaming design](../../design/STREAMING_RECEIVE.md) where its timer statements change.
+
+## T4 — Pauses and the Retry action
+
+**Contribution.** Pause with an accurate reason, and let one Retry click create exactly one replacement request that respects any server cooldown. Basis: [N4](spec.md#n4--pause-and-the-retry-action).
+
+**Work.**
+
+1. Replace the interim T2 pause with the four N4 stop reasons and messages.
+2. Add `retry_request` to the start API. Validate it under the task lock, write `continuation:<request>` with `explicit_network_retry` before the graph advances, and prepare the successor from current state with the current retry policy.
+3. Refuse the action before `not_before`, and carry the cooldown into the receipt and the successor's first attempt.
+4. Keep explicit Continue for configuration errors and rejected replies.
+5. Expose what the desktop needs on the job: the pause class, attempts used, `not_before`, and whether Retry or Continue applies.
+
+**Files.** `runtime.py`, `server.py`, `nexus.py` (only the cooldown check at admission), and tests under `tests/engine/execution/`.
+
+**Checks.** A8, A9, A15 and A15b; existing compaction-recovery and continuation tests still pass.
+
+**Owners to update.** The runtime contract's Q3 section for the new transition.
+
+## T5 — Desktop activity, recovery and settings
+
+**Contribution.** Show retries, sleep and pauses in plain words, and give the user Retry or Continue plus the retry settings. Basis: [N7](spec.md#n7--desktop).
+
+**Work.**
+
+1. Activity shows "Attempt *n* of *m*", the class, the next retry time and "Resumed after sleep".
+2. The task view shows the pause reason, attempts used and the duplicate-work note, plus a Retry button (disabled with "Retry available at *time*" before `not_before`) or a Continue button for configuration errors.
+3. Connection settings get the "Retry automatically after network problems" checkbox (default on) and the attempts per request, replacing the current replay checkbox.
+4. The Electron `start` handler in `src/desktop/main.ts` builds the engine payload itself and currently forwards only `recover_compaction_request`. It must also forward `retry_request`, or the Retry button cannot reach the engine.
+
+**Files.** `src/renderer/` (`main.tsx`, the settings and recovery features, `types.ts`), `src/desktop/main.ts` (and the preload if its typing changes), the diagnostic client types, and specs under `tests/desktop/specs/`.
+
+**Checks.**
+
+- Focused desktop specs for each display state against a local scripted engine fixture.
+- One check through the actual Electron path: a Retry click in the renderer reaches the engine as `retry_request`, and a second click creates no second successor.
+- Typecheck and the development build.
+
+**Owners to update.** User-facing wording wherever settings and recovery are described.
+
+## T6 — Integration and offline acceptance
+
+**Contribution.** Show that the whole batch meets the spec's offline acceptance and leaves earlier behavior intact. Basis: [Acceptance](spec.md#acceptance).
+
+**Work.**
+
+1. Run A1–A20 together on one revision, through the real `Nexus.send` and graph path, checking saved, reopened and exported output after each recovery.
+2. Run the full Python and desktop suites, typecheck, and the development and frozen-engine builds.
+3. Run the desktop against a local scripted server: stop and restart the server during a send, delay a reply, and kill the engine during a wait. Check the activity wording, Retry, Continue, settings and the exported result.
+4. Reconcile the runtime contract, the streaming design, the guides and the R04 and NET-01 register rows into one consistent description.
+5. Record the combined offline verdict in verification. It is offline only; real sleep stays with T7.
+
+**Checks.** As listed; every A-case is linked to its observed result.
+
+## T7 — Real Windows sleep and wake check
+
+**Contribution.** Observe real Windows suspend and resume once against a local scripted server, with no provider calls. Basis: the real sleep case in [Acceptance](spec.md#acceptance).
+
+**Preconditions.** T6 has passed, and the user has chosen a time to put the laptop to sleep. Put the machine to sleep only in that window; the sleep and wake are the user's actions.
+
+**Work.** Two runs:
+
+- sleep during a backoff wait;
+- sleep during an in-flight request whose scripted reply is delayed past the wake.
+
+For each, record the `suspended_interval`, the active-time totals before and after, the wake behavior and the saved, reopened and exported result.
+
+**Result.** This completes NET-01's Windows acceptance. A live Nexus check of route-specific behavior is a separate, later selection.
