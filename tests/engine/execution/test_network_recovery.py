@@ -162,18 +162,18 @@ def test_retry_after_forms(delivery, tmp_path, headers, expected):
     check_delivery(store, job, version, image, source, tmp_path / "retry-after.zip")
 
 
-@pytest.mark.parametrize("mode", ["stop", "requests", "active", "sleep"])
+@pytest.mark.parametrize("mode", ["stop", "requests", "active", "sleep", "sleep_backoff"])
 def test_wait_respects_controls_and_sleep_elapsed_time(delivery, tmp_path, mode):
     store, job, version, image, source = delivery
     clock = Clocks()
     def reply(_):
         if len(store.records("attempt", job["id"])) == 1:
-            return httpx.Response(503, headers={"Retry-After": "8"})
-        assert clock.uptime >= 108
+            return httpx.Response(503, headers={} if mode == "sleep_backoff" else {"Retry-After": "8"})
+        assert clock.uptime >= (102 if mode == "sleep_backoff" else 108)
         return final(version)
     def pause(seconds):
         assert seconds <= 1
-        if mode == "sleep":
+        if mode.startswith("sleep"):
             clock.advance(10, asleep=True)
         elif mode == "stop":
             store.update_job(job["id"], cancel_requested=True)
@@ -185,7 +185,7 @@ def test_wait_respects_controls_and_sleep_elapsed_time(delivery, tmp_path, mode)
     try:
         execution.run(job["id"])
         current = store.get("job", job["id"])
-        if mode == "sleep":
+        if mode.startswith("sleep"):
             assert current["active_seconds"] == 0 and current["attempts"] == 2
             assert [r["duration_seconds"] for r in store.records("suspended_interval", job["id"])] == [10]
         else:
