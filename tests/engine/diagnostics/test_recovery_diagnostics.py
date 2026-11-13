@@ -49,6 +49,9 @@ def next_request(store, job, monkeypatch, outcome="timeout", suffix=b"data: {"):
     runtime = Runtime(store, service)
     config = {"configurable": {"thread_id": job["id"]}}
     try:
+        if outcome == "timeout":
+            current = store.get("job", job["id"])
+            store.update_job(job["id"], limits={**current["limits"], "automatic_retry": False})
         state = runtime.graph.get_state(config).values
         key = f"{job['id']}:{state['seq']}:{state['revision']}"
         route = Route.model_validate(store.get("job", job["id"])["route"])
