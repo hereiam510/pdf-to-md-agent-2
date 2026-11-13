@@ -24,7 +24,7 @@ The [loopback desktop case](../../../tests/desktop/specs/network-retry.spec.ts) 
 
 ## T6 — Offline integration
 
-The focused graph suite passed all 58 cases. The following table maps each acceptance case to its check.
+The NET-01 matrix passed all 61 cases at `01c546d`. The following table maps each acceptance case to its check.
 
 | Case | Check in the graph suite |
 | --- | --- |
@@ -51,6 +51,9 @@ The focused graph suite passed all 58 cases. The following table maps each accep
 - **NET-01-F03.** Test fixtures that meant to exercise pre-NET-01 recovery inherited new defaults. Mark their frozen records with the historical policy or explicitly configure the intended new policy. Continue tests now use a configuration error. The legacy deadline tests expect `read=None` and independently check the frozen write/pool timeout and the local deadline under C1.
 - **NET-01-F04.** Actual Windows loopback refusal reached HTTPX through an AnyIO wrapper that suppressed display of the underlying exception context. The classifier now walks both exception links and nested exception groups. A loopback port reserved without a listener reproduced the issue and verified the corrected proxy wording.
 - **NET-01-F05.** The transport group passed 780 cases and failed 20 stream-item cases on the revised rejection wording. The restored wording identifies the absence of a complete valid reply. The affected 24-case whole/chunked stream matrix passed on rerun. The diagnostics/documents group passed 347 cases and failed three one-attempt fixture assertions because the fixtures allowed automatic retry. Those three cases passed after setting their retry policy explicitly.
+- **NET-01-F06.** The observer clock fixture patched process monotonic time instead of injecting the working clock. Two trial fault-injection hooks also required the ordinary freeze call shape. The test now injects the execution clock, the ordinary freeze call keeps its existing arguments, and the trial HTTP 400 check verifies its configuration classification and the independent overflow evidence gate. All four cases passed on rerun.
+- **NET-01-F07.** Desktop diagnostic fixtures assumed one timeout attempt, and Task limits submitted unchanged retry fields with unrelated edits. The fixtures now select one attempt explicitly, and the form submits retry fields when edited. Both protocols passed each rerun.
+- **NET-01-F08.** A cold Chat Completions streaming fixture reached its held progress boundary after the assertion timed out. The test now allows 45 seconds for that observation. The server held the same boundary, and both streaming protocols passed on rerun.
 
 ### Documentation impact
 
@@ -58,6 +61,8 @@ The [runtime contract](../../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-tr
 
 ### Combined verdict
 
-The 58-case NET-01 graph suite passed, plus the separate real loopback-refusal check. The complete execution group passed all 295 tests. A 153-case targeted engine run also exercised historical compaction recovery alongside the execution cases. Fourteen transport and settlement checks passed after the pointer corrections. All eight targeted desktop checks passed, including both protocols' historical compaction and earlier-attempt evidence cases, the wake/cooldown fixture and the loopback termination/export case. TypeScript checking, the development build and repository documentation checks passed. The frozen engine built at `61ae1f7` and passed startup, local TLS setup and the XMP worker relaunch smoke check. The only subsequent production change is the stream rejection wording covered by NET-01-F05.
+T6 passed on the combined offline evidence. The complete Python suite ran 1,879 cases and passed 1,852. The targeted rerun passed all 94 selected cases. JUnit identity comparison confirmed that those 94 cover all 27 earlier failures. The final 61-case NET-01 matrix included the separately exercised Windows loopback refusal, jittered backoff during simulated suspension and the rejected-reply Continue path under both frozen policies.
 
-Complete-suite verification remains open. The first broad runs started before the fixture and diagnostic pointer corrections. The desktop run also hit timeouts in existing Responses context-delivery cases. The subsequent all-tests desktop run uses a 240-second runner timeout, with no changes to the app's request deadlines. See the retained local logs under `build/net-01-*.log`. An all-green offline result remains necessary for T6. Real Windows sleep and wake remain with [T7](tickets.md#t7--real-windows-sleep-and-wake-check). Live route testing requires its own selection.
+The complete desktop run passed 113 of 118 cases. All five earlier failures passed their focused reruns covering diagnostics, streaming and task settings. The final development build also passed the NET-01 desktop wake/cooldown and loopback termination/export tests. The full desktop run used a 240-second Playwright timeout after earlier fixture timeouts. The application's deadlines stayed the same.
+
+TypeScript checking, the development build, the frozen-engine startup/TLS/XMP smoke checks and repository documentation checks passed. The local logs under `build/net-01-*.log` retain the whole-run results and reruns. Suite coverage comes from the full runs plus targeted checks of corrections, with no single all-green whole-suite run on the final revision. Real Windows sleep and wake remain with [T7](tickets.md#t7--real-windows-sleep-and-wake-check). Live route testing requires its own selection.

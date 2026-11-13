@@ -3,8 +3,8 @@
 ## Focus and resume route
 
 Current focus: NET-01 network-failure handling (Stage C) before the next Stage B batch.
-Resume at: [NET-01 offline integration](batches/NET-01/verification.md#t6--offline-integration).
-Next activity: finish the authorized offline verification and reconcile the result against the [NET-01 acceptance cases](batches/NET-01/spec.md#acceptance).
+Resume at: [NET-01 acceptance](batches/NET-01/verification.md#combined-verdict).
+Next activity: [T7](batches/NET-01/tickets.md#t7--real-windows-sleep-and-wake-check) when the user selects a Windows sleep test window. Live Nexus testing remains deferred.
 Instruction basis: [NET-01 execution authority](batches/NET-01/tickets.md#planning-basis-and-authority) and the [adopted specification](batches/NET-01/spec.md#status-and-authority).
 
 ## Return routes

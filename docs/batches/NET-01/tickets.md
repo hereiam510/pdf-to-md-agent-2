@@ -32,7 +32,7 @@ The user authorized implementation of T1–T6 on 2026-11-14, with offline checks
 | [T3](#t3--retry-policy-cooldowns-scheduling-and-response-waits) | Frozen retry policy, cooldowns, durable scheduling, retry loop, C1 response waits | T1, T2 | Implemented |
 | [T4](#t4--pauses-and-the-retry-action) | Pause reasons, the `retry_request` transition and cooldown carry-over | T3 | Implemented |
 | [T5](#t5--desktop-activity-recovery-and-settings) | Desktop activity, Retry or Continue, settings, and forwarding `retry_request` through the Electron bridge | T4 | Implemented |
-| [T6](#t6--integration-and-offline-acceptance) | Whole-batch offline acceptance, local-server desktop check, contract consolidation | T1–T5 | Integration checks in progress |
+| [T6](#t6--integration-and-offline-acceptance) | Whole-batch offline acceptance, local-server desktop check, contract consolidation | T1–T5 | Complete |
 | [T7](#t7--real-windows-sleep-and-wake-check) | Real sleep and wake against a local scripted server | T6, plus a test window chosen by the user | Deferred |
 
 **Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch.
