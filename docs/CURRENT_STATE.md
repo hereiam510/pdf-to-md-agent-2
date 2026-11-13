@@ -3,8 +3,8 @@
 ## Focus and resume route
 
 Current focus: R01CAL-A03-DELIVERY-01 T5 final tickets.
-Resume at: the [T5 final tickets](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-final-tickets), starting with T5-L2.
-Next activity: the user assigns T5-L2, T5-V2 and T5-M to other models, in that order; each ticket updates this pointer.
+Resume at: [T5-V2 — Close the T5 verdict](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-v2--close-the-t5-verdict) using the [T5-L2 evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-live-re-run-after-the-guidance-clarification).
+Next activity: await the user's T5-V2 assignment. The current instruction covers T5-L2 through the branch push.
 Instruction basis: the user's [2026-11-13 final route and merge approval](discussions/ASSET_REFERENCES.md#t5-final-route-and-merge-approved). It covers one bounded live re-run, the closing verdict under the AR-8 and AR-9 amendment, and a merge-commit merge of PR #1. Squash, rebase and branch deletion are not authorized.
 
 ## Return routes

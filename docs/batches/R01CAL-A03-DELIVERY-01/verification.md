@@ -1971,7 +1971,7 @@ ExifTool 13.55 recovered the matching structured record, both identifiers and re
 | [AR-5](spec.md#ar-5--actual-desktop-reopen-and-link-use) | The [final Windows chain](#t5-final-same-revision-windows-verification) repeated app relaunch, explicit selection, image decoding and Return. [T2](#final-t2-protocol-evidence-and-scoped-assessment) and [T3a](#t3a-portable-link-save-implementation-and-verification) supply the earlier resource and link-only controls. | [AR-T5-15](#ar-t5-15--return-can-block-images-during-preview-frame-startup) has [focused repair evidence](#t5-offline-repair-for-ar-t5-15). The [final Windows rerun](#t5-r-windows-rerun-after-the-windows-naming-repair) passed both desktop modes and the schema 1 cases exposed by [AR-T5-16](#ar-t5-16--a-shared-schema-1-original-can-hide-all-selected-preview-images). |
 | [AR-6](spec.md#ar-6--exact-export-and-relocation-without-inference) | The [final Windows rerun](#t5-r-windows-rerun-after-the-windows-naming-repair) compared the selected files and actual ZIP bytes and repeated the occupied-output, concurrent retry, long-path and relocated-viewer checks. See also the [directory conflict](#t5-offline-repair-for-ar-t5-08-to-ar-t5-10), [corrupt ZIP conflict](#t5-offline-repair-for-ar-t5-11) and [unreadable destination checks](#t5-offline-repair-for-ar-t5-12). | The [Windows-row check](#long-whole-path-behavior) and [rerun](#t5-offline-repair-and-same-revision-windows-verification) retain the external long-path limits. Linux and macOS are deferred. |
 | [AR-7](spec.md#ar-7--historical-incomplete-inventory-and-diagnosis) | The current desktop and engine regressions rechecked the [T2 diagnosis controls](#final-t2-protocol-evidence-and-scoped-assessment). [T4-C](#ar-t4-02-correction) reassessed a valid shared original from its exact historical ZIP. | Preserve historical bytes and receipts. The [shared-original repair](#t5-offline-repair-for-ar-t5-16) covers genuine schema 1 shared originals and keeps the missing, foreign and corrupt controls. |
-| [AR-8](spec.md#ar-8--source-grounded-naming-and-embedded-standalone-provenance) | The synthetic PDF established the title, caption, nonconsecutive printed labels and physical fallback in the filenames and standalone records. [T4-A](#t4-a-shared-source-correction) and [T4-C](#t4-c-correction-lifecycle) add shared-source and repeated-label cases. The [publisher check](#t5-offline-publisher-source-check) covers visible printed labels, an unnumbered cover and standalone source facts. The [guidance rerun](#t5-offline-repair-and-same-revision-windows-verification) reaches enrichment on the first image save. | The [live run](#t5-live-adoption-run) adds autonomous adoption after correction and real absent-label coverage. The [guidance check](#t5-enriched-save-guidance-verification) verifies offline title transfer. Real-model [visible source title](#ar-t5-13--standalone-images-omit-the-visible-source-title) transfer is open and is checked by [T5-L2](tickets.md#t5-l2--live-re-run-with-the-clarified-guidance). A real unresolved printed label is a recorded limitation under the [AR-8 and AR-9 amendment](spec.md#status-and-authority). |
+| [AR-8](spec.md#ar-8--source-grounded-naming-and-embedded-standalone-provenance) | The synthetic PDF established the title, caption, nonconsecutive printed labels and physical fallback in the filenames and standalone records. [T4-A](#t4-a-shared-source-correction) and [T4-C](#t4-c-correction-lifecycle) add shared-source and repeated-label cases. The [publisher check](#t5-offline-publisher-source-check) covers visible printed labels, an unnumbered cover and standalone source facts. The [guidance rerun](#t5-offline-repair-and-same-revision-windows-verification) reaches enrichment on the first image save. | The [live run](#t5-live-adoption-run) adds autonomous adoption after correction and real absent-label coverage. The [guidance check](#t5-enriched-save-guidance-verification) verifies offline title transfer. [T5-L2](#t5-live-re-run-after-the-guidance-clarification) supplies the real-model first-save title and standalone readback evidence for [AR-T5-13](#ar-t5-13--standalone-images-omit-the-visible-source-title). A real unresolved printed label is a recorded limitation under the [AR-8 and AR-9 amendment](spec.md#status-and-authority). |
 | [AR-9](spec.md#ar-9--portable-spelling-exact-180-byte-limit-and-semantic-shortening) | The local ZIP and pinned viewer exercised NFC, CJK, full-width punctuation, spaces, parentheses, ampersands and literal percent-looking text. The [naming follow-up](#t5-offline-repair-for-ar-t5-19-and-ar-t5-20) verifies reserved aliases, exact 180-byte save/export and prefix- and suffix-adjusted feedback. | The [Windows-row check](#t5-windows-row-and-agent-tool-path-checks) covers NTFS collision spelling and whole-path failure. Source-led shortening evidence is a recorded limitation under the [AR-8 and AR-9 amendment](spec.md#status-and-authority). Linux and macOS are deferred. |
 | [AR-10](spec.md#ar-10--collision-allocation-retries-and-distinct-occurrences) | [Cross-process allocation](#t3b-cross-process-allocation), [receipt settlement](#t3b-receipt-and-preparation-correction) and [T4-C](#t4-c-correction-lifecycle) cover bounded collision, recovery and occurrence identity. The local ZIP keeps the two repeated JPEG occurrences distinct. The [published-suffix check](#ar-10-published-suffix-verification) passes the adopted competing-reservation case locally. | The [Windows-row check](#t5-windows-row-and-agent-tool-path-checks) covers case, canonical, full-fold and substitution collisions on NTFS. Linux and macOS are deferred. |
 | [AR-11](spec.md#ar-11--synchronized-corrections-and-immutable-history) | [T4-A](#t4-a-shared-source-correction), [T4-B](#t4-b-multiple-occurrence-corrections) and [T4-C](#t4-c-correction-lifecycle) cover synchronized source, page and occurrence corrections, immutability and replay. | The [Windows-row check](#t5-windows-row-and-agent-tool-path-checks) adds an agent-driven correction. Linux and macOS are deferred. |
@@ -2565,3 +2565,70 @@ Each change matches its selected method, and the retained evidence covers its st
 - source-led shortening.
 
 T5-L1 also ran out of its 12-send allowance before a terminal report; two of those sends went to rejected saves. The [recommendation](../../discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-t5-closing-review) sets out the closing choice.
+
+## T5 live re-run after the guidance clarification
+
+**Tested basis.** On 2026-11-13 (Asia/Singapore), T5-L2 used the [exact T5-L1 request](tickets.md#t5-l1--bounded-live-adoption-run) in fresh task `50b2d928e8d844ada37f61add9272579`. The local PDF and immutable import matched at 290 pages and SHA-256 `9d23a3c4a519a1c04357a6f2e64093afd1c001034e8e4576561883c13b1cad4e`. The first three pages each contain one full-page DCT JPEG: RGB object 2137, RGB object 3 and gray object 7. The cover stream matched SHA-256 `228660d981f8af0dc7415d84f8b4b1cb06b052a416e7129f2e9cdeb4f715088b`. The development build used branch head `ee25ecf34f54b7941a1123d2ae5bebcd06585999`. `git diff 8ccf461 HEAD -- src` was empty. Lockfile SHA-256 values were `8c3b138608dabfe33bd3ef9761f1bfce05cf71bd98a5181e93f5442d11386257` for `uv.lock` and `96512c26fe1efd3b0afa5b7a645f33fdbbec23434b80b2863eea929b4628a4ad` for `pnpm-lock.yaml`. The executed development main bundle SHA-256 was `3b721183795991e2233f7811a7ffa5791be5d2e994a10d3fb3b0dfd43acd94c6`. The frozen system and tool descriptions contained the T5-G1 guidance. Only the PDF and the exact task request were supplied to the converter.
+
+**Readiness and limits.** The allowlisted local Nexus mapping matched the user-confirmed subscription-only route. The local model catalog accepted the development credential and listed `cliproxy/gpt-6.1-sol`. The app loaded the ignored credential through `tools/dev/start.ps1`. The isolated synthetic control exercised Cancel, close and relaunch, image decode and desktop export at zero inference. The live launch confirmed the enabled Start, readable activity and a fresh store with no requests, attempts, versions or delivery. The live settings matched T5-L1: Chat Completions at low effort, vision on, `bpe_proxy_v1`, context/output/image allowances of 131,072/8,192/4,096, the 180-second non-streaming deadline and two response repairs. The ceilings were 12 physical sends, 1,200 known active seconds and a 1,500-second wall-time Stop, with one attempt per request. Replay, trusted scripts, observer and usage anchoring were off.
+
+**AR-T5-13 resolved in this run.** The first image edit, `:2:2:0`, used three `asset_changes` creates with `facts.image_ref` from the three `render_page` results and saved schema 2 version `903e33b42eaa4054aed88b1cd0f3ee39`. Both saved versions record the visible title and subtitle from pages 1 and 3 as the known source title. ExifTool returned that title and its evidence from all three isolated, renamed images. The first enriched save supplied this `source_update` (formatted for readability):
+
+```json
+{
+  "kind": "book",
+  "title": {
+    "state": "known",
+    "value": "新闻报道写作：理论、方法与技术",
+    "basis": [
+      {"ref": "9ecf064b91df4a388e2c7e7b7f7410c7", "physical_page": 1, "note": "封面可见正题名与副题名。"}
+    ]
+  },
+  "creators": [
+    {
+      "role": "author",
+      "name": {
+        "state": "known",
+        "value": "刘冰",
+        "basis": [
+          {"ref": "3d9a047d91774a0e99714eb28a9f2483", "physical_page": 3, "note": "题名页署名刘冰著。"}
+        ]
+      }
+    }
+  ],
+  "publisher": {
+    "state": "known",
+    "value": "南方日报出版社",
+    "basis": [
+      {"ref": "3d9a047d91774a0e99714eb28a9f2483", "physical_page": 3, "note": "页底出版者名称。"}
+    ]
+  },
+  "identifiers": [
+    {
+      "scheme": "ISBN",
+      "value": "978-7-5491-0169-6",
+      "basis": [
+        {"ref": "7f6c268737924d539eb277a99560a854", "physical_page": 2, "note": "封底ISBN。"}
+      ]
+    }
+  ]
+}
+```
+
+**Rejected saves and absence evidence.** Zero rejected `edit_document` calls, so there are no rejection messages to quote. The first save set the printed label, caption and figure label to `none` for all three pages. Each printed state had `printed_basis`, and each absent caption and figure label had its own `basis`, all tied to the corresponding full-page render. Both saves succeeded. A separate `read_document` call ranged over the `/content/pages` object and received the expected range-type rejection. The model read the object without a range on the next send. This was a read error under the documented string/array restriction.
+
+**Ending and usage.** The sole Start was at 23:50:16.036 SGT, with the Stop threshold at 00:15:16.036 SGT on 2026-11-14. On send 10 the accepted terminal `report` operation `:9:9:0` returned `complete` and selected `277b6cc78e874d0bbeab6fe472c766fb`. The task settled as `completed` with `stop_reason=agent_report` after 350.219 known active seconds and 351.199 seconds of monitored wall time. Monitoring began before Start, confirmed the enabled Stop control and recorded 354 job/activity samples including preflight and settlement, with a maximum gap of 1.018 seconds. All 10 sends were normal requests with one accepted attempt each and no unsettled attempt. No compaction or response-repair sends, operator Stop, Continue, replay, extension or coaching occurred. The native replies reported **311,947 input, 9,879 output and 321,826 total tokens**. Cached input (41,216) and reasoning output (133) are subsets. Usage was present for all 10 sends. Subscription allocation, fees and upstream internal attempts remain unknown.
+
+**Selected version, images and standalone readback.** After closing the development app and relaunching, the reviewer selected the delivery version explicitly. All three inline images decoded at 1323 × 1946 before and after Return, and the preview text matched across the remount. The desktop exported `outputs/t5-l2-234748-b5531/live.zip`, SHA-256 `0348b67c1e0cc78118469cd54d75425a2cc8651daac515382990e12348e69220`. Its seven members matched the saved inventory and member bytes. Requests, attempts and active time stayed at the settled values through reopen and export. ExifTool 13.55 independently recovered the known title, source SHA-256, physical page and evidence-backed printed state from each image after copying it alone into an empty folder and renaming it. The readable XMP description and structured record agreed.
+
+| Physical page | Exported basename | Printed state |
+| --- | --- | --- |
+| 1 | `前封面整体设计-i1.png` | `none` |
+| 2 | `封底推荐语与条形码-i2.png` | `none` |
+| 3 | `题名页与文具摄影设计-i3.png` | `none` |
+
+The model chose three full-page 160 DPI PNG renders. Their copied PNG ranges matched the pre-enrichment PNGs and their pixels matched fresh renders of the PDF pages. No DCT originals were retained in the version or export. The three embedded streams remain in the immutable source PDF.
+
+**Source-led review.** The saved Markdown preserves the covers and title page in physical order, with searchable titles, author and publisher, the cover's six recommenders, all six back-cover endorsements, ISBN, price and barcode digits. The added scope notes and image descriptions are identified as editorial or agent-authored. Review found no substantive discrepancy in the scoped transcription. For [AR-T5-14](#ar-t5-14--contributor-name-differs-from-the-visible-source), the Markdown correctly spells `李炳库` on pages 1 and 2. This is an observation on this run for Stage B. The saved map contains every physical position. Pages 1–3 are included, and pages 4–290 are outside scope with notes and unknown printed labels.
+
+**Evidence and records.** The ignored `.local/t5-l2-234748-b5531/` retains preparation, monitoring, settlements, readback and source review. `workspaces/t5-l2-234748-b5531/store` retains the frozen payloads, native responses, candidates, receipts, versions and usage. No new product defect was observed. The AR-8 criterion row and AR-T5-13 work-register row link to this evidence. The ticket table links the completed run, and CURRENT_STATE routes to the separate verdict ticket. The repository documentation and Git whitespace checks passed.

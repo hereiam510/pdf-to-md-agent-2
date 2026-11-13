@@ -512,7 +512,7 @@ The user [selected](../../discussions/ASSET_REFERENCES.md#t5-final-route-and-mer
 
 | Ticket | Contribution | Depends on | Ready |
 | --- | --- | --- | --- |
-| [T5-L2](#t5-l2--live-re-run-with-the-clarified-guidance) | Check real-model title transfer and the evidence-of-absence path after T5-G1 | Committed and pushed records from this planning step | Yes |
+| [T5-L2](#t5-l2--live-re-run-with-the-clarified-guidance) | Check real-model title transfer and the evidence-of-absence path after T5-G1 | Committed and pushed records from this planning step | [Live run and review complete](verification.md#t5-live-re-run-after-the-guidance-clarification) |
 | [T5-V2](#t5-v2--close-the-t5-verdict) | Close the T5 and batch verdict under the amended scope | T5-L2 | After T5-L2 |
 | [T5-M](#t5-m--mark-pr-1-ready-and-merge) | Mark PR #1 ready and merge it into `master` | T5-V2 committed and pushed | After T5-V2 |
 
