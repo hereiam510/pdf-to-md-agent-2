@@ -2,12 +2,16 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 after the offline follow-up for AR-T5-08 to AR-T5-10.
-Resume at: the [offline repair and regression checks](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-08-to-ar-t5-10).
+Current focus: R01CAL-A03-DELIVERY-01 after the AR-T5-11 offline repair.
+Resume at: the [AR-T5-11 verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-11).
 Next activity: await selection of a remaining T5 activity from the [work register](WORK_ITEMS.md#selection-now).
-Instruction basis: the user's [2026-11-13 offline selection](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-follow-up-for-ar-t5-08-to-ar-t5-10), with live adoption and branch publication deferred.
+Instruction basis: the user's [2026-11-13 offline repair request](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-follow-up-for-ar-t5-11), with live adoption and branch publication deferred.
 
 ## Return routes
+
+- Review basis: [review of commit `52d950f`](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-commit-52d950f).
+
+- Reviewed implementation: [offline repair and regression checks for AR-T5-08 to AR-T5-10](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-08-to-ar-t5-10).
 
 - Selection basis: [standalone review of the T5 cleanup](batches/R01CAL-A03-DELIVERY-01/verification.md#standalone-review-of-the-t5-cleanup).
 

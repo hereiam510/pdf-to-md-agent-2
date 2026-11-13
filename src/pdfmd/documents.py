@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 from tempfile import NamedTemporaryFile
 import zipfile
+import zlib
 import base64
 
 from .schema import Block, CandidateRef, Document, Edit, OccurrenceFacts, Page, pointer
@@ -870,7 +871,7 @@ class Documents:
                     names = archive.namelist()
                     return (len(names) == len(expected) and set(names) == set(expected)
                             and all(archive.read(name) == data for name, data in expected.items()))
-            except zipfile.BadZipFile:
+            except (zipfile.BadZipFile, zlib.error):
                 return False
 
         def verified_receipt():

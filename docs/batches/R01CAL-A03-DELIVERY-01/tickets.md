@@ -312,6 +312,12 @@ On 2026-11-13 the user selected [AR-T5-08 to AR-T5-10](verification.md#standalon
 
 The selected offline work is complete. See the [regression evidence](verification.md#t5-offline-repair-for-ar-t5-08-to-ar-t5-10) and the [remaining T5 scope](verification.md#t5-criterion-evidence-map).
 
+### T5 follow-up for AR-T5-11
+
+The user selected the [corrupt competing ZIP repair](verification.md#ar-t5-11--a-corrupt-competing-zip-can-discard-the-verified-preparation) for offline implementation. Under AR-6, a DEFLATE read failure in the competing ZIP must leave it in place and preserve the verified preparation with a conflict diagnostic naming both paths. Check the same-destination retry and the identical-ZIP control. Live adoption and branch publication remain deferred.
+
+The selected offline work is complete. See the [regression evidence](verification.md#t5-offline-repair-for-ar-t5-11).
+
 ## Coverage and integration discipline
 
 | Criterion owner | Primary contribution / dependencies | Final acceptance responsibility |

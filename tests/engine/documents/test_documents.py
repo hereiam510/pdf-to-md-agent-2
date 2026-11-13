@@ -2,8 +2,10 @@ from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 import json
 import os
+import struct
 from threading import Barrier
 import zipfile
+import zlib
 
 import pytest
 import pymupdf
@@ -306,7 +308,7 @@ def test_concurrent_exports_reconcile_without_sharing_preparation(setup, tmp_pat
         assert {name: sha256(archive.read(name)).hexdigest() for name in archive.namelist()} == hashes
 
 
-@pytest.mark.parametrize("competitor", ["file", "directory"])
+@pytest.mark.parametrize("competitor", ["file", "directory", "corrupt_zip"])
 def test_export_preserves_a_destination_that_appears_during_publication(setup, tmp_path, monkeypatch, competitor):
     from fastapi.testclient import TestClient
     from pdfmd.server import create_app
@@ -314,31 +316,49 @@ def test_export_preserves_a_destination_that_appears_during_publication(setup, t
     store, job = setup
     job_id = job["id"]
     version = call(Dispatcher(store), job_id, "save", edit())["data"]["version_id"]
+    hashes = store.get("version", version, job=job_id)["files"]
     destination = (tmp_path / "delivery.zip").resolve()
     link = os.link
+    competing_bytes = b"unrelated new destination"
 
     def competing_link(source, target):
+        nonlocal competing_bytes
         if target == destination:
             if competitor == "directory":
                 target.mkdir()
+            elif competitor == "corrupt_zip":
+                corrupt = bytearray(source.read_bytes())
+                # Keep the ZIP directories intact and corrupt the first DEFLATE block.
+                assert corrupt.startswith(b"PK\x03\x04")
+                name_length, extra_length = struct.unpack_from("<HH", corrupt, 26)
+                corrupt[30 + name_length + extra_length] = 7  # Reserved DEFLATE block type.
+                competing_bytes = bytes(corrupt)
+                target.write_bytes(competing_bytes)
+                with zipfile.ZipFile(target) as archive:
+                    assert set(archive.namelist()) == set(hashes)
+                    with pytest.raises(zlib.error):
+                        archive.read(archive.namelist()[0])
             else:
-                target.write_bytes(b"unrelated new destination")
+                target.write_bytes(competing_bytes)
         return link(source, target)
 
-    with TestClient(create_app(store.root, "synthetic-only"), headers={"Authorization": "Bearer synthetic-only"}) as client:
+    with TestClient(create_app(store.root, "synthetic-only"), headers={"Authorization": "Bearer synthetic-only"},
+                    raise_server_exceptions=False) as client:
         with monkeypatch.context() as patch:
             patch.setattr(os, "link", competing_link)
             response = client.post(f"/jobs/{job_id}/export", json={"version_id": version, "destination": str(destination)})
+        assert response.status_code == 409, response.text
+        if competitor == "corrupt_zip":
+            retry = client.post(f"/jobs/{job_id}/export", json={"version_id": version, "destination": str(destination)})
+            assert retry.status_code == 409, retry.text
 
-    assert response.status_code == 409, response.json()
     if competitor == "directory":
         assert destination.is_dir() and not list(destination.iterdir())
     else:
-        assert destination.read_bytes() == b"unrelated new destination"
+        assert destination.read_bytes() == competing_bytes
     [prepared] = tmp_path.glob(".pdfmd-export-*.tmp")
     message = response.json()["error"]
     assert "Prepared work is retained" in message
     assert str(destination) in message and str(prepared.resolve()) in message
-    hashes = store.get("version", version, job=job_id)["files"]
     with zipfile.ZipFile(prepared) as archive:
         assert {name: sha256(archive.read(name)).hexdigest() for name in archive.namelist()} == hashes
