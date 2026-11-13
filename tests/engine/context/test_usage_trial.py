@@ -412,8 +412,10 @@ def test_veto_commits_once_and_survives_reopen(setup, veto):
     # Scenario geometry: the proxy request fits while the usage-anchored
     # reservation (measured > proxy) triggers the veto. Capacity and measured
     # usage were 10000/8000 before T3b enlarged the edit_document schema
-    # (~1,300 proxy tokens); both were rescaled to keep the same geometry.
-    store, job, rt, trial, state, sent, _ = fixture(setup, context=11500, body=120, measured=9600, veto=veto)
+    # (~1,300 proxy tokens), then 11500/9600 before the AR-T5-03 guidance
+    # lengthened the instructions (proxy input 9,489 + 2,048 output reserve).
+    # Each time both were rescaled to keep the same geometry.
+    store, job, rt, trial, state, sent, _ = fixture(setup, context=12000, body=120, measured=10100, veto=veto)
     try:
         pf, f = rt.context.normal(job, state, capacity_deferral=False)
         assert f["fits"]
@@ -873,18 +875,31 @@ def test_review_gate_denominators_are_separate_and_passing_only_invites_review(s
 
 
 @pytest.mark.parametrize("gate", ["cancel", "requests", "active_time"])
-@pytest.mark.parametrize("veto", [False,True])
+@pytest.mark.parametrize("veto", [False, True])
 def test_ordinary_task_guards_apply_without_consuming_trial_budget(setup, gate, veto):
-    store,job,rt,trial,state,sent,_=fixture(setup,context=11500 if veto else 12000,
-        body=120 if veto else 8000, measured=9600 if veto else 500)
+    store, job, rt, trial, state, sent, _ = fixture(setup, context=12000,
+        body=120 if veto else 8000, measured=10100 if veto else 500)
     try:
-        state.update(rt.prepare(state));current=store.get("job",job["id"])
-        if gate=="cancel": store.update_job(job["id"],cancel_requested=True)
-        elif gate=="requests": store.update_job(job["id"],limits={**current["limits"],"max_requests":current["attempts"]})
-        else: store.update_job(job["id"],active_seconds=current["limits"]["max_active_seconds"])
-        with pytest.raises(StopRun): rt.nexus.send(job["id"],state["pending"])
-        assert len(sent)==1 and trial.current()["attempts"]==0 and trial.current()["slot"] is None
-    finally: rt.close()
+        state.update(rt.prepare(state))
+        request = store.get("request", state["pending"])
+        anchor = request["meta"]["capacity"]["anchor"]
+        assert request["kind"] == "normal"
+        assert anchor["disposition"] == ("veto_C" if veto else "decisive")
+        assert trial.current()["veto_decision"] == (anchor["decision_id"] if veto else None)
+
+        current = store.get("job", job["id"])
+        if gate == "cancel":
+            store.update_job(job["id"], cancel_requested=True)
+        elif gate == "requests":
+            store.update_job(job["id"], limits={**current["limits"], "max_requests": current["attempts"]})
+        else:
+            store.update_job(job["id"], active_seconds=current["limits"]["max_active_seconds"])
+        with pytest.raises(StopRun) as stopped:
+            rt.nexus.send(job["id"], state["pending"])
+        assert stopped.value.reason == ("cancelled" if gate == "cancel" else "budget_exhausted")
+        assert len(sent) == 1 and trial.current()["attempts"] == 0 and trial.current()["slot"] is None
+    finally:
+        rt.close()
 
 
 def test_veto_in_another_task_preserves_outstanding_accepted_settlement(setup):

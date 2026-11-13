@@ -23,6 +23,7 @@ import zipfile
 
 import httpx
 import pymupdf
+import pytest
 
 from pdfmd.documents import Documents
 from pdfmd.evidence import Evidence
@@ -205,3 +206,55 @@ def test_scripted_agent_creates_and_corrects_enriched_images_from_tool_results(t
             "created": agent.created, "corrected": agent.corrected, "guidance": {"system": agent.system, **agent.guidance},
             "export_zip_members": sorted(members), "requests_to_scripted_model": len(agent.payloads),
             "store_request_records": len(store.records("request", job))}, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+@pytest.mark.parametrize("enriched_base", [False, True])
+@pytest.mark.parametrize(("markdown", "guidance"), [
+    ("![Map](asset:new/map)", "asset_changes create with client_key 'map'"),
+    ("![Map](asset:id/0123456789abcdef)", "schema 2 base"),
+    ("![Map](asset:new/map.v1)", "Invalid input asset handle"),
+    ("![Map](asset:NEW/map)", "Invalid input asset handle"),
+    ("<asset:new/map>", "need inline/reference links or HTML attributes"),
+])
+def test_handle_rejection_guides_to_a_successful_retry(tmp_path, enriched_base, markdown, guidance):
+    from pdfmd.tools import Dispatcher
+
+    source = make_source(tmp_path / "harbour.pdf")
+    store = Store(tmp_path / "workspace")
+    dispatcher = Dispatcher(store)
+    job = dispatcher.evidence.create_job(str(source), "Handle guidance check only.")["id"]
+    render = dispatcher.evidence.render_page(job, 1, 72)
+    basis = ev(render["ref"], 1, "page")
+    page = {"1": {"disposition": "included", "printed": "7", "printed_basis": basis}}
+    create = {"kind": "create", "client_key": "map", "facts": {
+        "image_ref": render["ref"],
+        "description": {"full": "Whole page.", "filename": "Harbour page", "language": "en", "punctuation": "ascii", "basis": basis},
+        "figure": {"state": "none", "value": None, "basis": basis, "alternatives": []},
+        "locations": [{"physical_page": 1, "region": None, "basis": basis}]}}
+    base = None
+
+    def request(text, changes=()):
+        return {"base_version": base, "expected_head": base, "page_updates": page, "asset_changes": list(changes),
+                "replace_blocks": [{"id": "b", "pages": [1], "markdown": text}]}
+
+    if enriched_base:
+        initial = request("Harbour notes.")
+        initial["source_update"] = {"title": known(TITLE, render["ref"], 1, "visible title")}
+        saved = dispatcher.execute(job, "base", "edit_document", json.dumps(initial))
+        assert saved["ok"], saved
+        base = saved["data"]["version_id"]
+
+    raw = json.dumps(request(markdown))
+    rejected = dispatcher.execute(job, "rejected", "edit_document", raw)
+    assert not rejected["ok"]
+    message = rejected["data"]["error"]
+    assert guidance in message and "in block b" in message
+    assert "registered assets/ path" not in message
+    if markdown == "![Map](asset:new/map)":
+        assert "facts.image_ref" in message
+    assert store.get("job", job)["head"] == base
+    assert store.bytes(rejected["candidate_ref"], job) == raw.encode("utf-8")
+
+    fixed = dispatcher.execute(job, "fixed", "edit_document", json.dumps(request("![Map](asset:new/map)", [create])))
+    assert fixed["ok"], fixed
+    assert Path(fixed["data"]["asset_changes"][0]["asset_path"]).name == "Harbour page-p7.png"

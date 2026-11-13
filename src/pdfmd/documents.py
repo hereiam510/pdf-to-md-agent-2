@@ -282,10 +282,6 @@ class Documents:
         # paths. Input handles are recognized here but allocated only by T3b's
         # enriched creation path, so an unresolved one never publishes.
         interpretation = analyze([b.model_dump() for b in content.blocks], {k: v.model_dump() for k, v in content.pages.items()})
-        handle = next((ref for ref in interpretation.references if ref.destination.lower().startswith("asset:")), None)
-        if handle is not None:
-            raise ValueError("Input asset handles must be resolved by the asset edit operation before publication. "
-                             f"{describe(issue_for(handle))} Use a registered assets/ path. Candidate retained: {candidate_ref}")
         sources, diagnostic_only = source_registrations(self.store.records("blob", job_id))
         try:
             union = dependencies(interpretation, set(sources) | diagnostic_only)
@@ -905,10 +901,16 @@ class Documents:
             try:
                 os.link(temp, target)
             except FileExistsError as exc:
-                if verify(target):
+                try:
+                    matches = verify(target)
+                except OSError:
+                    # A directory or unreadable entry can win the destination race.
+                    matches = False
+                if matches:
                     return verified_receipt()
-                temp = None  # Keep this verified preparation for a destination conflict.
-                raise Conflict("The destination appeared during export. Prepared work is retained.") from exc
+                kept, temp = temp, None  # Keep this verified preparation for a destination conflict.
+                raise Conflict(f"The destination appeared during export: {target}. Prepared work is retained as "
+                               f"{kept}; it contains the verified ZIP and can be renamed or deleted.") from exc
             if not verify(target):
                 raise ValueError(f"The published ZIP failed its member and byte checks: {target}")
             receipt = verified_receipt()

@@ -132,7 +132,7 @@ def test_rejections_identify_reference_and_preserve_candidate_and_head(setup, tm
     assert_rejected(d, job["id"], "markup", edit([{"id": "b", "pages": [1], "markdown": f'<img src="{own}" SRC="{own}">'}]), None,
                     "Ambiguous or duplicate resource attributes")
     assert_rejected(d, job["id"], "handle", edit([{"id": "b", "pages": [1], "markdown": "[new](asset:new/figure)"}]), None,
-                    "handles must be resolved")
+                    "asset_changes create with client_key 'figure'", "facts.image_ref")
     real = documents_module.analyze
 
     def spanless(blocks, pages):

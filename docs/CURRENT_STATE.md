@@ -2,12 +2,20 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 continuation after the offline repairs and Windows checks.
-Resume at: the [same-revision Windows verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-and-same-revision-windows-verification) and the [T5 criterion map](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-criterion-evidence-map).
-Next activity: select a remaining validation scope when the user continues, using the [follow-up discussion](discussions/ASSET_REFERENCES.md#t5-offline-repairs-and-same-revision-checks-selected).
-Instruction basis: the user's 2026-11-12 selection of both offline repairs and the same-revision Windows checks, keeping explicit legacy adoption available.
+Current focus: R01CAL-A03-DELIVERY-01 after the offline follow-up for AR-T5-08 to AR-T5-10.
+Resume at: the [offline repair and regression checks](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-08-to-ar-t5-10).
+Next activity: await selection of a remaining T5 activity from the [work register](WORK_ITEMS.md#selection-now).
+Instruction basis: the user's [2026-11-13 offline selection](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-follow-up-for-ar-t5-08-to-ar-t5-10), with live adoption and branch publication deferred.
 
 ## Return routes
+
+- Selection basis: [standalone review of the T5 cleanup](batches/R01CAL-A03-DELIVERY-01/verification.md#standalone-review-of-the-t5-cleanup).
+
+- Reviewed increment: [AR-T5-05 to AR-T5-07 cleanup](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5-05-to-ar-t5-07-cleanup).
+
+- Previous review: [AR-T5-03 and AR-T5-04 implementation review](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-the-ar-t5-03-and-ar-t5-04-implementation).
+
+- Previous increment: [same-revision Windows verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-and-same-revision-windows-verification) and [selection](discussions/ASSET_REFERENCES.md#t5-offline-repairs-and-same-revision-checks-selected).
 
 - Previous review: [standalone checkpoint review](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-standalone-checkpoint-review) and [offline follow-up proposal](discussions/ASSET_REFERENCES.md#t5-checkpoint-review-and-follow-up-proposal).
 

@@ -306,25 +306,39 @@ def test_concurrent_exports_reconcile_without_sharing_preparation(setup, tmp_pat
         assert {name: sha256(archive.read(name)).hexdigest() for name in archive.namelist()} == hashes
 
 
-def test_export_preserves_a_destination_that_appears_during_publication(setup, tmp_path, monkeypatch):
+@pytest.mark.parametrize("competitor", ["file", "directory"])
+def test_export_preserves_a_destination_that_appears_during_publication(setup, tmp_path, monkeypatch, competitor):
+    from fastapi.testclient import TestClient
+    from pdfmd.server import create_app
+
     store, job = setup
     job_id = job["id"]
     version = call(Dispatcher(store), job_id, "save", edit())["data"]["version_id"]
-    destination = tmp_path / "delivery.zip"
+    destination = (tmp_path / "delivery.zip").resolve()
     link = os.link
 
     def competing_link(source, target):
         if target == destination:
-            target.write_bytes(b"unrelated new destination")
+            if competitor == "directory":
+                target.mkdir()
+            else:
+                target.write_bytes(b"unrelated new destination")
         return link(source, target)
 
-    with monkeypatch.context() as patch:
-        patch.setattr(os, "link", competing_link)
-        with pytest.raises(Conflict, match="Prepared work is retained"):
-            Documents(store).export(job_id, version, str(destination))
+    with TestClient(create_app(store.root, "synthetic-only"), headers={"Authorization": "Bearer synthetic-only"}) as client:
+        with monkeypatch.context() as patch:
+            patch.setattr(os, "link", competing_link)
+            response = client.post(f"/jobs/{job_id}/export", json={"version_id": version, "destination": str(destination)})
 
-    assert destination.read_bytes() == b"unrelated new destination"
+    assert response.status_code == 409, response.json()
+    if competitor == "directory":
+        assert destination.is_dir() and not list(destination.iterdir())
+    else:
+        assert destination.read_bytes() == b"unrelated new destination"
     [prepared] = tmp_path.glob(".pdfmd-export-*.tmp")
+    message = response.json()["error"]
+    assert "Prepared work is retained" in message
+    assert str(destination) in message and str(prepared.resolve()) in message
     hashes = store.get("version", version, job=job_id)["files"]
     with zipfile.ZipFile(prepared) as archive:
         assert {name: sha256(archive.read(name)).hexdigest() for name in archive.namelist()} == hashes

@@ -424,13 +424,29 @@ def dependencies(analysis: Analysis, registered: set[str], *, handles: dict[str,
         kind, path = classify(ref.destination, ref.role)
         if kind == "unrelated":
             continue
+        if kind == "invalid":
+            if ref.destination.lower().startswith("asset:"):
+                raise ReferenceError("ASSET_REFERENCE_INVALID",
+                                     "Invalid input asset handle. Use lowercase asset:new/<client_key> with a matching "
+                                     "asset_changes create. Use 1 to 64 ASCII letters, digits, underscores or hyphens "
+                                     "for the client_key. For an existing occurrence, use asset:id/<occurrence_id> "
+                                     "from the selected schema 2 base.", ref)
+            raise ReferenceError("ASSET_REFERENCE_INVALID", "Use the exact registered asset URI; image sources must be local registered assets.", ref)
         if kind == "handle":
+            if ref.span is None:
+                raise ReferenceError("ASSET_SPAN_AMBIGUOUS", "Write the handle in an explicit link or image destination "
+                                     "with an unambiguous source span.", ref)
             path = (handles or {}).get(ref.destination)
             if path is None:
-                raise ReferenceError("ASSET_REFERENCE_INVALID", "Resolve the input asset handle in this edit before publication.", ref)
+                if ref.destination.startswith("asset:new/"):
+                    key = ref.destination.removeprefix("asset:new/")
+                    raise ReferenceError("ASSET_REFERENCE_INVALID",
+                                         f"To resolve this handle, add an asset_changes create with client_key {key!r} and facts.image_ref set to the "
+                                         "render_page or extract_image result's ref, with its source-grounded facts.", ref)
+                raise ReferenceError("ASSET_REFERENCE_INVALID",
+                                     "For this handle, use an occurrence ID from the selected schema 2 base, or add an asset_changes create "
+                                     "and use asset:new/<client_key>.", ref)
             asset_uri(path)
-        elif kind == "invalid":
-            raise ReferenceError("ASSET_REFERENCE_INVALID", "Use the exact registered asset URI; image sources must be local registered assets.", ref)
         if path not in registered:
             raise ReferenceError("ASSET_NOT_OWNED", "This asset is not registered in the selected task/version. Register it in this edit or correct the destination.", ref)
         if ref.span is None:
