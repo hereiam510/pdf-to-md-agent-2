@@ -8,7 +8,7 @@ Planned 2026-11-14 (Asia/Singapore) after the user's "Confirm and plan tickets",
 
 Revised the same day after a review of the plan: T5 now includes the Electron bridge, T2's scope is narrowed to classification and reporting, the defect rule follows the authorized work, and shared interfaces have one owner. C1 and C2 are unchanged.
 
-Planning authorizes no implementation, provider call or sleep test. Each ticket below needs an implementation request. Once a request authorizes a set of tickets, the main agent carries them through implementation, checks, scoped corrections and records without asking again at each ticket boundary, within that request's scope.
+The user authorized implementation of T1–T6 on 2026-11-14, with offline checks only. T7 and live Nexus testing are deferred. Preserve unrelated changes and commit the NET-01 records before implementation.
 
 **Rules for every ticket.**
 

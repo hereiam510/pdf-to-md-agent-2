@@ -3,9 +3,9 @@
 ## Focus and resume route
 
 Current focus: NET-01 network-failure handling (Stage C) before the next Stage B batch.
-Resume at: [NET-01 tickets](batches/NET-01/tickets.md#sequence-and-dependencies), with T1 and T2 ready, under the adopted [spec](batches/NET-01/spec.md). The [network discussion](discussions/NETWORK_RECOVERY.md#questions-for-the-spec) holds its basis and the three review reconciliations.
-Next activity: implementation of the tickets the user requests, starting with T1 and T2.
-Instruction basis: the user's 2026-11-14 direction to establish network-problem handling before Stage B, their acceptance of choices A to D with answer E, their request to check the independent reviews, and the 2026-11-14 request "prepare the spec" with a fourth review comment, fifth and sixth review comments that led to revisions 2 and 3 (see [status](batches/NET-01/spec.md#status-and-authority)), and "Confirm and plan tickets", which adopted C1 and C2. No implementation, provider call or sleep test is authorized yet.
+Resume at: [NET-01 ticket sequence](batches/NET-01/tickets.md#sequence-and-dependencies), under the adopted [spec](batches/NET-01/spec.md).
+Next activity: implement and verify T1–T6.
+Instruction basis: [NET-01 execution authority](batches/NET-01/tickets.md#planning-basis-and-authority) and the [adopted specification](batches/NET-01/spec.md#status-and-authority).
 
 ## Return routes
 
