@@ -387,7 +387,7 @@ class Nexus:
             if request["status"] == "http_error":
                 raise StopRun(failure.get("reason", "provider_configuration_error"),
                               failure.get("message", "Nexus returned an HTTP error."))
-            if (failure.get("reason") == "provider_configuration_error"
+            if (failure.get("reason") in network.NETWORK_PAUSES | {"provider_configuration_error"}
                     or not policy.get("replay_unknown")
                     or len(request["attempts"]) >= policy.get("max_attempts_per_request", 1)):
                 raise StopRun(failure.get("reason", "unknown_outcome"),

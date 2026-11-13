@@ -57,4 +57,6 @@ The [runtime contract](../../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-tr
 
 ### Combined verdict
 
-Offline integration checks are in progress. Real Windows sleep and wake remain with [T7](tickets.md#t7--real-windows-sleep-and-wake-check). Live route testing requires its own selection.
+The 58-case NET-01 graph suite passed, plus the separate real loopback-refusal check. A 153-case targeted engine run passed, covering active time, acceptance settlement, task settings and compaction recovery. Fourteen additional transport and settlement checks passed after the reported pointer corrections. The focused desktop wake/cooldown fixture and loopback termination/export case passed. TypeScript checking, the development build, frozen-engine startup/TLS/XMP smoke, and repository documentation checks passed. The frozen-engine check exercised the implementation before the follow-up loopback classification change.
+
+Complete-suite verification remains open. The first broad runs started before the fixture and diagnostic pointer corrections and recorded failures at those boundaries. The desktop run also hit timeouts in existing Responses context-delivery cases. See the retained local logs under `build/net-01-*.log`. An all-green run on the final revision remains necessary for T6. Real Windows sleep and wake remain with [T7](tickets.md#t7--real-windows-sleep-and-wake-check). Live route testing requires its own selection.

@@ -331,8 +331,8 @@ class Runtime:
         if request.get("failure", {}).get("reason") in NETWORK_PAUSES | {"retry_scheduled"}:
             raise Conflict("Use the pending network recovery action for this compaction.")
 
-    def network_recovery(self, job: str) -> dict | None:
-        request = self.pending_request(job)
+    def network_recovery(self, job: str, request: dict | None = None) -> dict | None:
+        request = request or self.pending_request(job)
         if not request or self.accepted_locally(request):
             return None
         failure = request.get("failure", {})
@@ -360,7 +360,7 @@ class Runtime:
             raise Conflict("The selected request is no longer pending. Refresh the task before retrying.")
         if self.accepted_locally(request):
             return True
-        recovery = self.network_recovery(job)
+        recovery = self.network_recovery(job, request)
         if not recovery or recovery["action"] != "retry" or receipt:
             raise Conflict("Only a paused retryable request can receive this Retry choice.")
         if recovery["retry_remaining_seconds"] > 0:
