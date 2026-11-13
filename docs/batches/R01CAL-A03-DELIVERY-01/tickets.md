@@ -28,7 +28,7 @@ The 2026-11-09 [AR-S4.4 adoption](../../discussions/ASSET_REFERENCES.md#primary-
 | [T3a](#r01cal-a03-delivery-01-t3a) | Save and export portable links under existing registered hash paths | T2's shared reference and preview contribution | Scoped contribution completed. [Implementation evidence and limits](verification.md#t3a-portable-link-save-implementation-and-verification) |
 | [T3b](#r01cal-a03-delivery-01-t3b) | Create readable, independently informative source-image deliverables | T3a's shared save path, positive T1-F06 qualification and explicit product selection of the candidate | In progress: selected 2026-11-10; the [remaining scope](#r01cal-a03-delivery-01-t3b) is on the T5 route |
 | [T4](#r01cal-a03-delivery-01-t4) | Correct source facts and synchronize assets and references atomically | T3b's enriched creation and publication path | Selected completion checks done in [T4-A to T4-C](#t4-follow-up-tickets); combined acceptance belongs to T5 |
-| [T5](#r01cal-a03-delivery-01-t5) | Establish combined save/reopen/export and declared-platform acceptance | Integrated T2, T3a, T3b and T4, with matching qualified and selected T1-F06 artifacts and invocation | [Closing tickets](#t5-closing-tickets) and [updated verdict with open criteria](verification.md#t5-verdict-update-after-the-windows-naming-repair); [final tickets](#t5-final-tickets) selected 2026-11-13 |
+| [T5](#r01cal-a03-delivery-01-t5) | Establish combined save/reopen/export and declared-platform acceptance | Integrated T2, T3a, T3b and T4, with matching qualified and selected T1-F06 artifacts and invocation | Verification complete under the amended scope. [T5 final verdict](verification.md#t5-final-verdict) and [final tickets](#t5-final-tickets) |
 
 T3a addresses P2 first when authorized. T1-F06 may be selected independently. One integrator owns the overlapping document publication path across T3a, T3b and T4. A scoped repair or qualification is distinct from the combined acceptance.
 
@@ -296,7 +296,7 @@ Completed on 2026-11-12 for the selected [collision, history and recovery case](
 
 Resolve in-scope integration defects and recheck affected criteria when future execution authority includes implementation. Preserve failed evidence and source limitations. The [verification owner](verification.md) records criterion-level observations, residuals and the combined verdict; ticket completion alone is not that verdict. Broader live conversion, numerical tuning, original A03 repair, installer delivery and cleanup remain outside this batch.
 
-**Exit:** every AR-1–AR-12 criterion has a source-linked observation or explicitly unresolved disposition, and the combined verdict accounts for all required destinations and source-preservation limits. Whole-batch acceptance requires the applicable conditions to pass; an unavailable required platform/check leaves acceptance incomplete. A completed review with unresolved criteria is recorded as such and does not become an accepted delivery. Keep software behavior, source-image fidelity, metadata interoperability and package consistency distinguishable in the verdict.
+**Exit:** complete. The [T5 final verdict](verification.md#t5-final-verdict) applies the [amended scope](spec.md#status-and-authority) and accounts for all applicable AR-1–AR-12 conditions, required destinations and source-preservation limits. The linked criterion evidence distinguishes software behavior, source-image fidelity, metadata interoperability and package consistency.
 
 ### T5 local execution
 
@@ -513,7 +513,7 @@ The user [selected](../../discussions/ASSET_REFERENCES.md#t5-final-route-and-mer
 | Ticket | Contribution | Depends on | Ready |
 | --- | --- | --- | --- |
 | [T5-L2](#t5-l2--live-re-run-with-the-clarified-guidance) | Check real-model title transfer and the evidence-of-absence path after T5-G1 | Committed and pushed records from this planning step | [Live run and review complete](verification.md#t5-live-re-run-after-the-guidance-clarification) |
-| [T5-V2](#t5-v2--close-the-t5-verdict) | Close the T5 and batch verdict under the amended scope | T5-L2 | After T5-L2 |
+| [T5-V2](#t5-v2--close-the-t5-verdict) | Close the T5 and batch verdict under the amended scope | T5-L2 | [Final verdict recorded](verification.md#t5-final-verdict) |
 | [T5-M](#t5-m--mark-pr-1-ready-and-merge) | Mark PR #1 ready and merge it into `master` | T5-V2 committed and pushed | After T5-V2 |
 
 **Order:** T5-L2, T5-V2, T5-M, one at a time in this checkout. Push the branch after each ticket so PR #1 carries its records. T5-L2 and T5-V2 change no product code.

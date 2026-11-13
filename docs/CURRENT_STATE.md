@@ -3,9 +3,9 @@
 ## Focus and resume route
 
 Current focus: R01CAL-A03-DELIVERY-01 T5 final tickets.
-Resume at: [T5-V2 — Close the T5 verdict](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-v2--close-the-t5-verdict) using the [T5-L2 evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-live-re-run-after-the-guidance-clarification).
-Next activity: await the user's T5-V2 assignment. The current instruction covers T5-L2 through the branch push.
-Instruction basis: the user's [2026-11-13 final route and merge approval](discussions/ASSET_REFERENCES.md#t5-final-route-and-merge-approved). It covers one bounded live re-run, the closing verdict under the AR-8 and AR-9 amendment, and a merge-commit merge of PR #1. Squash, rebase and branch deletion are not authorized.
+Resume at: [T5-M — Mark PR #1 ready and merge](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-m--mark-pr-1-ready-and-merge) using the [T5 final verdict](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-final-verdict).
+Next activity: await the user's T5-M assignment. Choose the next work from [WORK_ITEMS](WORK_ITEMS.md#selection-now) after the merge.
+Instruction basis: the user's 2026-11-14 T5-V2 instruction covers the verdict, checks, commit and push, then stops before T5-M. The [2026-11-13 final route and merge approval](discussions/ASSET_REFERENCES.md#t5-final-route-and-merge-approved) records the amended scope and the approved merge method for the separate ticket.
 
 ## Return routes
 
