@@ -28,7 +28,7 @@ The 2026-11-09 [AR-S4.4 adoption](../../discussions/ASSET_REFERENCES.md#primary-
 | [T3a](#r01cal-a03-delivery-01-t3a) | Save and export portable links under existing registered hash paths | T2's shared reference and preview contribution | Scoped contribution completed. [Implementation evidence and limits](verification.md#t3a-portable-link-save-implementation-and-verification) |
 | [T3b](#r01cal-a03-delivery-01-t3b) | Create readable, independently informative source-image deliverables | T3a's shared save path, positive T1-F06 qualification and explicit product selection of the candidate | In progress: selected 2026-11-10; the [remaining scope](#r01cal-a03-delivery-01-t3b) is on the T5 route |
 | [T4](#r01cal-a03-delivery-01-t4) | Correct source facts and synchronize assets and references atomically | T3b's enriched creation and publication path | Selected completion checks done in [T4-A to T4-C](#t4-follow-up-tickets); combined acceptance belongs to T5 |
-| [T5](#r01cal-a03-delivery-01-t5) | Establish combined save/reopen/export and declared-platform acceptance | Integrated T2, T3a, T3b and T4, with matching qualified and selected T1-F06 artifacts and invocation | [Local execution and continuation](#t5-local-execution) |
+| [T5](#r01cal-a03-delivery-01-t5) | Establish combined save/reopen/export and declared-platform acceptance | Integrated T2, T3a, T3b and T4, with matching qualified and selected T1-F06 artifacts and invocation | [Local execution and continuation](#t5-local-execution); [closing tickets](#t5-closing-tickets) selected 2026-11-13 |
 
 T3a addresses P2 first when authorized. T1-F06 may be selected independently. One integrator owns the overlapping document publication path across T3a, T3b and T4. A scoped repair or qualification is distinct from the combined acceptance.
 
@@ -317,6 +317,154 @@ The selected offline work is complete. See the [regression evidence](verificatio
 The user selected the [corrupt competing ZIP repair](verification.md#ar-t5-11--a-corrupt-competing-zip-can-discard-the-verified-preparation) for offline implementation. Under AR-6, a DEFLATE read failure in the competing ZIP must leave it in place and preserve the verified preparation with a conflict diagnostic naming both paths. Check the same-destination retry and the identical-ZIP control. Live adoption and branch publication remain deferred.
 
 The selected offline work is complete. See the [regression evidence](verification.md#t5-offline-repair-for-ar-t5-11).
+
+### T5 closing tickets
+
+The user [selected](../../discussions/ASSET_REFERENCES.md#t5-closing-route-selected) the T5 closing route on 2026-11-13 and asked for tickets before execution. The user will assign these tickets to other models. Each executor reads [AGENTS.md](../../../AGENTS.md), this section, the ticket's linked basis and the [T5 ticket](#r01cal-a03-delivery-01-t5). The [criterion map](verification.md#t5-criterion-evidence-map) owns remaining acceptance, and [verification](verification.md) receives each ticket's observations in a new section named in the ticket.
+
+| Ticket | Contribution | Depends on | Ready |
+| --- | --- | --- | --- |
+| [T5-F12](#t5-f12--repair-ar-t5-12) | Keep the verified preparation for any unreadable competing ZIP | None | Yes |
+| [T5-L1](#t5-l1--bounded-live-adoption-run) | Observe whether a real model takes the enriched save path | None. Running after T5-F12 lets T5-R reuse the same revision | Yes |
+| [T5-R](#t5-r--final-windows-chain-on-the-verdict-revision) | Repeat the Windows desktop and frozen-engine chain once | T5-F12 and T5-L1 complete, with no unreviewed code change after them | After both |
+| [T5-V](#t5-v--combined-t5-verdict) | Record the combined T5 and batch verdict | T5-R | After T5-R |
+| [T5-P](#t5-p--publish-the-batch-branch) | Push the branch and open a PR to `master` | Push: none. PR: T5-V, or a draft PR earlier | Push yes |
+
+**Recommended order:** T5-P push, T5-F12, T5-L1, T5-R, T5-V, then the PR. Run them one at a time in this checkout. They all edit `verification.md`, this file, [WORK_ITEMS](../../WORK_ITEMS.md) and [CURRENT_STATE](../../CURRENT_STATE.md). Only T5-F12 changes `src/pdfmd/documents.py`. If two tickets run in parallel, give each its own worktree and have one integrator merge the records.
+
+**Rules for every ticket.** Commit locally when the ticket is complete, with the attribution the repository uses. Do not push except under T5-P. Do not merge, change global settings or install software globally. Do not read credentials from conversation or authentication logs. Keep runtime stores, logs and outputs in a new uniquely named ignored folder under `.local/`, `workspaces/` or `outputs/`, following [artifact storage](../../ARTIFACT_STORAGE.md#ownership-and-locations). Do not overwrite earlier runs. Preserve failed evidence and say what was not run. If a ticket finds a new defect, record it as the next `AR-T5-NN` finding with a reproduction, severity and impact. Add it to the [work register](../../WORK_ITEMS.md#context-capability-and-delivery-work) and stop for the user. Do not fix it in the same ticket unless it is inside that ticket's stated scope. Update [CURRENT_STATE](../../CURRENT_STATE.md#focus-and-resume-route) when the ticket finishes. Run `python tools/docs/check_docs.py` and `git diff --check` before committing.
+
+#### T5-F12 — Repair AR-T5-12
+
+**Basis:** [AR-T5-12](verification.md#ar-t5-12--other-unreadable-competing-zips-still-discard-the-verified-preparation), [AR-6](spec.md#ar-6--exact-export-and-relocation-without-inference), [export retention contract](../../design/RUNTIME_AND_DELIVERY.md#continuation-feedback-and-delivery-settlement). The method is settled. Offline only; no provider call.
+
+**Change.** In `Documents.export` in `src/pdfmd/documents.py`, the local `verify(path)` returns `False` only for `zipfile.BadZipFile` and `zlib.error`. `zipfile` also raises `RuntimeError` (encrypted member), `NotImplementedError` (unsupported compression method), `EOFError` and other errors. Comparing a *competing destination* has one meaning: does it already hold this version's export? Any failure to read it means no.
+
+- Add a helper, for example `holds_this_export(path)`, that returns `verify(path)` and returns `False` on any `Exception`. Use it at both destination comparisons: the pre-check `if self.store.maybe("export", intent) and verify(target)` and the comparison after `os.link` raises `FileExistsError`. The `except OSError` around the post-link comparison then becomes unnecessary.
+- Keep `verify(temp)` and the post-publication `verify(target)` strict. Those check the attempt's own files, and a failure there must still be reported.
+- Keep the outer `except OSError` mapping to `_destination_error` for the attempt's own folder, preparation and publication errors.
+- Expected behavior: a competing destination that appears during publication and cannot be read returns 409. The message names the destination and the retained preparation. The preparation keeps the selected version's exact members, and the competing bytes are unchanged. An existing unreadable destination at the pre-check returns the existing-destination conflict, 409, "The destination exists". This includes an existing directory, which currently gives 400 through the `OSError` path. Record that response change in the verification section.
+
+**Tests.** In `tests/engine/documents/test_documents.py`, extend the parameter list of `test_export_preserves_a_destination_that_appears_during_publication` with `encrypted_zip` and `unsupported_method_zip`. Build each from the source preparation's bytes, as `corrupt_zip` does:
+
+- **Encrypted:** set bit 0 of the general-purpose flag at offset 6 of the first local header (`PK\x03\x04`) and at offset 8 of the first central directory header (`PK\x01\x02`).
+- **Unsupported method:** set the 16-bit compression method to 93 at offset 8 of the first local header and at offset 10 of the first central directory header.
+
+Assert inside the hook that the member names still match and that `archive.read` raises the expected exception, so the case cannot pass vacuously. Add a retry for each new case, as for `corrupt_zip`. The retry reaches the pre-check with the intent the first attempt recorded. Add the same retry to the `directory` case; it must return 409 with "destination exists" instead of the current 400. First run the new cases against the unchanged code and record that they fail with 500. The review's probe, which is not in the repository, saw `RuntimeError` and `NotImplementedError` with 500 and a deleted preparation.
+
+**Checks.** `.venv\Scripts\python.exe -m pytest tests/engine/documents` must pass. On 2026-11-13 the group had 220 tests before these additions. Then run the full `.venv\Scripts\python.exe -m pytest` once and record the count and exit code. Record SHA-256 of `documents.py` and `test_documents.py`.
+
+**Records.** Add verification section `## T5 offline repair for AR-T5-12`. Update the [execution guide](../../guides/EXECUTION_AND_DELIVERY.md#10-explicit-version-export-and-publication), which describes the decompression failure path, to say that any read failure of a competing destination is a conflict. Add the evidence link to the AR-6 row of the [criterion map](verification.md#t5-criterion-evidence-map), and update the AR-T5-12 row in WORK_ITEMS.
+
+#### T5-L1 — Bounded live adoption run
+
+**Question:** under ordinary guidance, does a real model deliver source images through `edit_document` with `asset_changes` creates on its first image save, producing schema 2 with readable names and standalone provenance? Or does it use a schema 1 hash-path link? The run answers this for one model, source and request. It is not a reliability rate and does not certify conversion fidelity in general. Basis: [AR-8](spec.md#ar-8--source-grounded-naming-and-embedded-standalone-provenance), [AR-T5-03](verification.md#ar-t5-03--system-instructions-also-steer-delivery-to-schema-1) and the [selection](../../discussions/ASSET_REFERENCES.md#t5-closing-route-selected).
+
+**Authority.** One fresh task and one Start against the provider, within the limits below. No Continue, replay, second Start, extension or replacement run. Do not repair or coach mid-run. If preparation fails, stop before Start and report.
+
+**Source and scope.** Use `references/news-writing/source.pdf` (ignored, local). Before anything else, check that it is 290 pages with SHA-256 `9d23a3c4a519a1c04357a6f2e64093afd1c001034e8e4576561883c13b1cad4e`. A missing or different file blocks the run; do not substitute another PDF. The requested scope is physical pages 1–3. Each is one full-page DCT JPEG with no printed page number: page 1, the front cover, is RGB, object 2137, with original stream SHA-256 `228660d981f8af0dc7415d84f8b4b1cb06b052a416e7129f2e9cdeb4f715088b`; page 2 is RGB and page 3 is gray. Use this exact task request, written in the A03 form with no coaching:
+
+> Convert physical pages 1–3 (the front cover and front matter) of this 290-page PDF into faithful, readable, reusable Markdown with source images where needed. Account truthfully for the full physical-page inventory and deliver your selected saved version. Choose your own source reads and conversion methods.
+
+Do not supply tool instructions, `asset_changes` examples, expected names, earlier outputs, reviewer renders or this ticket to the converter.
+
+**Route and limits.** Use the A03 values recorded in [Task A's identities](../../verification/20261106_1408_R01CAL_TASK_A.md#identities-and-preserved-conditions) and [A03's configuration](../R01CAL-A03/spec.md#selected-configuration-and-finite-interval):
+
+- **Route:** `cliproxy/gpt-6.1-sol`, `reasoning_effort: low`, Chat Completions through the existing Nexus gateway, vision on.
+- **Allowances:** context 131,072, output 8,192, image 4,096.
+- **Request limits:** at most 12 physical application sends, including compaction and response-correction sends; at most 1,200 known active seconds; Stop at 1,500 seconds of wall time after Start; one attempt per request; replay off.
+- **Optional mechanisms:** trusted scripts, the observer and usage anchoring stay off.
+
+If the current app cannot set a field identically, for example because waiting now defaults to streaming progress, record the effective value. A different waiting policy is acceptable. A different route, model or effort is not. Use the existing subscription route only, with no purchase, top-up or paid fallback. If metered billing exposure is unknown or has changed, stop before Start and ask the user.
+
+**Preparation, offline.** Follow steps 1–2 of [A03's preparation](../R01CAL-A03/spec.md#preparation-execution-and-evidence-responsibilities):
+
+- **Launch:** use the development launcher, `.\tools\dev\start.ps1 -Workspace <new workspace>`. It loads the credential from the ignored `private/api-key.txt` without printing it.
+- **Task:** import the source and create the fresh task, then record the source, build, lockfile and task identities and the effective limits.
+- **Readiness:** confirm Start, monitoring, Stop, reopen and export work, with zero requests.
+- **Tooling:** drive the UI with the supported Electron and Playwright tooling. Native Windows capture is unreliable ([OPS-01](../../WORK_ITEMS.md#context-capability-and-delivery-work)). [A03 T3](../R01CAL-A03/verification.md#t3-single-finite-conversion-2026-11-08) shows the monitoring and settlement records to keep.
+
+**Run.** Start once and monitor until the task reports complete, partial or waiting, or a limit stops it. Keep the frozen payloads, native responses, candidates, operation receipts, versions and usage the store records.
+
+**Observations to record:**
+
+1. **First image save.** Which `edit_document` call first carries an image, its schema version, and whether it uses `asset_changes` creates with `facts.image_ref` taken from `extract_image` or `render_page`. Quote any rejection message and the agent's next attempt; [AR-T5-08](verification.md#ar-t5-08--handle-guidance-can-prescribe-an-invalid-retry) changed those messages.
+2. **Image path.** Whether the agent used `extract_image`, which preserves the DCT originals, or `render_page`. Compare each retained original with the PDF stream bytes. Record the delivered basenames and the printed-label state for each page. No printed label is visible on pages 1–3, so `none` with evidence is expected, and `unknown` must be explained.
+3. **Selected version.** Close and relaunch the app, open the selected version explicitly, check that the images decode and Return works, then export it. Use a fresh short folder under `outputs/`, not a long path. Confirm that requests and attempts do not increase during reopen and export.
+4. **Standalone provenance.** Copy each delivered image alone into an empty folder, rename it and read it with ExifTool 13.55 at `.local/ar-t1-20261108-qualification/dependencies/exiftool/exiftool-13.55_64/exiftool.exe`. Check the source title, physical page, printed-label state and source identity against the saved record.
+5. **Content.** Compare the saved Markdown with the visible pages 1–3 and record discrepancies. Review the page map for all 290 pages.
+6. **Usage.** Record native usage, active time, sends and anything unknown.
+
+**Result.** Report one of the following:
+
+- **Adopted:** the first image save is schema 2 through creates.
+- **Adopted after correction:** a rejected attempt was followed by an autonomous schema 2 save.
+- **Not adopted:** the selected version has schema 1 hash links or embeds.
+- **Inconclusive:** no image was saved, or the run stopped first.
+
+Keep this result separate from content fidelity, AR-8 naming and provenance on real pages, and package consistency. Do not change the guidance or code in this ticket. Any of these sends the decision on requiring enriched saves back to the user: not adopted, adopted only after correction, or a defect found in the run.
+
+**Records.** Add verification section `## T5 live adoption run`. Update the AR-8 row, and AR-12 where the run applies, in the [criterion map](verification.md#t5-criterion-evidence-map). Add the result to the [selection discussion](../../discussions/ASSET_REFERENCES.md#t5-closing-route-selected) and update the AR-T5-03 row in WORK_ITEMS. Usage evidence follows the [cost rule](../../../AGENTS.md#verification-and-records): keep unknowns unknown.
+
+#### T5-R — Final Windows chain on the verdict revision
+
+**Purpose:** one Windows desktop and frozen-engine chain on the exact revision that carries the T5 verdict, replacing the `2b8e2ef` run in the [same-revision record](verification.md#t5-offline-repair-and-same-revision-windows-verification). Offline; no provider call. Start only when T5-F12 and T5-L1 are committed and nothing else changed product code. If T5-L1 led to a user-selected code change, run after that change.
+
+**Steps.** Repeat that record's chain on the current commit, using the harness scripts retained under ignored `.local/t5-final-c19a72/` and its `chain/` folder (`seed.py`, `desktop.cjs`, `verify-package.py`, `verify-browser.cjs`) as the starting point. Copy them to a new run folder and adjust paths.
+
+1. **Builds.** Build the Electron app with `pnpm build` and freeze the engine with `.\tools\build\build-windows.ps1`, both from the same commit. Record the commit, the frozen engine SHA-256 and the tool versions.
+2. **Smoke and regression checks.** Run the frozen startup and the writer smoke check (`tools/build/check-frozen-engine.py`) and `pnpm test:desktop`. Run the full `.venv\Scripts\python.exe -m pytest` once and record the count and exit code.
+3. **One version through Windows delivery:**
+   - Save a schema 2 version on the synthetic PDF through the frozen HTTP edit route, then advance the head in the desktop editor.
+   - Close and relaunch the app, select the older version explicitly, decode its image links and Return.
+   - Make two desktop exports and one frozen export, and compare all members byte for byte.
+   - Extract to a short new folder, follow the links in Chrome for Testing 157.0.8103.38 (`.local/t5-971eccc/chrome/chrome-win64/chrome.exe`), and read each renamed standalone image with ExifTool 13.55.
+   - Check that copied ranges outside primary XMP and the decoded pixels match the source evidence.
+4. **Windows-row controls.** Repeat the following:
+   - the collision package through Python `zipfile`, Windows `tar.exe` and PowerShell 7 `Expand-Archive`;
+   - the long ZIP path and the overlong-component 400;
+   - the deep-extraction limits;
+   - the export conflict cases: file, directory, corrupt, encrypted and unsupported-method competitors, plus the concurrent identical-ZIP retry.
+
+**Records.** Add verification section `## T5 final same-revision Windows verification` with all identities. Point the AR-5, AR-6 and AR-12 rows of the [criterion map](verification.md#t5-criterion-evidence-map) at it. If any check fails, record it as a finding and stop.
+
+#### T5-V — Combined T5 verdict
+
+**Purpose:** meet the [T5 exit](#r01cal-a03-delivery-01-t5). Every AR-1–AR-12 criterion gets a linked observation or an explicit unresolved disposition, and the batch receives one combined verdict. Documentation only.
+
+**Work.**
+
+- Add verification section `## T5 combined verdict`. Give one row per criterion with its evidence and verdict, built on the [criterion map](verification.md#t5-criterion-evidence-map) and the T5-F12, T5-L1 and T5-R sections.
+- Report software behavior, source-image fidelity, metadata interoperability, package consistency and real-model adoption separately before the combined verdict.
+- Apply the [verdict scope amendment](spec.md#status-and-authority): a publisher JPEG with competing or legacy XMP is a recorded AR-12 limitation, not a blocker.
+- Record the Linux and macOS rows as deferred under [XPLAT-01](../../WORK_ITEMS.md#context-capability-and-delivery-work), unverified.
+- An "inconclusive" or "not adopted" result from T5-L1 leaves AR-8's agent path open and must be stated in the verdict. It does not justify calling the batch fully accepted.
+
+**Also update:**
+
+- the T5 row of the [sequence table](#sequence-and-dependencies);
+- the R01CAL-A03-DELIVERY-01 row in WORK_ITEMS, with residual items and their revisit conditions;
+- [PHASE_PLAN readiness](../../PHASE_PLAN.md#readiness-and-evidence) only if a stage's completion basis changed: this batch does not by itself close Stage B or Stage D;
+- CURRENT_STATE.
+
+Recommend the next work from [WORK_ITEMS selection](../../WORK_ITEMS.md#selection-now) without selecting it.
+
+#### T5-P — Publish the batch branch
+
+**Authority:** the user [authorized](../../discussions/ASSET_REFERENCES.md#t5-closing-route-selected) pushing `codex/r01cal-a03-delivery-01` and opening a PR to `master`. Merging, force-pushing, rewriting history and deleting branches are not authorized.
+
+**Work.**
+
+1. **Push.** Check that the working tree is clean and that no ignored private data is tracked: `git ls-files` must not include `private/`, `references/`, `.local/`, `workspaces/` or `outputs/`. Then run `git push -u origin codex/r01cal-a03-delivery-01`. This can happen at any time and again after each ticket. If the push is rejected, stop and report; do not force.
+2. **PR.** After T5-V, open a PR with base `master`. Opening a draft PR earlier is also allowed. The description gives:
+   - the problem: P2 broken portable source-image links from A03;
+   - the delivered behavior: portable links, enriched schema 2 images with readable names and standalone XMP provenance, corrections, export publication protection, and Windows-only scope;
+   - the T5 verdict and its open limits;
+   - the commands and evidence used, linking verification sections.
+
+   Do not merge. Bind and monitor the PR only as the user directs.
+
+**Records.** Note the remote branch and PR link in the T5-V verification section, or in a short `## Branch publication` note if T5-V has not run yet.
 
 ## Coverage and integration discipline
 

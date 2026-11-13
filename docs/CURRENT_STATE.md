@@ -2,12 +2,16 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 after the AR-T5-11 offline repair.
-Resume at: the [AR-T5-11 verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-11).
-Next activity: await selection of a remaining T5 activity from the [work register](WORK_ITEMS.md#selection-now).
-Instruction basis: the user's [2026-11-13 offline repair request](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-follow-up-for-ar-t5-11), with live adoption and branch publication deferred.
+Current focus: R01CAL-A03-DELIVERY-01 T5 closing tickets.
+Resume at: the [T5 closing tickets](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-closing-tickets), starting with T5-P push and T5-F12.
+Next activity: the user assigns the tickets to other models; each ticket updates this pointer when it finishes.
+Instruction basis: the user's [2026-11-13 selection of the closing route](discussions/ASSET_REFERENCES.md#t5-closing-route-selected), which authorizes the AR-T5-12 repair, one bounded live run on physical pages 1–3 with the A03 route and limits, the final Windows chain, the verdict, a push and a PR. Merge is not authorized.
 
 ## Return routes
+
+- Previous review: [review of commit `0b46f45`](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-commit-0b46f45) and its [recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-ar-t5-11-review).
+
+- Reviewed repair: [AR-T5-11 offline repair](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-11) and its [selection](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-follow-up-for-ar-t5-11).
 
 - Review basis: [review of commit `52d950f`](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-commit-52d950f).
 
