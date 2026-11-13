@@ -3,8 +3,8 @@
 ## Focus and resume route
 
 Current focus: R01CAL-A03-DELIVERY-01 T5 closing tickets.
-Resume at: [T5-R](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-r--final-windows-chain-on-the-verdict-revision).
-Next activity: run the offline Windows chain on the committed [shared diagnostic snapshot check](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-18).
+Resume at: [T5-V](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-v--combined-t5-verdict).
+Next activity: record the combined verdict from the [fixed-revision Windows rerun](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-r-windows-rerun-after-the-shared-diagnostic-snapshot-repair).
 Instruction basis: the user's [2026-11-13 shared snapshot and conditional publication instruction](discussions/ASSET_REFERENCES.md#shared-diagnostic-snapshot-check-selected).
 
 ## Return routes
