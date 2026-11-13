@@ -14,6 +14,7 @@ import subprocess
 import sys
 import zipfile
 
+from fastapi.testclient import TestClient
 import pymupdf
 import pytest
 
@@ -21,6 +22,7 @@ import pdfmd.documents as documents_module
 from pdfmd import asset_catalog, primary_xmp
 from pdfmd.asset_naming import NameBudgetError, build, comparison_key
 from pdfmd.asset_references import analyze, asset_uri, assess, classify
+from pdfmd.server import create_app
 from pdfmd.storage import Store
 from pdfmd.tools import Dispatcher
 
@@ -900,10 +902,75 @@ def test_names_policy_boundaries():
     assert comparison_key("Ａ.png") != comparison_key("A.png")
 
 
+def test_http_device_names_save_and_export_as_portable_assets(jpeg_job, tmp_path):
+    d, job, _, png = jpeg_job
+    cases = [
+        ("CON .study", "image-CON .study-i1.png"),
+        ("NUL .notes", "image-NUL .notes-i1.png"),
+        ("CON.study", "image-CON.study-i1.png"),
+        ("CON study", "CON study-i1.png"),
+        ("COM¹ .study", "image-COM¹ .study-i1.png"),
+        ("CONIN$.notes", "image-CONIN$.notes-i1.png"),
+        ("CONOUT$ .study", "image-CONOUT$ .study-i1.png"),
+        ("CON\u00a0.study", "CON\u00a0.study-i1.png"),
+    ]
+    links = "\n\n".join(f"[Open {index}](asset:new/{index})" for index, _ in enumerate(cases))
+    changes = [create(str(index), png, label, language="en", punctuation="ascii")
+               for index, (label, _) in enumerate(cases)]
+    app = create_app(d.store.root, "synthetic-only")
+    job_url = f"/jobs/{job}"
+    with TestClient(app, headers={"Authorization": "Bearer synthetic-only"}) as client:
+        saved = http_edit(client, job_url, "device-names", args(links, changes))
+        assert saved["ok"], saved
+        version = saved["data"]["version_id"]
+        expected = [f"assets/{name}" for _, name in cases]
+        assert [change["asset_path"] for change in saved["data"]["asset_changes"]] == expected
+        selected = client.get(f"{job_url}/versions/{version}").json()
+        assert selected["asset_reference_check"] == {"status": "ok", "issues": []}
+        assert set(selected["assets"]) == set(expected)
+        exported = http_export_members(client, job_url, version, tmp_path / "devices.zip")
+    assert set(exported) == set(d.store.get("version", version, job=job)["files"])
+    assert all(payload == (d.documents.root / version / name).read_bytes() for name, payload in exported.items())
+
+
+def test_http_reserved_name_budget_includes_applied_prefix_and_suffix(jpeg_job, tmp_path):
+    d, job, _, png = jpeg_job
+    label = "CON." + "x" * 163
+    app = create_app(d.store.root, "synthetic-only")
+    job_url = f"/jobs/{job}"
+    with TestClient(app, headers={"Authorization": "Bearer synthetic-only"}) as client:
+        too_long = args("[Open](asset:new/img)", [create("img", png, label + "x", punctuation="ascii")])
+        rejected = http_edit(client, job_url, "overlong", too_long)
+        assert not rejected["ok"] and rejected["data"]["error_code"] == "ASSET_NAME_BUDGET"
+        assert rejected["data"]["issues"][0]["details"] == {
+            "maximum": 180, "fixed_component_bytes": 13, "suffix_bytes": 0, "remaining_description_bytes": 167,
+        }
+        assert d.store.get("job", job)["head"] is None
+        assert d.store.json(rejected["candidate_ref"], job) == too_long
+
+        fitting = args("[Open](asset:new/img)", [create("img", png, label, punctuation="ascii")])
+        saved = http_edit(client, job_url, "fits", fitting)
+        assert saved["ok"], saved
+        version = saved["data"]["version_id"]
+        name = f"image-{label}-i1.png"
+        assert len(name.encode("utf-8")) == 180
+        path = f"assets/{name}"
+        assert saved["data"]["asset_changes"][0]["asset_path"] == path
+        exported = http_export_members(client, job_url, version, tmp_path / "boundary.zip")
+        assert set(exported) == set(d.store.get("version", version, job=job)["files"])
+        assert all(payload == (d.documents.root / version / member).read_bytes() for member, payload in exported.items())
+
+        collision = args("[Open](asset:new/img)", [create("img", png, label, punctuation="ascii")], base=version)
+        rejected = http_edit(client, job_url, "collision", collision)
+        assert not rejected["ok"] and rejected["data"]["error_code"] == "ASSET_NAME_BUDGET"
+        assert rejected["data"]["issues"][0]["details"] == {
+            "maximum": 180, "fixed_component_bytes": 13, "suffix_bytes": 4, "remaining_description_bytes": 163,
+        }
+        assert d.store.get("job", job)["head"] == version
+
+
 def test_http_edit_idempotency_key_returns_the_original_receipt(jpeg_job):
     import httpx
-    from fastapi.testclient import TestClient
-    from pdfmd.server import create_app
     d, job, jpeg, png = jpeg_job
 
     def forbidden(request):

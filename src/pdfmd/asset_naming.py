@@ -27,7 +27,7 @@ FALLBACK = "image"
 SUBSTITUTIONS = str.maketrans({"<": "＜", ">": "＞", ":": "：", '"': "＂", "/": "／", "\\": "＼",
                                "|": "｜", "?": "？", "*": "＊"})
 CONTROLS = re.compile(r"[\x00-\x1f\x7f]")
-RESERVED = re.compile(r"(?i)(con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])")
+RESERVED = re.compile(r"(con|conin\$|conout\$|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])", re.ASCII | re.IGNORECASE)
 EXTENSIONS = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg"}
 
 
@@ -112,12 +112,13 @@ def build(description: str, groups: list[dict], printed: dict[int, dict], figure
     fixed = "-" + locator(groups, printed) + ("-" + component(figure) if figure else "") + "." + extension
     tail = suffix(collision, punctuation)
     name = nfc(label + fixed[:-len(extension) - 1] + tail + "." + extension)
-    base = name.split(".", 1)[0]
-    if RESERVED.fullmatch(base):
-        name = nfc("image-" + name)
+    # Win32 ignores ASCII spaces immediately before the first dot of a device name.
+    base = name.split(".", 1)[0].rstrip(" ")
+    prefix = "image-" if RESERVED.fullmatch(base) else ""
+    name = prefix + name
     size = len(name.encode("utf-8"))
     if size > MAX_BYTES:
-        fixed_bytes = len(nfc(fixed).encode("utf-8"))
+        fixed_bytes = len(nfc(prefix + fixed).encode("utf-8"))
         suffix_bytes = len(tail.encode("utf-8"))
         raise NameBudgetError(
             f"The filename needs {size} UTF-8 bytes; the limit is {MAX_BYTES}. Supply a shorter faithful "

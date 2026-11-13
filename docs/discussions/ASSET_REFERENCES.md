@@ -1221,3 +1221,7 @@ The [AR-T5-16 diagnosis](../batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5
 ### Shared diagnostic snapshot check selected
 
 2026-11-13, Asia/Singapore. The user selected an offline AR-T5-18 repair that shares the existing durable-byte comparison across the recovery, attribution and task-diagnostics desktop fixtures. Task diagnostics also audits the source and existing ZIP outside its workspace. That coverage is part of the [focused verification](../batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-18). A fresh fixed-revision Windows run precedes the verdict and draft PR update.
+
+### Windows device-name and byte-budget repair selected
+
+2026-11-13, Asia/Singapore. After the [draft review](../batches/R01CAL-A03-DELIVERY-01/verification.md#draft-pr-1-review-at-e57c71e), the user selected the offline AR-T5-19 and AR-T5-20 repair and a fresh fixed-revision T5-R. Verify Windows device aliases and the 180-byte boundary through save and export. Update the T5 verdict and draft PR #1 if T5-R passes. The PR stays in draft. The [existing filename contract](../design/ASSET_REFERENCES.md#readable-filenames-and-source-locators) owns the reserved-name and spelling requirements.
