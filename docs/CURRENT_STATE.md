@@ -2,9 +2,9 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 Windows naming repair.
-Resume at: [T5-R](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-r--final-windows-chain-on-the-verdict-revision), with the [focused naming repair](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-19-and-ar-t5-20).
-Next activity: run the full offline Windows chain on the committed naming repair.
+Current focus: R01CAL-A03-DELIVERY-01 draft PR review after the Windows naming repair.
+Resume at: [updated T5 verdict](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-verdict-update-after-the-windows-naming-repair) and [draft PR #1](https://github.com/hereiam510/pdf-to-md-agent-2/pull/1).
+Next activity: draft review. The [work register](WORK_ITEMS.md#selection-now) retains residual validation and revisit conditions.
 Instruction basis: the user's [offline repair and conditional draft update instruction](discussions/ASSET_REFERENCES.md#windows-device-name-and-byte-budget-repair-selected).
 
 ## Return routes
