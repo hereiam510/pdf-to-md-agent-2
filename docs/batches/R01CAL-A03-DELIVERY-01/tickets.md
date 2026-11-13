@@ -327,9 +327,9 @@ The user [selected](../../discussions/ASSET_REFERENCES.md#t5-closing-route-selec
 | [T5-F12](#t5-f12--repair-ar-t5-12) | Keep the verified preparation for any unreadable competing ZIP | None | [Repair and document-engine checks complete](verification.md#t5-offline-repair-for-ar-t5-12). Full suite in T5-R |
 | [T5-L1](#t5-l1--bounded-live-adoption-run) | Observe whether a real model takes the enriched save path | None | [Single authorized run and review complete](verification.md#t5-live-adoption-run) |
 | [T5-G1](#t5-g1--clarify-enriched-save-guidance) | Clarify how to carry established source facts and evidence of absence into the first enriched save | T5-L1 | [Offline verification complete](verification.md#t5-enriched-save-guidance-verification) |
-| [T5-R](#t5-r--final-windows-chain-on-the-verdict-revision) | Repeat the Windows desktop and frozen-engine chain once | T5-F12, T5-L1 and T5-G1 complete, with no unreviewed code change after them | After T5-G1 and T5-F12 |
+| [T5-R](#t5-r--final-windows-chain-on-the-verdict-revision) | Repeat the Windows desktop and frozen-engine chain once | T5-F12, T5-L1 and T5-G1 complete, with no unreviewed code change after them | [Blocked at the desktop check](verification.md#ar-t5-15--return-can-block-images-during-preview-frame-startup) |
 | [T5-V](#t5-v--combined-t5-verdict) | Record the combined T5 and batch verdict | T5-R | After T5-R |
-| [T5-P](#t5-p--publish-the-batch-branch) | Push the branch and open a PR to `master` | Push: none. PR: T5-V, or a draft PR earlier | Initial [push verified](verification.md#branch-publication) |
+| [T5-P](#t5-p--publish-the-batch-branch) | Push the branch and open a PR to `master` | Push: none. PR: T5-V, or a draft PR earlier | [Branch pushed and draft PR opened](verification.md#branch-publication) |
 
 **Execution order:** T5-P initial push, T5-F12, T5-L1, the selected T5-G1 follow-up, T5-R, T5-V, then the PR. Coordinate shared edits to `verification.md`, this file, [WORK_ITEMS](../../WORK_ITEMS.md) and [CURRENT_STATE](../../CURRENT_STATE.md) through one writer.
 

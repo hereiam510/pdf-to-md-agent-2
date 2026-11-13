@@ -1185,3 +1185,7 @@ The [closing ticket](../batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-l1--bounded
 ### Enriched save guidance clarification selected
 
 2026-11-13, Asia/Singapore. The user chose to clarify the guidance and verify it offline. Address [AR-T5-13](../batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5-13--standalone-images-omit-the-visible-source-title) and the two observed evidence-of-absence rejections through [T5-G1](../batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-g1--clarify-enriched-save-guidance). The existing API supports these facts in the same save. Requiring enriched saves or another live interval needs a separate selection.
+
+### Preview startup failure in final Windows checks
+
+[AR-T5-15](../batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5-15--return-can-block-images-during-preview-frame-startup) supplies a counterexample to reliable Return. A targeted offline follow-up would reproduce the first-resource timing on a fresh frame, establish when the trusted shell can bind the child identity, and preserve the [frame and revocation rules](../design/ASSET_REFERENCES.md#sandbox-and-native-request-boundary). The production delivery fixture passed, so the mixed-image Return cases supply the discriminating acceptance for any proposed fix. The [closing ticket's failure boundary](../batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-r--final-windows-chain-on-the-verdict-revision) applies. A follow-up remedy has not been selected.
