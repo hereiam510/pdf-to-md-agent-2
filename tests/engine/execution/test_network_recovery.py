@@ -340,7 +340,8 @@ def test_compaction_retry_uses_shared_gate(delivery, tmp_path):
     check_delivery(store, job, version, image, source, tmp_path / "compaction.zip")
 
 
-def test_historical_policy_and_complete_rejection(delivery, tmp_path, monkeypatch):
+@pytest.mark.parametrize("legacy_policy", [False, True])
+def test_complete_rejection_requires_continue(delivery, tmp_path, monkeypatch, legacy_policy):
     store, job, version, image, source = delivery
     job_id = job["id"]
     def reply(_):
@@ -355,7 +356,8 @@ def test_historical_policy_and_complete_rejection(delivery, tmp_path, monkeypatc
         request["replay_policy"] = {"replay_unknown": False, "max_attempts_per_request": 1}
         store.put("request", request["id"], job_id, request)
         return request
-    monkeypatch.setattr(execution.nexus, "freeze", legacy)
+    if legacy_policy:
+        monkeypatch.setattr(execution.nexus, "freeze", legacy)
     try:
         execution.run(job_id)
         old = execution.pending_request(job_id)

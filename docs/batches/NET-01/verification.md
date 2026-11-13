@@ -42,7 +42,7 @@ The focused graph suite passed all 58 cases. The following table maps each accep
 | A18 | `test_configuration_requires_continue` and `test_http_diagnostics_are_isolated` |
 | A18b | `test_http_diagnostics_are_isolated` |
 | A19 | `test_receive_clocks_at_exchange_start` |
-| A20 | `test_historical_policy_and_complete_rejection` |
+| A20 | `test_complete_rejection_requires_continue` |
 
 ### Regression findings
 
