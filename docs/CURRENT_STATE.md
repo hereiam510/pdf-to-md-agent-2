@@ -3,9 +3,9 @@
 ## Focus and resume route
 
 Current focus: R01CAL-A03-DELIVERY-01 T5 closing tickets.
-Resume at: [AR-T5-17](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5-17--recovery-diagnostics-test-compares-an-empty-sqlite-wal-as-durable-state).
-Next activity: select the recovery-test correction and a new fixed-revision Windows run before T5-V and draft publication.
-Instruction basis: the user's [2026-11-13 offline repair and conditional publication instruction](discussions/ASSET_REFERENCES.md#shared-schema-1-original-repair-selected).
+Resume at: [T5-R](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-r--final-windows-chain-on-the-verdict-revision).
+Next activity: run the offline Windows chain on the committed [recovery-test correction](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-17).
+Instruction basis: the user's [2026-11-13 test correction and conditional publication instruction](discussions/ASSET_REFERENCES.md#recovery-snapshot-test-correction-selected).
 
 ## Return routes
 

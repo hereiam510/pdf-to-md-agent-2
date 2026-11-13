@@ -21,9 +21,27 @@ from pdfmd.schema import Route
 from pdfmd.storage import Store
 
 
+SQLITE_WALS = {"catalog.sqlite-wal", "graph.sqlite-wal"}
+SQLITE_WAL_INDEXES = {"catalog.sqlite-shm", "graph.sqlite-shm"}
+
+
 def hash_files(directory):
-    return {p.relative_to(directory).as_posix(): sha256(p.read_bytes()).hexdigest()
-            for p in directory.rglob("*") if p.is_file()}
+    """Hash durable workspace files, including any WAL with bytes."""
+    hashes = {}
+    for path in directory.rglob("*"):
+        name = path.relative_to(directory).as_posix()
+        # SQLite regenerates these indexes from the WAL as connections come and go.
+        if name in SQLITE_WAL_INDEXES or not path.is_file():
+            continue
+        try:
+            data = path.read_bytes()
+        except FileNotFoundError:
+            if name in SQLITE_WALS:
+                continue  # SQLite closed the sidecar after enumeration.
+            raise
+        if name not in SQLITE_WALS or data:
+            hashes[name] = sha256(data).hexdigest()
+    return hashes
 
 
 def prepare(directory, protocol):
