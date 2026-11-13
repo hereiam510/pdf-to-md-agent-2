@@ -694,8 +694,9 @@ def test_confirmed_overflow_on_ordinary_send_stops_route_but_generic_http_is_not
     try:
         state.update(rt.prepare(state))
         rt.nexus.transport=httpx.MockTransport(lambda _:httpx.Response(400,json={"error":"synthetic"}))
-        with pytest.raises(StopRun,match="No context-overflow diagnosis"):
+        with pytest.raises(StopRun,match="HTTP 400") as stopped:
             rt.model(state)
+        assert stopped.value.reason == "provider_configuration_error"
         assert not trial.current()["stops"]
         evidence=store.blob(job["id"],"reviewed_overflow",{"confirmed":True,"note":"synthetic confirmed context overflow"})
         trial.confirm_overflow(job["id"],state["pending"],evidence["ref"])
