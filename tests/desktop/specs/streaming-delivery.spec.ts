@@ -146,7 +146,9 @@ for (const protocol of ['chat_completions', 'responses']) {
         { timeout: 15000 }).toBe(fixture.unknown_stop_events_before + 1)
       expect(payloads).toHaveLength(0)
       await page.getByRole('button', { name: 'Resume context organization', exact: true }).click()
-      await expect(page.getByTestId('receive-progress')).toContainText('Receiving generation progress', { timeout: 15000 })
+      // The server holds the stream open at this boundary. Cold engine
+      // preparation and renderer polling can take longer on a loaded host.
+      await expect(page.getByTestId('receive-progress')).toContainText('Receiving generation progress', { timeout: 45000 })
       const partial = await getJob()
       expect(partial.head).toBe(fixture.version)
       expect(partial.versions).toHaveLength(1)
