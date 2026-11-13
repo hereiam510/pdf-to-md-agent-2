@@ -4,7 +4,7 @@ from __future__ import annotations
 from .storage import Conflict
 
 
-def resolution_receipt(store, job, key):
+def resolution_receipt(store, job, key, *, verify_stream=True):
     """One authority/receipt membership check for diagnosis, history and projection."""
     authority = store.get("conflict_resolution", key, job=job)
     ref = f"conflict-resolution:{key}"
@@ -21,6 +21,20 @@ def resolution_receipt(store, job, key):
             or receipt.get("original_request") != store.get("request", key, job=job)
             or receipt.get("original_attempt") != store.get("attempt", receipt["attempt"], job=job)):
         raise Conflict("Historical resolution contradicts its authority or original request/attempt facts.")
+    if not verify_stream:
+        # Read-only diagnostic identity/facts remain useful when bytes are
+        # missing or incompatible. This cannot authorize reuse or projection.
+        return receipt
+    # A recorded resolution only permits the selected trailing receive-boundary
+    # conflict. It cannot grandfather item semantics that the current shared
+    # decoder rejects, even when the terminal-only native projection still parses.
+    from .acceptance import inspect_acceptance
+    try:
+        checked = inspect_acceptance(store, job, key)
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        raise Conflict("Resolved historical acceptance is incompatible with retained evidence.") from exc
+    if not checked["reconstructed"] or checked["boundary"]["status"] != "finish_conflict":
+        raise Conflict("Resolved historical evidence no longer satisfies its supported receive boundary.")
     return receipt
 
 

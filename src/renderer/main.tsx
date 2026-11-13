@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Job, Limits, Route, Settings } from './types'
-import { useDocumentSession } from './useDocumentSession'
-import { TaskSettings } from './TaskSettings'
-import { initialWaitPolicy, WaitingSettings } from './WaitingSettings'
-import { ReceiveProgress } from './ReceiveProgress'
-import { ConflictRecovery } from './ConflictRecovery'
+import { useDocumentSession } from './features/documents/useDocumentSession'
+import { AssetReferenceStatus } from './features/documents/AssetReferenceStatus'
+import { SavedPreview } from './features/documents/SavedPreview'
+import { TaskSettings } from './features/settings/TaskSettings'
+import { initialWaitPolicy, WaitingSettings } from './features/settings/WaitingSettings'
+import { ReceiveProgress } from './features/receive/ReceiveProgress'
+import { ConflictRecovery } from './features/recovery/ConflictRecovery'
+import { TaskDiagnostics } from './features/diagnostics/TaskDiagnostics'
 import './style.css'
 
 const api = window.workbench.invoke
@@ -23,22 +26,25 @@ function Connection({ initial, close, onSave }: { initial: Settings; close: () =
     wait_policy: initial.route ? initial.route.wait_policy : { ...initialWaitPolicy } })
   const [limits, setLimits] = useState<Limits>({ ...defaultLimits, ...initial.limits })
   const [key, setKey] = useState('')
+  const [clearKey, setClearKey] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [remember, setRemember] = useState(initial.remember ?? true)
   const [parameters, setParameters] = useState(JSON.stringify(route.parameters, null, 2))
   const [error, setError] = useState('')
   const field = (name: keyof Route, value: unknown) => setRoute(r => ({ ...r, [name]: value }))
   return <div className="overlay"><form className="modal connection" onSubmit={async e => {
-    e.preventDefault(); setError('')
+    e.preventDefault(); setError(''); setSaving(true)
     try {
-      const value = await api<Settings>('saveSettings', { route: { ...route, parameters: JSON.parse(parameters) }, limits, key, remember })
+      const value = await api<Settings>('saveSettings', { route: { ...route, parameters: JSON.parse(parameters) }, limits, key, remember, clearKey })
       onSave(value); close()
-    } catch (e) { setError(String(e)) }
+    } catch (e) { setError(String(e)) } finally { setSaving(false) }
   }}>
     <div className="modal-heading"><div><span className="eyebrow">MODEL ACCESS</span><h2>Nexus connection</h2></div><button className="icon-button" type="button" onClick={close} aria-label="Close settings"><Icon name="close" /></button></div>
     <p className="muted">Use the endpoint and model from your Nexus subscription connector.</p>
     <label>Full endpoint URL<input required type="url" placeholder="https://your-nexus-host/v1/chat/completions" value={route.endpoint} onChange={e => field('endpoint', e.target.value)} /></label>
     <div className="form-row"><label>Protocol<select value={route.protocol} onChange={e => field('protocol', e.target.value)}><option value="chat_completions">Chat Completions</option><option value="responses">Responses</option></select></label><label>Model alias<input required placeholder="Your Nexus model alias" value={route.model} onChange={e => field('model', e.target.value)} /></label></div>
-    <label>Nexus credential<input type="password" autoComplete="off" value={key} onChange={e => setKey(e.target.value)} placeholder={initial.hasKey ? 'Saved credential — leave blank to keep' : 'Enter credential'} /></label>
+    <label>Nexus credential<input type="password" autoComplete="off" value={key} onChange={e => { setKey(e.target.value); setClearKey(false) }} placeholder={clearKey ? 'Credential will be cleared on save' : initial.hasKey ? 'Saved credential — leave blank to keep' : 'Enter credential'} /></label>
+    <button type="button" className="text-button" disabled={saving} onClick={() => { setKey(''); setClearKey(true); setRemember(false) }}>Clear credential</button>
     <label className="check"><input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />Remember with operating-system encryption</label>
     {initial.encryptionAvailable === false && <p className="hint">Encryption is unavailable. The credential stays in memory for this session.</p>}
     <details open><summary>Context and execution limits</summary><p className="hint">Set the effective limits for this Nexus route. These starter values are not verified model specifications.</p>
@@ -56,13 +62,14 @@ function Connection({ initial, close, onSave }: { initial: Settings; close: () =
       <label>Additional native parameters (JSON)<textarea rows={3} value={parameters} onChange={e => setParameters(e.target.value)} /></label>
     </details>
     {error && <p className="error" role="alert">{error}</p>}
-    <div className="modal-footer"><span className="hint">Defaults for unconfigured tasks. Use Task limits to adjust an existing task.</span><button className="primary" type="submit">Save connection</button></div>
+    <div className="modal-footer"><span className="hint">Defaults for unconfigured tasks. Use Task limits to adjust an existing task.</span><button className="primary" type="submit" disabled={saving}>Save connection</button></div>
   </form></div>
 }
 
 function App() {
   const [ready, setReady] = useState(false)
   const [settings, setSettings] = useState<Settings>({})
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsJob, setSettingsJob] = useState<Job | null>(null)
   const [jobs, setJobs] = useState<Job[]>([])
@@ -75,15 +82,27 @@ function App() {
   const [scripts, setScripts] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [exportNotice, setExportNotice] = useState<{ job: string; version: string; generation?: string; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
   const [importName, setImportName] = useState('')
   const [scope, setScope] = useState('Convert the complete document, preserving substantive text, tables, footnotes, and source images.')
-  const { version, saved, editing, loadError, selectVersion, beginEdit, changeBlock, finishEdit, discardEdit, retryLoad } = useDocumentSession(job?.id === active ? job : null)
+  const { version, saved, editing, loadError, selectVersion, beginEdit, changeBlock, finishEdit, discardEdit, retryLoad, previewKey, returnToDocument, previewFailed } = useDocumentSession(job?.id === active ? job : null)
   const [evidence, setEvidence] = useState<any>(null)
   const [activityOpen, setActivityOpen] = useState(false)
   const refresh = useRef<() => Promise<void>>(async () => {})
+  const visibleNotice = notice || (saved && !editing && exportNotice?.job === saved.job && exportNotice.version === saved.version && exportNotice.generation === saved.preview_generation ? exportNotice.text : '')
 
-  useEffect(() => { void api<Settings>('settings').then(setSettings) }, [])
+  const acceptSettings = (value: Settings) => setSettings(previous =>
+    (value.revision ?? 0) < (previous.revision ?? 0) ? previous : value)
+  useEffect(() => {
+    let alive = true
+    void api<Settings>('settings').then(value => {
+      if (!alive) return
+      acceptSettings(value); setSettingsLoaded(true)
+      if (value.error) setError(value.error)
+    }).catch(() => { if (alive) setError('Cannot load connection settings. Please restart the app.') })
+    return () => { alive = false }
+  }, [])
   useEffect(() => {
     let alive = true, pending = false
     const load = async () => {
@@ -122,7 +141,7 @@ function App() {
   }, [active, page])
 
   const act = async (fn: () => Promise<unknown>) => {
-    setBusy(true); setError(''); setNotice('')
+    setBusy(true); setError(''); setNotice(''); setExportNotice(null)
     try { await fn(); await refresh.current() } catch (e) { setError(String(e)) } finally { setBusy(false) }
   }
   const choose = () => act(async () => { const file = await api('choosePdf'); if (file) setImportName(file.name) })
@@ -135,6 +154,7 @@ function App() {
   const latestRequest = job?.requests?.at(-1)
   const unmeasuredIntervals = (job?.active_time_gaps?.length || 0) + (job?.active_since != null && !running ? 1 : 0)
   const continueTask = (recover_compaction_request?: string) => {
+    if (!ready || !settingsLoaded || settings.credentialState === 'failed') return
     if (!settings.hasKey || !settings.route?.model) { setSettingsOpen(true); return }
     void act(async () => {
       await api('start', { job: active, amendment, scripts, recover_compaction_request })
@@ -150,7 +170,7 @@ function App() {
       <nav className="document-list" aria-label="Documents">{jobs.map(item => <button className={`document-item ${active === item.id ? 'selected' : ''}`} disabled={busy || Boolean(editing)} onClick={() => select(item.id)} key={item.id}>
         <Icon name="file" /><span><strong>{item.name}</strong><small><i className={`dot ${item.status}`} />{statusNames[item.status] || item.status}</small></span>
       </button>)}{jobs.length === 0 && <p className="sidebar-hint">Your documents and saved versions will appear here.</p>}</nav>
-      <div className="sidebar-bottom"><button className="connection-button" onClick={() => setSettingsOpen(true)}><Icon name="settings" /><span>Nexus connection<small>{settings.route?.model || 'Choose your model'}</small></span><Icon name="arrow" size={14} /></button>
+      <div className="sidebar-bottom"><button className="connection-button" disabled={!settingsLoaded} onClick={() => setSettingsOpen(true)}><Icon name="settings" /><span>Nexus connection<small>{settings.route?.model || 'Choose your model'}</small></span><Icon name="arrow" size={14} /></button>
         <div className="engine-state"><i className={`dot ${ready ? 'completed' : 'paused'}`} />{ready ? 'Local engine ready' : 'Starting local engine…'}<span>v0.1</span></div>
       </div>
     </aside>
@@ -168,7 +188,7 @@ function App() {
       </> : <>
         <header className="topbar"><div className="document-heading"><span className="breadcrumb">DOCUMENT WORKSPACE</span><h1>{job?.name || 'Opening document…'}</h1></div><div className="header-actions"><span className={`status ${job?.status || ''}`}><i className={`dot ${job?.status || ''}`} />{statusNames[job?.status || ''] || 'Loading'}</span><button className="primary" disabled={!saved || busy} onClick={() => act(async () => {
           if (!saved) return
-          const result = await api('export', { job: saved.job, version: saved.version, name: job?.name }); if (result) setNotice(`Exported ${result.claim === 'complete' ? 'completed version' : 'partial draft'} to ${result.path}`)
+          const result = await api('export', { job: saved.job, version: saved.version, name: job?.name }); if (result) setExportNotice({ job: saved.job, version: saved.version, generation: saved.preview_generation, text: `Exported ${result.claim === 'complete' ? 'completed version (agent claim)' : 'partial draft'} to ${result.path}. ZIP bytes ${result.verified ? 'verified' : 'not verified'}. Asset references: ${result.asset_reference_check?.status || 'unavailable'}.${result.asset_reference_check?.status !== 'ok' ? ' Inspect the saved-version diagnosis; export preserves its original inventory.' : ''}` })
         })}><Icon name="download" size={17} />Export ZIP</button></div></header>
         <div className="scope-bar"><span>SCOPE</span><p>{job?.scope}</p></div>
         <div className="reading-area">
@@ -177,27 +197,29 @@ function App() {
           </section>
           <section className="panel output-panel"><div className="panel-toolbar"><div className="tabs">{['preview', 'markdown', 'evidence'].map(name => <button key={name} className={tab === name ? 'active' : ''} onClick={() => setTab(name)}>{name[0].toUpperCase() + name.slice(1)}</button>)}</div>
             {job?.versions?.length ? <select aria-label="Saved version" value={version} disabled={busy || Boolean(editing)} onChange={e => selectVersion(e.target.value)}>{job.versions.map((v, i) => <option key={v.id} value={v.id}>{i === 0 ? 'Latest' : `Version ${job.versions!.length - i}`} · {v.claim} · {v.id.slice(0, 6)}</option>)}</select> : <span className="muted small">No saved version</span>}</div>
+            {saved && !editing && <><AssetReferenceStatus check={saved.asset_reference_check} />{tab === 'preview' && !saved.preview_error && <button className="text-button" onClick={returnToDocument}>Return to document</button>}</>}
             {tab === 'evidence' ? <div className="evidence-view"><div className="evidence-list">{job?.evidence?.map(item => <button key={item.ref} onClick={() => act(async () => setEvidence(await api('evidence', { job: active, ref: item.ref })))}><span className="tag">{item.kind.replace('_', ' ')}</span><code>{item.ref.slice(0, 18)}</code><small>{(item.bytes / 1024).toFixed(1)} KB</small></button>)}{!job?.evidence?.length && <p className="muted">Source reads and retained candidates will appear here.</p>}</div>{evidence && <div className="evidence-detail">{evidence.url ? <img src={evidence.url} alt="Saved evidence" /> : <pre>{JSON.stringify(evidence, null, 2)}</pre>}</div>}</div>
               : editing ? <div className="block-editor"><p className="hint">{editing.mode === 'rebuild' ? 'Rebuilding from' : 'Editing'} saved version {editing.baseVersion.slice(0, 6)}. {editing.mode === 'rebuild' && 'Later saved changes will not be included. '}Export ZIP uses this saved version until you save your edits.</p>{job?.head !== editing.expectedHead && <p className="error">A newer version was saved while you were editing. Your draft is retained; saving will report a conflict.</p>}{editing.blocks.map((block, index) => <label key={block.id}><span>{block.id} · PDF {block.pages.join(', ')}</span><textarea disabled={busy} rows={Math.max(4, Math.min(16, block.markdown.split('\n').length + 1))} value={block.markdown} onChange={e => changeBlock(index, e.target.value)} /></label>)}</div>
-                : saved ? tab === 'preview' ? <iframe title="Saved document preview" sandbox="" srcDoc={saved.preview} /> : <pre className="markdown-view">{saved.markdown}</pre>
+                : saved ? tab === 'preview' ? saved.preview_error ? <div className="output-empty"><p role="alert">{saved.preview_error}</p><button onClick={retryLoad}>Retry loading version</button></div> : <SavedPreview key={previewKey} saved={saved} onUnavailable={previewFailed} /> : <pre className="markdown-view">{saved.markdown}</pre>
                   : version ? <div className="output-empty">{loadError ? <><p className="error" role="alert">Could not load the selected version: {loadError}</p><button onClick={retryLoad}>Retry loading version</button></> : <p>Loading selected version…</p>}</div>
                     : <div className="output-empty"><Icon name="book" size={38} /><h3>Your Markdown takes shape here</h3><p>Start the conversion when your scope and Nexus connection are ready. Saved drafts stay available as the agent works.</p></div>}
             <div className="panel-footnote output-footer"><span>{editing ? `Unsaved draft · ${editing.blocks.length} blocks` : saved ? `${saved.content.claim === 'complete' ? 'Agent marked complete' : 'Partial draft'} · ${saved.content.blocks.length} blocks` : 'Immutable versions · portable images'}</span>{tab !== 'evidence' && <div>{editing ? <><button className="text-button" disabled={busy} onClick={discardEdit}>Discard edits</button><button className="text-button accent" disabled={busy || running} onClick={() => act(async () => {
-              const result = await api('edit', { job: editing.job, edit: { mode: editing.mode, base_version: editing.baseVersion, expected_head: editing.expectedHead, replace_blocks: editing.blocks, claim: 'partial' } })
+              const result = await api('edit', { job: editing.job, idempotencyKey: `desktop:${editing.submissionKey}`, edit: { mode: editing.mode, base_version: editing.baseVersion, expected_head: editing.expectedHead, replace_blocks: editing.blocks, claim: 'partial' } })
               if (!result.ok) throw new Error(result.data.error)
               setJob(current => current?.id === editing.job ? { ...current, head: result.data.version_id } : current)
               finishEdit(); setNotice('Saved your edits as a new partial version.')
             })}>Save new version</button></> : version && (saved && saved.version !== job?.head ? <button className="text-button" disabled={busy || running} title="Create a new version from this older version. Content added in later versions will not be included." onClick={() => beginEdit('rebuild')}>Rebuild from this version</button> : <button className="text-button" disabled={!saved || busy || running} onClick={() => beginEdit('edit')}>Edit content</button>)}</div>}</div>
           </section>
         </div>
-        <section className="agent-panel"><div className="agent-header"><div><span className={`agent-indicator ${running ? 'working' : ''}`} /><strong>Conversion agent</strong><span className="muted small">{job?.route?.model || settings.route?.model || 'Connect Nexus to begin'}</span></div><button className="text-button" onClick={() => setActivityOpen(!activityOpen)}>{activityOpen ? 'Hide activity' : 'View activity'} <span className="event-count">{job?.events?.length || 0}</span></button></div>
+        <section className="agent-panel"><div className="agent-header"><div><span className={`agent-indicator ${running ? 'working' : ''}`} /><strong>Conversion agent</strong><span className="muted small">{job?.route?.model || settings.route?.model || 'Connect Nexus to begin'}</span></div><button className="text-button" onClick={() => setActivityOpen(!activityOpen)}>{activityOpen ? 'Hide activity and diagnostics' : 'View activity and diagnostics'} <span className="event-count">{job?.event_summary?.count || 0}</span></button></div>
           {job?.last_message && <div className="agent-message">{job.last_message}</div>}
+          {job?.diagnostic_limitations?.map(text => <p className="hint" key={text}>{text}</p>)}
           {latestRequest?.receive && <ReceiveProgress receive={latestRequest.receive} status={latestRequest.status} running={running} />}
-          {activityOpen && <div className="activity-log">{job?.events?.map(event => <div key={event.seq}><time>{new Date(event.created * 1000).toLocaleTimeString()}</time><span>{event.type.replaceAll('_', ' ')}</span><code>{String(event.data.tool || event.data.reason || event.data.kind || event.data.version_id || '')}</code></div>)}</div>}
+          {activityOpen && job?.id === active && <TaskDiagnostics key={`diagnostics:${job.id}`} job={job.id} latest={job.event_summary?.latest_seq ?? null} observation={recoveryObservation} />}
           <div className="agent-controls"><textarea aria-label="Instructions or reply" rows={2} placeholder={job?.status === 'waiting' ? 'Reply to the agent…' : 'Add an instruction or correction for the next step…'} value={amendment} onChange={e => setAmendment(e.target.value)} disabled={running} />
-            {running ? <button className="stop-button" disabled={job?.cancel_requested || busy} onClick={() => act(() => api('cancel', { job: active }))}><Icon name="stop" size={16} />{job?.cancel_requested ? 'Stopping…' : 'Stop'}</button> : <button className="primary" disabled={busy || !ready || Boolean(editing)} onClick={() => continueTask()}>{job?.attempts ? 'Continue' : 'Start conversion'}<Icon name="arrow" size={16} /></button>}
+            {running ? <button className="stop-button" disabled={job?.cancel_requested || busy} onClick={() => act(() => api('cancel', { job: active }))}><Icon name="stop" size={16} />{job?.cancel_requested ? 'Stopping…' : 'Stop'}</button> : <button className="primary" disabled={busy || !ready || !settingsLoaded || settings.credentialState === 'failed' || Boolean(editing)} onClick={() => continueTask()}>{job?.attempts ? 'Continue' : 'Start conversion'}<Icon name="arrow" size={16} /></button>}
           </div>
-          {recoveryRequest && <div className="agent-meta"><p className="hint">The interrupted context organization has no accepted reply. Resume permits one replacement for that request, then continues the task. It may repeat upstream work. Saved content and recorded usage stay intact.</p><button className="text-button accent" disabled={busy || !ready || Boolean(editing)} onClick={() => continueTask(recoveryRequest)}>Resume context organization</button></div>}
+          {recoveryRequest && <div className="agent-meta"><p className="hint">The interrupted context organization has no accepted reply. Resume permits one replacement for that request, then continues the task. It may repeat upstream work. Saved content and recorded usage stay intact.</p><button className="text-button accent" disabled={busy || !ready || !settingsLoaded || settings.credentialState === 'failed' || Boolean(editing)} onClick={() => continueTask(recoveryRequest)}>Resume context organization</button></div>}
           {job && <ConflictRecovery key={job.id} job={job.id} running={running} observation={recoveryObservation} refresh={() => refresh.current()}
             viewEvidence={(ref, raw) => { void act(async () => { setEvidence(await api('evidence', { job: active, ref, view: raw ? 'raw' : 'full' })); setTab('evidence') }) }} />}
           <div className="agent-meta"><span>{job?.attempts || 0} / {job?.limits.max_requests || defaultLimits.max_requests} model requests{latestCapacity ? ` · Estimated input ${latestCapacity.input_estimate.toLocaleString()} / ${(latestCapacity.capacity - latestCapacity.output_reserve).toLocaleString()}` : ''}</span><label className="check"><input type="checkbox" checked={scripts} onChange={e => setScripts(e.target.checked)} disabled={running} />Enable trusted task scripts</label></div>
@@ -207,9 +229,9 @@ function App() {
         </section>
       </>}
       {error && <div className="toast error" role="alert"><span>{error.replace(/^Error: /, '')}</span><button onClick={() => setError('')} aria-label="Dismiss error"><Icon name="close" size={16} /></button></div>}
-      {notice && <div className="toast success" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss notice"><Icon name="close" size={16} /></button></div>}
+      {visibleNotice && <div className="toast success" role="status"><span>{visibleNotice}</span><button onClick={() => { setNotice(''); setExportNotice(null) }} aria-label="Dismiss notice"><Icon name="close" size={16} /></button></div>}
     </main>
-    {settingsOpen && <Connection initial={settings} close={() => setSettingsOpen(false)} onSave={setSettings} />}
+    {settingsOpen && settingsLoaded && <Connection initial={settings} close={() => setSettingsOpen(false)} onSave={acceptSettings} />}
     {settingsJob && <TaskSettings key={settingsJob.id} job={settingsJob} close={() => setSettingsJob(null)} onSave={updated => {
       setJob(current => current?.id === updated.id ? { ...current, ...updated } : current)
       setNotice('Task limits saved. Recorded usage and pending requests are preserved.')

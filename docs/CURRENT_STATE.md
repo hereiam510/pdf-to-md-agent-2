@@ -1,57 +1,122 @@
 # Current state
 
-## Current product status
+## Focus and resume route
 
-Updated for the authorized topic-based documentation reorganization on 2026-10-31. The product remains in **Stage B: complete autonomous conversion on actual sources**. The latest application increment, streaming contract A followed by SC02 item-state/role correction, is implemented and locally verified at its recorded scope. Complete real fourteen-page Nursing delivery, live-route compatibility of that source, and installed-product readiness remain unverified. This documentation batch does not change application behavior or certify a new live state.
+Current focus: R01CAL-A03-DELIVERY-01 T5 final tickets.
+Resume at: [T5-M — Mark PR #1 ready and merge](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-m--mark-pr-1-ready-and-merge) using the [T5 final verdict](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-final-verdict).
+Next activity: await the user's T5-M assignment. Choose the next work from [WORK_ITEMS](WORK_ITEMS.md#selection-now) after the merge.
+Instruction basis: the user's 2026-11-14 T5-V2 instruction covers the verdict, checks, commit and push, then stops before T5-M. The [2026-11-13 final route and merge approval](discussions/ASSET_REFERENCES.md#t5-final-route-and-merge-approved) records the amended scope and the approved merge method for the separate ticket.
 
-The human authorized editing, moving, splitting and combining this project's documents using vibe-coding `c0307ef`. [The current documentation decision](decisions/DOCUMENTATION.md#topic-ownership-and-version-correspondence-2026-10-31) and [batch review](reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md) delimit this work. A further real-route interval requires a separate execution decision and fresh preflight. Historical run allowances, directions and permissions do not authorize it.
+## Return routes
 
-## Find current work
+- Previous review: [closing review at `c7fe4c3`](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-the-t5-closing-implementation-at-c7fe4c3) and its [recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-t5-closing-review).
 
-Use [INDEX](INDEX.md) for the full catalogue and topic/design/basis routes. The following map concerns current work; it is not another document inventory.
+- Previous verdict: [T5 verdict update after the Windows naming repair](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-verdict-update-after-the-windows-naming-repair) and [draft PR #1](https://github.com/hereiam510/pdf-to-md-agent-2/pull/1).
 
-| Question | Owning section |
-| --- | --- |
-| What works, what is unverified, and what is the next decision? | [Status above](#current-product-status), [verification basis](#verification-basis), [Nursing boundary](#nursing-boundary-and-next-product-decision) |
-| What must the product phase deliver? | [Delivery route](PHASE_PLAN.md#delivery-route) and [Stage B acceptance](PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources) |
-| Which requirements and safety/fidelity constraints apply? | [Product acceptance](PRODUCT_REQUIREMENTS.md#acceptance-and-cost), [contracts navigator](CONTRACTS.md#reading-this-contract), [working agreement](../AGENTS.md) |
-| Why was an approach selected, and what remains open? | [Decision navigation](INDEX.md#decisions), [unselected options](PROPOSED_CHANGES.md#find-an-option), [technical guide routes](DEVELOPMENT_GUIDE.md#reading-by-implementation-concern) |
-| Where are SC/R/F/H/CTX findings and deferred work? | [Issue navigator](reviews/RUNTIME_FINDINGS.md#issue-navigation); [documentation findings](reviews/DOCUMENTATION_REORGANIZATION_2026-10.md#findings-and-disposition) |
-| What is the latest code evidence and its limitation? | [SC02 recorded result](history/IMPLEMENTATION_HISTORY.md#sc02-item-state-and-role-correction-locally-verified-2026-10-30), [A recorded result](history/IMPLEMENTATION_HISTORY.md#streaming-contract-a-implemented-and-locally-verified-2026-10-30), [current handoff](REVIEW_HANDOFF.md) |
-| What happened during the last real request? | [Actual single-dispatch result](verification/20261031_0157_NURSING_BASELINE_AND_DISPATCH.md#actual-single-dispatch-result-2026-10-30); distinguish raw observations, accepted content, effects and ledger usage |
-| Which actions are authorized now? | The current human instruction and its attributed [decision](decisions/DOCUMENTATION.md#topic-ownership-and-version-correspondence-2026-10-31). Plans, old instructions and findings are not execution permission. |
-| Where are older checks, scope changes and handoffs? | [Implementation history](history/IMPLEMENTATION_HISTORY.md), [phase history](history/PHASE_HISTORY.md), [review history](history/REVIEW_HISTORY.md); [directory roles](../README.md#repository-map) |
+- Previous review: [review of commit `0b46f45`](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-commit-0b46f45) and its [recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-ar-t5-11-review).
 
-## Verification basis
+- Reviewed repair: [AR-T5-11 offline repair](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-11) and its [selection](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-follow-up-for-ar-t5-11).
 
-The entry worktree was based on HEAD `ba8bad3867c82373da008bccf716be7df413a417`, branch `master`, with accumulated modified and untracked files. HEAD alone is not the tested implementation identity. The current documentation batch preserves a 722-file entry snapshot under `.local/docs-topic-reorganization-20261031_0157/`; earlier snapshots remain retained. Application, test and runtime-configuration behavior is unchanged. Documentation-tool source locators and Git's source-preservation path patterns follow the relocated files; this is not a new application verification. Detailed historical validation belongs to the linked records, including failed checks and corrected expectations.
+- Review basis: [review of commit `52d950f`](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-commit-52d950f).
 
-| Capability | Recorded evidence and practical limit |
-| --- | --- |
-| Autonomous engine, document versions, precise evidence access, context coordination, recovery and explicit-version export | Implemented, with local/synthetic saved/reopened/exported results in [implementation history](history/IMPLEMENTATION_HISTORY.md). Mechanism availability does not establish general PDF fidelity or natural model use. |
-| R01 request estimation and R02 receive storage | Selected fixes are implemented and locally measured/verified. [R01/R02 findings](reviews/RUNTIME_FINDINGS.md#finding-index) retain route-calibration and controlled-performance limits. BPE proxy/reserves are not a discovered hard route limit. |
-| R13 accepted-result settlement and historical conflict recovery | Local acceptance/reopen/effect safeguards are implemented. [Recovery contract](design/ACCEPTED_EVIDENCE_RECOVERY.md#historical-accepted-evidence-local-recovery) retains eligibility, unknown-effect stops and separate Continue authority. |
-| F01/F02 diagnostics, their corrections and DT01 client | Local API/UI/reopen evidence is recorded by the [diagnostic design](design/LOCAL_DIAGNOSTICS.md). Raw, validated, published and unknown facts remain distinct. No Langfuse backend was integrated. |
-| Streaming contract A and SC02 follow-up | The final SC02 affected selection reports 344 passes. Its preceding larger run reports 779 passes, three diagnostic failures and one seed setup error, followed by documented corrections/reruns. The separate A batch has composite parser, persistence, type/build and actual desktop evidence. These are not a single final whole-suite pass, live-route certification or new installed build. |
+- Reviewed implementation: [offline repair and regression checks for AR-T5-08 to AR-T5-10](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-08-to-ar-t5-10).
 
-The latest SC02 source manifest is the 148-file `implementation-source-final.json` under `.local/sc02-item-state-2026-10-30-run1/`, SHA-256 `dddd8f3d8aa96ca7cc539b8426726bcd1ffa71df8778f5cbdacea86fac9bfa2d`. The [recorded handoff](history/REVIEW_HISTORY.md#sc02-item-state-and-role-implementation-handoff-2026-10-30) preserves exact check boundaries. Local evidence directories are not available to an external reviewer unless separately packaged or supplied. An old release artifact cannot stand in for this worktree. The current reorganization preserves 146 of those 148 manifest members exactly; only `tools/check_docs.py` and `tools/source_lookup.py` change source-locator constants. The original manifest and run evidence remain unchanged.
+- Selection basis: [standalone review of the T5 cleanup](batches/R01CAL-A03-DELIVERY-01/verification.md#standalone-review-of-the-t5-cleanup).
 
-## Nursing boundary and next product decision
+- Reviewed increment: [AR-T5-05 to AR-T5-07 cleanup](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5-05-to-ar-t5-07-cleanup).
 
-The **last recorded real run**, not a fresh task query, ended with rejected request `:45:62`, 63 attempts against a 63-request ceiling, and 2883.2810000000172 active seconds against a 4481-second ceiling. Two partial drafts cover through page 8; pages 9–14 and complete source-led delivery remain outstanding. The run produced no accepted reply, tool/context effect or new draft. Raw reported usage is distinct from the null new ledger usage; old consumption and uncertainty remain preserved. The [actual result](verification/20261031_0157_NURSING_BASELINE_AND_DISPATCH.md#actual-single-dispatch-result-2026-10-30) owns exact provenance and save/reopen/preservation evidence.
+- Previous review: [AR-T5-03 and AR-T5-04 implementation review](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-the-ar-t5-03-and-ar-t5-04-implementation).
 
-The metadata rejection was addressed by local A work, but the received original raw still lacks `[DONE]`. Neither changing the decoder nor appending a synthetic terminator can make that old raw an accepted real reply. Preserve frozen requests, raw evidence, acceptance, consumption and completed effects. Do not combine tool arguments across attempts. A later eligible ordinary failed Continue would create a receipt and successor; the old `:45:61` unknown-request recovery is not the selector for this state.
+- Previous increment: [same-revision Windows verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-and-same-revision-windows-verification) and [selection](discussions/ASSET_REFERENCES.md#t5-offline-repairs-and-same-revision-checks-selected).
 
-The next product decision is whether to authorize a bounded autonomous real-route/fourteen-page interval. Fresh actual task/request/settings/allowance preflight must precede it. Select future-only settings, cumulative allowance and exit conditions explicitly; old 600/300/no-total waits and old allowances are historical selections, not a fresh run authorization or a guaranteed wall-clock/remote-cancellation bound. Evaluate faithful new work, full-scope completion, intervention, and saved/reopened/exported content under [Stage B acceptance](PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources). Do not make routine per-request approvals the long-term operating model.
+- Previous review: [standalone checkpoint review](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-standalone-checkpoint-review) and [offline follow-up proposal](discussions/ASSET_REFERENCES.md#t5-checkpoint-review-and-follow-up-proposal).
 
-## Unresolved work and selection boundaries
+- Previous recommendation: [next step after the Windows-row checks](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-windows-row-checks) and the [check record](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-windows-row-and-agent-tool-path-checks).
 
-Use the [finding owners](reviews/RUNTIME_FINDINGS.md#issue-navigation) for evidence, severity, disposition and revisit conditions. R01/CTX route calibration, R02 residual performance and repeat/delivery-impact seed rename evidence, R03 unknown local effects, broader R07 shape validation and deferred F03/F04/Langfuse work remain visible. SC02's finite supported item-state/role gap is locally closed; new semantic counterexamples or first/reopen disagreements can reopen it. None is automatically a new Stage B prerequisite. Supported risks that directly defeat safe/correct delivery still require action; uncertain magnitude alone does not weaken them.
+- Previous selection: [Windows-row and tool-path checks](discussions/ASSET_REFERENCES.md#windows-row-checks-and-agent-tool-path-check-selected).
 
-## Documentation batch
+- Previous advice: [Windows 10 acceptance and remaining checks](discussions/ASSET_REFERENCES.md#windows-10-accepted-for-the-windows-row).
 
-The topic reorganization separates current designs/contracts, engineering guides, discussions, decisions, retained proposals, research, verification and source collections. [INDEX](INDEX.md) is the single complete catalogue. Old summary forwarding lists are replaced by direct historical-owner links. Exact entry editions preserve the combined contract, architecture, requirements and affected design/discussion/decision owners; their timestamps describe capture, not new adoption or tests.
+- Previous scope change: [Windows-only platform scope selection](discussions/ASSET_REFERENCES.md#windows-only-platform-scope-selected).
 
-The [batch review](reviews/20261031_0157_DOCUMENTATION_STRUCTURE.md) owns DOC-09–13 and the [verification record](verification/20261031_0157_DOCUMENTATION_STRUCTURE.md) owns checks, intermediate failures and preservation limits. No application or Nursing acceptance is inferred from document checks. The inherited source/test changes and three scratch files remain preserved; no live task operation or remote publication is part of this work. The documentation outcome is complete: parsed paths/anchors/case/catalogue reachability, source/prose preservation, source lookups and fourteen real installed-Edge reading routes pass at their recorded scope. The application/test work remains inherited and uncommitted; document checks do not certify it as a clean release.
+- Previous orientation: [recommendation after the publisher-source check](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-publisher-source-check).
 
-The local documentation checkpoint covers root guidance, maintained documents/source locators, the two documentation tools and the source-preservation paths in `.gitattributes`. It includes related documentation already modified on entry, identified separately by the entry snapshot and scoped comparison. It excludes inherited application/test changes and scratch, and is not a release or remote synchronization.
+- Previous T5 increment: [publisher-source evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-publisher-source-check) and [selection](discussions/ASSET_REFERENCES.md#t5-offline-publisher-source-check-selected).
+
+- Previous AR-10 increment: [published-suffix verification](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-10-published-suffix-verification) and [policy selection](discussions/ASSET_REFERENCES.md#ar-10-published-suffix-policy-selected).
+
+- Previous AR-10 advice: [published-suffix recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-t5-windows-10-checkpoint).
+
+- Previous T5 increment: [Windows 10 verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-local-integration-on-windows-10) and [checkpoint selection](discussions/ASSET_REFERENCES.md#t5-windows-10-checkpoint-selected).
+
+- Previous access review: [T5 destination options](discussions/ASSET_REFERENCES.md#t5-access-review-after-t4-c) and [environment check](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-environment-check-after-t4-c).
+
+- Previous T4 increment: [correction lifecycle verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-c-correction-lifecycle) and [T4-C selection](discussions/ASSET_REFERENCES.md#t4-c-selected).
+
+- Previous T4 increment: [multiple occurrence verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-b-multiple-occurrence-corrections) and [T4-B selection](discussions/ASSET_REFERENCES.md#t4-b-selected).
+
+- Previous T4 increment: [shared source verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-a-shared-source-correction) and [T4-A selection](discussions/ASSET_REFERENCES.md#t4-a-selected).
+
+- Previous T4 review: [completion proposal](discussions/ASSET_REFERENCES.md#review-and-proposed-t4-completion) and [review evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-residual-correction-review).
+
+- Previous T4 increment: [shared-page verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-shared-printed-page-correction) and [next-step advice](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-shared-page-correction).
+
+- Previous T4 increment: [single-occurrence verification](batches/R01CAL-A03-DELIVERY-01/verification.md#t4-single-occurrence-correction) and [next-step advice](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-single-occurrence-correction).
+
+- Previous T3b closeout: [receipt and preparation correction](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-receipt-and-preparation-correction) and [next-step advice](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-ar-t3b-13-and-ar-t3b-14).
+
+- Reviewed correction: [cross-process allocation evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-cross-process-allocation), [subsequent review](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-cross-process-correction-review) and [earlier frozen, desktop and readback checks](batches/R01CAL-A03-DELIVERY-01/verification.md#frozen-desktop-and-readback-recheck-after-the-correction).
+
+- Reviewed increment: [streaming and writer pool implementation](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-streaming-and-writer-pool), [standalone review](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-streaming-and-writer-pool-review) and [host defaults](discussions/ASSET_REFERENCES.md#concurrency-engine-copies-and-host-memory-discussion-2026-11-11).
+
+- Previous T3b work: [bounded writer review](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-bounded-writer-review), [bounded writer implementation](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-bounded-writer-process) and [first-increment review correction](batches/R01CAL-A03-DELIVERY-01/verification.md#t3b-review-correction).
+
+- Previous review: [T3a review findings AR-T3A-01/02](batches/R01CAL-A03-DELIVERY-01/verification.md#t3a-implementation-review-and-residuals) and the [original T3a evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t3a-portable-link-save-implementation-and-verification).
+
+- Previous scope amendment: [AR-S4.4 documentation and ticket review](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-s44-documentation-and-ticket-review).
+
+- Previous coverage work: [T1-F05 disposition](batches/R01CAL-A03-DELIVERY-01/tickets.md#t1-f05-read-only-packet-coverage-for-the-xmp-only-candidate), [source gate and Brotli evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t1-f05-packet-coverage-source-gate) and [wider-scope revisit basis](discussions/ASSET_REFERENCES.md#continuation-after-the-t1-f05-source-gate).
+
+- Previous method review: [T1-F04 source/API evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t1-f04-xmp-only-container-feasibility-evidence) and [writer recommendation](discussions/ASSET_REFERENCES.md#writer-recommendation-after-t1-f04).
+
+- Previous T1-F04 preparation: [ticket and prompt preparation](batches/R01CAL-A03-DELIVERY-01/verification.md#t1-f04-ticket-and-prompt-preparation).
+
+- Previous SDK review: [T1-F03 evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t1-f03-adobe-sdk-writer-source-evidence) and [ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#t1-f03-adobe-xmp-toolkit-writer-source-review).
+
+- Previous release comparison: [T1-F02 evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t1-f02-production-exiftool-release-evidence) and [recommendation](discussions/ASSET_REFERENCES.md#writer-recommendation-after-t1-f02).
+
+- Previous T1 decision: [writer reconsideration](discussions/ASSET_REFERENCES.md#writer-reconsideration-after-t1-f01), [T1-F01 evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#t1-f01-ar-q4-c1-r1-feasibility-evidence) and [ticket](batches/R01CAL-A03-DELIVERY-01/tickets.md#t1-f01-ar-q4-c1-r1-offline-feasibility-note).
+
+- Previous orientation: [next-step advice after T2](discussions/ASSET_REFERENCES.md#next-step-advice-after-t2).
+
+- Previous execution: [AR-S4.3 T2 protocol assessment](batches/R01CAL-A03-DELIVERY-01/verification.md#final-t2-protocol-evidence-and-scoped-assessment), [documentation and checks](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-s43-documentation-impact-and-closeout) and [T2 contribution](batches/R01CAL-A03-DELIVERY-01/tickets.md#r01cal-a03-delivery-01-t2).
+
+- Previous advice: [next-step recommendation after the coverage study](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-coverage-study), including the separate unresolved T1 decision questions.
+
+- Previous coverage execution: [study evidence and limits](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-q4-c1-coverage-study-source-closure-stop), [skipped-carrier question](discussions/ASSET_REFERENCES.md#ar-q4-c1-execution-and-the-skipped-carrier-question), [T1 scope/progress](batches/R01CAL-A03-DELIVERY-01/tickets.md#t1-ar-q4-c1-coverage-only-study) and [proof obligations](design/ASSET_REFERENCES.md#ar-q4-c1-coverage-proof-for-the-agreed-study).
+- Previous coverage-study planning: [amendment/prompt review](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-q4-c1-study-amendment-and-execution-prompt-review), with [selection/instrumentation reasoning](discussions/ASSET_REFERENCES.md#ar-q4-c1-coverage-only-study-agreed).
+- Previous AR-Q4 execution: [bounded disposition and remaining evidence](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-q4-bounded-disposition-and-remaining-evidence), with [the original coverage-method proposal](discussions/ASSET_REFERENCES.md#ar-q4-c1-native-traversal-observer-proposal).
+- Previous ticket discussion: [options, dependency reasoning and proposed split](discussions/ASSET_REFERENCES.md#spec-readiness-and-ticket-sequence-discussion), with [design-filing review](batches/R01CAL-A03-DELIVERY-01/verification.md#spec-readiness-design-filing-and-ticket-discussion-review).
+- Previous dependency assessment: [official-release and later-fix audit](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-s42-release-and-security-applicability-review), with [production-first reasoning](discussions/ASSET_REFERENCES.md#official-release-audit-and-later-fix-applicability).
+- Previous specification: [captured AR-S1 and discussion amendments](batches/R01CAL-A03-DELIVERY-01/20261108_1152_spec_AR_S1.md), with [original specification review](batches/R01CAL-A03-DELIVERY-01/verification.md#specification-review).
+- Previous asset-reference discussion: [investigation, alternatives and subsequent specification route](discussions/ASSET_REFERENCES.md#decision-and-continuation).
+- Previous orientation: [inspected basis and continuation check](verification/20261106_0112_WORK_REGISTER.md#orientation-continuation-check-2026-11-08).
+- Previous inventory: [backfilled observations and retained-evidence coverage](verification/20261106_0112_WORK_REGISTER.md#retained-evidence-inventory-2026-11-08); R04 and OPS-01 retain their work-register dispositions.
+- Previous review: [A03 T4 combined verdict and supported next action](batches/R01CAL-A03/verification.md#t4-combined-verdict-and-supported-next-action), with [criterion-level evidence](batches/R01CAL-A03/verification.md#t4-a1-a8-assessment). The current work follows its investigation recommendation; the original execution stop and evidence remain preserved.
+- Previous execution: [T3 settled interval and preserved originals](batches/R01CAL-A03/verification.md#t3-preservation-scope-and-continuation).
+- Previous preparation: [T2 identities, controls and limits](batches/R01CAL-A03/verification.md#t2-offline-fresh-task-preparation-2026-11-07).
+- Previous prerequisite: [the offline preview check and T1 reassessment](batches/R01CAL-A03/verification.md#offline-preview-startup-check-and-t1-reassessment-2026-11-07).
+- Previous advice: [next-step recommendation and subsequent selection](discussions/REQUEST_CAPACITY.md#next-step-recommendation-after-a03-transition-review-2026-11-07).
+- Initial transition closeout: [T1's original decision](batches/R01CAL-A03/verification.md#t1-transition-decision-2026-11-07) and [original prerequisite](batches/R01CAL-A03/verification.md#required-prerequisite-and-revisit-condition).
+- Previous first-stage closeout: [A02-T3 integrated assessment](batches/R01CAL-A02/verification.md#t3-integrated-review-and-combined-outcome-2026-11-07) and [validity/coverage disposition](batches/R01CAL-A02/verification.md#experiment-validity-and-combined-verdict).
+- Previous ticket-prompt/worktree advice: [scope and checkout recommendation](discussions/REQUEST_CAPACITY.md#ticket-execution-prompts-and-worktree-recommendation-2026-11-07) and [advice verification](batches/R01CAL-A03/verification.md#execution-prompt-and-worktree-advice-review-2026-11-07).
+- Two-stage specification closeout: [A02 readiness](batches/R01CAL-A02/spec.md#readiness-and-continuation), [A03 readiness](batches/R01CAL-A03/spec.md#readiness-and-continuation), [A02 specification review](batches/R01CAL-A02/verification.md#specification-completion-review-2026-11-07) and [A03 planning verification](batches/R01CAL-A03/verification.md).
+- Previous diagnosis closeout: [combined diagnosis](batches/R01CAL-A01/verification.md#diagnosis-acceptance), [tickets](batches/R01CAL-A01/tickets.md#dependency-and-execution-overview) and [spec continuation](batches/R01CAL-A01/spec.md#deliverable-readiness-and-continuation).
+- Previous application closeout: [CRED-03-04 combined acceptance](batches/CRED-03-04/verification.md#combined-acceptance) and [integration review/evidence](batches/CRED-03-04/verification.md#integration-review-and-execution-2026-11-07); [tickets](batches/CRED-03-04/tickets.md) own execution details.
+- Previous documentation handoff: [DOC-FLOW-01 combined acceptance](batches/DOC-FLOW-01/verification.md#combined-acceptance) and [main review](batches/DOC-FLOW-01/verification.md#main-review-and-preservation). Its [orientation follow-up](batches/DOC-FLOW-01/verification.md#orientation-continuation-check-2026-11-07) records the current pointer change and its limits.
+- Application selection and later investigations: [WORK_ITEMS](WORK_ITEMS.md#selection-now), reconciled with [phase readiness](PHASE_PLAN.md#readiness-and-evidence). Switching focus does not change the agreed work sequence.
+- R03 remains at its [work-item owner](WORK_ITEMS.md#runtime-and-engineering-inventory). The earlier R03-01 walkthrough was illustrative and is not a project assignment.
+
+## Continuation discipline
+
+This file owns the interaction's focus, exact resume destination, next activity and instruction basis. Keep detailed discussion/specification, execution and results at their owners. Save meaningful content when it forms; change this pointer when activity or focus changes. Parking a topic does not cancel or reprioritize it. For a vague continuation, read the linked owner and current instruction; for an explicit topic, follow that topic's route. A ready spec or newer timestamp alone does not authorize implementation.

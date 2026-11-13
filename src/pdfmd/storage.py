@@ -21,6 +21,19 @@ def uid() -> str:
     return uuid4().hex
 
 
+CHUNK = 1 << 20  # streaming unit: engine memory does not grow with object size
+
+
+def file_digest(path: Path) -> tuple[str, int]:
+    """SHA-256 and size of a file, read in chunks."""
+    digest, size = sha256(), 0
+    with Path(path).open("rb") as source:
+        while block := source.read(CHUNK):
+            digest.update(block)
+            size += len(block)
+    return digest.hexdigest(), size
+
+
 class Conflict(ValueError):
     pass
 
@@ -140,19 +153,7 @@ class Store:
 
     def blob(self, job: str, kind: str, data: bytes | Any, meta: dict | None = None,
              *, key: str | None = None) -> dict:
-        raw = data if isinstance(data, bytes) else encode(data)
-        digest = sha256(raw).hexdigest()
-        target = self.root / "objects" / digest
-        if not target.exists():
-            tmp = target.with_name(f".{digest}.{uid()}.tmp")
-            with tmp.open("xb") as out:
-                out.write(raw)
-                out.flush()
-                os.fsync(out.fileno())
-            # All writers to this content address have identical bytes.
-            os.replace(tmp, target)
-        record = {"ref": key or uid(), "job": job, "kind": kind, "sha256": digest,
-                  "bytes": len(raw), "meta": meta or {}}
+        record = self.stage_blob(job, kind, data, meta, key=key)
         with self.transaction() as db:
             previous = self.get_tx(db, "blob", record["ref"])
             if previous:
@@ -160,6 +161,115 @@ class Store:
                     raise Conflict("An immutable reference already contains different data.")
                 return previous
             self.put_tx(db, "blob", record["ref"], job, record)
+        return record
+
+    def stage_blob(self, job: str, kind: str, data: bytes | Any, meta: dict | None = None,
+                   *, key: str | None = None) -> dict:
+        """Write immutable object bytes before the caller's catalog transaction."""
+        raw = data if isinstance(data, bytes) else encode(data)
+        digest = sha256(raw).hexdigest()
+        target = self.root / "objects" / digest
+        if not self._object_intact(target, digest, len(raw)):
+            self._restore(target, raw, digest)
+        return {"ref": key or uid(), "job": job, "kind": kind, "sha256": digest,
+                "bytes": len(raw), "meta": meta or {}}
+
+    def _restore(self, target: Path, raw: bytes, digest: str) -> None:
+        """Write a missing/corrupt content-addressed object from verified identical bytes.
+
+        All writers to one address hold identical bytes. The stage is removed on
+        every failure (write, flush, sync, verification or replace). If replace
+        fails but a concurrent writer already left the verified bytes in place,
+        the repair has succeeded; otherwise the original failure is reported.
+        """
+        self._stage(target, digest, len(raw), lambda out: out.write(raw))
+
+    def _stage(self, target: Path, digest: str, size: int, write) -> None:
+        tmp = target.with_name(f".{digest}.{uid()}.tmp")
+        try:
+            with tmp.open("xb") as out:
+                write(out)
+                out.flush()
+                os.fsync(out.fileno())
+            if not self._object_intact(tmp, digest, size):
+                raise ValueError("Staged object failed its integrity check; the existing object was left unchanged.")
+            try:
+                os.replace(tmp, target)
+            except OSError as exc:
+                if self._object_intact(target, digest, size):
+                    return
+                raise ValueError("Could not restore the content-addressed object; close readers and retry.") from exc
+        finally:
+            tmp.unlink(missing_ok=True)
+
+    @staticmethod
+    def _object_intact(path: Path, digest: str, size: int) -> bool:
+        """True when ``path`` holds exactly the content for ``digest`` (missing or unreadable is False)."""
+        try:
+            if path.stat().st_size != size:
+                return False
+            return file_digest(path) == (digest, size)
+        except OSError:
+            return False
+
+    def blob_from_file(self, job: str, kind: str, path: Path, meta: dict | None = None,
+                       *, key: str | None = None, expected_sha256: str | None = None) -> dict:
+        """Register a file in chunks, checking any SHA-256 established by the caller."""
+        digest, size = file_digest(path)
+        if expected_sha256 is not None and digest != expected_sha256:
+            raise ValueError("The source file does not match the expected SHA-256.")
+        target = self.root / "objects" / digest
+
+        def copy(out):
+            with Path(path).open("rb") as source:
+                while block := source.read(CHUNK):
+                    out.write(block)
+        if not self._object_intact(target, digest, size):
+            self._stage(target, digest, size, copy)
+        if file_digest(path) != (digest, size):
+            raise ValueError("The source file changed while it was registered.")
+        record = {"ref": key or uid(), "job": job, "kind": kind, "sha256": digest, "bytes": size, "meta": meta or {}}
+        with self.transaction() as db:
+            previous = self.get_tx(db, "blob", record["ref"])
+            if previous:
+                if previous != record:
+                    raise Conflict("An immutable reference already contains different data.")
+                return previous
+            self.put_tx(db, "blob", record["ref"], job, record)
+        return record
+
+    def verify_object(self, ref: str, job: str) -> tuple[Path, dict]:
+        """Path of a task-owned object after a streamed integrity check."""
+        record = self.get("blob", ref, job=job)
+        path = self.root / "objects" / record["sha256"]
+        if not self._object_intact(path, record["sha256"], record["bytes"]):
+            raise ValueError("Saved object failed its integrity check.")
+        return path, record
+
+    def head(self, ref: str, job: str, size: int = 16) -> bytes:
+        record = self.get("blob", ref, job=job)
+        with (self.root / "objects" / record["sha256"]).open("rb") as source:
+            return source.read(size)
+
+    def copy_object(self, ref: str, job: str, target: Path) -> dict:
+        """Copy an object to a new file in chunks; the copy must hash to the recorded identity."""
+        record = self.get("blob", ref, job=job)
+        digest, size = sha256(), 0
+        target = Path(target)
+        try:
+            with (self.root / "objects" / record["sha256"]).open("rb") as source, target.open("xb") as out:
+                while block := source.read(CHUNK):
+                    digest.update(block)
+                    size += len(block)
+                    out.write(block)
+                out.flush()
+                os.fsync(out.fileno())
+        except OSError:
+            target.unlink(missing_ok=True)
+            raise
+        if digest.hexdigest() != record["sha256"] or size != record["bytes"]:
+            target.unlink(missing_ok=True)
+            raise ValueError("Saved object failed its integrity check.")
         return record
 
     def bytes(self, ref: str, job: str) -> bytes:
@@ -293,6 +403,12 @@ class Store:
             db.execute("INSERT INTO events(job,type,data,created) VALUES(?,?,?,?)",
                        (job, kind, encode(data).decode(), time.time()))
             self.put_tx(db, "event_receipt", identity, job, data)
+
+    def event_summary(self, job: str) -> dict:
+        """Small poll indicator, not a change cursor or a task snapshot."""
+        with self._db() as db:
+            count, latest = db.execute("SELECT count(*),max(seq) FROM events WHERE job=?", (job,)).fetchone()
+        return {"count": count, "latest_seq": latest}
 
     def events(self, job: str, after: int = 0, limit: int = 200) -> list[dict]:
         with self._db() as db:

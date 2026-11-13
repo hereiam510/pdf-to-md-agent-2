@@ -9,7 +9,7 @@ Exact spellings matter for locating a discussion, but not every spelling is a re
 - **Historical** means an earlier design or library observation.
 - **Optional** means not a first-version prerequisite.
 
-Historical library observations retain their original scope. The current [implemented Q1–Q3 contracts](CONTRACTS.md#implemented-first-version-contracts) own selected schemas and behavior; the implementation map in [ARCHITECTURE](ARCHITECTURE.md#implementation-map-and-selected-dependencies) identifies installed versions.
+Historical library observations retain their original scope. The current [implemented Q1–Q3 contracts](INDEX.md#initial-contract-basis) own selected schemas and behavior; the implementation map in [ARCHITECTURE](ARCHITECTURE.md#implementation-map-and-selected-dependencies) identifies installed versions.
 
 ## Runtime, framework and protocol terms
 

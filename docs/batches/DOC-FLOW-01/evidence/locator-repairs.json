@@ -1,0 +1,1302 @@
+{
+  "first_pass": [
+    {
+      "file": "README.md",
+      "from": "docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading",
+      "to": "docs/design/DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading"
+    },
+    {
+      "file": "README.md",
+      "from": "docs/REVIEW_HANDOFF.md",
+      "to": "docs/CURRENT_STATE.md#focus-and-resume-route"
+    },
+    {
+      "file": "README.md",
+      "from": "docs/CONTRACTS.md",
+      "to": "docs/INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/ARCHITECTURE.md",
+      "from": "CONTRACTS.md#implemented-first-version-contracts",
+      "to": "INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/batches/CRED-03-04/spec.md",
+      "from": "../../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-credential-follow-up-target-2026-11-06",
+      "to": "../../design/DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06"
+    },
+    {
+      "file": "docs/batches/CRED-03-04/spec.md",
+      "from": "../../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance",
+      "to": "../../design/DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance"
+    },
+    {
+      "file": "docs/batches/CRED-03-04/spec.md",
+      "from": "../../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-repair-acceptance",
+      "to": "../../design/DEVELOPMENT_CREDENTIALS.md#credential-repair-acceptance"
+    },
+    {
+      "file": "docs/batches/CRED-03-04/tickets.md",
+      "from": "../../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-credential-follow-up-target-2026-11-06",
+      "to": "../../design/DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06"
+    },
+    {
+      "file": "docs/batches/CRED-03-04/tickets.md",
+      "from": "../../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance",
+      "to": "../../design/DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance"
+    },
+    {
+      "file": "docs/batches/CRED-03-04/tickets.md",
+      "from": "../../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-credential-follow-up-target-2026-11-06",
+      "to": "../../design/DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06"
+    },
+    {
+      "file": "docs/batches/CRED-03-04/tickets.md",
+      "from": "../../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance",
+      "to": "../../design/DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance"
+    },
+    {
+      "file": "docs/decisions/INITIAL_CONTRACTS.md",
+      "from": "../CONTRACTS.md#implemented-first-version-contracts",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/design/ACCEPTED_EVIDENCE_RECOVERY.md",
+      "from": "../CONTRACTS.md#reading-this-contract",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/design/ACCEPTED_EVIDENCE_RECOVERY.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/design/CONTEXT_MANAGEMENT.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/design/CONTEXT_MANAGEMENT.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/design/CONTEXT_UPDATE_COORDINATION.md",
+      "from": "../CONTRACTS.md#reading-this-contract",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/design/CONTEXT_UPDATE_COORDINATION.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/design/CONTEXT_UPDATE_COORDINATION.md",
+      "from": "../REVIEW_HANDOFF.md",
+      "to": "../CURRENT_STATE.md#focus-and-resume-route"
+    },
+    {
+      "file": "docs/design/DEVELOPMENT_CREDENTIALS.md",
+      "from": "../REVIEW_HANDOFF.md#credential-startup-implementation-handoff-2026-11-06",
+      "to": "../history/20261106_2300_REVIEW_HANDOFF.md#credential-startup-implementation-handoff-2026-11-06"
+    },
+    {
+      "file": "docs/design/DEVELOPMENT_CREDENTIALS.md",
+      "from": "../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06",
+      "to": "../batches/CRED-03-04/spec.md"
+    },
+    {
+      "file": "docs/design/DOCUMENT_MODEL.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/design/DOCUMENT_MODEL.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/design/LOCAL_DIAGNOSTICS.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/design/LOCAL_DIAGNOSTICS.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/design/PDF_EVIDENCE.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/design/PDF_EVIDENCE.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/design/RUNTIME_AND_DELIVERY.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/design/RUNTIME_AND_DELIVERY.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/design/STREAMING_RECEIVE.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/design/STREAMING_RECEIVE.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/design/STREAMING_RECEIVE.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/DEVELOPMENT_GUIDE.md",
+      "from": "CONTRACTS.md#implemented-first-version-contracts",
+      "to": "INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/DEVELOPMENT_GUIDE.md",
+      "from": "CONTRACTS.md",
+      "to": "INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/DEVELOPMENT_GUIDE.md",
+      "from": "REVIEW_HANDOFF.md",
+      "to": "CURRENT_STATE.md#focus-and-resume-route"
+    },
+    {
+      "file": "docs/DEVELOPMENT_GUIDE.md",
+      "from": "REVIEW_HANDOFF.md",
+      "to": "CURRENT_STATE.md#focus-and-resume-route"
+    },
+    {
+      "file": "docs/discussions/CONTEXT_COORDINATION.md",
+      "from": "../CURRENT_STATE.md#current-product-status",
+      "to": "../history/20261107_1358_CURRENT_STATE.md#current-product-status"
+    },
+    {
+      "file": "docs/discussions/CONTEXT_COORDINATION.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/discussions/CONTEXT_COORDINATION.md",
+      "from": "../REVIEW_HANDOFF.md",
+      "to": "../CURRENT_STATE.md#focus-and-resume-route"
+    },
+    {
+      "file": "docs/discussions/NURSING.md",
+      "from": "../CURRENT_STATE.md#nursing-boundary-and-next-product-decision",
+      "to": "../history/20261107_1358_CURRENT_STATE.md#nursing-boundary-and-next-product-decision"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../CURRENT_STATE.md#nursing-boundary-and-next-product-decision",
+      "to": "../history/20261107_1358_CURRENT_STATE.md#nursing-boundary-and-next-product-decision"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../REVIEW_HANDOFF.md#usage-anchoring-implementation-handoff",
+      "to": "../history/20261106_2300_REVIEW_HANDOFF.md#usage-anchoring-implementation-handoff"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../REVIEW_HANDOFF.md#offline-acceptance-cases",
+      "to": "../history/20261106_2300_REVIEW_HANDOFF.md#offline-acceptance-cases"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06",
+      "to": "../history/20261106_2300_REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06",
+      "to": "../history/20261106_2300_REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06",
+      "to": "../history/20261106_2300_REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06",
+      "to": "../batches/CRED-03-04/spec.md"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading",
+      "to": "../design/DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-startup-repair-target-2026-11-06",
+      "to": "../design/DEVELOPMENT_CREDENTIALS.md#selected-startup-repair-target-2026-11-06"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-repair-acceptance",
+      "to": "../design/DEVELOPMENT_CREDENTIALS.md#credential-repair-acceptance"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../REVIEW_HANDOFF.md#credential-startup-implementation-handoff-2026-11-06",
+      "to": "../history/20261106_2300_REVIEW_HANDOFF.md#credential-startup-implementation-handoff-2026-11-06"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading",
+      "to": "../design/DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-credential-follow-up-target-2026-11-06",
+      "to": "../design/DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06"
+    },
+    {
+      "file": "docs/discussions/REQUEST_CAPACITY.md",
+      "from": "../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06",
+      "to": "../batches/CRED-03-04/spec.md"
+    },
+    {
+      "file": "docs/guides/CONTEXT_AND_EVIDENCE.md",
+      "from": "../CONTRACTS.md#implemented-first-version-contracts",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/CONTEXT_AND_EVIDENCE.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/guides/CONTEXT_AND_EVIDENCE.md",
+      "from": "../CONTRACTS.md#implemented-first-version-contracts",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/DOCUMENT_ENGINE.md",
+      "from": "../CONTRACTS.md#implemented-first-version-contracts",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/DOCUMENT_ENGINE.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/DOCUMENT_ENGINE.md",
+      "from": "../CONTRACTS.md#reading-this-contract",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/DOCUMENT_ENGINE.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/guides/EXECUTION_AND_DELIVERY.md",
+      "from": "../CONTRACTS.md#implemented-first-version-contracts",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/EXECUTION_AND_DELIVERY.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/EXECUTION_AND_DELIVERY.md",
+      "from": "../CONTRACTS.md#reading-this-contract",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/EXECUTION_AND_DELIVERY.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/guides/EXECUTION_AND_DELIVERY.md",
+      "from": "../CONTRACTS.md#implemented-first-version-contracts",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md",
+      "from": "../CONTRACTS.md#implemented-first-version-contracts",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md",
+      "from": "../CONTRACTS.md",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/guides/INTEGRATION_AND_MODEL_BOUNDARY.md",
+      "from": "../CONTRACTS.md#implemented-first-version-contracts",
+      "to": "../INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-credential-follow-up-target-2026-11-06",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../REVIEW_HANDOFF.md#selected-offline-correctness-and-measurement-handoff-2026-11-05",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#selected-offline-correctness-and-measurement-handoff-2026-11-05"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../REVIEW_HANDOFF.md#usage-anchoring-implementation-handoff",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#usage-anchoring-implementation-handoff"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../CONTRACTS.md#reading-this-contract",
+      "to": "20261107_1358_CONTRACTS.md#reading-this-contract"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../REVIEW_HANDOFF.md#current-source-and-latest-application-evidence",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#current-source-and-latest-application-evidence"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../CONTRACTS.md",
+      "to": "20261107_1358_CONTRACTS.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../CURRENT_STATE.md#find-current-work",
+      "to": "20261107_1358_CURRENT_STATE.md#find-current-work"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-credential-follow-up-target-2026-11-06",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../CURRENT_STATE.md#nursing-boundary-and-next-product-decision",
+      "to": "20261107_1358_CURRENT_STATE.md#nursing-boundary-and-next-product-decision"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../REVIEW_HANDOFF.md#usage-anchoring-implementation-handoff",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#usage-anchoring-implementation-handoff"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../REVIEW_HANDOFF.md#selected-offline-correctness-and-measurement-handoff-2026-11-05",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#selected-offline-correctness-and-measurement-handoff-2026-11-05"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../INDEX.md#start-development",
+      "to": "../INDEX.md#start-by-task"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../REVIEW_HANDOFF.md",
+      "to": "20261107_1358_REVIEW_HANDOFF.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../CONTRACTS.md",
+      "to": "20261107_1358_CONTRACTS.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#r01-cal-discussion-continuation-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../REVIEW_HANDOFF.md",
+      "to": "20261107_1358_REVIEW_HANDOFF.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../CURRENT_STATE.md#find-current-work",
+      "to": "20261107_1358_CURRENT_STATE.md#find-current-work"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-credential-follow-up-target-2026-11-06",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-repair-acceptance",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-repair-acceptance"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-startup-repair-target-2026-11-06",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#selected-startup-repair-target-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-repair-acceptance",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-repair-acceptance"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../CURRENT_STATE.md#find-current-work",
+      "to": "20261107_1358_CURRENT_STATE.md#find-current-work"
+    },
+    {
+      "file": "docs/history/20261107_1358_REVIEW_HANDOFF.md",
+      "from": "../INDEX.md#start-development",
+      "to": "../INDEX.md#start-by-task"
+    },
+    {
+      "file": "docs/history/20261107_1358_WORK_ITEMS.md",
+      "from": "../INDEX.md#start-development",
+      "to": "../INDEX.md#start-by-task"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../INDEX.md#start-development",
+      "to": "../INDEX.md#start-by-task"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../CURRENT_STATE.md#find-current-work",
+      "to": "20261107_1358_CURRENT_STATE.md#find-current-work"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-credential-follow-up-target-2026-11-06",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-repair-acceptance",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-repair-acceptance"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-credential-follow-up-target-2026-11-06",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-repair-acceptance",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-repair-acceptance"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../INDEX.md#start-development",
+      "to": "../INDEX.md#start-by-task"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../CURRENT_STATE.md#find-current-work",
+      "to": "20261107_1358_CURRENT_STATE.md#find-current-work"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-repair-acceptance",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-repair-acceptance"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance",
+      "to": "design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06",
+      "to": "20261107_1358_REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "20261107_1358_CURRENT_STATE.md#verification-basis"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../CONTRACTS.md",
+      "to": "20261107_1358_CONTRACTS.md"
+    },
+    {
+      "file": "docs/history/contracts/20261031_0157_CONTRACTS.md",
+      "from": "../../CURRENT_STATE.md#verification-basis",
+      "to": "../20261107_1358_CURRENT_STATE.md#verification-basis"
+    },
+    {
+      "file": "docs/history/decisions/20261031_0157_DECISIONS.md",
+      "from": "../../CURRENT_STATE.md#find-current-work",
+      "to": "../20261107_1358_CURRENT_STATE.md#find-current-work"
+    },
+    {
+      "file": "docs/history/design/20261031_0157_EXECUTION_AND_DELIVERY.md",
+      "from": "../../CURRENT_STATE.md#verification-basis",
+      "to": "../20261107_1358_CURRENT_STATE.md#verification-basis"
+    },
+    {
+      "file": "docs/history/design/20261031_0157_EXECUTION_AND_DELIVERY.md",
+      "from": "../../CURRENT_STATE.md#find-current-work",
+      "to": "../20261107_1358_CURRENT_STATE.md#find-current-work"
+    },
+    {
+      "file": "docs/history/design/20261031_0157_INTEGRATION_AND_MODEL_BOUNDARY.md",
+      "from": "../../CURRENT_STATE.md#find-current-work",
+      "to": "../20261107_1358_CURRENT_STATE.md#find-current-work"
+    },
+    {
+      "file": "docs/history/design/20261031_1917_ACCEPTED_EVIDENCE_RECOVERY.md",
+      "from": "../../CONTRACTS.md#reading-this-contract",
+      "to": "../20261107_1358_CONTRACTS.md#reading-this-contract"
+    },
+    {
+      "file": "docs/history/design/20261031_1917_ACCEPTED_EVIDENCE_RECOVERY.md",
+      "from": "../../CURRENT_STATE.md#verification-basis",
+      "to": "../20261107_1358_CURRENT_STATE.md#verification-basis"
+    },
+    {
+      "file": "docs/history/design/20261031_1917_CONTEXT_UPDATE_COORDINATION.md",
+      "from": "../../CONTRACTS.md#reading-this-contract",
+      "to": "../20261107_1358_CONTRACTS.md#reading-this-contract"
+    },
+    {
+      "file": "docs/history/design/20261031_1917_CONTEXT_UPDATE_COORDINATION.md",
+      "from": "../../CURRENT_STATE.md#verification-basis",
+      "to": "../20261107_1358_CURRENT_STATE.md#verification-basis"
+    },
+    {
+      "file": "docs/history/design/20261031_1917_CONTEXT_UPDATE_COORDINATION.md",
+      "from": "../../REVIEW_HANDOFF.md",
+      "to": "../20261107_1358_REVIEW_HANDOFF.md"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_OBSERVABILITY_AND_LANGFUSE.md",
+      "from": "../../CURRENT_STATE.md#find-current-work",
+      "to": "../20261107_1358_CURRENT_STATE.md#find-current-work"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_REBUILD_DELIVERY.md",
+      "from": "../../CONTRACTS.md",
+      "to": "../20261107_1358_CONTRACTS.md"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_REBUILD_FOUNDATIONS.md",
+      "from": "../../CONTRACTS.md",
+      "to": "../20261107_1358_CONTRACTS.md"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_STAGE_B_CONVERSION.md",
+      "from": "../../CURRENT_STATE.md#nursing-boundary-and-next-product-decision",
+      "to": "../20261107_1358_CURRENT_STATE.md#nursing-boundary-and-next-product-decision"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_STAGE_B_CONVERSION.md",
+      "from": "../../CURRENT_STATE.md#nursing-boundary-and-next-product-decision",
+      "to": "../20261107_1358_CURRENT_STATE.md#nursing-boundary-and-next-product-decision"
+    },
+    {
+      "file": "docs/history/IMPLEMENTATION_HISTORY.md",
+      "from": "../CONTRACTS.md#implemented-first-version-contracts",
+      "to": "20261107_1358_CONTRACTS.md#implemented-first-version-contracts"
+    },
+    {
+      "file": "docs/history/IMPLEMENTATION_HISTORY.md",
+      "from": "../REVIEW_HANDOFF.md",
+      "to": "20261107_1358_REVIEW_HANDOFF.md"
+    },
+    {
+      "file": "docs/history/IMPLEMENTATION_HISTORY.md",
+      "from": "../CONTRACTS.md#implemented-first-version-contracts",
+      "to": "20261107_1358_CONTRACTS.md#implemented-first-version-contracts"
+    },
+    {
+      "file": "docs/history/IMPLEMENTATION_HISTORY.md",
+      "from": "../CONTRACTS.md",
+      "to": "20261107_1358_CONTRACTS.md"
+    },
+    {
+      "file": "docs/history/PHASE_HISTORY.md",
+      "from": "../CONTRACTS.md",
+      "to": "20261107_1358_CONTRACTS.md"
+    },
+    {
+      "file": "docs/history/PHASE_HISTORY.md",
+      "from": "../REVIEW_HANDOFF.md",
+      "to": "20261107_1358_REVIEW_HANDOFF.md"
+    },
+    {
+      "file": "docs/PHASE_PLAN.md",
+      "from": "CONTRACTS.md",
+      "to": "INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/PHASE_PLAN.md",
+      "from": "CURRENT_STATE.md#verification-basis",
+      "to": "INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/PHASE_PLAN.md",
+      "from": "CURRENT_STATE.md#nursing-boundary-and-next-product-decision",
+      "to": "decisions/NURSING.md#historical-fourteen-page-task-closeout-2026-11-01"
+    },
+    {
+      "file": "docs/PHASE_PLAN.md",
+      "from": "CURRENT_STATE.md#verification-basis",
+      "to": "INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/PHASE_PLAN.md",
+      "from": "CURRENT_STATE.md#current-product-status",
+      "to": "PHASE_PLAN.md#readiness-and-evidence"
+    },
+    {
+      "file": "docs/PRODUCT_REQUIREMENTS.md",
+      "from": "CURRENT_STATE.md#verification-basis",
+      "to": "INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/PROPOSED_CHANGES.md",
+      "from": "INDEX.md#topics",
+      "to": "INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/PROPOSED_CHANGES.md",
+      "from": "CURRENT_STATE.md#nursing-boundary-and-next-product-decision",
+      "to": "decisions/NURSING.md#historical-fourteen-page-task-closeout-2026-11-01"
+    },
+    {
+      "file": "docs/REVIEW_HANDOFF.md",
+      "from": "INDEX.md#start-development",
+      "to": "INDEX.md#start-by-task"
+    },
+    {
+      "file": "docs/reviews/20261106_2307_ORGANIZATION_REVIEW.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#selected-credential-follow-up-target-2026-11-06",
+      "to": "../history/design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06"
+    },
+    {
+      "file": "docs/reviews/20261106_2307_ORGANIZATION_REVIEW.md",
+      "from": "../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06",
+      "to": "../history/20261107_1358_REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06"
+    },
+    {
+      "file": "docs/reviews/20261106_2307_ORGANIZATION_REVIEW.md",
+      "from": "../CURRENT_STATE.md#nursing-boundary-and-next-product-decision",
+      "to": "../history/20261107_1358_CURRENT_STATE.md#nursing-boundary-and-next-product-decision"
+    },
+    {
+      "file": "docs/reviews/DOCUMENTATION_REORGANIZATION_2026-10.md",
+      "from": "../REVIEW_HANDOFF.md",
+      "to": "../history/20261107_1358_REVIEW_HANDOFF.md"
+    },
+    {
+      "file": "docs/reviews/DOCUMENTATION_REORGANIZATION_2026-10.md",
+      "from": "../CONTRACTS.md",
+      "to": "../history/20261107_1358_CONTRACTS.md"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../CURRENT_STATE.md#find-current-work",
+      "to": "../history/20261107_1358_CURRENT_STATE.md#find-current-work"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading",
+      "to": "../history/design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#development-credential-file-loading",
+      "to": "../history/design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance",
+      "to": "../history/design/20261107_1358_DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06",
+      "to": "../history/20261107_1358_REVIEW_HANDOFF.md#credential-follow-up-implementation-handoff-2026-11-06"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../REVIEW_HANDOFF.md#choose-the-baseline-and-the-first-increment",
+      "to": "../history/20261107_1358_REVIEW_HANDOFF.md#choose-the-baseline-and-the-first-increment"
+    },
+    {
+      "file": "docs/TECHNICAL_TERMS.md",
+      "from": "CONTRACTS.md#implemented-first-version-contracts",
+      "to": "INDEX.md#initial-contract-basis"
+    },
+    {
+      "file": "docs/verification/20261031_1917_DOCUMENTATION_CONFORMANCE.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../history/20261107_1358_CURRENT_STATE.md#verification-basis"
+    },
+    {
+      "file": "docs/verification/20261031_1917_DOCUMENTATION_CONFORMANCE.md",
+      "from": "../REVIEW_HANDOFF.md#current-source-and-latest-application-evidence",
+      "to": "../history/20261107_1358_REVIEW_HANDOFF.md#current-source-and-latest-application-evidence"
+    },
+    {
+      "file": "docs/verification/20261031_1917_STREAMING_ACCEPTANCE.md",
+      "from": "../CURRENT_STATE.md#verification-basis",
+      "to": "../history/20261107_1358_CURRENT_STATE.md#verification-basis"
+    },
+    {
+      "file": "docs/verification/20261105_0220_USAGE_OBSERVATION.md",
+      "from": "../REVIEW_HANDOFF.md#offline-acceptance-cases",
+      "to": "../history/20261107_1358_REVIEW_HANDOFF.md#offline-acceptance-cases"
+    },
+    {
+      "file": "docs/verification/20261105_0220_USAGE_OBSERVATION.md",
+      "from": "../REVIEW_HANDOFF.md#selected-offline-correctness-and-measurement-handoff-2026-11-05",
+      "to": "../history/20261107_1358_REVIEW_HANDOFF.md#selected-offline-correctness-and-measurement-handoff-2026-11-05"
+    },
+    {
+      "file": "docs/WORK_ITEMS.md",
+      "from": "guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance",
+      "to": "design/DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance"
+    },
+    {
+      "file": "docs/WORK_ITEMS.md",
+      "from": "guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-repair-acceptance",
+      "to": "design/DEVELOPMENT_CREDENTIALS.md#credential-repair-acceptance"
+    },
+    {
+      "file": "docs/WORK_ITEMS.md",
+      "from": "guides/INTEGRATION_AND_MODEL_BOUNDARY.md#credential-follow-up-acceptance",
+      "to": "design/DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance"
+    },
+    {
+      "file": "docs/WORK_ITEMS.md",
+      "from": "CURRENT_STATE.md#verification-basis",
+      "to": "INDEX.md#find-by-topic"
+    },
+    {
+      "file": "docs/WORK_ITEMS.md",
+      "from": "CONTRACTS.md",
+      "to": "INDEX.md#initial-contract-basis"
+    }
+  ],
+  "historical_capture_routes": [
+    {
+      "file": "docs/batches/DOC-LAYOUT-01/spec.md",
+      "from": "../../WORK_ITEMS.md#batch-layout-organization",
+      "to": "../../history/20261107_1358_WORK_ITEMS.md#batch-layout-organization"
+    },
+    {
+      "file": "docs/batches/DOC-ORG-R1/spec.md",
+      "from": "../../WORK_ITEMS.md#maintenance-and-coverage",
+      "to": "../../history/20261107_1358_WORK_ITEMS.md#maintenance-and-coverage"
+    },
+    {
+      "file": "docs/batches/DOC-ORG-R1/verification.md",
+      "from": "../../WORK_ITEMS.md#maintenance-and-coverage",
+      "to": "../../history/20261107_1358_WORK_ITEMS.md#maintenance-and-coverage"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../WORK_ITEMS.md#development-credential-startup",
+      "to": "20261107_1358_WORK_ITEMS.md#development-credential-startup"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../PHASE_PLAN.md#d-make-delivery-usable-outside-the-development-checkout",
+      "to": "20261107_1358_PHASE_PLAN.md#d-make-delivery-usable-outside-the-development-checkout"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../PHASE_PLAN.md#delivery-route",
+      "to": "20261107_1358_PHASE_PLAN.md#delivery-route"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources",
+      "to": "20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../WORK_ITEMS.md",
+      "to": "20261107_1358_WORK_ITEMS.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_CURRENT_STATE.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_PHASE_PLAN.md",
+      "from": "../WORK_ITEMS.md",
+      "to": "20261107_1358_WORK_ITEMS.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../PHASE_PLAN.md#delivery-route",
+      "to": "20261107_1358_PHASE_PLAN.md#delivery-route"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_README.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../WORK_ITEMS.md#selection-now",
+      "to": "20261107_1358_WORK_ITEMS.md#selection-now"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../PHASE_PLAN.md#next-increment-selection",
+      "to": "20261107_1358_PHASE_PLAN.md#next-increment-selection"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../PHASE_PLAN.md#next-increment-selection",
+      "to": "20261107_1358_PHASE_PLAN.md#next-increment-selection"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../PHASE_PLAN.md#next-increment-selection",
+      "to": "20261107_1358_PHASE_PLAN.md#next-increment-selection"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../PHASE_PLAN.md#next-increment-selection",
+      "to": "20261107_1358_PHASE_PLAN.md#next-increment-selection"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources",
+      "to": "20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources"
+    },
+    {
+      "file": "docs/history/20261106_2300_REVIEW_HANDOFF.md",
+      "from": "../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources",
+      "to": "20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../WORK_ITEMS.md#selection-now",
+      "to": "20261107_1358_WORK_ITEMS.md#selection-now"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../WORK_ITEMS.md#selection-now",
+      "to": "20261107_1358_WORK_ITEMS.md#selection-now"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../PHASE_PLAN.md#next-increment-selection",
+      "to": "20261107_1358_PHASE_PLAN.md#next-increment-selection"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../WORK_ITEMS.md#selection-now",
+      "to": "20261107_1358_WORK_ITEMS.md#selection-now"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_REVIEW_HANDOFF.md",
+      "from": "../PHASE_PLAN.md#next-increment-selection",
+      "to": "20261107_1358_PHASE_PLAN.md#next-increment-selection"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../PHASE_PLAN.md#next-increment-selection",
+      "to": "20261107_1358_PHASE_PLAN.md#next-increment-selection"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../PHASE_PLAN.md#next-increment-selection",
+      "to": "20261107_1358_PHASE_PLAN.md#next-increment-selection"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../WORK_ITEMS.md#doc-org-r1-specification",
+      "to": "20261107_1358_WORK_ITEMS.md#doc-org-r1-specification"
+    },
+    {
+      "file": "docs/history/20261107_BATCH_LAYOUT_WORK_ITEMS.md",
+      "from": "../WORK_ITEMS.md#doc-org-r1-tickets",
+      "to": "20261107_1358_WORK_ITEMS.md#doc-org-r1-tickets"
+    },
+    {
+      "file": "docs/history/contracts/20261031_0157_ARCHITECTURE.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/contracts/20261031_0157_CONTRACTS.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/contracts/20261031_0157_CONTRACTS.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/decisions/20261031_0157_DECISIONS.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/design/20261031_0157_EXECUTION_AND_DELIVERY.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/design/20261031_0157_EXECUTION_AND_DELIVERY.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/design/20261031_0157_INTEGRATION_AND_MODEL_BOUNDARY.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/design/20261031_1917_ACCEPTED_EVIDENCE_RECOVERY.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/design/20261031_1917_ACCEPTED_EVIDENCE_RECOVERY.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/design/20261031_1917_ACCEPTED_EVIDENCE_RECOVERY.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/design/20261031_1917_CONTEXT_UPDATE_COORDINATION.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/design/20261031_1917_CONTEXT_UPDATE_COORDINATION.md",
+      "from": "../../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources",
+      "to": "../20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_DESIGN_OPTIONS.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_DESIGN_OPTIONS.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_DESIGN_OPTIONS.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_DESIGN_OPTIONS.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_STAGE_B_CONVERSION.md",
+      "from": "../../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources",
+      "to": "../20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_STAGE_B_CONVERSION.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_STAGE_B_CONVERSION.md",
+      "from": "../../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources",
+      "to": "../20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_STAGE_B_CONVERSION.md",
+      "from": "../../CURRENT_STATE.md",
+      "to": "../20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_STAGE_B_CONVERSION.md",
+      "from": "../../PHASE_PLAN.md",
+      "to": "../20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/history/discussions/20261031_0157_STAGE_B_CONVERSION.md",
+      "from": "../../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources",
+      "to": "../20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources"
+    },
+    {
+      "file": "docs/history/IMPLEMENTATION_HISTORY.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/IMPLEMENTATION_HISTORY.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/history/IMPLEMENTATION_HISTORY.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/history/IMPLEMENTATION_HISTORY.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/history/IMPLEMENTATION_HISTORY.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/IMPLEMENTATION_HISTORY.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/history/PHASE_HISTORY.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/PHASE_HISTORY.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/history/PHASE_HISTORY.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/REVIEW_HISTORY.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/history/REVIEW_HISTORY.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/history/REVIEW_HISTORY.md",
+      "from": "../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources",
+      "to": "20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources"
+    },
+    {
+      "file": "docs/history/REVIEW_HISTORY.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/reviews/20261106_2307_ORGANIZATION_REVIEW.md",
+      "from": "../PHASE_PLAN.md#next-increment-selection",
+      "to": "../history/20261107_1358_PHASE_PLAN.md#next-increment-selection"
+    },
+    {
+      "file": "docs/reviews/20261106_2307_ORGANIZATION_REVIEW.md",
+      "from": "../WORK_ITEMS.md#maintenance-and-coverage",
+      "to": "../history/20261107_1358_WORK_ITEMS.md#maintenance-and-coverage"
+    },
+    {
+      "file": "docs/reviews/DOCUMENTATION_REORGANIZATION_2026-10.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "../history/20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/reviews/DOCUMENTATION_REORGANIZATION_2026-10.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "../history/20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/reviews/DOCUMENTATION_REORGANIZATION_2026-10.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "../history/20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/reviews/DOCUMENTATION_REORGANIZATION_2026-10.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "../history/20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../WORK_ITEMS.md",
+      "to": "../history/20261107_1358_WORK_ITEMS.md"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../WORK_ITEMS.md#development-credential-startup",
+      "to": "../history/20261107_1358_WORK_ITEMS.md#development-credential-startup"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "../history/20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "../history/20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/reviews/RUNTIME_FINDINGS.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "../history/20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/verification/20261031_1917_DOCUMENTATION_CONFORMANCE.md",
+      "from": "../PHASE_PLAN.md",
+      "to": "../history/20261107_1358_PHASE_PLAN.md"
+    },
+    {
+      "file": "docs/verification/20261031_2220_VERSION_PUBLICATION.md",
+      "from": "../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources",
+      "to": "../history/20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources"
+    },
+    {
+      "file": "docs/verification/20261101_0033_FD01_LOCAL.md",
+      "from": "../CURRENT_STATE.md",
+      "to": "../history/20261107_1358_CURRENT_STATE.md"
+    },
+    {
+      "file": "docs/verification/20261101_0033_FD01_LOCAL.md",
+      "from": "../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources",
+      "to": "../history/20261107_1358_PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources"
+    },
+    {
+      "file": "docs/verification/20261106_0112_WORK_REGISTER.md",
+      "from": "../WORK_ITEMS.md",
+      "to": "../history/20261107_1358_WORK_ITEMS.md"
+    }
+  ],
+  "note": "Active owner prose and direct evidence destinations received subsequent semantic repair. Final diff is authoritative; historical prose verification ignores only destinations."
+}

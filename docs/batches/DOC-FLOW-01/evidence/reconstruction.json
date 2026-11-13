@@ -1,0 +1,10 @@
+{
+  "baseline": "3407626bbda562823f6a0e273d80a6bd9fa798d2",
+  "method": "git read-tree/apply in a separate GIT_INDEX_FILE; compare every frozen Markdown document as UTF-8 LF. Main index/worktree untouched.",
+  "candidate_patch_applies": true,
+  "documents_checked": 118,
+  "mismatches": [],
+  "compressed_patch_sha256": "1f75b7d0ea6a166958eabec729549871f1800c3bd43d91366ca7846fa582923e",
+  "decompressed_patch_sha256": "86208ee0cbda218620b837870c95fc413788598f7d18dc9662c75eb905ffa317",
+  "gzip_roundtrip_identical": true
+}

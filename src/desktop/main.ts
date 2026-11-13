@@ -1,4 +1,6 @@
-import { app, BrowserWindow, dialog, ipcMain, safeStorage, session } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, protocol, session } from 'electron'
+import { ConnectionState } from './connection'
+import { PreviewResources, previewScheme } from './preview'
 import { spawn, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { promises as fs, existsSync } from 'node:fs'
@@ -8,10 +10,12 @@ import { fileURLToPath } from 'node:url'
 let window: BrowserWindow | null = null
 let child: ChildProcess | null = null
 let origin = ''
-let apiKey = ''
+let connection: ConnectionState
 let selectedPdf = ''
 let startupError = ''
 let stopping = false
+let previews: PreviewResources
+protocol.registerSchemesAsPrivileged([{ scheme: previewScheme, privileges: { standard: true, secure: true, corsEnabled: true } }])
 const token = randomBytes(32).toString('hex')
 const root = resolve(__dirname, '../..')
 const dataRoot = process.env.PDFMD_DATA || join(app.getPath('userData'), 'workspace')
@@ -20,29 +24,10 @@ if (process.argv.includes('--preview-worker')) {
   app.setPath('userData', join(app.getPath('temp'), `pdfmd-preview-${randomBytes(12).toString('hex')}`))
 }
 
-async function settings() {
-  const encryptionAvailable = await safeStorage.isAsyncEncryptionAvailable()
-  try {
-    const data = JSON.parse(await fs.readFile(settingsPath, 'utf8'))
-    if (data.secret && encryptionAvailable) {
-      const decrypted = await safeStorage.decryptStringAsync(Buffer.from(data.secret, 'base64'))
-      apiKey = decrypted.result
-      if (decrypted.shouldReEncrypt) {
-        data.secret = (await safeStorage.encryptStringAsync(apiKey)).toString('base64')
-        await fs.writeFile(settingsPath, JSON.stringify(data, null, 2), { mode: 0o600 })
-      }
-    }
-    delete data.secret
-    return { ...data, hasKey: Boolean(apiKey), encryptionAvailable }
-  } catch {
-    return { hasKey: Boolean(apiKey), encryptionAvailable }
-  }
-}
-
-async function call(path: string, method = 'GET', body?: unknown) {
+async function call(path: string, method = 'GET', body?: unknown, extraHeaders: Record<string, string> = {}) {
   if (!origin) throw new Error(startupError || 'The local engine is starting. Try again in a moment.')
   const response = await fetch(origin + path, {
-    method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...extraHeaders },
     body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(30000)
   })
   const value = await response.json()
@@ -57,11 +42,12 @@ function id(value: unknown): string {
 
 async function launchBackend() {
   await fs.mkdir(dataRoot, { recursive: true })
-  await settings()
+  const settled = await connection.settings()
+  if (settled.error) throw new Error(settled.error)
   const packaged = app.isPackaged
   const python = process.env.PDFMD_PYTHON || join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python')
   const executable = packaged ? join(process.resourcesPath, 'engine', 'pdf-md-engine', process.platform === 'win32' ? 'pdf-md-engine.exe' : 'pdf-md-engine') : python
-  if (!existsSync(executable)) throw new Error('The Python engine is missing. Run tools/setup.ps1, then restart the app.')
+  if (!existsSync(executable)) throw new Error('The Python engine is missing. Run tools/dev/setup.ps1, then restart the app.')
   const args = packaged ? ['--workspace', dataRoot] : ['-m', 'pdfmd.server', '--workspace', dataRoot]
   const previewLaunch = packaged ? [process.execPath] : [process.execPath, join(root, 'out/main/index.js')]
   child = spawn(executable, args, {
@@ -69,7 +55,7 @@ async function launchBackend() {
     env: { ...process.env, PYTHONIOENCODING: 'utf-8', PDFMD_LOCAL_TOKEN: token,
       LANGSMITH_TRACING: 'false', LANGCHAIN_TRACING_V2: 'false',
       PDFMD_NODE: process.execPath, PDFMD_PREVIEW_LAUNCH: JSON.stringify(previewLaunch),
-      PDFMD_OCR_WORKER: packaged ? join(process.resourcesPath, 'ocr-worker.cjs') : join(root, 'tools/ocr-worker.cjs'),
+      PDFMD_OCR_WORKER: packaged ? join(process.resourcesPath, 'ocr-worker.cjs') : join(root, 'tools/runtime/ocr-worker.cjs'),
       NODE_PATH: packaged ? join(app.getAppPath(), 'node_modules') : join(root, 'node_modules') }
   })
   let buffer = ''
@@ -88,7 +74,7 @@ async function launchBackend() {
   })
   child.stderr?.on('data', (chunk: Buffer) => {
     let text = chunk.toString('utf8').split(token).join('[local token]')
-    if (apiKey) text = text.split(apiKey).join('[credential]')
+    text = connection.redact(text)
     void fs.appendFile(join(dataRoot, 'engine.log'), text).catch(() => undefined)
   })
   child.on('error', (error) => { startupError = `Cannot start the local engine: ${error.message}` })
@@ -135,21 +121,13 @@ app.whenReady().then(async () => {
   }
   if (!app.requestSingleInstanceLock()) { app.quit(); return }
   app.on('second-instance', () => { window?.show(); window?.focus() })
+  connection = new ConnectionState(settingsPath, root, app.isPackaged)
   ipcMain.handle('workbench', async (event, action: string, args: Record<string, any>) => {
-    if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame) throw new Error('Untrusted IPC sender.')
+    if (!window || window.isDestroyed() || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame) throw new Error('Untrusted IPC sender.')
     switch (action) {
       case 'health': return origin ? call('/health') : { ready: false, error: startupError }
-      case 'settings': return settings()
-      case 'saveSettings': {
-        if (typeof args.key === 'string' && args.key) apiKey = args.key
-        if (args.clearKey) apiKey = ''
-        const saved: Record<string, unknown> = { route: args.route, limits: args.limits, remember: Boolean(args.remember) }
-        const encryptionAvailable = await safeStorage.isAsyncEncryptionAvailable()
-        if (args.remember && apiKey && encryptionAvailable) saved.secret = (await safeStorage.encryptStringAsync(apiKey)).toString('base64')
-        await fs.mkdir(dirname(settingsPath), { recursive: true })
-        await fs.writeFile(settingsPath, JSON.stringify(saved, null, 2), { mode: 0o600 })
-        return { ...saved, secret: undefined, hasKey: Boolean(apiKey), encryptionAvailable }
-      }
+      case 'settings': return connection.settings()
+      case 'saveSettings': return connection.save(args)
       case 'choosePdf': {
         const result = await dialog.showOpenDialog(window, { properties: ['openFile'], filters: [{ name: 'PDF documents', extensions: ['pdf'] }] })
         selectedPdf = result.canceled ? '' : result.filePaths[0]
@@ -163,23 +141,45 @@ app.whenReady().then(async () => {
       }
       case 'jobs': return call('/jobs')
       case 'job': return call(`/jobs/${id(args.job)}`)
+      case 'activity': return call(`/jobs/${id(args.job)}/activity?` + new URLSearchParams({ limit: String(args.limit || 100), ...(args.cursor ? { cursor: String(args.cursor) } : {}) }))
+      case 'diagnostics': return call(`/jobs/${id(args.job)}/diagnostics?` + new URLSearchParams({ kind: args.kind || 'request', ...(args.view ? { view: args.view } : {}), ...(args.cursor ? { cursor: args.cursor } : {}) }))
+      case 'diagnosticRecord': return call(`/jobs/${id(args.job)}/diagnostics/record?` + new URLSearchParams({ view: args.view, kind: args.kind, key: args.key }))
+      case 'diagnosticEvidence': return call(`/jobs/${id(args.job)}/diagnostics/evidence?` + new URLSearchParams(Object.fromEntries(
+        Object.entries({ view: args.view, ref: args.ref, mode: args.mode || 'full', pointer: args.pointer || '', start: args.start, end: args.end }).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]))))
+      case 'closeDiagnostics': return call(`/jobs/${id(args.job)}/diagnostics/${id(args.view)}`, 'DELETE')
       case 'page': return call(`/jobs/${id(args.job)}/page/${Number(args.page)}`)
-      case 'version': return call(`/jobs/${id(args.job)}/versions/${id(args.version)}`)
+      case 'version': {
+        previews.begin(args.generation)
+        try {
+          const value = await call(`/jobs/${id(args.job)}/versions/${id(args.version)}`)
+          return previews.prepare(value, args.job, args.version, args.generation)
+        } catch (error) { previews.release(args.generation); throw error }
+      }
+      case 'activatePreview': return previews.activate(args.job, args.version, args.generation, args.lease)
+      case 'mountPreview': return previews.mount(args.generation, args.lease, args.mount)
+      case 'bindPreview': return previews.bind(args.generation, args.lease, args.mount)
+      case 'unmountPreview': previews.unmount(args.generation, args.lease, args.mount); return true
+      case 'releasePreview': previews.release(args.generation); return true
       case 'evidence': return call(`/jobs/${id(args.job)}/evidence/${id(args.ref)}${args.view === 'raw' ? '?view=raw' : ''}`)
       case 'diagnoseConflict': return call(`/jobs/${id(args.job)}/accepted-evidence-diagnosis`)
       case 'resolveConflict': return call(`/jobs/${id(args.job)}/accepted-evidence-resolution`, 'POST', {
         request: args.request, basis: args.basis, choice: 'preserve_and_replan' })
       case 'start': {
-        const configuration = await settings()
+        await connection.settings()
         const current = await call(`/jobs/${id(args.job)}`)
-        return call(`/jobs/${id(args.job)}/start`, 'POST', { key: apiKey,
+        const { configuration, key } = await connection.forStart()
+        return call(`/jobs/${id(args.job)}/start`, 'POST', { key,
           route: current.route ? undefined : configuration.route, limits: current.route ? undefined : configuration.limits,
           amendment: args.amendment || '', scripts: args.scripts === true,
           recover_compaction_request: args.recover_compaction_request })
       }
       case 'taskSettings': return call(`/jobs/${id(args.job)}/settings`, 'POST', { route: args.route, limits: args.limits })
       case 'cancel': return call(`/jobs/${id(args.job)}/cancel`, 'POST', {})
-      case 'edit': return call(`/jobs/${id(args.job)}/edit`, 'POST', args.edit)
+      case 'edit': {
+        // One key per logical submission, kept across a retry, so the engine returns the original receipt.
+        const key = typeof args.idempotencyKey === 'string' && /^[A-Za-z0-9._:-]{1,128}$/.test(args.idempotencyKey) ? args.idempotencyKey : undefined
+        return call(`/jobs/${id(args.job)}/edit`, 'POST', args.edit, key ? { 'Idempotency-Key': key } : {})
+      }
       case 'export': {
         const destination = await dialog.showSaveDialog(window, { defaultPath: `${String(args.name || 'document').replace(/[<>:"/\\|?*]/g, '_')}.zip`,
           filters: [{ name: 'Portable Markdown package', extensions: ['zip'] }] })
@@ -194,6 +194,7 @@ app.whenReady().then(async () => {
     webPreferences: { preload: join(__dirname, '../preload/index.js'), nodeIntegration: false, contextIsolation: true, sandbox: true } })
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   window.webContents.on('will-navigate', (event) => event.preventDefault())
+  previews = new PreviewResources(window)
   window.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))
   window.webContents.session.on('will-download', (event) => event.preventDefault())
   if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) await window.loadURL(process.env.ELECTRON_RENDERER_URL)

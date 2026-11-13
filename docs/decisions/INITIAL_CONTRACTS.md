@@ -1,6 +1,6 @@
 # First-version open questions
 
-The user explicitly stopped incremental design expansion (EVT-1148). EVT-1166 consolidated three contracts. Authorized implementation on 2026-10-23 selected their executable schemas and transitions in [CONTRACTS](../CONTRACTS.md#implemented-first-version-contracts). Q1–Q3 are now closed as design choices. Implementation, live source fidelity and distribution readiness still require distinct evidence; [CURRENT_STATE](../CURRENT_STATE.md) records that evidence. This file does not queue additional model experiments.
+The user explicitly stopped incremental design expansion (EVT-1148). EVT-1166 consolidated three contracts. Authorized implementation on 2026-10-23 selected their executable schemas and transitions in [topic contracts](../INDEX.md#initial-contract-basis). Q1–Q3 are now closed as design choices. Implementation, live source fidelity and distribution readiness still require distinct evidence; [implementation history](../history/IMPLEMENTATION_HISTORY.md) and the [topic evidence routes](../INDEX.md#find-by-topic) retain it. This file does not queue additional model experiments.
 
 The detailed engineering background is local in [DEVELOPMENT_GUIDE](../DEVELOPMENT_GUIDE.md) and its linked guides. These open choices are not permission to leave previously discussed mechanisms unexplained or send the next developer back to a conversation archive.
 

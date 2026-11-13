@@ -1,8 +1,41 @@
 # Changelog
 
-This file records application changes and important validation limits. The dated entries below currently cover development snapshots through 2026-10-25, not all later accumulated work and not published releases. For subsequent A/SC02, diagnostics, recovery, estimator/storage and Nursing records, start with [current verification](docs/CURRENT_STATE.md#verification-basis) and [implementation history](docs/history/IMPLEMENTATION_HISTORY.md). Updating documentation does not rebuild or publish an application. [CURRENT_STATE](docs/CURRENT_STATE.md) routes current status, [implementation history](docs/history/IMPLEMENTATION_HISTORY.md) retains detailed dated evidence, and [CONTRACTS](docs/CONTRACTS.md) owns implemented behavior.
+This file records selected application changes, repository maintenance and important validation limits, not published releases or every accumulated increment. The application entries through 2026-10-25 remain development snapshots. For later A/SC02, diagnostics, recovery, estimator/storage and Nursing records, start with [current verification](docs/CURRENT_STATE.md#verification-basis) and [implementation history](docs/history/IMPLEMENTATION_HISTORY.md). Updating documentation does not rebuild or publish an application. [CURRENT_STATE](docs/CURRENT_STATE.md) routes current status, [implementation history](docs/history/IMPLEMENTATION_HISTORY.md) retains detailed dated evidence, and [CONTRACTS](docs/CONTRACTS.md) owns implemented behavior.
 
 ## Unreleased
+
+### 2026-11-06 — Offline calibration evaluation
+
+- Add `python -m pdfmd.calibration` for explicit hash-bound study/corpus evaluation using current production measurement and native usage interpretation. Preserve unknowns, independent-validation declarations, strict finite-corpus gates, exclusive reports and source/configuration privacy. No fitting or production activation is included.
+- [Verification and limits](docs/reviews/RUNTIME_FINDINGS.md#r01-cal-offline-evaluator-increment-2026-11-06): 39 new cases and 214 affected engine cases pass; saved/reopened synthetic reports demonstrate all three verdicts. Production F/dependencies remain unchanged; actual numeric calibration, validation data, costs and fidelity remain open.
+
+### 2026-11-06 — Counter resource recovery
+
+- Reuse deterministic failed vocabulary decoding in separate one-entry production/shadow caches. Changed resource bytes restore counting automatically; transient reads and unrelated construction errors remain retryable. Retain source access, ordinary profiles/reserves, immutable history and honest fallback.
+- [Offline acceptance](docs/reviews/RUNTIME_FINDINGS.md#r01-count-automatic-recovery-increment-2026-11-06): 223 affected engine cases pass, including 25 new recovery controls. Resource rereads remain necessary; no latency/savings or installed-product result is claimed.
+
+### 2026-11-06 — Production modality classification
+
+- Correct production capacity estimation so image/file-like metadata stays completely counted as text; charge supported native image occurrences only at protocol-native content positions and retain explicit unsupported-modality errors. Preserve original payloads, canonical JSON/BPE/fallback counting and numerical reserves.
+- Identify new observations as `modality_projection=protocol_native_content_v2`. [Scope and checks](docs/reviews/RUNTIME_FINDINGS.md#r01-mod-production-classification-increment-2026-11-06) include fresh negative controls, alias preservation, actual admission/feedback, prospective commitment and synthetic reopen/export. Coverage is composite with retained failures/corrections; no live route, savings, installed build or release is claimed.
+
+### 2026-11-01 — Figure delivery requirements and acceptance correction
+
+- Reopen Nursing content-delivery acceptance after user review of whole-page images; preserve the original agent report, source observations, package/pixel/usage checks and consumed allowance. [Correction](docs/verification/20261031_2242_NURSING_LIVE.md#acceptance-correction-2026-11-01).
+- Adopt complete independent crops with adjacent original captions, labels and necessary source-supported information. Permit explicitly attributed descriptions for captionless sources. [FD-01](docs/design/FIGURE_DELIVERY.md) owns the concrete proposed implementation and verification plan. This is documentation only: no manual output repair, code change or live run.
+
+
+### 2026-10-31 — Version publication and complete Nursing delivery
+
+- Remove the unnecessary Windows prepared-directory rename from new-version saving; retain exclusive immutable preparation and the existing conditional catalog registration/head/receipt transaction. Failed unregistered work remains preserved and invisible. [Mechanism and checks](docs/verification/20261031_2220_VERSION_PUBLICATION.md) distinguish the controlled failure from unknown historical OS causes.
+- Historical acceptance, superseded by the 2026-11-01 figure-delivery correction: accept the app agent's complete fourteen-page Nursing conversion at one saved/reopened/exported version, including fourteen faithful source-page images, source-led content review and a zero-send exhausted-budget copy check. The [27-send actual interval](docs/verification/20261031_2242_NURSING_LIVE.md) records own-agent repair, natural context continuation, consumption, initial helper correction and limits. Other source/OCR classes and the current installed distribution remain unverified.
+
+### 2026-10-31 — Repository organization
+
+- Group renderer features, engine tests, desktop specs/fixtures/support/type checks and development/build/documentation/runtime tools by responsibility. [Project layout](docs/guides/PROJECT_LAYOUT.md) provides current commands and module lookup.
+- Give new desktop checks a unique local run root, with runner-cleared results separate from retained case evidence. [Artifact storage](docs/ARTIFACT_STORAGE.md) explains private/runtime data, packaging and retention.
+- Preserve inherited implementation work and existing user data. [Organization verification](docs/verification/20261031_1646_PROJECT_ORGANIZATION.md) distinguishes path/build/regression checks from live-source acceptance and installed-product readiness.
+- Follow-up [organization review](docs/reviews/20261031_1907_PROJECT_ORGANIZATION.md) verifies preservation/navigation and replaces two remaining ad hoc fixture loaders with canonical imports; focused delivery and diagnostic/reopen checks pass.
 
 ### 2026-10-25 — Capacity waiting and projection estimates
 

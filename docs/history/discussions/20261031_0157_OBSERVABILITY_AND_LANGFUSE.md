@@ -6,7 +6,7 @@
 
 ## Read this discussion by question
 
-F01/F02, their bounded corrections and DT01 have recorded local implementation/acceptance. Langfuse integration, timing extensions and backend trials remain separate unselected choices. Earlier candidate batches and not-yet-authorized statements retain their historical scope; [CURRENT_STATE](../../CURRENT_STATE.md#find-current-work) determines present continuation.
+F01/F02, their bounded corrections and DT01 have recorded local implementation/acceptance. Langfuse integration, timing extensions and backend trials remain separate unselected choices. Earlier candidate batches and not-yet-authorized statements retain their historical scope; [CURRENT_STATE](../20261107_1358_CURRENT_STATE.md#find-current-work) determines present continuation.
 
 - Current local method and evidence: [DT01 client](#dt01-selected-diagnostic-client-boundary-2026-10-30), [D03](#f02-d03-implementation-and-evidence-2026-10-30), [D01/D02](#f02-consistency-correction-implementation-and-evidence-2026-10-29), [F01/F02](#f01f02-implementation-method-2026-10-29).
 - Boundaries and facts: [recorded conclusion](#current-conclusion-and-authority), [existing facts/gaps](#facts-already-available-and-actual-gaps), [API mechanism](../design/20261031_0157_INTEGRATION_AND_MODEL_BOUNDARY.md#task-activity-and-local-diagnostic-api).

@@ -17,7 +17,7 @@ Status meanings used throughout:
 
 ## Reading this reference on its own
 
-For the effective product and responsibility boundaries, start with [PRODUCT_REQUIREMENTS](../../PRODUCT_REQUIREMENTS.md), [ARCHITECTURE](../../ARCHITECTURE.md), and [CONTRACTS](../../CONTRACTS.md). This reference supplies the reasoning behind them. [P1-098](#p1-098) explains the final framework choice. [P1-099–101](#p1-099) describe the three bounded open contracts. The earlier proposals remain here because their corrections explain constraints that a simple implementation must still respect.
+For the effective product and responsibility boundaries, start with [PRODUCT_REQUIREMENTS](../../PRODUCT_REQUIREMENTS.md), [ARCHITECTURE](../../ARCHITECTURE.md), and [CONTRACTS](../20261107_1358_CONTRACTS.md). This reference supplies the reasoning behind them. [P1-098](#p1-098) explains the final framework choice. [P1-099–101](#p1-099) describe the three bounded open contracts. The earlier proposals remain here because their corrections explain constraints that a simple implementation must still respect.
 
 Several terms had distinct meanings in the discussion:
 

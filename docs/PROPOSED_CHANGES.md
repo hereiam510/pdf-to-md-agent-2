@@ -1,11 +1,14 @@
 # Proposed changes and reconsideration conditions
 
-This is a retained-options record, not an execution queue. Inclusion establishes neither superiority, adoption nor scheduling. Current rules belong to the [topic designs](INDEX.md#topics); current delivery belongs to [the phase plan](PHASE_PLAN.md). The earlier mixed [options edition](history/discussions/20261031_0157_DESIGN_OPTIONS.md) remains retrievable.
+This is a retained-options record, not an execution queue. Inclusion establishes neither superiority, adoption nor scheduling. Current rules belong to the [topic designs](INDEX.md#find-by-topic); current delivery belongs to [the phase plan](PHASE_PLAN.md). The earlier mixed [options edition](history/discussions/20261031_0157_DESIGN_OPTIONS.md) remains retrievable.
+
+Current cross-topic dispositions are in [WORK_ITEMS](WORK_ITEMS.md); this owner retains substantive alternatives and rationale.
 
 ## Find an option
 
 | Unselected direction | Location / trigger |
 | --- | --- |
+| Whole-request estimation, usage anchoring and component calibration | [Usage-anchoring v1](design/CONTEXT_MANAGEMENT.md#usage-anchoring-v1-first-bounded-trial-2026-11-05) is adopted and the observer is offline verified. Production recalibration remains open; trial implementation/enrollment and operational observation remain unselected. [WORK_ITEMS](WORK_ITEMS.md#context-capability-and-delivery-work) owns CTX-02/UA-01/UA-02 dispositions; [discussion](discussions/REQUEST_CAPACITY.md) preserves earlier alternatives. |
 | Langfuse, external export, F03/F04 work | [Observability discussion](discussions/OBSERVABILITY.md); select for a demonstrated missing diagnostic need and settle privacy, deployment and reliability choices first. |
 | Diagnostic detail cost and bounds | [Read cost](#diagnostic-detail-read-cost-and-bounds); revisit on measured responsiveness/scale impact. |
 | Prepare-only, before-tools gate or multi-dispatch fail-stop controls | [Execution controls](#explicit-request-preparation-and-execution-stop-controls); select only the needed boundary. |
@@ -24,9 +27,9 @@ If a selected detail proves slow/busy or profiling shows repeated work matters, 
 
 ## Explicit request preparation and execution stop controls
 
-On 2026-10-30 the human selected the existing baseline/zero-dispatch preparation stage for a future execution prompt after D03 review. This selects use of existing controls, not implementation of the interface alternatives below; [Stage B](history/discussions/20261031_0157_STAGE_B_CONVERSION.md#baseline-and-zero-dispatch-preparation-selected-2026-10-30) owns current scope and stops.
+On 2026-10-30 the human selected the existing baseline/zero-dispatch preparation stage for a future execution prompt after D03 review. This selects use of existing controls, not implementation of the interface alternatives below; [Stage B](history/discussions/20261031_0157_STAGE_B_CONVERSION.md#baseline-and-zero-dispatch-preparation-selected-2026-10-30) retains that closed preparation scope and stops; [CURRENT_STATE](decisions/NURSING.md#historical-fourteen-page-task-closeout-2026-11-01) owns the next real-task decision.
 
-Recorded 2026-10-29 after the human accepted the Nursing planning review and asked to retain the design consideration. **Disposition:** retain for later selection; no interface or controller implementation selected. The [current decision](decisions/NURSING.md#staged-nursing-continuation-and-control-interface-deferral-2026-10-29) uses existing exact recovery plus the cumulative request guard for one bounded preparation. [Stage B](history/discussions/20261031_0157_STAGE_B_CONVERSION.md#nursing-planning-reviewed-and-staged-direction-agreed-2026-10-29) owns that operational sequence and its unexecuted status.
+Recorded 2026-10-29 after the human accepted the Nursing planning review and asked to retain the design consideration. **Disposition:** retain for later selection; no interface or controller implementation selected. The [historical decision](decisions/NURSING.md#staged-nursing-continuation-and-control-interface-deferral-2026-10-29) selected existing exact recovery plus the cumulative request guard for one bounded preparation. [Stage B](history/discussions/20261031_0157_STAGE_B_CONVERSION.md#nursing-planning-reviewed-and-staged-direction-agreed-2026-10-29) retains that operational sequence as understood then. The [later actual dispatch](verification/20261031_0157_NURSING_BASELINE_AND_DISPATCH.md#actual-single-dispatch-result-2026-10-30) supersedes the old unexecuted status; interface alternatives remain unselected.
 
 **Need and evidence.** Start currently prepares and freezes before the send budget check. Setting the total request allowance equal to consumed attempts can prevent dispatch, but still requires the ordinary credential path and writes recovery/settings/graph/time records. It communicates the pause as budget exhaustion, not an explicit prepared-for-review state. A one-dispatch allowance also allows the accepted response's tools, while multi-dispatch allowances permit existing response repairs. Source and existing tests support these distinctions; they do not establish how frequently users need an alternative or prove a live Nursing failure caused by the interface.
 
@@ -79,15 +82,7 @@ An agent could explicitly request a retention period or release condition, such 
 
 ### Compact other history before admitting a pin
 
-**Disposition:** Adopted for the 2026-10-25 history-pressure coordination increment after dual-protocol local reproductions. Exact behavior is owned by [Q2](design/CONTEXT_MANAGEMENT.md#q2-context-transitions), the decision by [DECISIONS](decisions/REBUILD.md#consequential-alternatives-and-corrections), and implementation/checks by [CURRENT_STATE](CURRENT_STATE.md). This adoption includes notes and release updates, not only pins. Other options on this page remain unselected.
-
-If a proposed pin could fit after removable history is compacted, the agent could retain the proposal, compact appropriate history, and reassess it against the resulting input. If required instructions plus the selected pins and request overhead already exceed capacity, compacting unrelated history cannot solve the problem. The actual compaction envelope must also fit; a hypothetical small final context does not prove a feasible compaction path.
-
-**Potential value and tradeoff:** A useful pin might become admissible without changing its representation. Compaction adds work and can lose useful semantic detail despite preserving raw history. Coordination must also avoid repeatedly retrying an infeasible proposal or applying a blocked policy before a usable next input exists. Existing atomic rejection and working-policy preservation should remain intact.
-
-**Revisit when:** A concrete task or proportionate local analysis shows rejection caused by reducible history, a feasible compaction path, and a useful evidence selection that existing agent-controlled choices handle awkwardly. Do not infer this need from a raw pin that cannot fit even with minimal history.
-
-**Proportionate evaluation:** Use fitting-after-compaction and irreducibly-oversized controls. Check that the former can progress, the latter receives actionable feedback, and both preserve originals, prior policy on rejection, consumed usage and frozen-request boundaries. Inspect retained instructions and dependencies as well as source-led saved/reopened/exported output. Selected coordination may invoke existing bounded compaction under the active policy; it does not select automatic release, lower fidelity or a narrower conversion scope.
+**Adopted, not pending.** History-pressure coordination is implemented under the current [context contract](design/CONTEXT_MANAGEMENT.md#q2-context-transitions). The [decision owner](decisions/CONTEXT_MANAGEMENT.md#history-pressure-admission-retained-option-and-adoption-basis) retains the full original comparison, tradeoffs, evaluation conditions and subsequent-policy distinction. Agent-selected expiry remains a separate unselected option above.
 
 ### Current disposition
 

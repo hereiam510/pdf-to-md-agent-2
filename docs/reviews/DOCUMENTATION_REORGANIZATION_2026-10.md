@@ -48,10 +48,10 @@ No software suite, renderer application, build, live model/route, Nursing Store/
 | Files | Change |
 | --- | --- |
 | [README](../../README.md), [AGENTS](../../AGENTS.md) | One current entry, concrete directory roles and maintenance/reading routes. |
-| [CURRENT_STATE](../CURRENT_STATE.md), [PHASE_PLAN](../PHASE_PLAN.md), [REVIEW_HANDOFF](../REVIEW_HANDOFF.md) | Current summaries, outcomes, next decision and evidence routes, with old-link forwarding. |
+| [CURRENT_STATE](../history/20261107_1358_CURRENT_STATE.md), [PHASE_PLAN](../history/20261107_1358_PHASE_PLAN.md), [REVIEW_HANDOFF](../history/20261107_1358_REVIEW_HANDOFF.md) | Current summaries, outcomes, next decision and evidence routes, with old-link forwarding. |
 | [IMPLEMENTATION_HISTORY](../history/IMPLEMENTATION_HISTORY.md), [PHASE_HISTORY](../history/PHASE_HISTORY.md), [REVIEW_HISTORY](../history/REVIEW_HISTORY.md) | New owners for preserved historical state, plan and handoff bodies; no present execution authority. |
 | [DECISIONS](../INDEX.md), [proposed changes](../PROPOSED_CHANGES.md), [CHANGELOG](../../CHANGELOG.md) | Reorganization rationale, clearer selection status and explicit changelog coverage. |
-| [CONTRACTS](../CONTRACTS.md), [DEVELOPMENT_GUIDE](../DEVELOPMENT_GUIDE.md) | Contract question map; corrected initial-contract closure route; relocated README behavior explanations. |
+| [CONTRACTS](../history/20261107_1358_CONTRACTS.md), [DEVELOPMENT_GUIDE](../DEVELOPMENT_GUIDE.md) | Contract question map; corrected initial-contract closure route; relocated README behavior explanations. |
 | [EXECUTION_AND_DELIVERY](../guides/EXECUTION_AND_DELIVERY.md), [CONTEXT_AND_EVIDENCE](../guides/CONTEXT_AND_EVIDENCE.md), [INTEGRATION_AND_MODEL_BOUNDARY](../guides/INTEGRATION_AND_MODEL_BOUNDARY.md) | Focused question maps and local contents; adopted streaming design label; maintained evidence destinations. |
 | [DOCUMENT_ENGINE](../guides/DOCUMENT_ENGINE.md), [CONTEXT_UPDATE_COORDINATION](../design/CONTEXT_UPDATE_COORDINATION.md), [ACCEPTED_EVIDENCE_RECOVERY](../design/ACCEPTED_EVIDENCE_RECOVERY.md) | Local guide contents and relocated evidence links; mechanisms retained. |
 | [STAGE_B_CONVERSION](../discussions/NURSING.md), [OBSERVABILITY_AND_LANGFUSE](../discussions/OBSERVABILITY.md), [CONTEXT_COORDINATION](../discussions/CONTEXT_COORDINATION.md) | Topic routes, historical authority labeling, clarified evidence-link labels; original discussion retained. |
@@ -85,4 +85,4 @@ Corrections belong to [CONTEXT_AND_EVIDENCE](../guides/CONTEXT_AND_EVIDENCE.md#d
 
 ## Continuation
 
-Use [CURRENT_STATE](../CURRENT_STATE.md) and the effective [phase plan](../PHASE_PLAN.md). R01/CTX calibration, controlled R02 performance, R03 uncertain local effects, broader R07 and external observability retain their existing independent triggers. This documentation work does not make those findings new prerequisites or authorize another model request.
+Use [CURRENT_STATE](../history/20261107_1358_CURRENT_STATE.md) and the effective [phase plan](../history/20261107_1358_PHASE_PLAN.md). R01/CTX calibration, controlled R02 performance, R03 uncertain local effects, broader R07 and external observability retain their existing independent triggers. This documentation work does not make those findings new prerequisites or authorize another model request.

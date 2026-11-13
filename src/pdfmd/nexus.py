@@ -12,8 +12,9 @@ import httpx
 
 from .schema import Route
 from .storage import Conflict, Store, encode, uid
-from .streaming import StreamDecoder, StreamError
+from .streaming import StreamDecoder, StreamError, validate_response_item_state
 from .waiting import RequestWait
+from .usage import interpret_usage
 
 
 class StopRun(RuntimeError):
@@ -37,7 +38,20 @@ def unique_object(pairs):
 
 
 def parse_reply(protocol: str, raw: bytes) -> dict:
-    value = json.loads(raw, object_pairs_hook=unique_object)
+    try:
+        return _parse_reply(protocol, raw)
+    except (KeyError, TypeError, AttributeError, IndexError) as exc:
+        raise ValueError("The native response contains an unsupported container or missing field. The original is retained.") from exc
+
+
+def _parse_reply(protocol: str, raw: bytes) -> dict:
+    if protocol not in {"chat_completions", "responses"}:
+        raise ValueError("Unsupported native protocol.")
+    def finite(_):
+        raise ValueError("Non-finite JSON numbers are not supported.")
+    value = json.loads(raw, object_pairs_hook=unique_object, parse_constant=finite)
+    if not isinstance(value, dict):
+        raise ValueError("The native response must be an object.")
     calls = []
     texts = []
     if protocol == "chat_completions":
@@ -47,6 +61,8 @@ def parse_reply(protocol: str, raw: bytes) -> dict:
         message = choices[0]["message"]
         if message.get("refusal") or message.get("role") != "assistant":
             raise ValueError("The model refused or returned an unexpected message role.")
+        if any(message.get(key) not in (None, "", [], {}) for key in ("audio", "function_call")):
+            raise ValueError("Unsupported native assistant content. The original is retained.")
         content = message.get("content")
         if isinstance(content, str):
             texts.append(content)
@@ -68,19 +84,42 @@ def parse_reply(protocol: str, raw: bytes) -> dict:
         native = value.get("output", [])
         if not isinstance(native, list):
             raise ValueError("The response output must be a list of native items.")
+        item_ids = set()
         for item in native:
+            if not isinstance(item, dict):
+                raise ValueError("Native output items must be objects.")
+            if "id" in item:
+                if not isinstance(item["id"], str) or not item["id"] or item["id"] in item_ids:
+                    raise ValueError("Native output item IDs must be nonempty and unique when present.")
+                item_ids.add(item["id"])
+            validate_response_item_state(item, final=True, stage="native")
             if item.get("type") == "function_call":
-                if item.get("status", "completed") != "completed":
-                    raise ValueError("The function call is incomplete.")
                 calls.append({"id": item["call_id"], "name": item["name"], "arguments": item["arguments"]})
             elif item.get("type") == "message":
-                if item.get("status", "completed") != "completed":
-                    raise ValueError("The assistant message is incomplete.")
-                for part in item.get("content", []):
+                parts = item.get("content", [])
+                if not isinstance(parts, list):
+                    raise ValueError("Native message content must be a list.")
+                for part in parts:
                     if part.get("type") == "refusal":
                         raise ValueError("The model refused the request.")
                     if part.get("type") == "output_text":
+                        if not isinstance(part.get("text"), str):
+                            raise ValueError("Native output text must be a string.")
                         texts.append(part["text"])
+                    else:
+                        raise ValueError("Unsupported native message content. The original is retained.")
+            elif item.get("type") == "reasoning":
+                content, summary = item.get("content"), item.get("summary")
+                if (content is not None and not isinstance(content, list)) or (summary is not None and not isinstance(summary, list)):
+                    raise ValueError("Native reasoning content and summary must be lists or null.")
+                for part in content or []:
+                    if not isinstance(part, dict) or part.get("type") != "reasoning_text" or not isinstance(part.get("text"), str):
+                        raise ValueError("Unsupported native reasoning content. The original is retained.")
+                for part in summary or []:
+                    if not isinstance(part, dict) or part.get("type") != "summary_text" or not isinstance(part.get("text"), str):
+                        raise ValueError("Unsupported native reasoning summary. The original is retained.")
+                if item.get("encrypted_content") is not None and not isinstance(item["encrypted_content"], str):
+                    raise ValueError("Opaque reasoning must retain its native string representation.")
             elif item.get("type") != "reasoning":
                 raise ValueError("Unsupported native output item. The original is retained; no tools were executed.")
     ids = set()
@@ -88,14 +127,15 @@ def parse_reply(protocol: str, raw: bytes) -> dict:
         if not isinstance(call["id"], str) or not call["id"] or call["id"] in ids:
             raise ValueError("Tool call IDs must be nonempty and unique in the accepted batch.")
         ids.add(call["id"])
-        if not isinstance(call["arguments"], str) or not isinstance(call["name"], str):
+        if not isinstance(call["arguments"], str) or not isinstance(call["name"], str) or not call["name"]:
             raise ValueError("Tool names and complete argument strings are required.")
-        arguments = json.loads(call["arguments"], object_pairs_hook=unique_object)
+        arguments = json.loads(call["arguments"], object_pairs_hook=unique_object, parse_constant=finite)
         if not isinstance(arguments, dict):
             raise ValueError("Tool arguments must be a complete JSON object.")
     if not calls and not any(text.strip() for text in texts):
         raise ValueError("The accepted response contains neither executable calls nor text.")
-    return {"native": native, "calls": calls, "text": "\n".join(texts), "usage": value.get("usage"), "provider_id": value.get("id")}
+    return {"native": native, "calls": calls, "text": "\n".join(texts),
+            "usage": interpret_usage(protocol, value.get("usage")).value, "provider_id": value.get("id")}
 
 
 def make_payload(route: Route, instructions: str, messages: list[dict], tools: list[dict]) -> dict:
@@ -120,6 +160,7 @@ class Nexus:
     def __init__(self, store: Store, credentials: Callable[[str], str], transport=None, *, clock=None):
         self.store, self.credentials, self.transport = store, credentials, transport
         self.active_time = None
+        self.usage_trial = None
         self.clock = clock or time.monotonic
 
     def freeze(self, job: str, key: str, payload: dict, kind: str, meta: dict) -> dict:
@@ -129,13 +170,30 @@ class Nexus:
             return old
         current = self.store.get("job", job)
         route = current["route"]
+        if meta.get("capacity", {}).get("anchor"):
+            meta = {**meta, "admission_version": meta["capacity"]["anchor"]["version"]}
         blob = self.store.blob(job, "request_input", payload, {"kind": kind, "request": key})
         record = {"id": key, "job": job, "kind": kind, "payload_ref": blob["ref"],
                   "route": route, "meta": meta, "instruction_basis": instruction_basis(current),
                   "replay_policy": {field: current["limits"][field] for field in ("replay_unknown", "max_attempts_per_request")},
                   "status": "prepared", "attempts": [], "accepted_ref": None}
-        self.store.put("request", key, job, record)
-        self.store.event(job, "request_prepared", {"request": key, "kind": kind, **meta.get("capacity", {})})
+        trial_identity = self.usage_trial.preflight(record, freezing=True) if self.usage_trial else None
+        prohibition = None
+        with self.store.transaction() as db:
+            current_request = self.store.get_tx(db, "request", key, job=job)
+            if current_request:
+                return current_request
+            if self.usage_trial is not None:
+                prohibition = self.usage_trial.freeze_tx(db, record, trial_identity)
+            if prohibition:
+                self.usage_trial.prohibit_tx(db, record, "before_freeze", prohibition)
+            else:
+                self.store.put_tx(db, "request", key, job, record)
+        if prohibition:
+            raise StopRun("usage_trial_revoked_before_freeze", "Trial authority changed before freeze: " + prohibition)
+        capacity = meta.get("capacity", {})
+        self.store.event(job, "request_prepared", {"request": key, "kind": kind,
+            **{field: capacity[field] for field in ("input_estimate", "output_reserve", "fits", "method", "anchor") if field in capacity}})
         return record
 
     def reconcile(self, job: str, key: str) -> dict:
@@ -148,6 +206,20 @@ class Nexus:
             raise Conflict("Accepted request has no saved acceptance evidence.")
         return request
 
+    def trial_for(self, request):
+        anchor = request.get("meta", {}).get("capacity", {}).get("anchor")
+        if not anchor and (request.get("meta", {}).get("admission_version")
+                           or request.get("meta", {}).get("capacity", {}).get("governing_method") == "usage_anchor"):
+            raise Conflict("Anchor-capable input is missing its required governing provenance.")
+        if not anchor or anchor.get("method") != "usage_anchor":
+            return None
+        if self.usage_trial is not None and self.usage_trial.lineage == anchor["lineage"]:
+            return self.usage_trial
+        # Settlement must preserve its durable authority even when a resumed
+        # Runtime omitted the optional coordinator. This grants no dispatch.
+        from .usage_trial import OfflineUsageTrial
+        return OfflineUsageTrial(self.store, anchor["lineage"])
+
     def _settle_accepted(self, job: str, key: str, *, verified_stream: dict | None = None) -> dict:
         """Validate immutable evidence, then atomically merge current metadata.
 
@@ -155,8 +227,13 @@ class Nexus:
         disk reconstruction and receive-boundary check. Reopen repeats both.
         No file reads/decoder work occurs while holding the write transaction.
         """
-        from .acceptance import inspect_acceptance, validate_metadata
-        checked = inspect_acceptance(self.store, job, key, verified_stream=verified_stream)
+        from .acceptance import EvidenceCheckError, inspect_acceptance, validate_metadata
+        try:
+            checked = inspect_acceptance(self.store, job, key, verified_stream=verified_stream)
+        except EvidenceCheckError as exc:
+            raise StopRun("accepted_evidence_conflict",
+                          "Saved acceptance is incompatible or inconsistent with retained native evidence. "
+                          "Original records, consumption and tool facts are retained; no request was sent.") from exc
         request, ref, evidence = checked["request"], checked["ref"], checked["evidence"]
         accepted, native = checked["accepted"], checked["native"]
         attempt_id, received_at = checked["attempt_id"], checked["received_at"]
@@ -167,6 +244,8 @@ class Nexus:
                           "Saved acceptance conflicts with its received stream: " + checked["boundary"]["reason"]
                           + " All evidence and committed tool effects are retained; no request was sent.")
 
+        trial = self.trial_for(request)
+        raw_usage = self.store.json(native["ref"], job).get("usage") if trial else None
         with self.store.transaction() as db:
             current = self.store.get_tx(db, "request", key, job=job)
             attempt = self.store.get_tx(db, "attempt", attempt_id, job=job)
@@ -195,6 +274,8 @@ class Nexus:
                 old_transport = attempt.get("transport", {})
                 updated_attempt.update(http_status=http_status, transport={**old_transport, **transport})
             updated_request = {**current, "status": "accepted", "accepted_ref": ref, **desired}
+            if trial is not None:
+                trial.settle_tx(db, updated_request, updated_attempt, raw_usage)
             if updated_request != current:
                 self.store.put_tx(db, "request", key, job, updated_request)
             if updated_attempt != attempt:
@@ -202,11 +283,17 @@ class Nexus:
         return updated_request
 
     def send(self, job: str, key: str) -> dict:
+        if self.usage_trial is not None:
+            self.usage_trial.fence(self)
         if self.active_time:
             self.active_time.checkpoint()
         request = self.reconcile(job, key)
         if request["accepted_ref"]:
             return self.store.json(request["accepted_ref"], job)
+        if self.trial_for(request) is not None and self.usage_trial is None:
+            raise StopRun("usage_trial_coordinator_required", "This frozen anchored input requires its offline coordinator. No request was sent.")
+        if self.usage_trial is not None and request["attempts"]:
+            self.usage_trial.recover_request(job, key)
         state = self.store.get("job", job)
         limits = state["limits"]
         # Pre-snapshot records retain their task's immutable recovery policy.
@@ -234,6 +321,8 @@ class Nexus:
                     "first_progress_elapsed_seconds": None, "last_progress_elapsed_seconds": None,
                     "event_count": 0, "progress_count": 0, "terminal_event": None,
                     "protocol_complete": False, "terminal_elapsed_seconds": None}
+        trial_identity = self.usage_trial.preflight(request) if self.usage_trial else None
+        prohibition = None
         with self.store.transaction() as db:
             current = self.store.get_tx(db, "job", job)
             elapsed = self.active_time.elapsed(current) if self.active_time else current["active_seconds"]
@@ -241,14 +330,21 @@ class Nexus:
                 raise StopRun("cancelled", "Stopped before a new model request.")
             if current["attempts"] >= limits["max_requests"] or elapsed >= limits["max_active_seconds"]:
                 raise StopRun("budget_exhausted", "The persistent request or active-time budget is exhausted. Saved versions remain exportable.")
-            current["attempts"] += 1
-            self.store.put_tx(db, "job", job, job, current)
-            request["attempts"].append(attempt_id)
-            request["status"] = "in_flight"
-            self.store.put_tx(db, "request", key, job, request)
-            self.store.put_tx(db, "attempt", attempt_id, job,
-                              {"id": attempt_id, "request": key, "status": "in_flight", "started": started, "usage": None,
-                               "transport": {k: v for k, v in observed.items() if k != "http_status"}})
+            if self.usage_trial is not None:
+                prohibition = self.usage_trial.claim_tx(db, request, attempt_id, trial_identity)
+            if prohibition:
+                self.usage_trial.prohibit_tx(db, request, "physical_dispatch", prohibition)
+            else:
+                current["attempts"] += 1
+                self.store.put_tx(db, "job", job, job, current)
+                request["attempts"].append(attempt_id)
+                request["status"] = "in_flight"
+                self.store.put_tx(db, "request", key, job, request)
+                self.store.put_tx(db, "attempt", attempt_id, job,
+                                  {"id": attempt_id, "request": key, "status": "in_flight", "started": started, "usage": None,
+                                   "transport": {k: v for k, v in observed.items() if k != "http_status"}})
+        if prohibition:
+            raise StopRun("usage_trial_dispatch_blocked", "Frozen anchored dispatch is prohibited: " + prohibition + ". No request was sent.")
         self.store.event(job, "request_started", {"request": key, "kind": request["kind"], "attempt": attempt_id})
         payload = self.store.json(request["payload_ref"], job)
         received = bytearray()
@@ -301,6 +397,8 @@ class Nexus:
                     accepted = parse_reply(route.protocol, native_bytes)
                 except (ValueError, KeyError, TypeError) as exc:
                     request["status"] = "rejected"
+                    observed["diagnostic"] = {"category": "invalid_stream", "field": "response", "stage": "native",
+                                              "ordinal": decoder.event_ordinal if streaming else None}
                     failure = StopRun("response_rejected", str(exc))
                 else:
                     accepted["native_ref"] = raw["ref"]
@@ -310,7 +408,8 @@ class Nexus:
                                           {"request": key, "attempt": attempt_id, "received_at": time.time(),
                                            "transport": deepcopy(observed)}, key=f"accepted:{key}")
                     request.update(status="accepted", accepted_ref=ref["ref"])
-        except StreamError:
+        except StreamError as exc:
+            observed["diagnostic"] = exc.diagnostic
             # Do not echo provider error events, which can contain arbitrary secrets.
             incomplete = observed["stop_cause"] == "stream_incomplete"
             request["status"] = "unknown" if incomplete else "rejected"
@@ -359,13 +458,16 @@ class Nexus:
             if request["accepted_ref"]:
                 request = self._settle_accepted(job, key, verified_stream=verified_stream)
             else:
-                self.store.put("request", key, job, request)
                 attempt = {"id": attempt_id, "request": key, "status": request["status"], "started": started,
                            "finished": time.time(), "http_status": observed["http_status"], "usage": None, "remote_cancelled": None,
                            "transport": {k: v for k, v in observed.items() if k != "http_status"}}
                 if streaming:
                     attempt["stream_ref"] = request.get("stream_ref")
-                self.store.put("attempt", attempt_id, job, attempt)
+                with self.store.transaction() as db:
+                    if self.usage_trial is not None:
+                        self.usage_trial.failed_tx(db, request, attempt)
+                    self.store.put_tx(db, "request", key, job, request)
+                    self.store.put_tx(db, "attempt", attempt_id, job, attempt)
         if failure:
             raise failure
         return self.store.json(request["accepted_ref"], job)
@@ -499,7 +601,8 @@ class Nexus:
                 remaining = wait.boundary()[0] - elapsed()
                 await asyncio.wait({task}, timeout=min(0.1, remaining))
             return await task
-        except StreamError:
+        except StreamError as exc:
+            observed["diagnostic"] = exc.diagnostic
             observed.update(terminal_event=decoder.terminal, protocol_complete=decoder.complete)
             if observed["stop_cause"] != "stream_incomplete":
                 observed["stop_cause"] = "stream_error"

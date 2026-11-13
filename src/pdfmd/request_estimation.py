@@ -28,29 +28,100 @@ PATTERN = "|".join([
 ])
 
 
+def vocabulary_ranks(compressed: bytes):
+    """Pure byte validation, shared code without shared counter/cache state."""
+    try:
+        data = gzip.decompress(compressed)
+    except (gzip.BadGzipFile, EOFError, zlib.error) as exc:
+        # These failures describe the supplied bytes. Resource I/O, imports and
+        # construction are outside this boundary and never become negative hits.
+        return None, f"Bundled counter vocabulary has invalid compressed data ({type(exc).__name__}: {exc})."
+    if hashlib.sha256(data).hexdigest() != VOCAB_SHA256:
+        return None, "Bundled counter vocabulary failed its SHA-256 check."
+    ranks = {base64.b64decode(token): int(rank) for token, rank in (line.split() for line in data.splitlines())}
+    return ranks, None
+
+
+@lru_cache(maxsize=1)
+def _counter_from_resource(compressed: bytes):
+    import tiktoken
+
+    ranks, invalid = vocabulary_ranks(compressed)
+    if invalid is not None:
+        return None, invalid  # No exception/traceback or private text is retained.
+    return tiktoken.Encoding("pdfmd_o200k_ordinary_v1", pat_str=PATTERN, mergeable_ranks=ranks, special_tokens={}), None
+
+
 @lru_cache(maxsize=1)
 def counter():
     import tiktoken
 
     if tiktoken.__version__ != "0.14.0":
         raise ValueError("The installed counter differs from the selected version.")
+    # A failed load rereads bytes, so repaired resources recover immediately.
+    # Only their deterministic decode result is reused; I/O failures can retry.
     compressed = files("pdfmd").joinpath("data/o200k_base.tiktoken.gz").read_bytes()
-    try:
-        data = gzip.decompress(compressed)
-    except zlib.error as exc:
-        # Normalize only the decompressor's invalid-data error. Other expected
-        # resource failures already reach estimate's explicit offline fallback.
-        raise ValueError("Bundled counter vocabulary has invalid compressed data.") from exc
-    if hashlib.sha256(data).hexdigest() != VOCAB_SHA256:
-        raise ValueError("Bundled counter vocabulary failed its SHA-256 check.")
-    ranks = {base64.b64decode(token): int(rank) for token, rank in (line.split() for line in data.splitlines())}
-    return tiktoken.Encoding("pdfmd_o200k_ordinary_v1", pat_str=PATTERN, mergeable_ranks=ranks, special_tokens={})
+    selected, invalid = _counter_from_resource(compressed)
+    if invalid is not None:
+        raise ValueError(invalid)
+    return selected
 
 
 @lru_cache(maxsize=512)
 def text_cost(text: str) -> int:
     # Bounded small pieces, never a disk cache or an entire growing history.
     return len(counter().encode_ordinary(text))
+
+
+def modality_projection(payload: dict, protocol: str) -> tuple[dict, int]:
+    """Copy complete JSON; classify only immediate protocol-native parts.
+
+    Metadata, schemas and serialized tool text can contain arbitrary type names.
+    They are textual input, including nested image/mask data, not native pixels.
+    This is a cost-applicability boundary, not full upstream schema validation.
+    """
+    # Copy only ancestors we edit, separately for each serialized occurrence.
+    # deepcopy preserves Python aliases and could also replace a metadata alias.
+    projected = dict(payload)
+    images = 0
+
+    def parts(content, image_kind, text_kinds):
+        nonlocal images
+        if not isinstance(content, list):
+            return content
+        content = list(content)
+        for index, part in enumerate(content):
+            if not isinstance(part, dict):
+                raise StopRun("capacity_configuration", "This native content part has no supported local cost rule.")
+            kind = part.get("type")
+            if image_kind is not None and kind == image_kind:
+                images += 1
+                content[index] = {"type": kind, "image": "[native image charged separately]"}
+            elif kind not in text_kinds:
+                raise StopRun("capacity_configuration", "This native modality has no supported local cost rule. Preserve the content and configure an applicable estimator before sending.")
+        return content
+
+    key = "messages" if protocol == "chat_completions" else "input"
+    items = payload.get(key)
+    if isinstance(items, list):
+        projected[key] = list(items)
+    for index, item in enumerate(items if isinstance(items, list) else []):
+        if not isinstance(item, dict):
+            continue
+        item = dict(item)
+        projected[key][index] = item
+        role = item.get("role")
+        if protocol == "chat_completions":
+            if role in ("user", "system", "developer", "assistant", "tool", "function") and "content" in item:
+                item["content"] = parts(item["content"], "image_url" if role == "user" else None, ("text", "refusal"))
+        elif item.get("type", "message") == "message" and role in ("user", "system", "developer", "assistant"):
+            if "content" in item:
+                item["content"] = parts(item["content"], "input_image", ("input_text", "output_text", "refusal"))
+        elif item.get("type") == "function_call_output" and "output" in item:
+            item["output"] = parts(item["output"], "input_image", ("input_text",))
+        elif item.get("type") == "computer_call_output":
+            raise StopRun("capacity_configuration", "This native screenshot modality has no supported local cost rule.")
+    return projected, images
 
 
 def estimate(payload: dict, route: Route) -> dict:
@@ -60,24 +131,9 @@ def estimate(payload: dict, route: Route) -> dict:
     other = "input" if expected == "messages" else "messages"
     if expected not in payload or other in payload or payload.get("model") != route.model:
         raise StopRun("capacity_configuration", "The native payload does not match the selected route/protocol; no capacity estimate is available.")
-    images = 0
-
-    def walk(value):
-        nonlocal images
-        if isinstance(value, dict):
-            kind = value.get("type", "")
-            if isinstance(kind, str) and kind in {"image_url", "input_image"}:
-                images += 1
-                return {"type": kind, "image": "[native image charged separately]"}
-            if isinstance(kind, str) and kind in {"input_audio", "audio", "audio_url", "input_video", "video", "input_file", "file", "image"}:
-                raise StopRun("capacity_configuration", "This native modality has no supported local cost rule. Preserve the content and configure an applicable estimator before sending.")
-            return {key: walk(item) for key, item in value.items()}
-        if isinstance(value, list):
-            return [walk(item) for item in value]
-        return value
-
     wire = encode(payload)
-    textual = encode(walk(payload))
+    projected, images = modality_projection(payload, route.protocol)
+    textual = encode(projected)
     if images and route.image_tokens is None:
         raise StopRun("capacity_configuration", "Configure a conservative per-image token allowance for this route before sending pixels.")
     fallback = None
@@ -101,6 +157,7 @@ def estimate(payload: dict, route: Route) -> dict:
     total = point + margin + 1024
     method = "utf8_fallback_v1" if fallback else "o200k_native_json_proxy_v1"
     return {"method": method, "method_version": 1, "counter_version": None if fallback else "tiktoken-0.14.0",
+            "modality_projection": "protocol_native_content_v2",
             "vocabulary_sha256": None if fallback else VOCAB_SHA256,
             "scope": "complete_native_json_proxy_not_provider_token_count",
             "calibration": "not_a_route_wide_calibration_or_bound",

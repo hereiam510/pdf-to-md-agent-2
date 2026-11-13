@@ -1,13 +1,14 @@
 # Integration and model-boundary engineering guide
 
-This guide explains how the independent desktop app, Python agent controller, framework, Nexus connection, and shared tools cooperate. The governing boundaries are in [ARCHITECTURE](../ARCHITECTURE.md), [PRODUCT_REQUIREMENTS](../PRODUCT_REQUIREMENTS.md), and [CONTRACTS](../CONTRACTS.md). The first increment implements a small Python LangGraph `StateGraph`, SQLite metadata and immutable files with pinned dependencies. No measurement established it as the best framework. [CURRENT_STATE](../CURRENT_STATE.md) records verification; the [implemented contracts](../CONTRACTS.md#implemented-first-version-contracts) govern current executable names and choices.
+This guide explains how the independent desktop app, Python agent controller, framework, Nexus connection, and shared tools cooperate. The governing boundaries are in [ARCHITECTURE](../ARCHITECTURE.md), [PRODUCT_REQUIREMENTS](../PRODUCT_REQUIREMENTS.md), and [topic contracts](../INDEX.md#initial-contract-basis). The first increment implements a small Python LangGraph `StateGraph`, SQLite metadata and immutable files with pinned dependencies. No measurement established it as the best framework. [implementation evidence](../history/IMPLEMENTATION_HISTORY.md) records verification; the [implemented contracts](../INDEX.md#initial-contract-basis) govern current executable names and choices.
 
 Descriptions marked illustrative preserve the design reasoning and alternatives rather than overriding current APIs, schemas or pins. [Q1–Q3](../decisions/INITIAL_CONTRACTS.md) records their implementation closure. The detailed [foundation record](../history/discussions/20261031_0157_REBUILD_FOUNDATIONS.md) preserves the framework/research discussion and its corrections. Local [discussion sources](../sources/rebuild/INDEX.md) support optional audit of exact wording. Understanding this guide does not require the original export or old checkout.
 
 ## Read by integration question
 
-[Architecture](../ARCHITECTURE.md) owns responsibilities; [contracts](../CONTRACTS.md) own effective behavior. This guide explains integration and preserves the reasons earlier options changed.
+[Architecture](../ARCHITECTURE.md) owns responsibilities; [contracts](../INDEX.md#initial-contract-basis) own effective behavior. This guide explains integration and preserves the reasons earlier options changed.
 
+- Development credentials: [loading and operational route](#development-credential-file-loading), [implementation/check integration](#credential-implementation-and-checks), [normative design](../design/DEVELOPMENT_CREDENTIALS.md).
 - Local diagnostic UI/API: [activity and reads](../design/LOCAL_DIAGNOSTICS.md#task-activity-and-local-diagnostic-api), [saved acceptance diagnosis/recovery](#local-saved-acceptance-diagnosis-and-recovery-api).
 - Route/native protocol: [configuration](#5-route-configuration-and-model-capability-semantics), [native boundary](#6-native-requestresponse-meaning-and-the-adapter-boundary), [current streaming rules](../design/STREAMING_RECEIVE.md#streaming-contract-a-and-sc02-adopted-rules-and-implementation).
 - Framework and tools: [framework rationale](#3-why-the-preferred-framework-direction-changed), [component ownership](#4-cooperating-components-and-one-owner-for-each-decision), [tool dispatch](#7-tool-discovery-shared-dispatch-and-capture).
@@ -16,6 +17,8 @@ Descriptions marked illustrative preserve the design reasoning and alternatives 
 <details>
 <summary>All sections in this owner</summary>
 
+- [Development credential-file loading](#development-credential-file-loading)
+- [Credential implementation and checks](#credential-implementation-and-checks)
 - [Task activity and local diagnostic API](../design/LOCAL_DIAGNOSTICS.md#task-activity-and-local-diagnostic-api)
 - [Local saved-acceptance diagnosis and recovery API](#local-saved-acceptance-diagnosis-and-recovery-api)
 - [1. The product and its runtime boundary](#1-the-product-and-its-runtime-boundary)
@@ -36,6 +39,24 @@ Descriptions marked illustrative preserve the design reasoning and alternatives 
 
 
 The current activity/diagnostic API, evidence semantics and typed client are maintained in [Local diagnostics](../design/LOCAL_DIAGNOSTICS.md).
+
+## Development credential-file loading
+
+Use the development launcher for automatic file loading or its `-CredentialFile` / `-NoCredentialFile` controls; direct development startup uses the same main-process mechanism. The [credential policy](../design/DEVELOPMENT_CREDENTIALS.md#development-credential-file-loading) owns the default path, validation, precedence, error and packaged-app boundaries. Read its complete rule when changing startup or connection behavior rather than inferring eligibility from a successful file discovery or `hasKey` reply.
+
+## Credential implementation and checks
+
+The [state-owner guarantees](../design/DEVELOPMENT_CREDENTIALS.md#selected-startup-repair-target-2026-11-06) govern initialization, explicit changes, queued persistence, renderer readiness and Start. For CRED-03/04, also read the [selected extension](../design/DEVELOPMENT_CREDENTIALS.md#selected-credential-follow-up-target-2026-11-06), [follow-up matrix](../design/DEVELOPMENT_CREDENTIALS.md#credential-follow-up-acceptance) and [original matrix](../design/DEVELOPMENT_CREDENTIALS.md#credential-repair-acceptance). Their expected behavior is maintained in that design, not repeated here.
+
+The implementation follows the existing Electron 45 lifecycle and async storage path; dependency pins and production estimation are unchanged. Official guidance checked before implementation: [app lifecycle and packaged status](https://www.electronjs.org/docs/latest/api/app), [asynchronous safeStorage and platform limits](https://www.electronjs.org/docs/latest/api/safe-storage). Source/build identity and actual checks are recorded with the current execution evidence; adoption alone does not prove loading or conversion acceptance.
+
+The implementation is in `src/desktop/connection.ts` and its `main.ts` lifecycle/IPC integration, `src/renderer/main.tsx` and settings types. The production-built acceptance harness and specs live under `tests/desktop/support/` and `tests/desktop/specs/`; [project layout](PROJECT_LAYOUT.md) owns placement. Installed Electron 45 async safeStorage declarations and official [lifecycle](https://www.electronjs.org/docs/latest/api/app), [safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage) and [React effect race handling](https://react.dev/reference/react/useEffect#fetching-data-with-effects) were checked again before implementation on 2026-11-06. Dependency pins are unchanged.
+
+`fileCandidate()` now handles discovery separately from the selected-file read/validation catch. Its `fs.stat` rejection handler alone can return an absent candidate; later failures enter the existing terminal initialization error path. This preserves one credential owner and reuses main-process engine blocking and renderer readiness rather than adding another fallback or UI state mechanism. The [CRED-03 execution evidence](../batches/CRED-03-04/verification.md#cred-03-offline-execution-2026-11-07) records the production-build discriminator and controls.
+
+`ConnectionState.save()` captures credential and connection intent on receipt, then waits in the existing write queue for initialization. Superseded work exits before capability checking. A Remember save with a key queries `isAsyncEncryptionAvailable()` again, handles rejection as unavailability and checks its revision before publishing capability metadata or starting encryption. The existing revision guard after encryption suppresses obsolete persistence. Refresh uses neither the file loader nor remembered decryption; safe snapshots still wait for the queue. Native encryption failures retain the fixed save error and recoverable queue. [CRED-04 execution evidence](../batches/CRED-03-04/verification.md#cred-04-offline-execution-2026-11-07) owns the capability transitions, delayed newer-intent cases and their tested identity; [combined review/acceptance](../batches/CRED-03-04/verification.md#combined-acceptance) owns the integrated result and limits.
+
+The selected batch's spec owns its execution boundary. Put new batch observations and acceptance in [verification](../batches/CRED-03-04/verification.md), retaining the runtime review as the owner of its original findings. Inspect README's development setup and the affected configuration/error consumers when changing these paths. Neither this guide nor an old check authorizes provider calls or application execution during documentation maintenance.
 
 ## Local saved-acceptance diagnosis and recovery API
 
@@ -61,7 +82,7 @@ The prior observation is React state because it affects rendering. The stale vie
 
 The local result preserves the original job Stop/status evidence. A ready recovery message is not task completion. Review/export, reopen and amendments remain available; the separate ordinary Continue supplies any necessary provider credential and authorizes subsequent model work. No combined resolve-and-send control is introduced. Task/request/attempt/operation/resolution identities remain domain records with explicit responsibility. Future Langfuse integration is only under consideration: this increment adds no tracing dashboard, cross-task analysis, evaluation platform, telemetry framework or external transmission.
 
-The implementation follows the installed FastAPI 0.161.1 / Pydantic 2.14.1 [body-validation pattern](https://fastapi.tiangolo.com/tutorial/body/) and React 19.3.1 [state](https://react.dev/learn/choosing-the-state-structure) and [effect](https://react.dev/reference/react/useEffect) lifecycle. Current source checks and private-profile Electron/scripted-loopback acceptance are recorded in CURRENT_STATE, separately from any real Nexus or installed-product validation. [The execution guide](EXECUTION_AND_DELIVERY.md#historical-conflict-recovery-implementation) explains read-only snapshots and atomic authority; [the context guide](CONTEXT_AND_EVIDENCE.md#resolved-historical-batches) explains native historical pairing and estimates.
+The implementation follows the installed FastAPI 0.161.1 / Pydantic 2.14.1 [body-validation pattern](https://fastapi.tiangolo.com/tutorial/body/) and React 19.3.1 [state](https://react.dev/learn/choosing-the-state-structure) and [effect](https://react.dev/reference/react/useEffect) lifecycle. Current source checks and private-profile Electron/scripted-loopback acceptance are recorded in [recovery verification](../verification/20261031_1917_RECOVERY_ACCEPTANCE.md), separately from any real Nexus or installed-product validation. [The execution guide](EXECUTION_AND_DELIVERY.md#historical-conflict-recovery-implementation) explains read-only snapshots and atomic authority; [the context guide](CONTEXT_AND_EVIDENCE.md#resolved-historical-batches) explains native historical pairing and estimates.
 
 ## 1. The product and its runtime boundary
 
@@ -642,7 +663,7 @@ This documentation work did not implement an adapter, connect a provider, select
 <a id="13-the-remaining-contracts-and-bounded-continuation"></a>
 ## 13. Closed initial contracts and bounded continuation
 
-The final discussion originally left these executable choices open. They were subsequently selected in [implemented Q1–Q3](../CONTRACTS.md#implemented-first-version-contracts); [the closure record](../decisions/INITIAL_CONTRACTS.md) preserves why the questions mattered. The table retains those responsibilities, not a new prerequisite to design the product again:
+The final discussion originally left these executable choices open. They were subsequently selected in [implemented Q1–Q3](../INDEX.md#initial-contract-basis); [the closure record](../decisions/INITIAL_CONTRACTS.md) preserves why the questions mattered. The table retains those responsibilities, not a new prerequisite to design the product again:
 
 | Historical design question / closure record | Boundaries now selected in CONTRACTS | Why integration needs that answer |
 | --- | --- | --- |
@@ -650,7 +671,7 @@ The final discussion originally left these executable choices open. They were su
 | [Q2: context capacity and handoff](../decisions/INITIAL_CONTRACTS.md#q2-context-capacity-and-handoff-contract) | Capacity/unknown-estimate handling, coverage/revision application, handoff replacement/rejection, finite stop when no useful input fits | Every route receives a valid selected input and failed organization leaves originals and unprocessed history intact |
 | [Q3: persistence, recovery, and stop](../decisions/INITIAL_CONTRACTS.md#q3-persistence-recovery-and-stop-contract) | State owners and re-entry at frozen request, accepted reply, committed tool, and graph checkpoint. Batch/cancellation/wait/publication reconciliation. | A reconnect, retry, or graph resume cannot silently reset budgets, duplicate effects, regress a head, or lose accepted work |
 
-These were coherent specification tasks, not requirements to prove an arbitrary hard-crash system before writing useful software. The retained original delivery rationale was to connect a useful source/scope to save, candidate repair, reopen, and explicit-version export. Current implementation/verification and the next authorized scope are in [CURRENT_STATE](../CURRENT_STATE.md#find-current-work); the remaining sentences explain that earlier bounded-first-increment rationale, not a new execution instruction. That increment should use the actual route and basic capacity behavior. Requiring both protocols, full concurrency, advanced screenshot targeting, whole-book conversion, and every recovery mode in the same first slice would recreate the overgrown proposals. The other product capabilities remain recorded, with implementation work chosen proportionately.
+These were coherent specification tasks, not requirements to prove an arbitrary hard-crash system before writing useful software. The retained original delivery rationale was to connect a useful source/scope to save, candidate repair, reopen, and explicit-version export. The [task and evidence routes](../INDEX.md#start-by-task) locate implementation, verification and interaction continuation; the remaining sentences explain that earlier bounded-first-increment rationale, not a new execution instruction. That increment should use the actual route and basic capacity behavior. Requiring both protocols, full concurrency, advanced screenshot targeting, whole-book conversion, and every recovery mode in the same first slice would recreate the overgrown proposals. The other product capabilities remain recorded, with implementation work chosen proportionately.
 
 Automatic incomplete-JSON salvage, delta-only handoffs, automatic reminders, all-exit packaging, advanced cache tuning, multi-writer/branch orchestration, and broader network/platform expansion remain historical or deferred options. They do not become a fourth design blocker. Reopen a relevant boundary when actual implementation/delivery exposes a contract violation or the human changes the requirement. The [three specialized guides](../DEVELOPMENT_GUIDE.md#reading-by-implementation-concern) provide the mechanisms needed to continue without treating every past proposal as current work.
 
