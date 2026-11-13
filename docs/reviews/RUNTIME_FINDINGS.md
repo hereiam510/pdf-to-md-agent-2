@@ -992,7 +992,9 @@ Real route/model validation needs separate authority for any probe or continuati
 
 ### R04 — HTTP errors lose diagnostic body and have no automatic retry
 
-**Evidence.** [Nexus.send/exchange](../../src/pdfmd/nexus.py), lines 174–177, 238–240 and 419–422, records an HTTP error status, withholds arbitrary body content to protect credentials, and does not automatically resend that terminal request. This is a deliberate contract tradeoff. It leaves limited diagnostic evidence; no new gateway causal analysis was performed here.
+**Historical evidence.** The reviewed Nexus send/exchange recorded an HTTP error status, withheld arbitrary body content to protect credentials, and did not automatically resend the terminal request. The review established a diagnostic gap without establishing a gateway cause.
+
+**Selected follow-up.** [NET-01](../batches/NET-01/spec.md) addresses the gap through [bounded diagnostics and retry](../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-transport-behavior). The historical HTTP 408 cause and upstream usage remain unknown.
 
 **Candidate direction / next check.** Evaluate bounded, explicitly labeled diagnostic capture and safe selected metadata, including applicable retry hints. Token-string replacement alone cannot guarantee arbitrary provider bodies are secret-free. Diagnostic retention and automatic retries require separate choices. A 502/504 does not establish that upstream did no work; retries must respect frozen policy, consumed attempts and unknown cost. Test complete error responses, malformed/secret-bearing diagnostics, error headers followed by stalled body, and replay identity/accounting before adopting a policy. Do not reinterpret generic HTTP errors as context overflow.
 

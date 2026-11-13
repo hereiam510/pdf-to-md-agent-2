@@ -128,7 +128,7 @@ def verify_stream_delivery(directory, *, extract=True):
     assert len(requests) == 3 and sum(request["kind"] == "compaction" for request in requests) == 1
     for request in requests:
         assert request["route"] == expected_route and request["status"] == "accepted"
-        assert request["replay_policy"] == fixture["unknown_request"]["replay_policy"] and len(request["attempts"]) == 1
+        assert request["replay_policy"]["automatic_retry"] and len(request["attempts"]) == 1
         assert store.json(request["payload_ref"], identity)["stream"] is True
         accepted = store.json(request["accepted_ref"], identity)
         assert accepted["usage"] is not None

@@ -66,6 +66,8 @@ These existing rules stay in force and the acceptance checks protect them:
 
 ## Design
 
+This section records the adopted design at the implementation baseline. The [runtime contract](../../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-transport-behavior) governs the current retry, clock and recovery rules. The [streaming design](../../design/STREAMING_RECEIVE.md#streaming-progress-waiting) governs progress timing.
+
 ### N1 — Failure classes
 
 Nexus classifies every failed attempt by what is known about the request, not by the exception name alone.

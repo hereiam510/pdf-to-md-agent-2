@@ -81,7 +81,8 @@ def prepare(setup, protocol, chunks, *, kind="normal"):
     path = "chat/completions" if protocol == "chat_completions" else "responses"
     route = Route.model_validate({**job["route"], "endpoint": "https://synthetic.invalid/v1/" + path,
                                   "wait_policy": WAIT})
-    job = store.update_job(job["id"], route=route.model_dump())
+    job = store.update_job(job["id"], route=route.model_dump(),
+                           limits={**job["limits"], "automatic_retry": False})
     body, sends = Body(chunks), []
     def respond(request):
         sends.append(request.content)
@@ -236,7 +237,7 @@ def test_bad_prefix_or_absent_terminal_is_never_rescued_by_suffix_rule(setup, pr
     with pytest.raises(StopRun) as error:
         service.send(job["id"], request["id"])
     unknown = case in {"eof", "disconnect"}
-    assert error.value.reason == ("unknown_outcome" if unknown else "response_rejected")
+    assert error.value.reason == ("network_retry_disabled" if unknown else "response_rejected")
     saved = store.get("request", request["id"])
     assert saved["status"] == ("unknown" if unknown else "rejected") and saved["accepted_ref"] is None
     attempt = store.get("attempt", saved["attempts"][0])

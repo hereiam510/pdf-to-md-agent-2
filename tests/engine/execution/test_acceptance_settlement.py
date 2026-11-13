@@ -32,7 +32,7 @@ def prepare(setup, protocol, streaming, monkeypatch, *, usage=True, kind="normal
     original = store.put_tx
 
     def capture(db, category, key, owner, value):
-        if category == "attempt" and value["status"] == "in_flight":
+        if category == "attempt" and value["status"] == "in_flight" and value.get("send_evidence") == "may_have_been_sent":
             inflight.append(deepcopy(value))
         return original(db, category, key, owner, value)
 
@@ -62,6 +62,9 @@ def prepare(setup, protocol, streaming, monkeypatch, *, usage=True, kind="normal
 
     nexus = Nexus(store, lambda _: "synthetic-only", httpx.MockTransport(respond))
     request = nexus.freeze(job["id"], "persistent-settlement", make_payload(route, "Offline fixture", [], []), kind, {})
+    if unknown_first:
+        request["replay_policy"] = {"replay_unknown": True, "max_attempts_per_request": 2}
+        store.put("request", request["id"], job["id"], request)
     return store, job, nexus, request, sends, inflight
 
 
@@ -128,7 +131,12 @@ def test_acceptance_metadata_failure_rolls_back_both_records_then_recovers(setup
     assert len(reached) == (2 if entry == "reconcile" else 1)
     pending = store.get("request", request["id"])
     assert pending["accepted_ref"] is None and pending["status"] == "in_flight"
-    assert store.get("attempt", inflight[0]["id"]) == inflight[0]
+    pending_attempt = store.get("attempt", inflight[0]["id"])
+    assert {k: v for k, v in pending_attempt.items() if k != "transport"} == {
+        **{k: v for k, v in inflight[0].items() if k != "transport"},
+        "http_status": 200, "send_evidence": "response_observed"}
+    assert pending_attempt["transport"]["headers_elapsed_seconds"] is not None
+    assert not pending_attempt["transport"]["settled"]
     before_job = store.get("job", job["id"])
     monkeypatch.setattr(store, "put_tx", original)
     reopened = Store(store.root)

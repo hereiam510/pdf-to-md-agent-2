@@ -122,7 +122,7 @@ for (const protocol of ['chat_completions', 'responses']) {
       expect(successors.filter((request: any) => request.kind === 'compaction')).toHaveLength(1)
       for (const request of successors) {
         expect(request.route).toEqual(configured.route)
-        expect(request.replay_policy).toEqual(fixture.unknown_request.replay_policy)
+        expect(request.replay_policy).toMatchObject({ automatic_retry: true, max_attempts_per_request: 1 })
       }
       const duplicate = await page.evaluate(async args => {
         try {

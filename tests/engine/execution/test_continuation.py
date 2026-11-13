@@ -229,7 +229,7 @@ def test_continue_after_failed_response_uses_new_input_and_delivers(delivery, tm
         seen.append(payload)
         if len(seen) == 1:
             if failure == 'http':
-                return httpx.Response(502, text='fixture-secret must not enter records')
+                return httpx.Response(401, text='fixture-secret must not enter records')
             value = native(protocol, tool('edit_document', {'base_version': version, 'expected_head': version,
                 'operations': [{'kind': 'delete', 'id': 'p2'}]}))
             if protocol == 'responses':
@@ -273,7 +273,7 @@ def test_repeated_failed_continue_preserves_original_request_budget(delivery):
     store, job, version, _, _ = delivery
     store.update_job(job['id'], limits={**job['limits'], 'max_requests': 2})
     seen = []
-    transport = httpx.MockTransport(lambda req: seen.append(req) or httpx.Response(502))
+    transport = httpx.MockTransport(lambda req: seen.append(req) or httpx.Response(401))
     for _ in range(4):
         continue_job(store, job, transport)
     assert len(seen) == store.get('job', job['id'])['attempts'] == 2
@@ -285,7 +285,7 @@ def test_repeated_failed_continue_preserves_original_request_budget(delivery):
 @pytest.mark.parametrize('replay', [False, True])
 def test_unknown_outcome_cannot_acquire_a_new_id_or_reset_replay_limits(delivery, replay):
     store, job, version, _, _ = delivery
-    store.update_job(job['id'], limits={**job['limits'], 'replay_unknown': replay, 'max_attempts_per_request': 2})
+    store.update_job(job['id'], limits={**job['limits'], 'automatic_retry': replay, 'max_attempts_per_request': 2})
     seen = []
     def fail(request):
         seen.append(request.content)
@@ -297,7 +297,7 @@ def test_unknown_outcome_cannot_acquire_a_new_id_or_reset_replay_limits(delivery
     assert len(set(seen)) == 1
     assert len(store.records('request', job['id'])) == 1
     assert not any(b['kind'] == 'request_continuation' for b in store.records('blob', job['id']))
-    assert store.get('job', job['id'])['stop_reason'] == 'unknown_outcome'
+    assert store.get('job', job['id'])['stop_reason'] == ('network_retry_exhausted' if replay else 'network_retry_disabled')
     assert store.get('job', job['id'])['head'] == version
 
 
@@ -307,7 +307,7 @@ def test_continue_receipt_survives_checkpoint_gap_without_new_authorization(deli
     seen = []
     def reply(request):
         seen.append(json.loads(request.content))
-        return httpx.Response(502) if len(seen) == 1 else httpx.Response(200, json=native('chat_completions',
+        return httpx.Response(401) if len(seen) == 1 else httpx.Response(200, json=native('chat_completions',
             tool('report', {'state': 'complete', 'message': 'Preserved.', 'version_id': version})))
     service = Nexus(store, lambda _: 'fixture', httpx.MockTransport(reply))
     runtime = Runtime(store, service)
@@ -426,7 +426,7 @@ def test_continue_after_failed_compaction_preserves_history_and_delivery(deliver
         else:
             compactions.append(payload)
             if len(compactions) == 1 and failure == 'http':
-                return httpx.Response(502)
+                return httpx.Response(401)
             value = native('chat_completions', text=json.dumps(handoff(job, current_state='Complete version saved: ' + version)))
             if len(compactions) == 1:
                 value['choices'][0]['finish_reason'] = 'length'

@@ -45,7 +45,8 @@ def run(store, job, transport, *, compact=False, credentials=None, continue_fail
 def configure(store, job, protocol, streaming):
     use_protocol(store, job, protocol)
     current = store.get("job", job["id"])
-    store.update_job(job["id"], route={**current["route"], "wait_policy": WAIT if streaming else None})
+    store.update_job(job["id"], route={**current["route"], "wait_policy": WAIT if streaming else None},
+                     limits={**current["limits"], "automatic_retry": False})
 
 
 def assert_failed_reopen(store, job, request, before_state, transport, expected="rejected"):
@@ -68,7 +69,7 @@ def assert_failed_reopen(store, job, request, before_state, transport, expected=
     assert service.reconcile(identity, request["id"]) == request
     with pytest.raises(StopRun) as stopped:
         service.send(identity, request["id"])
-    assert stopped.value.reason == ("response_rejected" if expected == "rejected" else "unknown_outcome")
+    assert stopped.value.reason == ("response_rejected" if expected == "rejected" else "network_retry_disabled")
     after = run(reopened, job, transport, credentials=forbidden)
     for key in ("history", "handoff", "notes", "pinned", "released", "revision", "pending"):
         assert after.get(key) == before_state.get(key)
@@ -162,7 +163,7 @@ def test_stream_boundaries_preserve_evidence_and_reopen(delivery, protocol, comp
     if boundary == "unknown":
         request = store.get("request", snapshot["pending"])
         assert request["status"] == "unknown" and request["accepted_ref"] is None
-        assert store.get("job", job["id"])["stop_reason"] == "unknown_outcome"
+        assert store.get("job", job["id"])["stop_reason"] == "network_retry_disabled"
         attempt = store.get("attempt", request["attempts"][0])
         assert attempt["transport"]["stop_cause"] == "stream_incomplete"
         assert not attempt["transport"]["protocol_complete"]

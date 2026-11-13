@@ -59,7 +59,9 @@ class Limits(Strict):
     max_active_seconds: int = Field(default=7200, ge=1)
     max_response_repairs: int = Field(default=2, ge=0)
     replay_unknown: bool = False
-    max_attempts_per_request: int = Field(default=1, ge=1, le=10)
+    automatic_retry: bool = True
+    max_attempts_per_request: int = Field(default=3, ge=1, le=10)
+    max_server_wait_seconds: float = Field(default=300, ge=0, allow_inf_nan=False)
 
 
 class Block(Strict):

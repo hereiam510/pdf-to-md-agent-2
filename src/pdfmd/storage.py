@@ -388,8 +388,11 @@ class Store:
 
     def event(self, job: str, kind: str, data: dict) -> None:
         with self.transaction() as db:
-            db.execute("INSERT INTO events(job,type,data,created) VALUES(?,?,?,?)",
-                       (job, kind, encode(data).decode(), time.time()))
+            self.event_tx(db, job, kind, data)
+
+    def event_tx(self, db: sqlite3.Connection, job: str, kind: str, data: dict) -> None:
+        db.execute("INSERT INTO events(job,type,data,created) VALUES(?,?,?,?)",
+                   (job, kind, encode(data).decode(), time.time()))
 
     def event_once(self, job: str, kind: str, key: str, data: dict) -> None:
         """Record a replayable node's event and deduplication receipt together."""

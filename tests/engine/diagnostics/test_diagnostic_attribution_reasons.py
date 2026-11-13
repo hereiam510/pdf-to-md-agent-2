@@ -51,7 +51,9 @@ def two_attempts(setup, protocol, *, second_bytes=False):
     service = Nexus(store, lambda _: "synthetic-only", httpx.MockTransport(transport))
     runtime = Runtime(store, service)
     try:
-        service.freeze(job["id"], key, make_payload(route, "Offline attribution", [], []), "normal", {})
+        request = service.freeze(job["id"], key, make_payload(route, "Offline attribution", [], []), "normal", {})
+        request["replay_policy"] = {"replay_unknown": True, "max_attempts_per_request": 2}
+        store.put("request", key, job["id"], request)
         runtime.graph.update_state({"configurable": {"thread_id": job["id"]}},
             {"job": job["id"], "seq": 0, "revision": 0, "history": [], "pending": key, "next": "model"}, as_node="prepare")
         for _ in range(2):

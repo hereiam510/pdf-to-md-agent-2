@@ -349,7 +349,8 @@ class Diagnostics:
                 if receive and (receive.get("attempt") != aid or receive.get("request") != key):
                     raise ValueError("Receive observation ownership disagrees with its attempt.")
                 attempts.append({"id": aid, "record": attempt, "receive_record": receive,
-                                 "usage_state": "unknown" if attempt.get("usage") is None else "reported",
+                                 "usage_state": ("not_sent" if attempt.get("send_evidence") == "not_sent" else
+                                                 "unknown" if attempt.get("usage") is None else "reported"),
                                  "time_meaning": "started/finished are recorded wall times; transport elapsed offsets are local receive observations, not provider TTFT"})
             except (OSError, ValueError, TypeError, KeyError) as exc:
                 attempts.append({"id": aid, "status": "unavailable", "reason": str(exc)})

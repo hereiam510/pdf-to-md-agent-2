@@ -23,8 +23,9 @@ from . import __version__
 from .documents import Documents
 from .diagnostics import Diagnostics, Unavailable, record_summary
 from .evidence import Evidence
+from .network import NETWORK_PAUSES, legacy_policy
 from .nexus import Nexus
-from .runtime import Runtime
+from .runtime import Runtime, committed_network_retry
 from .schema import ConflictResolutionSelection, Limits, Route
 from .storage import Conflict, Store, uid
 from .tools import Dispatcher
@@ -66,14 +67,18 @@ class Engine:
             if frozen:
                 for name, before, after, allowed in (
                     ("route", current["route"], updated_route, {"context_tokens", "output_tokens", "image_tokens", "estimation_profile", "timeout_seconds", "wait_policy"}),
-                    ("limits", current["limits"], updated_limits, {"max_requests", "max_active_seconds"}),
+                    ("limits", current["limits"], updated_limits, {"max_requests", "max_active_seconds",
+                       "automatic_retry", "max_attempts_per_request", "max_server_wait_seconds"}),
                 ):
                     changed = {key for key in set(before) | set(after) if before.get(key) != after.get(key)}
                     if changed - allowed:
                         raise Conflict(f"This task already has a frozen request. Cannot change {name}: "
                                        + ", ".join(sorted(changed - allowed))
-                                       + ". Only capacity, new-request waiting policy and total request/time allowances can change.")
+                                       + ". Only capacity, new-request waiting and retry policies, and total request/time allowances can change.")
             if updated_route != current["route"] or updated_limits != current["limits"]:
+                if (frozen and "automatic_retry" not in current["limits"]
+                        and updated_limits != current["limits"]):
+                    current.setdefault("legacy_replay_policy", legacy_policy(current))
                 change = {"id": uid(), "before": {"route": current["route"], "limits": current["limits"]},
                           "after": {"route": updated_route, "limits": updated_limits}}
                 self.store.put_tx(db, "task_settings", change["id"], job, change)
@@ -95,11 +100,16 @@ class Engine:
                 raise Conflict("Stop the task before changing its settings.") from exc
 
     def start(self, job: str, key: str, route: dict | None = None, limits: dict | None = None,
-              amendment: str = "", scripts: bool = False, recover_compaction_request: str | None = None):
+              amendment: str = "", scripts: bool = False, recover_compaction_request: str | None = None,
+              retry_request: str | None = None):
         with self.guard:
             future = self.futures.get(job)
             if future and not future.done():
+                if isinstance(retry_request, str) and committed_network_retry(self.store, job, retry_request):
+                    return {"started": False, "job": job}
                 raise Conflict("This task is already running.")
+            if retry_request is not None and recover_compaction_request is not None:
+                raise Conflict("Choose one recovery action.")
             lock = FileLock(str(self.store.root / f"task-{job}.lock"), thread_local=False)
             try:
                 lock.acquire(timeout=0)
@@ -109,9 +119,14 @@ class Engine:
             try:
                 if not key:
                     raise ValueError("Enter the Nexus credential in Connection settings.")
-                if recover_compaction_request is not None:
+                if recover_compaction_request is not None or retry_request is not None:
                     runtime = Runtime(self.store, Nexus(self.store, lambda _: self.keys[job], self.transport), scripts=scripts)
+                if recover_compaction_request is not None:
                     runtime.validate_compaction_recovery(job, recover_compaction_request)
+                if retry_request is not None and not runtime.validate_network_retry(job, retry_request):
+                    runtime.close()
+                    lock.release()
+                    return {"started": False, "job": job}
                 self._configure(job, route, limits, starting=True, amendment=amendment)
                 self.keys[job] = key
             except BaseException:
@@ -125,7 +140,8 @@ class Engine:
                 try:
                     runtime = runtime or Runtime(self.store, Nexus(self.store, lambda _: self.keys[job], self.transport), scripts=scripts)
                     # This API is the user's Start/Continue action, distinct from crash re-entry.
-                    runtime.run(job, lock, continue_failed=True, recover_compaction_request=recover_compaction_request)
+                    runtime.run(job, lock, continue_failed=True, recover_compaction_request=recover_compaction_request,
+                                retry_request=retry_request)
                 except Exception:
                     logging.exception("Task stopped with a local engine error")
                 finally:
@@ -136,6 +152,21 @@ class Engine:
 
             self.futures[job] = self.pool.submit(run)
         return {"started": True, "job": job}
+
+    def network_recovery(self, job: str) -> dict | None:
+        # Only an executor holding the task lock can renew a cooldown after
+        # reboot. The UI uses the resulting authoritative remaining time.
+        with self.guard:
+            lock = FileLock(str(self.store.root / f"task-{job}.lock"))
+            try:
+                with lock.acquire(timeout=0):
+                    runtime = Runtime(self.store, Nexus(self.store, lambda _: "", self.transport))
+                    try:
+                        return runtime.network_recovery(job)
+                    finally:
+                        runtime.close()
+            except Timeout:
+                return None
 
     def compaction_recovery(self, job: str) -> dict | None:
         """Inspect the authoritative graph position without changing a request."""
@@ -156,6 +187,7 @@ class Engine:
                         key = state.get("pending") or f"{job}:{state['seq']}:{state['revision']}"
                         request = view.maybe("request", key)
                         if (request and request["kind"] == "compaction" and request["status"] == "unknown"
+                                and request.get("failure", {}).get("reason") not in NETWORK_PAUSES | {"retry_scheduled"}
                                 and not request.get("accepted_ref") and not view.maybe("blob", f"accepted:{key}")
                                 and not view.maybe("blob", f"continuation:{key}")):
                             return {"request": key}
@@ -258,7 +290,8 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
                 value["requests"].append({"id": row["id"], "kind": r.get("kind") or "unknown", "status": r.get("status") or "unknown",
                                           "capacity": capacity, "attempts": summary["attempts"], "route": r.get("route"),
                                           "receive": engine.receive_observation(job, r),
-                                          "replay_policy": r.get("replay_policy", {k: value["limits"][k] for k in ("replay_unknown", "max_attempts_per_request")})})
+                                          "retry_schedule": r.get("retry_schedule"),
+                                          "replay_policy": r.get("replay_policy", legacy_policy(value))})
             except (ValueError, TypeError, KeyError, AttributeError, OSError) as exc:
                 value["requests"].append({"id": row["id"], "kind": "unknown", "status": "unavailable",
                                           "diagnostic_status": "unavailable", "reason": "Malformed record JSON." if isinstance(exc, json.JSONDecodeError) else str(exc)})
@@ -266,6 +299,7 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
         value["diagnostic_limitations"] = ([f"{unavailable_requests} request display summaries unavailable. Inspect diagnostic rows for identities and reasons."]
                                            if unavailable_requests else [])
         value["active_time_gaps"] = engine.store.records("active_time_gap", job)
+        value["suspended_intervals"] = engine.store.records("suspended_interval", job)
         value["active_time_budget_policy"] = "known_active_only"
         value["exports"] = engine.store.records("export", job)
         value["event_summary"] = engine.store.event_summary(job)
@@ -275,6 +309,12 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
         if value["status"] == "running" and not running:
             value["status"] = "interrupted"
         value["running"] = running
+        value["network_recovery"] = None
+        if value["stop_reason"] in NETWORK_PAUSES | {"provider_configuration_error"} and not running:
+            try:
+                value["network_recovery"] = engine.network_recovery(job)
+            except (OSError, ValueError, sqlite3.Error, KeyError, TypeError, AttributeError) as exc:
+                value["diagnostic_limitations"].append("Network recovery display unavailable: " + str(exc))
         try:
             value["compaction_recovery"] = engine.compaction_recovery(job)
         except (OSError, ValueError, sqlite3.Error, KeyError, TypeError, AttributeError) as exc:
@@ -316,7 +356,7 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
     @app.post("/jobs/{job}/start")
     def start(job: str, body: dict):
         return engine.start(job, body.get("key", ""), body.get("route"), body.get("limits"), body.get("amendment", ""), body.get("scripts", False),
-                            recover_compaction_request=body.get("recover_compaction_request"))
+                            recover_compaction_request=body.get("recover_compaction_request"), retry_request=body.get("retry_request"))
 
     @app.get("/jobs/{job}/accepted-evidence-diagnosis")
     def accepted_evidence_diagnosis(job: str):

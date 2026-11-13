@@ -487,7 +487,8 @@ def diagnostic_facts(view, job, key=None, *, checked=None, receipt=None):
                  original_request_status=request["status"], original_attempt_status=attempt.get("status") if attempt else None,
                  original_failure=request.get("failure"),
                  original_usage=attempt.get("usage") if attempt else None,
-                 original_usage_state=("unavailable" if attempt and "usage" not in attempt else
+                 original_usage_state=("not_sent" if attempt and attempt.get("send_evidence") == "not_sent" else
+                                       "unavailable" if attempt and "usage" not in attempt else
                                        "known" if attempt and attempt["usage"] is not None else "unknown"),
                  finished=attempt.get("finished") if attempt else None,
                  original_finish=attempt.get("finished") if attempt else None)

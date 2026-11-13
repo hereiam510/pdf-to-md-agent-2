@@ -2,15 +2,15 @@
 
 ## Current question and authority
 
-2026-11-14, Asia/Singapore. After the [post-merge recommendation](ASSET_REFERENCES.md#next-step-recommendation-after-the-merge), the user said: "i think we need to establish the handling of network problems, before entering stage B". This sets the direction: settle network-failure handling as a [Stage C](../PHASE_PLAN.md#c-continue-through-ordinary-interruptions) increment before the next Stage B conversion batch. It is a discussion. No spec, implementation or provider call is selected. Interrupted local OCR and scripts ([R03](../WORK_ITEMS.md#runtime-and-engineering-inventory)) are a different interruption family and are not in this question.
+2026-11-14, Asia/Singapore. After the [post-merge recommendation](ASSET_REFERENCES.md#next-step-recommendation-after-the-merge), the user said: "i think we need to establish the handling of network problems, before entering stage B". This set the direction for a [Stage C](../PHASE_PLAN.md#c-continue-through-ordinary-interruptions) network increment before the next Stage B batch. Interrupted OCR and scripts ([R03](../WORK_ITEMS.md#runtime-and-engineering-inventory)) are a separate interruption family.
 
-The [adopted runtime contract](../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-transport-behavior) owns the current rules. This file holds the discussion until a spec is agreed.
+The [runtime contract](../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-transport-behavior) owns the effective rules. The [NET-01 tickets](../batches/NET-01/tickets.md#planning-basis-and-authority) own implementation authority.
 
-## Current behavior
+## Baseline before NET-01
 
 The model request path is `Nexus.send` in [nexus.py](../../src/pdfmd/nexus.py). It uses `httpx` 0.28.1 with HTTP/2, `trust_env=False` and no redirects. Each frozen request records a `replay_policy` (`replay_unknown`, `max_attempts_per_request`) that later settings cannot change. Task defaults are no automatic transport retry and no unknown-outcome replay (`replay_unknown=false`, one attempt per request). The desktop offers a checkbox for bounded replay when creating a task.
 
-| What happened | Recorded as | What the user can do today |
+| What happened | Recorded as | Recovery available at the baseline |
 | --- | --- | --- |
 | HTTP error status received (for example 408, 429, 5xx, 401) | Request `http_error`; the error body is withheld to protect credentials ([R04](../reviews/RUNTIME_FINDINGS.md#r04--http-errors-lose-diagnostic-body-and-have-no-automatic-retry)) | Explicit Continue creates a new request identity with continuation feedback. Nothing is automatic, and `Retry-After` is not read. |
 | Connection refused, DNS failure, connect timeout or pool timeout | `stop_cause` such as `connect_timeout` or `transport_error`, but the request status is `unknown` | Only replay, if the task was created with replay enabled. Ordinary Continue cannot move an `unknown` request to a new identity. With default settings the task has no supported way to continue. |

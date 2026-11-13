@@ -5,12 +5,15 @@ import asyncio
 from copy import deepcopy
 import json
 from hashlib import sha256
+from random import uniform
 import time
 from typing import Callable
 
 import httpx
 
-from .schema import Route
+from .clocks import SYSTEM_CLOCKS
+from . import network
+from .schema import Limits, Route
 from .storage import Conflict, Store, encode, uid
 from .streaming import StreamDecoder, StreamError, validate_response_item_state
 from .waiting import RequestWait
@@ -157,13 +160,17 @@ def make_payload(route: Route, instructions: str, messages: list[dict], tools: l
 
 
 class Nexus:
-    def __init__(self, store: Store, credentials: Callable[[str], str], transport=None, *, clock=None):
+    def __init__(self, store: Store, credentials: Callable[[str], str], transport=None, *,
+                 clock=None, clocks=None, retry_sleep=None, jitter=None):
         self.store, self.credentials, self.transport = store, credentials, transport
         self.active_time = None
         self.usage_trial = None
-        self.clock = clock or time.monotonic
+        self.clocks = clocks or SYSTEM_CLOCKS
+        self.clock = clock or self.clocks.working
+        self.retry_sleep = retry_sleep or time.sleep
+        self.jitter = jitter or uniform
 
-    def freeze(self, job: str, key: str, payload: dict, kind: str, meta: dict) -> dict:
+    def freeze(self, job: str, key: str, payload: dict, kind: str, meta: dict, *, not_before=None) -> dict:
         old = self.store.maybe("request", key)
         if old:
             # Re-entry never rebuilds or alters a frozen request.
@@ -173,10 +180,13 @@ class Nexus:
         if meta.get("capacity", {}).get("anchor"):
             meta = {**meta, "admission_version": meta["capacity"]["anchor"]["version"]}
         blob = self.store.blob(job, "request_input", payload, {"kind": kind, "request": key})
+        limits = Limits.model_validate(current["limits"]).model_dump()
         record = {"id": key, "job": job, "kind": kind, "payload_ref": blob["ref"],
                   "route": route, "meta": meta, "instruction_basis": instruction_basis(current),
-                  "replay_policy": {field: current["limits"][field] for field in ("replay_unknown", "max_attempts_per_request")},
+                  "replay_policy": {**{field: limits[field] for field in network.RETRY_POLICY_FIELDS}, **network.BACKOFF},
                   "status": "prepared", "attempts": [], "accepted_ref": None}
+        if not_before is not None:
+            record["not_before"] = not_before
         trial_identity = self.usage_trial.preflight(record, freezing=True) if self.usage_trial else None
         prohibition = None
         with self.store.transaction() as db:
@@ -265,6 +275,7 @@ class Nexus:
             finished = attempt.get("finished")
             updated_attempt = {**attempt, "status": "accepted", "usage": accepted["usage"],
                                "finished": received_at if finished is None else finished}
+            updated_attempt["send_evidence"] = "response_observed"
             updated_attempt.setdefault("remote_cancelled", None)
             if streaming:
                 updated_attempt["stream_ref"] = stream_ref
@@ -287,28 +298,173 @@ class Nexus:
             self.usage_trial.fence(self)
         if self.active_time:
             self.active_time.checkpoint()
-        request = self.reconcile(job, key)
-        if request["accepted_ref"]:
-            return self.store.json(request["accepted_ref"], job)
-        if self.trial_for(request) is not None and self.usage_trial is None:
-            raise StopRun("usage_trial_coordinator_required", "This frozen anchored input requires its offline coordinator. No request was sent.")
-        if self.usage_trial is not None and request["attempts"]:
-            self.usage_trial.recover_request(job, key)
-        state = self.store.get("job", job)
-        limits = state["limits"]
-        # Pre-snapshot records retain their task's immutable recovery policy.
-        policy = request.get("replay_policy", limits)
-        if request["status"] in {"rejected", "http_error"}:
-            raise StopRun("response_rejected", "The saved response was rejected. Its original is retained. No partial tool calls were executed.")
-        if request["attempts"] and (not policy["replay_unknown"] or len(request["attempts"]) >= policy["max_attempts_per_request"]):
-            raise StopRun("unknown_outcome", "The prior request has no accepted reply. Configured replay is disabled or exhausted. Remote completion and cost are unknown.")
+        while True:
+            request = self.reconcile(job, key)
+            if request["accepted_ref"]:
+                return self.store.json(request["accepted_ref"], job)
+            if self.trial_for(request) is not None and self.usage_trial is None:
+                raise StopRun("usage_trial_coordinator_required", "This frozen anchored input requires its offline coordinator. No request was sent.")
+            if self.usage_trial is not None and request["attempts"]:
+                self.usage_trial.recover_request(job, key)
+            if request["attempts"]:
+                self._recover_failed_attempt(request)
+                self._check_reentry(request)
+            self._wait_for_retry(request)
+            result = self._send_attempt(job, key, request)
+            if result is not None:
+                return result
+
+    def _budget(self, current, *, admission=False):
+        if current["cancel_requested"]:
+            raise StopRun("cancelled", "Stopped before a new model request." if admission else
+                          "Local request cancelled. Upstream cancellation and final cost are unknown.")
+        active = self.active_time.elapsed(current) if self.active_time else current["active_seconds"]
+        limits = current["limits"]
+        if active >= limits["max_active_seconds"] or (admission and current["attempts"] >= limits["max_requests"]):
+            raise StopRun("budget_exhausted", "The persistent request or active-time budget is exhausted. Saved versions remain exportable.")
+
+    def deadline_remaining(self, request: dict, field: str) -> float:
+        record = request.get(field)
+        if record is None or record.get("satisfied_by"):
+            return 0.0
+        seconds, renewed = network.remaining(self.clocks, record)
+        if renewed is not record:
+            request[field] = renewed
+            schedule = request.get("retry_schedule")
+            if field == "not_before" and schedule and schedule.get("source") == "retry_after":
+                request["retry_schedule"] = {**schedule, **renewed}
+            with self.store.transaction() as db:
+                self.store.put_tx(db, "request", request["id"], request["job"], request)
+                if field == "retry_schedule" or request.get("retry_schedule") is not schedule:
+                    self.store.event_tx(db, request["job"], "retry_scheduled", request["retry_schedule"])
+        return seconds
+
+    def _wait_for_retry(self, request):
+        if not (request.get("not_before") or request.get("retry_schedule")):
+            return
+        while True:
+            if self.active_time:
+                self.active_time.checkpoint(force=False)
+            self._budget(self.store.get("job", request["job"]), admission=True)
+            seconds = max(self.deadline_remaining(request, "not_before"),
+                          self.deadline_remaining(request, "retry_schedule"))
+            if seconds <= 0:
+                return
+            self.retry_sleep(min(1.0, seconds))
+
+    def _recover_failed_attempt(self, request):
+        if request["status"] != "in_flight":
+            return
+        job, key = request["job"], request["id"]
+        attempt = self.store.get("attempt", request["attempts"][-1], job=job)
+        observation = self.store.maybe("stream_receive", attempt["id"])
+        if observation and observation["transport"].get("http_status") is not None:
+            attempt.update(http_status=observation["transport"]["http_status"], send_evidence="response_observed")
+        status = attempt.get("http_status")
+        if status is not None and not 200 <= status < 300:
+            failure_class = "transient_status" if status in network.TRANSIENT_STATUSES else "configuration"
+            attempt.update(failure_class=failure_class, upstream_code=attempt.get("upstream_code", "unavailable"))
+            detail = f"Nexus returned HTTP {status}."
+            request["status"] = "http_error"
+        else:
+            attempt.update(failure_class="lost_after_send")
+            detail = "The engine stopped before it recorded a complete accepted reply."
+            request["status"] = "unknown"
+        attempt.update(status=request["status"], finished=self.clocks.wall(), remote_cancelled=None)
+        attempt.setdefault("send_evidence", "may_have_been_sent")
+        self._settle_failure(request, attempt, detail)
+
+    def _check_reentry(self, request):
+        failure = request.get("failure", {})
+        if request["status"] == "rejected":
+            raise StopRun("response_rejected", failure.get("message", "The saved response was rejected."))
+        policy = request.get("replay_policy")
+        if policy is None:
+            policy = network.legacy_policy(self.store.get("job", request["job"]))
+        if "automatic_retry" not in policy:
+            # Historical requests keep their prior re-entry gate, with no
+            # automatic retry loop on the exchange that encounters a failure.
+            if request["status"] == "http_error":
+                raise StopRun(failure.get("reason", "provider_configuration_error"),
+                              failure.get("message", "Nexus returned an HTTP error."))
+            if (failure.get("reason") == "provider_configuration_error"
+                    or not policy.get("replay_unknown")
+                    or len(request["attempts"]) >= policy.get("max_attempts_per_request", 1)):
+                raise StopRun(failure.get("reason", "unknown_outcome"),
+                              failure.get("message", "The prior request has no accepted reply. Remote completion and cost are unknown."))
+            return
+        if request.get("retry_schedule"):
+            return
+        # A user/allowance stop can end an exchange before the transport
+        # provides a result. On re-entry schedule it like other unresolved sends.
+        if failure.get("reason") in {"cancelled", "budget_exhausted"}:
+            attempt = self.store.get("attempt", request["attempts"][-1], job=request["job"])
+            self._settle_failure(request, attempt, "The previous exchange ended before an accepted reply.")
+            if request.get("retry_schedule"):
+                return
+            failure = request["failure"]
+        raise StopRun(failure.get("reason", "unknown_outcome"),
+                      failure.get("message", "The prior request has no accepted reply."))
+
+    def _settle_failure(self, request, attempt, detail):
+        job, key = request["job"], request["id"]
+        policy = request.get("replay_policy")
+        if policy is None:
+            policy = network.legacy_policy(self.store.get("job", job))
+        failure_class = attempt["failure_class"]
+        used = len(request["attempts"])
+        maximum = policy.get("max_attempts_per_request", 1)
+        usage_trial = self.trial_for(request)
+        delay = attempt.get("retry_after_seconds")
+        if delay is not None and "not_before" not in request:
+            request["not_before"] = network.deadline(self.clocks, delay)
+        if failure_class == "configuration":
+            reason = "provider_configuration_error"
+        elif failure_class == "rejected_reply":
+            reason = "response_rejected"
+        elif delay is not None and delay > policy.get("max_server_wait_seconds", float("inf")):
+            reason = "retry_wait_exceeds_limit"
+        elif usage_trial or not policy.get("automatic_retry"):
+            reason = ("network_retry_disabled" if not usage_trial and ("automatic_retry" in policy or failure_class == "unsent")
+                      else "provider_error" if failure_class == "transient_status" else "unknown_outcome")
+        elif used >= maximum:
+            reason = "network_retry_exhausted"
+        else:
+            backoff = min(policy["backoff_max_seconds"], policy["backoff_initial_seconds"] * 2 ** (used - 1))
+            schedule = dict(request["not_before"]) if delay is not None else network.deadline(self.clocks, self.jitter(0, backoff))
+            schedule.update(request=key, failed_attempt=attempt["id"], failure_class=failure_class,
+                            detail=detail, source="retry_after" if delay is not None else "backoff",
+                            next_attempt=used + 1, max_attempts=maximum)
+            request["retry_schedule"] = schedule
+            reason = "retry_scheduled"
+        meaning = ("No request reached the provider and this attempt incurred no inference usage."
+                   if attempt["send_evidence"] == "not_sent" else
+                   "Remote completion and usage are unknown. A repeated request may duplicate upstream work.")
+        pause = {"network_retry_disabled": "Automatic retry is off. ",
+                 "network_retry_exhausted": "Automatic attempts exhausted. ",
+                 "retry_wait_exceeds_limit": f"The server requested {delay:g} seconds, above the automatic wait limit. "
+                 if delay is not None else ""}
+        label = {"unsent": "Connection failed before sending", "lost_after_send": "Connection lost after possible send",
+                 "transient_status": "Temporary HTTP failure", "configuration": "Provider configuration error",
+                 "rejected_reply": "Reply rejected"}[failure_class]
+        request["failure"] = {"reason": reason, "message": f"{pause.get(reason, '')}{label}. {detail} Attempt {used} of {maximum}. {meaning}",
+                              "class": failure_class}
+        with self.store.transaction() as db:
+            if self.usage_trial is not None:
+                self.usage_trial.failed_tx(db, request, attempt)
+            self.store.put_tx(db, "request", key, job, request)
+            self.store.put_tx(db, "attempt", attempt["id"], job, attempt)
+            if reason == "retry_scheduled":
+                self.store.event_tx(db, job, "retry_scheduled", request["retry_schedule"])
+        return StopRun(reason, request["failure"]["message"])
+
+    def _send_attempt(self, job: str, key: str, request: dict) -> dict | None:
         token = self.credentials(job)
         route = Route.model_validate(request["route"])
         attempt_id = uid()
-        started = time.time()
+        started = self.clocks.wall()
         streaming = route.wait_policy is not None
-        wait = RequestWait(route)
-        observed = {"deadline_seconds": wait.total,
+        observed = {"deadline_seconds": route.wait_policy.total_seconds if streaming else route.timeout_seconds,
                     "wait_policy": route.wait_policy.model_dump() if streaming else None,
                     "mode": "streaming_progress" if streaming else "legacy_total",
                     "connect_timeout_seconds": min(30, route.wait_policy.first_progress_seconds if streaming else route.timeout_seconds),
@@ -325,11 +481,10 @@ class Nexus:
         prohibition = None
         with self.store.transaction() as db:
             current = self.store.get_tx(db, "job", job)
-            elapsed = self.active_time.elapsed(current) if self.active_time else current["active_seconds"]
-            if current["cancel_requested"]:
-                raise StopRun("cancelled", "Stopped before a new model request.")
-            if current["attempts"] >= limits["max_requests"] or elapsed >= limits["max_active_seconds"]:
-                raise StopRun("budget_exhausted", "The persistent request or active-time budget is exhausted. Saved versions remain exportable.")
+            self._budget(current, admission=True)
+            frozen = self.store.get_tx(db, "request", key, job=job)
+            if frozen != request:
+                raise Conflict("The pending request changed before attempt admission.")
             if self.usage_trial is not None:
                 prohibition = self.usage_trial.claim_tx(db, request, attempt_id, trial_identity)
             if prohibition:
@@ -339,13 +494,22 @@ class Nexus:
                 self.store.put_tx(db, "job", job, job, current)
                 request["attempts"].append(attempt_id)
                 request["status"] = "in_flight"
+                for field in ("failure", "retry_schedule"):
+                    request.pop(field, None)
+                cooldown = request.get("not_before")
+                if cooldown and not cooldown.get("satisfied_by"):
+                    request["not_before"] = {**cooldown, "satisfied_by": attempt_id}
                 self.store.put_tx(db, "request", key, job, request)
                 self.store.put_tx(db, "attempt", attempt_id, job,
                                   {"id": attempt_id, "request": key, "status": "in_flight", "started": started, "usage": None,
+                                   "send_evidence": "may_have_been_sent",
+                                   **({"not_before": cooldown} if cooldown and not cooldown.get("satisfied_by") else {}),
                                    "transport": {k: v for k, v in observed.items() if k != "http_status"}})
+                self.store.event_tx(db, job, "request_started", {"request": key, "kind": request["kind"],
+                    "attempt": attempt_id, "attempt_number": len(request["attempts"]),
+                    "max_attempts": request.get("replay_policy", {}).get("max_attempts_per_request", 1)})
         if prohibition:
             raise StopRun("usage_trial_dispatch_blocked", "Frozen anchored dispatch is prohibited: " + prohibition + ". No request was sent.")
-        self.store.event(job, "request_started", {"request": key, "kind": request["kind"], "attempt": attempt_id})
         payload = self.store.json(request["payload_ref"], job)
         received = bytearray()
         decoder = StreamDecoder(route.protocol) if streaming else None
@@ -371,16 +535,34 @@ class Nexus:
                            {"attempt": attempt_id, "request": key, "cursor": dict(cursor),
                             "transport": deepcopy(observed)})
 
+        def record_headers():
+            status = observed["http_status"]
+            if observed.get("retry_after_seconds") is not None:
+                request["not_before"] = network.deadline(self.clocks, observed["retry_after_seconds"])
+            with self.store.transaction() as db:
+                attempt = self.store.get_tx(db, "attempt", attempt_id, job=job)
+                attempt.update(http_status=status, send_evidence="response_observed",
+                               transport={k: v for k, v in observed.items() if k != "http_status"})
+                if not 200 <= status < 300:
+                    attempt.update(failure_class=observed["failure_class"], upstream_code="unavailable",
+                                   retry_after_seconds=observed.get("retry_after_seconds"))
+                    self.store.put_tx(db, "request", key, job, request)
+                self.store.put_tx(db, "attempt", attempt_id, job, attempt)
+
         failure = None
+        failure_class = detail = None
+        attempt_response_ref = None
+        send_evidence = "may_have_been_sent"
         verified_stream = None
         try:
             with self.store.connection_scope():
                 status = asyncio.run(self.exchange(job, route, token, payload, received, observed,
-                                                   decoder=decoder, wait=wait, record_chunk=record_chunk,
-                                                   record_observation=record_observation))
+                                                   decoder=decoder, record_chunk=record_chunk,
+                                                   record_observation=record_observation, record_headers=record_headers))
             if status < 200 or status >= 300:
                 request["status"] = "http_error"
-                failure = StopRun("provider_error", f"Nexus returned HTTP {status}. The error body is withheld to protect credentials. No context-overflow diagnosis is assumed.")
+                failure_class = observed["failure_class"]
+                detail = f"Nexus returned HTTP {status}."
             else:
                 if streaming:
                     stream = self.archive_stream(job, request, attempt_id, received, observed, cursor)
@@ -393,13 +575,14 @@ class Nexus:
                     raw = self.store.blob(job, "native_response", bytes(received), {"request": key, "attempt": attempt_id, "complete_transport": True})
                     native_bytes = bytes(received)
                 request["response_ref"] = raw["ref"]
+                attempt_response_ref = raw["ref"]
                 try:
                     accepted = parse_reply(route.protocol, native_bytes)
                 except (ValueError, KeyError, TypeError) as exc:
                     request["status"] = "rejected"
                     observed["diagnostic"] = {"category": "invalid_stream", "field": "response", "stage": "native",
                                               "ordinal": decoder.event_ordinal if streaming else None}
-                    failure = StopRun("response_rejected", str(exc))
+                    failure_class, detail = "rejected_reply", str(exc)
                 else:
                     accepted["native_ref"] = raw["ref"]
                     if streaming:
@@ -413,13 +596,15 @@ class Nexus:
             # Do not echo provider error events, which can contain arbitrary secrets.
             incomplete = observed["stop_cause"] == "stream_incomplete"
             request["status"] = "unknown" if incomplete else "rejected"
-            failure = StopRun("unknown_outcome" if incomplete else "response_rejected",
-                              "The stream ended without a complete terminal response. Remote completion and usage are unknown."
-                              if incomplete else "The stream was invalid, failed, or incomplete. Original received bytes are retained; no partial tools were executed.")
-        except (httpx.HTTPError, asyncio.TimeoutError):
-            request["status"] = "unknown"
+            failure_class = "lost_after_send" if incomplete else "rejected_reply"
+            detail = ("The stream ended without a complete terminal response." if incomplete else
+                      "The stream failed validation. Original received bytes are retained; no partial tools were executed.")
+        except (httpx.HTTPError, asyncio.TimeoutError) as exc:
+            failure_class, send_evidence, explanation = network.classify_transport(
+                exc, route.endpoint, "response_observed" if observed["http_status"] is not None else send_evidence)
+            request["status"] = "unsent" if failure_class == "unsent" else "http_error" if failure_class == "configuration" else "unknown"
             cause = observed["stop_cause"]
-            detail = (f"The local {route.timeout_seconds:g}-second request deadline was reached."
+            detail = explanation or (f"The local {route.timeout_seconds:g}-second request deadline was reached."
                       if cause == "request_deadline" else
                       {"first_progress_timeout": "The first generation-progress wait expired.",
                        "progress_idle_timeout": "The generation-progress idle wait expired.",
@@ -427,23 +612,25 @@ class Nexus:
                       "The connection ended before a complete accepted reply (" + str(cause or "unclassified") + ").")
             status_text = (f"HTTP {observed['http_status']} headers were received."
                            if observed["http_status"] is not None else "No HTTP status was observed.")
-            failure = StopRun("unknown_outcome", f"{detail} {status_text} "
-                              f"Received {observed['received_body_bytes']} success-body bytes. "
-                              "Remote completion and usage are unknown.")
+            if failure_class == "lost_after_send":
+                detail += f" {status_text} Received {observed['received_body_bytes']} success-body bytes."
         except StopRun as exc:
-            request["status"] = "unknown"
+            failure_class = observed.get("failure_class", "lost_after_send")
+            request["status"] = "http_error" if observed.get("failure_class") else "unknown"
+            detail = f"Nexus returned HTTP {observed['http_status']}." if request["status"] == "http_error" else None
             failure = exc
         finally:
             # Only success-stream bytes are retained. Arbitrary HTTP error bodies can echo credentials.
             if streaming:
                 if received:
                     self.archive_stream(job, request, attempt_id, received, observed, cursor)
-                if decoder.value is not None and not request.get("response_ref"):
+                if decoder.value is not None and attempt_response_ref is None:
                     candidate = self.store.blob(job, "assembled_response", decoder.value,
                                                {"request": key, "attempt": attempt_id, "source_stream_ref": request.get("stream_ref"),
                                                 "protocol": route.protocol, "complete_protocol": decoder.complete,
                                                 "accepted": False})
                     request["response_ref"] = candidate["ref"]
+                    attempt_response_ref = candidate["ref"]
                 record_observation()
             elif received and request["status"] == "unknown":
                 complete = observed["body_complete"] is True
@@ -453,24 +640,47 @@ class Nexus:
                                        if complete else None})
                 if complete:
                     request["response_ref"] = raw["ref"]
-            if failure:
-                request["failure"] = {"reason": failure.reason, "message": str(failure)}
+                attempt_response_ref = raw["ref"]
             if request["accepted_ref"]:
                 request = self._settle_accepted(job, key, verified_stream=verified_stream)
             else:
-                attempt = {"id": attempt_id, "request": key, "status": request["status"], "started": started,
-                           "finished": time.time(), "http_status": observed["http_status"], "usage": None, "remote_cancelled": None,
+                # Exceptions outside the transport/validation boundary leave
+                # the admission unresolved for re-entry.
+                attempt = {**self.store.get("attempt", attempt_id, job=job),
+                           "id": attempt_id, "request": key, "status": request["status"], "started": started,
+                           "finished": self.clocks.wall(), "http_status": observed["http_status"], "usage": None, "remote_cancelled": None,
+                           "send_evidence": "response_observed" if observed["http_status"] is not None else send_evidence,
+                           "failure_class": failure_class,
                            "transport": {k: v for k, v in observed.items() if k != "http_status"}}
-                if streaming:
-                    attempt["stream_ref"] = request.get("stream_ref")
-                with self.store.transaction() as db:
-                    if self.usage_trial is not None:
-                        self.usage_trial.failed_tx(db, request, attempt)
-                    self.store.put_tx(db, "request", key, job, request)
-                    self.store.put_tx(db, "attempt", attempt_id, job, attempt)
+                for field in ("upstream_code", "retry_after_seconds"):
+                    if field in observed:
+                        attempt[field] = observed[field]
+                if streaming and received:
+                    attempt["stream_ref"] = request["stream_ref"]
+                if attempt_response_ref:
+                    attempt["response_ref"] = attempt_response_ref
+                if detail is not None:
+                    settled = self._settle_failure(request, attempt, detail)
+                    if failure is None and settled.reason != "retry_scheduled":
+                        failure = settled
+                elif failure is not None:
+                    request["failure"] = {"reason": failure.reason, "message": str(failure), "class": failure_class}
+                    with self.store.transaction() as db:
+                        if self.usage_trial is not None:
+                            self.usage_trial.failed_tx(db, request, attempt)
+                        self.store.put_tx(db, "request", key, job, request)
+                        self.store.put_tx(db, "attempt", attempt_id, job, attempt)
+                elif received:
+                    # A local fault can follow a durable success-body write.
+                    # Publish its proven pointers while leaving the admission unresolved.
+                    attempt.pop("finished", None)
+                    attempt.pop("failure_class", None)
+                    with self.store.transaction() as db:
+                        self.store.put_tx(db, "request", key, job, request)
+                        self.store.put_tx(db, "attempt", attempt_id, job, attempt)
         if failure:
             raise failure
-        return self.store.json(request["accepted_ref"], job)
+        return self.store.json(request["accepted_ref"], job) if request["accepted_ref"] else None
 
     def archive_stream(self, job, request, attempt_id, received, observed, cursor):
         key = f"raw-stream:{attempt_id}"
@@ -502,10 +712,9 @@ class Nexus:
         return previous
 
     async def exchange(self, job, route, token, payload, received, observed, *, decoder=None,
-                       wait=None, record_chunk=None, record_observation=None):
-        started = self.clock()
-        elapsed = lambda: max(0.0, self.clock() - started)
-        wait = wait or RequestWait(route)
+                       record_chunk=None, record_observation=None, record_headers=None):
+        wait = RequestWait(route, clock=self.clock)
+        elapsed = wait.elapsed
 
         def check_wait(moment):
             cause = wait.expired(moment)
@@ -514,30 +723,33 @@ class Nexus:
                 raise asyncio.TimeoutError()
 
         def check_control():
-            current = self.store.get("job", job)
-            if current["cancel_requested"]:
-                raise StopRun("cancelled", "Local request cancelled. Upstream cancellation and final cost are unknown.")
-            active = self.active_time.elapsed(current) if self.active_time else current["active_seconds"]
-            if active >= current["limits"]["max_active_seconds"]:
-                raise StopRun("budget_exhausted", "Active-time budget exhausted. Upstream completion and cost are unknown.")
+            self._budget(self.store.get("job", job))
 
-        timeout = (httpx.Timeout(None, connect=observed["connect_timeout_seconds"], write=30, pool=30)
-                   if decoder else httpx.Timeout(route.timeout_seconds, connect=observed["connect_timeout_seconds"]))
+        io_seconds = 30 if decoder else route.timeout_seconds
+        timeout = httpx.Timeout(None, connect=observed["connect_timeout_seconds"], write=io_seconds, pool=io_seconds)
         client = httpx.AsyncClient(http2=True, trust_env=False, follow_redirects=False,
                                    timeout=timeout, transport=self.transport)
         response = None
+        diagnostic_deadline = None
 
         async def perform():
-            nonlocal response
+            nonlocal response, diagnostic_deadline
             native_request = client.build_request("POST", route.endpoint,
                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, content=encode(payload))
             response = await client.send(native_request, stream=True)
             # These observations survive a later body timeout. Do not retain response headers.
             observed["http_status"] = response.status_code
             observed["headers_elapsed_seconds"] = elapsed()
+            success = 200 <= response.status_code < 300
+            if not success:
+                observed.update(stop_cause="http_error", upstream_code="unavailable",
+                                failure_class="transient_status" if response.status_code in network.TRANSIENT_STATUSES else "configuration",
+                                retry_after_seconds=network.retry_after(response.headers, self.clocks.wall()))
+            if record_headers:
+                record_headers()
             if decoder:
                 record_observation()
-            if 200 <= response.status_code < 300:
+            if success:
                 observed["body_complete"] = False
                 async for chunk in response.aiter_bytes():
                     received.extend(chunk)
@@ -587,8 +799,9 @@ class Nexus:
                     decoder.finish()
                 observed["stop_cause"] = "complete"
             else:
-                # An observed error status is sufficient; arbitrary error bodies may echo credentials.
-                observed["stop_cause"] = "http_error"
+                check_control()
+                diagnostic_deadline = asyncio.get_running_loop().time() + network.DIAGNOSTIC_SECONDS
+                observed["upstream_code"] = await self._error_code(response)
             return response.status_code
 
         task = asyncio.create_task(perform())
@@ -597,8 +810,10 @@ class Nexus:
                 if self.active_time:
                     self.active_time.checkpoint(force=False)
                 check_control()
-                check_wait(elapsed())
-                remaining = wait.boundary()[0] - elapsed()
+                remaining = 0.1
+                if observed["stop_cause"] != "http_error":
+                    check_wait(elapsed())
+                    remaining = max(0.0, wait.boundary()[0] - elapsed())
                 await asyncio.wait({task}, timeout=min(0.1, remaining))
             return await task
         except StreamError as exc:
@@ -621,7 +836,8 @@ class Nexus:
                 observed["stop_cause"] = "transport_timeout"
             raise
         except StopRun as exc:
-            observed["stop_cause"] = {"cancelled": "user_stop", "budget_exhausted": "active_time_limit"}.get(exc.reason, "local_stop")
+            if observed["stop_cause"] != "http_error":
+                observed["stop_cause"] = {"cancelled": "user_stop", "budget_exhausted": "active_time_limit"}.get(exc.reason, "local_stop")
             raise
         finally:
             if not task.done():
@@ -638,10 +854,37 @@ class Nexus:
                     await client.aclose()
             cleanup_started = self.clock()
             try:
-                await asyncio.wait_for(cleanup(), timeout=5)
+                cleanup_budget = 5
+                if diagnostic_deadline is not None:
+                    # The optional error-body path shares one wall-time budget
+                    # with cleanup, even if the upstream stops producing bytes.
+                    cleanup_budget = max(0.001, diagnostic_deadline - asyncio.get_running_loop().time())
+                await asyncio.wait_for(cleanup(), timeout=cleanup_budget)
                 observed["cleanup_complete"] = True
             except (Exception, asyncio.CancelledError) as exc:
                 observed.update(cleanup_complete=False, cleanup_error_type=type(exc).__name__)
             observed["cleanup_elapsed_seconds"] = max(0.0, self.clock() - cleanup_started)
             observed["elapsed_seconds"] = elapsed()
             observed["settled"] = True
+
+    @staticmethod
+    async def _error_code(response):
+        content_type = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+        if (content_type != "application/json" and not content_type.endswith("+json")
+                or response.headers.get("content-encoding", "identity").lower() != "identity"):
+            return "unavailable"
+
+        async def read():
+            if response.is_stream_consumed:
+                return network.upstream_code(response.content) if len(response.content) <= network.DIAGNOSTIC_BYTES else "unavailable"
+            body = bytearray()
+            async for chunk in response.aiter_raw():
+                if len(body) + len(chunk) > network.DIAGNOSTIC_BYTES:
+                    return "unavailable"
+                body.extend(chunk)
+            return network.upstream_code(body)
+
+        try:
+            return await asyncio.wait_for(read(), timeout=network.DIAGNOSTIC_SECONDS)
+        except (httpx.HTTPError, httpx.StreamError, TimeoutError, OSError, ValueError):
+            return "unavailable"

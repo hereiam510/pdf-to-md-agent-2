@@ -1,12 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react'
 import type { DiagnosticDetail, DiagnosticPage } from '../../types'
 import { readDiagnosticRecord } from './diagnosticClient'
+import { retryDisplay } from '../recovery/retryDisplay'
 
 const api = window.workbench.invoke
 const kinds = [['activity', 'Activity'], ['request', 'Requests'], ['operation', 'Operations'], ['version', 'Versions'],
   ['context_commit', 'Context decisions'], ['context_disposition', 'Context dispositions'], ['context_policy', 'Active context'],
   ['conflict_resolution', 'Resolutions'], ['event_receipt', 'Boundary receipts'], ['blob', 'Evidence records']]
 const json = (value: unknown) => JSON.stringify(value, null, 2)
+
+function activityLabel({ type, data }: DiagnosticPage['events'][number]) {
+  if (type === 'request_started' && typeof data.attempt_number === 'number' && typeof data.max_attempts === 'number')
+    return `Attempt ${data.attempt_number} of ${data.max_attempts}`
+  if (type === 'retry_scheduled' && typeof data.due_wall === 'number'
+      && typeof data.next_attempt === 'number' && typeof data.max_attempts === 'number')
+    return retryDisplay({ due_wall: data.due_wall, next_attempt: data.next_attempt, max_attempts: data.max_attempts,
+      failure_class: String(data.failure_class), detail: typeof data.detail === 'string' ? data.detail : undefined })
+  if (type === 'resumed_after_sleep' && typeof data.duration_seconds === 'number')
+    return `Resumed after sleep (${data.duration_seconds.toFixed(1)} seconds)`
+  return type.replaceAll('_', ' ')
+}
 // Raw observations remain unknown. Narrow only the selected display value;
 // retain unsupported shapes as JSON in both the cell and the complete record.
 const field = (value: unknown, key: string): unknown =>
@@ -111,7 +124,7 @@ export function TaskDiagnostics({ job, latest, observation }: { job: string; lat
       {kind === 'activity' ? <>
         <p role="status">Showing {events.first}–{events.last} of {events.total} events in this boundary; {events.events.length} loaded. Each page is ordered oldest to newest.</p>
         <div className="diagnostic-toolbar">{[['Oldest events', events.oldest], ['Older events', events.older], ['Newer events', events.newer], ['Recent events', events.recent]].map(([label, cursor]) => <button key={label} disabled={busy || !cursor} onClick={() => void loadEvents(cursor!)}>{label}</button>)}</div>
-        <div className="activity-log">{events.events.map(event => <div key={event.id} data-event-seq={event.seq}><time>{new Date(event.created * 1000).toLocaleString()}</time><span>#{event.seq} · {event.type.replaceAll('_', ' ')}</span><details><summary>Event details</summary><pre>{json(event.data)}</pre></details></div>)}{!events.events.length && <p>No events in this task boundary.</p>}</div>
+        <div className="activity-log">{events.events.map(event => <div key={event.id} data-event-seq={event.seq}><time>{new Date(event.created * 1000).toLocaleString()}</time><span>#{event.seq} · {activityLabel(event)}</span><details><summary>Event details</summary><pre>{json(event.data)}</pre></details></div>)}{!events.events.length && <p>No events in this task boundary.</p>}</div>
       </> : list && <>
         <p role="status">Showing {list.items?.length ? (list.offset || 0) + 1 : 0}–{(list.offset || 0) + (list.items?.length || 0)} of {list.total} {kind} records. Newest catalog creation first; this is not graph execution order.</p>
         <table><thead><tr><th>Identity</th><th>Recorded facts</th><th>Detail</th></tr></thead><tbody>{list.items?.map(item => <tr key={item.id}><td><code>{item.id}</code></td><td>{[item.diagnostic_status && `Diagnostic ${item.diagnostic_status}`, item.status, item.tool, item.claim, item.reason, item.attempts != null ? `${item.attempts} attempts` : ''].filter(Boolean).join(' · ')}</td><td><button disabled={busy} onClick={() => void openRecord(kind, item.id)}>Inspect {item.id}</button></td></tr>)}</tbody></table>
@@ -127,7 +140,7 @@ export function TaskDiagnostics({ job, latest, observation }: { job: string; lat
       {detail.boundary && <p><strong>Established boundary: </strong>{detail.boundary}</p>}
       {detail.publication && <p><strong>Acceptance publication: </strong>{detail.publication.pointer ? `pointer ${detail.publication.pointer}` : 'no published pointer'} · Staging: {detail.publication.staging_ref || 'not recorded'}. {detail.publication.meaning}</p>}
       {detail.frozen_preparation && <details open><summary>Recorded preparation, capacity and context</summary><pre>{json(detail.frozen_preparation)}</pre></details>}
-      {detail.attempts && <><table><thead><tr><th>Attempt</th><th>Status</th><th>Observed success-body bytes</th><th>Recorded usage</th></tr></thead><tbody>{detail.attempts.map(item => <tr key={item.id}><td><code>{item.id}</code></td><td>{observed(field(item.record, 'status')) || item.status}</td><td>{observed(field(field(item.record, 'transport'), 'received_body_bytes')) ?? 'unknown'}</td><td>{item.usage_state}: {json(field(item.record, 'usage') ?? null)}</td></tr>)}</tbody></table><details><summary>Attempts, receive boundaries and reported usage</summary><pre>{json(detail.attempts)}</pre></details></>}
+      {detail.attempts && <><table><thead><tr><th>Attempt</th><th>Status</th><th>Observed success-body bytes</th><th>Recorded usage</th></tr></thead><tbody>{detail.attempts.map(item => <tr key={item.id}><td><code>{item.id}</code></td><td>{observed(field(item.record, 'status')) || item.status}</td><td>{observed(field(field(item.record, 'transport'), 'received_body_bytes')) ?? 'unknown'}</td><td>{item.usage_state === 'not_sent' ? 'No inference (unsent)' : `${item.usage_state}: ${json(field(item.record, 'usage') ?? null)}`}</td></tr>)}</tbody></table><details><summary>Attempts, receive boundaries and reported usage</summary><pre>{json(detail.attempts)}</pre></details></>}
       {detail.usage_comparison && <p><strong>Usage comparison: </strong>{detail.usage_comparison}</p>}
       {detail.raw_usage && <details><summary>Reported and derived usage (separate from settlement)</summary><pre>{json(detail.raw_usage)}</pre></details>}
       {detail.saved_acceptance_facts && <details><summary>Saved acceptance facts and usage provenance</summary><pre>{json(detail.saved_acceptance_facts)}</pre></details>}

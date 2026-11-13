@@ -44,6 +44,17 @@ def start(engine, job, **kwargs):
     engine.futures[job].result(timeout=30)
 
 
+def freeze_legacy_policy(runtime):
+    """Reproduce pre-NET-01 frozen compaction recovery records."""
+    freeze = runtime.nexus.freeze
+    def historical(*args, **kwargs):
+        request = freeze(*args, **kwargs)
+        request["replay_policy"] = {"replay_unknown": False, "max_attempts_per_request": 1}
+        runtime.store.put("request", request["id"], request["job"], request)
+        return request
+    runtime.nexus.freeze = historical
+
+
 def fail_unknown(setup, protocol):
     store, original = setup
     job = protocol_job(store, original, protocol)
@@ -54,6 +65,7 @@ def fail_unknown(setup, protocol):
     transport = httpx.MockTransport(failed)
     runtime = Runtime(store, Nexus(store, lambda _: "offline", transport))
     refs = seed(runtime, store, job)
+    freeze_legacy_policy(runtime)
     runtime.run(job["id"])
     old = runtime.pending_request(job["id"])
     runtime.close()
@@ -92,6 +104,7 @@ def test_task_deadline_change_then_compaction_recovery_preserves_delivery(delive
     transport = httpx.MockTransport(reply)
     runtime = Runtime(store, Nexus(store, lambda _: "offline", transport))
     refs = seed(runtime, store, job, pins=[image["ref"]])
+    freeze_legacy_policy(runtime)
     runtime.run(job["id"])
     old = runtime.pending_request(job["id"])
     policy = {field: runtime.graph.get_state({"configurable": {"thread_id": job["id"]}}).values.get(field)
@@ -142,7 +155,7 @@ def test_task_deadline_change_then_compaction_recovery_preserves_delivery(delive
     new_requests = [request for request in requests if request["id"] not in {r["id"] for r in original_requests}]
     assert len(new_requests) == 3 and sum(r["kind"] == "compaction" for r in new_requests) == 1
     for request in new_requests:
-        assert request["route"] == updated_route and request["replay_policy"] == old["replay_policy"]
+        assert request["route"] == updated_route and request["replay_policy"]["automatic_retry"]
         assert request["status"] == "accepted" and len(request["attempts"]) == 1
         assert store.get("attempt", request["attempts"][0], job=job["id"])["transport"]["deadline_seconds"] == 600
     for request in original_requests:
@@ -227,8 +240,9 @@ def test_stale_choice_cannot_recover_successor_unknown_or_change_settings(setup,
         raise httpx.ReadTimeout("Successor is independently unknown.")
     engine = Engine(store.root, transport=httpx.MockTransport(failed))
     try:
+        engine.configure(job["id"], limits={"automatic_retry": False})
         start(engine, job["id"], recover_compaction_request=old["id"])
-        offer = engine.compaction_recovery(job["id"])
+        offer = engine.network_recovery(job["id"])
         assert offer and offer["request"] != old["id"] and len(seen) == 2
         before = store.update_job(job["id"], cancel_requested=True)
         requests = deepcopy(store.records("request", job["id"]))
@@ -239,7 +253,7 @@ def test_stale_choice_cannot_recover_successor_unknown_or_change_settings(setup,
         assert store.records("request", job["id"]) == requests
         start(engine, job["id"])
         assert len(seen) == store.get("job", job["id"])["attempts"] == 2
-        assert store.get("job", job["id"])["stop_reason"] == "unknown_outcome"
+        assert store.get("job", job["id"])["stop_reason"] == "network_retry_disabled"
         assert len([b for b in store.records("blob", job["id"]) if b["kind"] == "request_continuation"]) == 1
     finally:
         engine.close()
@@ -285,6 +299,7 @@ def test_locally_accepted_handoff_wins_before_pointer_commit(setup, monkeypatch,
 def test_normal_unknown_is_not_a_compaction_recovery_target(setup, protocol):
     store, initial = setup
     job = protocol_job(store, initial, protocol)
+    store.update_job(job["id"], limits={**job["limits"], "automatic_retry": False})
     seen = []
     def failed(request):
         seen.append(request.content)
@@ -339,6 +354,7 @@ def test_explicit_recovery_does_not_reset_handoff_correction_budget(setup, proto
     transport = httpx.MockTransport(reply)
     runtime = Runtime(store, Nexus(store, lambda _: "offline", transport))
     seed(runtime, store, job)
+    freeze_legacy_policy(runtime)
     runtime.run(job["id"])
     old = runtime.pending_request(job["id"])
     assert old["status"] == "unknown"
