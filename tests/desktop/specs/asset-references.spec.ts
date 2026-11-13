@@ -41,14 +41,40 @@ async function viewImage(page: Page, width: number, height: number) {
   expect(await image.evaluate(item => [(item as HTMLImageElement).naturalWidth, (item as HTMLImageElement).naturalHeight])).toEqual([width, height])
 }
 
-async function returnDocument(page: Page) {
+async function returnDocument(page: Page, app: ElectronApplication, expectedImages: string[] = []) {
+  const before = await app.evaluate(() => {
+    const { calls, responses } = (globalThis as any).referenceControl
+    return { calls: calls.length, responses: responses.length }
+  })
   const previous = await page.locator('iframe').getAttribute('name').catch(() => null)
   await page.getByRole('button', { name: 'Return to document' }).click()
   await expect.poll(() => page.locator('iframe').getAttribute('name')).not.toBe(previous)
   await expect.poll(() => page.frames().some(f => f !== page.mainFrame() && f.url() === 'about:srcdoc')).toBe(true)
   const frame = page.frames().find(f => f !== page.mainFrame() && f.url() === 'about:srcdoc')!
   await frame.waitForLoadState('load')
-  await page.frameLocator('iframe').locator('img').evaluateAll(async images => Promise.all(images.map(i => (i as HTMLImageElement).decode())))
+  const images = page.frameLocator('iframe').locator('img')
+  await expect(images).toHaveCount(expectedImages.length)
+  const urls = await images.evaluateAll(items => Promise.all(items.map(async item => {
+    const image = item as HTMLImageElement
+    await image.decode()
+    return image.src
+  })))
+  const name = await page.locator('iframe').getAttribute('name')
+  const { network, responses } = await app.evaluate(() => (globalThis as any).referenceControl)
+  const bindingIndex = network.findIndex((row: any) => row.hook === 'bindPreview' && row.name === name && row.accepted)
+  expect(bindingIndex).toBeGreaterThanOrEqual(0)
+  const binding = network[bindingIndex]
+  expect(binding).toMatchObject({ url: expect.stringMatching(/^(about:blank)?$/), node: expect.any(Number) })
+  for (const [index, url] of urls.entries()) {
+    const firstRequest = network.findIndex((row: any) => row.hook === 'onBeforeRequest' && row.frame?.name === name && row.url === url)
+    expect(firstRequest).toBeGreaterThan(bindingIndex)
+    expect(network[firstRequest]).toMatchObject({ cancel: false, frame: { node: binding.node } })
+    expect(responses.slice(before.responses).find((row: any) => row.url === url && row.status === 200)?.sha256).toBe(expectedImages[index])
+  }
+  // The regular health/jobs/job polling continues while the user reads.
+  const actions = (await calls(app)).slice(before.calls).map((c: any) => c.action)
+  expect(actions.filter((action: string) => !['health', 'jobs', 'job'].includes(action)))
+    .toEqual(['unmountPreview', 'mountPreview', 'bindPreview'])
 }
 
 for (const shell of ['file', 'development-url']) test(`normal isolated desktop (${shell}) uses selected immutable references, returns, diagnoses and rejects stale loads`, async () => {
@@ -57,6 +83,9 @@ for (const shell of ['file', 'development-url']) test(`normal isolated desktop (
   const fixtureCommand = (command: string) => JSON.parse(execFileSync(resolve('.venv/Scripts/python.exe'),
     ['-X', 'utf8', '-m', 'tests.desktop.fixtures.asset_references', command, directory], { windowsHide: true, encoding: 'utf-8' }))
   const fixture = fixtureCommand('prepare')
+  const smallHash = fixture.versions[fixture.mixed][fixture.asset]
+  const largeHash = fixture.versions[fixture.mixed][fixture.large_asset]
+  const mixedHashes = [...Array<string>(4).fill(largeHash), smallHash]
   const server = shell === 'development-url' ? await createServer({ configFile: false, root: resolve('src/renderer'),
     server: { host: '127.0.0.1', port: 0, hmr: false } }) : null
   await server?.listen()
@@ -97,11 +126,11 @@ for (const shell of ['file', 'development-url']) test(`normal isolated desktop (
           // CSP may replace the attempted external navigation with its blocked
           // error frame before Electron emits a navigation event. Return still
           // restores the selected snapshot without allowing a network request.
-          await returnDocument(page)
+          await returnDocument(page, app, mixedHashes)
           await expect(page.frameLocator('iframe').getByText('Mixed fixture', { exact: false })).toBeVisible()
           await nativeLink(page, 'New window')
           expect(app.windows()).toHaveLength(1)
-          await returnDocument(page)
+          await returnDocument(page, app, mixedHashes)
         }
         const count = await reads(app)
         const address = await page.frameLocator('iframe').getByRole('link', { name: 'Open selected image', exact: true }).getAttribute('href')
@@ -109,7 +138,7 @@ for (const shell of ['file', 'development-url']) test(`normal isolated desktop (
         addresses.set(version, address!)
         await viewImage(page, fixture.width, fixture.height)
         await page.screenshot({ path: join(directory, `${stage}-${version === fixture.link ? 'link' : 'mixed'}-image.png`) })
-        await returnDocument(page)
+        await returnDocument(page, app, version === fixture.mixed ? mixedHashes : [])
         await expect(page.frameLocator('iframe').getByRole('link', { name: 'Open selected image', exact: true })).toBeVisible()
         if (version === fixture.mixed) {
           await nativeLink(page, 'HTML image link')
@@ -117,13 +146,13 @@ for (const shell of ['file', 'development-url']) test(`normal isolated desktop (
           await expect(image).toHaveCount(1)
           await image.evaluate(async item => (item as HTMLImageElement).decode())
           expect(await image.evaluate(item => [(item as HTMLImageElement).naturalWidth, (item as HTMLImageElement).naturalHeight])).toEqual([fixture.width, fixture.height])
-          await returnDocument(page)
+          await returnDocument(page, app, mixedHashes)
           await expect(page.frameLocator('iframe').getByRole('link', { name: 'HTML image link', exact: true })).toBeVisible()
           await nativeLink(page, 'Linked thumbnail')
           const jpeg = page.frameLocator('iframe').locator('img')
           await jpeg.evaluate(async item => (item as HTMLImageElement).decode())
           expect(await jpeg.evaluate(item => [(item as HTMLImageElement).naturalWidth, (item as HTMLImageElement).naturalHeight])).toEqual([512, 512])
-          await returnDocument(page)
+          await returnDocument(page, app, mixedHashes)
         }
         expect(await reads(app)).toBe(count)
         observations.push({ stage, version, image_decoded: true, html_link_opened: version === fixture.mixed, return_without_version_read: true })
@@ -144,7 +173,7 @@ for (const shell of ['file', 'development-url']) test(`normal isolated desktop (
     await largeImage.evaluate(async item => (item as HTMLImageElement).decode())
     expect(await largeImage.evaluate(item => [(item as HTMLImageElement).naturalWidth, (item as HTMLImageElement).naturalHeight])).toEqual([fixture.large_width, fixture.large_height])
     await page.screenshot({ path: join(directory, 'large-link-opened.png') })
-    await returnDocument(page)
+    await returnDocument(page, app, Array<string>(4).fill(largeHash))
     await expect(page.frameLocator('iframe').getByText('Large-link control', { exact: false })).toBeVisible()
     observations.push({ finding: 'AR-T2-01', image_bytes: fixture.large_bytes, protocol_url_characters: largeHref!.length, large_embeds_decoded: 4, large_link_opened: true })
     const served = await app.evaluate(() => (globalThis as any).referenceControl.responses)
@@ -192,12 +221,54 @@ for (const shell of ['file', 'development-url']) test(`normal isolated desktop (
     }, largeHref!)
     await expect.poll(async () => (await app.evaluate(() => (globalThis as any).referenceControl.network)).filter((n: any) => n.url === largeHref && n.cancel).length).toBeGreaterThanOrEqual(3)
     await page.locator('iframe[name="unrelated"]').evaluate(frame => frame.remove())
+    // A replacement bearing a retired mount's name has a different frame-tree ID.
+    const retiredName = await page.locator('iframe').getAttribute('name')
     const beforeTabs = await reads(app)
     await page.getByRole('button', { name: 'Markdown', exact: true }).click()
     await expect(page.locator('iframe')).toHaveCount(0)
     await page.getByRole('button', { name: 'Preview', exact: true }).click()
     await page.frameLocator('iframe').locator('img').first().evaluate(async image => (image as HTMLImageElement).decode())
     expect(await reads(app)).toBe(beforeTabs)
+    await page.evaluate(({ name, url }) => {
+      const stale = document.createElement('iframe')
+      stale.name = name!; stale.sandbox.value = ''; stale.srcdoc = `<img src="${url}">`
+      document.body.append(stale)
+    }, { name: retiredName, url: largeHref })
+    await expect.poll(() => app.evaluate((_electron, { name, url }) => (globalThis as any).referenceControl.network.some(
+      (row: any) => row.hook === 'onBeforeRequest' && row.frame?.name === name && row.url === url && row.cancel
+    ), { name: retiredName, url: largeHref })).toBe(true)
+    await page.locator(`iframe[name="${retiredName}"]`).evaluate(frame => frame.remove())
+
+    // Delay an old remount's bind and cleanup before the real handlers run.
+    // The next selection binds and serves bytes before either old IPC resumes.
+    await app.evaluate(() => { (globalThis as any).referenceControl.holdMount = true })
+    await page.getByRole('button', { name: 'Return to document' }).click()
+    await expect.poll(() => app.evaluate(() => (globalThis as any).referenceControl.pendingMounts.map((row: any) => row.action)))
+      .toEqual(['unmountPreview', 'bindPreview'])
+    await expect(page.frameLocator('iframe').locator('img')).toHaveCount(0)
+    await page.getByLabel('Saved version').selectOption(fixture.mixed)
+    await expect.poll(() => app.evaluate(() => (globalThis as any).referenceControl.pendingMounts.map((row: any) => row.action)))
+      .toEqual(['unmountPreview', 'bindPreview', 'unmountPreview', 'bindPreview'])
+    const replacement = await page.locator('iframe').getAttribute('name')
+    const staleMount = await app.evaluate(() => {
+      const control = (globalThis as any).referenceControl
+      control.holdMount = false
+      const [firstCleanup, lateBind, lateCleanup, replacementBind] = control.pendingMounts.splice(0)
+      control.releaseOldMounts = () => { firstCleanup.resolve(); lateBind.resolve(); lateCleanup.resolve() }
+      replacementBind.resolve()
+      return lateBind.args.mount
+    })
+    await expect(page.frameLocator('iframe').getByText('Mixed fixture', { exact: false })).toBeVisible()
+    await app.evaluate(() => (globalThis as any).referenceControl.releaseOldMounts())
+    await expect.poll(() => app.evaluate((_electron, mount) => (globalThis as any).referenceControl.network.some(
+      (row: any) => row.hook === 'bindPreview' && row.mount === mount && !row.accepted
+    ), staleMount)).toBe(true)
+    await expect(page.locator('iframe')).toHaveAttribute('name', replacement!)
+    await expect(page.getByRole('alert')).toHaveCount(0)
+    // A new native link request must still be authorized in the replacement frame.
+    await viewImage(page, fixture.width, fixture.height)
+    await returnDocument(page, app, mixedHashes)
+
     await page.getByLabel('Saved version').selectOption(fixture.link)
     await viewImage(page, fixture.width, fixture.height)
     const advanced = fixtureCommand('advance')
@@ -209,7 +280,8 @@ for (const shell of ['file', 'development-url']) test(`normal isolated desktop (
     await expect(page.locator('.toast.success')).toContainText('ZIP bytes verified. Asset references: ok')
     expect((await calls(app)).filter((c: any) => c.action === 'export').at(-1)).toMatchObject({ job: fixture.job, version: fixture.link })
     await page.getByRole('button', { name: 'Export ZIP' }).click() // exact repeated export
-    await returnDocument(page)
+    await expect(page.locator('.toast.success')).toContainText('ZIP bytes verified. Asset references: ok')
+    await returnDocument(page, app)
 
     // A transfer failure keeps raw inspection/export and the real assessment,
     // while publishing no partial preview or stale Return action.
@@ -337,7 +409,21 @@ for (const shell of ['file', 'development-url']) test(`normal isolated desktop (
     observations.push({ actual_desktop: true, explicit_selection_retained: true, default_follow_head: true,
       late_success_and_failure_ignored: true, task_switch: true, editor_invalidates_return: true,
       external_requests: requests, integrity_failure_distinct: true, large_repeated_bytes: fixture.large_bytes })
-  } finally { await page!.screenshot({ path: join(directory, 'final-observation.png') }).catch(() => {}); await fs.writeFile(join(directory, 'browser-messages.json'), JSON.stringify(browserMessages, null, 2)); await fs.writeFile(join(directory, 'network.json'), JSON.stringify(await app.evaluate(() => ({ network: (globalThis as any).referenceControl.network, responses: (globalThis as any).referenceControl.responses })), null, 2)); await app.close(); await server?.close() }
+  } catch (error) {
+    if (page!) {
+      const layout = await page.locator('iframe').evaluateAll(frames => frames.map(frame => ({
+        name: frame.getAttribute('name'), rect: frame.getBoundingClientRect().toJSON()
+      }))).catch(() => [])
+      const documents = await Promise.all(page.frames().slice(1).map(frame => frame.evaluate(() => ({
+        url: location.href, viewport: [innerWidth, innerHeight], text: document.body?.innerText,
+        rect: document.body?.getBoundingClientRect().toJSON(), ready: document.readyState,
+        html: document.documentElement?.getBoundingClientRect().toJSON(), visibility: document.visibilityState,
+        display: document.body && getComputedStyle(document.body).display
+      })).catch(() => null)))
+      await fs.writeFile(join(directory, 'failed-preview-layout.json'), JSON.stringify({ layout, documents }, null, 2))
+    }
+    throw error
+  } finally { await page!.screenshot({ path: join(directory, 'final-observation.png') }).catch(() => {}); await fs.writeFile(join(directory, 'browser-messages.json'), JSON.stringify(browserMessages, null, 2)); await recordNetwork('network.json'); await app.close(); await server?.close() }
   const verification = fixtureCommand('verify')
   await fs.writeFile(join(directory, 'desktop-verification.json'), JSON.stringify({ shell, renderer_url: rendererURL, observations, verification }, null, 2))
 })

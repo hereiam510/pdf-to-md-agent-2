@@ -3,9 +3,9 @@
 ## Focus and resume route
 
 Current focus: R01CAL-A03-DELIVERY-01 T5 closing tickets.
-Resume at: [AR-T5-15](batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5-15--return-can-block-images-during-preview-frame-startup).
-Next activity: decide how to address the preview startup failure before the final Windows rerun and combined verdict.
-Instruction basis: the [T5-R failure stop](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-r--final-windows-chain-on-the-verdict-revision) under the [selected closing route](discussions/ASSET_REFERENCES.md#t5-closing-route-selected).
+Resume at: [T5-R](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-r--final-windows-chain-on-the-verdict-revision).
+Next activity: run the full offline Windows chain on the committed [preview repair](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-15).
+Instruction basis: the user's [2026-11-13 closing-ticket execution instruction](discussions/ASSET_REFERENCES.md#ar-t5-15-execution-and-mount-choice).
 
 ## Return routes
 

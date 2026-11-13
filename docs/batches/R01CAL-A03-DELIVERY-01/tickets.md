@@ -322,16 +322,19 @@ The selected offline work is complete. See the [regression evidence](verificatio
 
 The user [selected](../../discussions/ASSET_REFERENCES.md#t5-closing-route-selected) the T5 closing route on 2026-11-13, requested tickets before execution and then asked to start them. Each executor reads [AGENTS.md](../../../AGENTS.md), this section, the ticket's linked basis and the [T5 ticket](#r01cal-a03-delivery-01-t5). The [criterion map](verification.md#t5-criterion-evidence-map) owns remaining acceptance, and [verification](verification.md) receives each ticket's observations in a new section named in the ticket.
 
+After the T5-R stop, the user agreed to the [AR-T5-15 follow-up plan](../../discussions/ASSET_REFERENCES.md#ar-t5-15-follow-up-plan-selected). That planning instruction covered tickets and related records. The user subsequently [authorized execution](../../discussions/ASSET_REFERENCES.md#ar-t5-15-execution-and-mount-choice) in the order below.
+
 | Ticket | Contribution | Depends on | Execution |
 | --- | --- | --- | --- |
 | [T5-F12](#t5-f12--repair-ar-t5-12) | Keep the verified preparation for any unreadable competing ZIP | None | [Repair and document-engine checks complete](verification.md#t5-offline-repair-for-ar-t5-12). Full suite in T5-R |
 | [T5-L1](#t5-l1--bounded-live-adoption-run) | Observe whether a real model takes the enriched save path | None | [Single authorized run and review complete](verification.md#t5-live-adoption-run) |
 | [T5-G1](#t5-g1--clarify-enriched-save-guidance) | Clarify how to carry established source facts and evidence of absence into the first enriched save | T5-L1 | [Offline verification complete](verification.md#t5-enriched-save-guidance-verification) |
-| [T5-R](#t5-r--final-windows-chain-on-the-verdict-revision) | Repeat the Windows desktop and frozen-engine chain once | T5-F12, T5-L1 and T5-G1 complete, with no unreviewed code change after them | [Blocked at the desktop check](verification.md#ar-t5-15--return-can-block-images-during-preview-frame-startup) |
+| [T5-F15](#t5-f15--repair-preview-frame-startup) | Restore selected preview images on the first load after Return | [AR-T5-15 evidence](verification.md#ar-t5-15--return-can-block-images-during-preview-frame-startup) and execution instruction | [Focused repair complete](verification.md#t5-offline-repair-for-ar-t5-15) |
+| [T5-R](#t5-r--final-windows-chain-on-the-verdict-revision) | Rerun the Windows desktop and frozen-engine chain on the repaired revision | T5-F15 focused checks and committed repair, with the earlier closing work integrated | [Previous attempt stopped at the desktop check](verification.md#ar-t5-15--return-can-block-images-during-preview-frame-startup) |
 | [T5-V](#t5-v--combined-t5-verdict) | Record the combined T5 and batch verdict | T5-R | After T5-R |
-| [T5-P](#t5-p--publish-the-batch-branch) | Push the branch and open a PR to `master` | Push: none. PR: T5-V, or a draft PR earlier | [Branch pushed and draft PR opened](verification.md#branch-publication) |
+| [T5-P](#t5-p--publish-the-batch-branch) | Publish the tested revision and update draft PR #1 | Tested commit and T5-V for the final update | [Initial branch and draft PR published](verification.md#branch-publication) |
 
-**Execution order:** T5-P initial push, T5-F12, T5-L1, the selected T5-G1 follow-up, T5-R, T5-V, then the PR. Coordinate shared edits to `verification.md`, this file, [WORK_ITEMS](../../WORK_ITEMS.md) and [CURRENT_STATE](../../CURRENT_STATE.md) through one writer.
+**Remaining execution order:** T5-F15, T5-R, T5-V, then T5-P's draft update. Coordinate shared edits to `verification.md`, this file, [WORK_ITEMS](../../WORK_ITEMS.md) and [CURRENT_STATE](../../CURRENT_STATE.md) through one writer.
 
 **Rules for every ticket.** Commit locally when the ticket is complete, with the attribution the repository uses. Do not push except under T5-P. Do not merge, change global settings or install software globally. Do not read credentials from conversation or authentication logs. Keep runtime stores, logs and outputs in a new uniquely named ignored folder under `.local/`, `workspaces/` or `outputs/`, following [artifact storage](../../ARTIFACT_STORAGE.md#ownership-and-locations). Do not overwrite earlier runs. Preserve failed evidence and say what was not run. If a ticket finds a new defect, record it as the next `AR-T5-NN` finding with a reproduction, severity and impact. Add it to the [work register](../../WORK_ITEMS.md#context-capability-and-delivery-work) and stop for the user. Do not fix it in the same ticket unless it is inside that ticket's stated scope. Update [CURRENT_STATE](../../CURRENT_STATE.md#focus-and-resume-route) when the ticket finishes. Run `python tools/docs/check_docs.py` and `git diff --check` before committing.
 
@@ -413,11 +416,21 @@ Keep this result separate from content fidelity, AR-8 naming and provenance on r
 
 **Work and check.** In the ordinary request's system instructions and `edit_document` description, explain how to use `source_update` for facts already established from evidence, including a visible source title. Explain that an asserted absence of a printed label uses `printed_basis`, and an asserted absence of a caption or figure label uses that fact's `basis`. Keep unresolved facts unknown. Extend the existing scripted agent check to inspect actual wire guidance, make a first enriched save with a visible title and both printed-label states exercised by the script, then verify the exact saved and exported provenance. Preserve controls for unknown values and legacy saves. Recheck context admission tests affected by the guidance size.
 
+#### T5-F15 — Repair preview frame startup
+
+**Purpose and owner.** The main desktop implementer/integrator owns the offline AR-5 repair under the [sandbox and request boundary](../../design/ASSET_REFERENCES.md#sandbox-and-native-request-boundary) and [snapshot lease lifecycle](../../design/ASSET_REFERENCES.md#snapshot-lease-lifecycle). The likely change spans `src/renderer/features/documents/SavedPreview.tsx` and `src/desktop/preview.ts`, with `src/desktop/main.ts` IPC and the existing desktop reference harness as needed. Use the [failed Windows run](verification.md#ar-t5-15--return-can-block-images-during-preview-frame-startup) as the baseline.
+
+1. Check the official guidance for the pinned Electron version and test the [candidate mount sequence](../../discussions/ASSET_REFERENCES.md#recommended-sequence-after-ar-t5-15) against the actual app. The host must be able to identify the current direct child of the trusted shell and bind it to the active generation, lease and mount before loading the cached preview HTML. If the runtime cannot establish that binding or it changes before image requests arrive, retain the trace and return to the method decision.
+2. Implement the supported repair within the existing preview contract. If registration fails or becomes stale during remount, preserve the preview-unavailable path, raw access and exact export. Keep validation of the main-frame IPC sender, exact resource URLs, the empty iframe sandbox, CSP, stale-frame rejection and lease revocation.
+3. Run `pnpm build` and `pnpm exec playwright test asset-references.spec.ts` with a new evidence directory. In both the file and development-URL cases, verify that images decode on first load, including after repeated Return from a native image view and after a blocked citation. Compare served bytes with the selected version. Check that Return restores the cached version without a new version read, head lookup, save or inference. Retain the existing isolation and stale-selection controls. Cover remount during a selection change so late registration or cleanup cannot affect the replacement preview. Confirm denial for stale, unrelated and missing frame contexts.
+
+**Exit and records.** Record the before/after request and frame traces, tested revision, focused results and any remaining limits in a new `T5 offline repair for AR-T5-15` section in [verification.md](verification.md). Update the AR-5 criterion map and the engineering guide if the mount mechanism changes. Commit the verified repair before T5-R. A failed candidate or unresolved isolation condition keeps T5-R blocked.
+
 #### T5-R — Final Windows chain on the verdict revision
 
-**Purpose:** one Windows desktop and frozen-engine chain on the product revision that carries the T5 verdict, replacing the `2b8e2ef` run in the [same-revision record](verification.md#t5-offline-repair-and-same-revision-windows-verification). Offline. Start after the committed T5-F12, T5-L1 and T5-G1 work. Bind the result to the tested commit and show that the verdict commit carries the same product and test sources.
+**Purpose:** one complete offline Windows desktop and frozen-engine chain on the product revision that carries the T5 verdict. Start after the [T5-F15 repair](#t5-f15--repair-preview-frame-startup) and focused checks are committed alongside T5-F12, T5-L1 and T5-G1. Bind both suites, builds and the delivery chain to one fixed product/test revision, with no changes to those files during verification. Show that the verdict commit carries the same sources.
 
-**Steps.** Repeat that record's chain on the current commit, using the harness scripts retained under ignored `.local/t5-final-c19a72/` and its `chain/` folder (`seed.py`, `desktop.cjs`, `verify-package.py`, `verify-browser.cjs`) as the starting point. Copy them to a new run folder and adjust paths.
+**Steps.** Use the harnesses and known corrections from the [stopped T5-R run](verification.md#t5-final-same-revision-windows-verification) as the starting point. Copy the scripts to a fresh run folder and retain the previous evidence.
 
 1. **Builds.** Build the Electron app with `pnpm build` and freeze the engine with `.\tools\build\build-windows.ps1`, both from the same commit. Record the commit, the frozen engine SHA-256 and the tool versions.
 2. **Smoke and regression checks.** Run the frozen startup and the writer smoke check (`tools/build/check-frozen-engine.py`) and `pnpm test:desktop`. Run the full `.venv\Scripts\python.exe -m pytest` once and record the count and exit code.
@@ -433,7 +446,7 @@ Keep this result separate from content fidelity, AR-8 naming and provenance on r
    - the deep-extraction limits;
    - the export conflict cases: file, directory, corrupt, encrypted and unsupported-method competitors, plus the concurrent identical-ZIP retry.
 
-**Records.** Add verification section `## T5 final same-revision Windows verification` with all identities. Point the AR-5, AR-6 and AR-12 rows of the [criterion map](verification.md#t5-criterion-evidence-map) at it. If any check fails, record it as a finding and stop.
+**Records.** Add a dated rerun section to [verification.md](verification.md) with all identities. Point the AR-5, AR-6 and AR-12 rows of the [criterion map](verification.md#t5-criterion-evidence-map) at the new evidence. If a check fails, record the finding and stop at the ticket's failure boundary.
 
 #### T5-V — Combined T5 verdict
 
@@ -441,11 +454,11 @@ Keep this result separate from content fidelity, AR-8 naming and provenance on r
 
 **Work.**
 
-- Add verification section `## T5 combined verdict`. Give one row per criterion with its evidence and verdict, built on the [criterion map](verification.md#t5-criterion-evidence-map) and the T5-F12, T5-L1 and T5-R sections.
+- Add verification section `## T5 combined verdict`. Give one row per criterion with its evidence and verdict, built on the [criterion map](verification.md#t5-criterion-evidence-map), T5-F12, T5-L1, T5-G1, T5-F15 and the new T5-R results.
 - Report software behavior, source-image fidelity, metadata interoperability, package consistency and real-model adoption separately before the combined verdict.
 - Apply the [verdict scope amendment](spec.md#status-and-authority): a publisher JPEG with competing or legacy XMP is a recorded AR-12 limitation, not a blocker.
 - Record the Linux and macOS rows as deferred under [XPLAT-01](../../WORK_ITEMS.md#context-capability-and-delivery-work), unverified.
-- An "inconclusive" or "not adopted" result from T5-L1 leaves AR-8's agent path open and must be stated in the verdict. It does not justify calling the batch fully accepted.
+- Record T5-L1 as adoption after correction with a partial draft. Keep [AR-T5-13](verification.md#ar-t5-13--standalone-images-omit-the-visible-source-title) open for real-model title transfer after the guidance change and [AR-T5-14](verification.md#ar-t5-14--contributor-name-differs-from-the-visible-source) open for transcription fidelity. The offline checks establish software behavior and guidance coverage. Apply the [T5 exit rules](#r01cal-a03-delivery-01-t5) to any unresolved required condition.
 
 **Also update:**
 
@@ -463,7 +476,7 @@ Recommend the next work from [WORK_ITEMS selection](../../WORK_ITEMS.md#selectio
 **Work.**
 
 1. **Push.** Check that the working tree is clean and that no ignored private data is tracked: `git ls-files` must not include `private/`, `references/`, `.local/`, `workspaces/` or `outputs/`. Then run `git push -u origin codex/r01cal-a03-delivery-01`. This can happen at any time and again after each ticket. If the push is rejected, stop and report; do not force.
-2. **PR.** After T5-V, open a PR with base `master`. Opening a draft PR earlier is also allowed. The description gives:
+2. **PR.** After T5-V, update [draft PR #1](https://github.com/hereiam510/pdf-to-md-agent-2/pull/1) with `master` as its base. Verify its head matches the published revision and keep it in draft for review. The description gives:
    - the problem: P2 broken portable source-image links from A03;
    - the delivered behavior: portable links, enriched schema 2 images with readable names and standalone XMP provenance, corrections, export publication protection, and Windows-only scope;
    - the T5 verdict and its open limits;

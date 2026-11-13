@@ -108,7 +108,7 @@ def prepare(directory):
               "corrupt_version": corrupt_version, "asset": path, "width": image["width"], "height": image["height"],
               "asset_bytes": len(store.bytes(image["ref"], job["id"])), "provider_calls": 0,
               "large_link": large_link, "large_width": large_image["width"], "large_height": large_image["height"],
-              "large_bytes": len(store.bytes(large_image["ref"], job["id"])),
+              "large_asset": large_path, "large_bytes": len(store.bytes(large_image["ref"], job["id"])),
               "jpeg_asset": jpeg['asset_path'],
               "versions": {v: store.get("version", v, job=job["id"])["files"] for v in [base, link, mixed, large_link, incomplete, unsupported, unavailable]}}
     (root / "fixture.json").write_bytes(encode(result))

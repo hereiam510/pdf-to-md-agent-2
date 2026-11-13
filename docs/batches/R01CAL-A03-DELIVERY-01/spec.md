@@ -122,6 +122,8 @@ Include `p58&p61` and `p58&i67` filenames whose generated destinations contain `
 
 **Expected and check:** native links display the complete selected image in the existing empty-sandbox frame. Actual response bytes, decoding and selection identity agree with the verified saved inventory. Return restores its cached matching document without a new version read, head lookup, inference or save. Host/resource and UI checks must agree across lifecycle boundaries. Screenshots/native interaction supplement byte and identity assertions; synthetic-host/API-only checks, successful repeated embedding and a passing negative observation cannot satisfy native-link acceptance. `about:blank#blocked`, a truncated payload or an `unresolved: true` observation remains a failure of required delivery.
 
+For the [AR-T5-15 follow-up](tickets.md#t5-f15--repair-preview-frame-startup), check the first image requests from the new frame after Return in both shell modes. They must decode on the first load and match the selected version. Requests with missing frame context or from a stale or unrelated frame remain denied under the [preview contract](../../design/ASSET_REFERENCES.md#sandbox-and-native-request-boundary).
+
 #### T2 protocol acceptance checks
 
 These are adopted **planned checks**, with actual evidence recorded in verification against its tested code/spec identity. The [preview design](../../design/ASSET_REFERENCES.md#preview-binding-and-return-behavior) owns the mechanism; this table owns its condition/expected-result/violation correspondence.

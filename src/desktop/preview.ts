@@ -5,6 +5,8 @@ export const previewScheme = 'pdfmd-preview'
 const nonce = () => randomBytes(24).toString('hex')
 type Resource = { bytes: Buffer; mime: string; asset: string; representation: string; sha256: string }
 type Snapshot = { job: string; version: string; generation: string; lease: string; resources: Map<string, Resource> }
+type PreviewMount = { name: string; node: number | null }
+const mountName = (lease: string, mount: string) => `pdfmd-preview-${lease}-${mount}`
 
 /** One window/session owns one loaded snapshot. No path is ever resolved here. */
 export class PreviewResources {
@@ -13,8 +15,7 @@ export class PreviewResources {
   private intent = ''
   private prepared: Snapshot | null = null
   private active: Snapshot | null = null
-  private mountName = ''
-  private frames = new Set<number>()
+  private previewMount: PreviewMount | null = null
   private grants = new Map<string, { url: string; lease: string; frame: WebFrameMain }>()
 
   constructor(private win: BrowserWindow) {
@@ -63,18 +64,19 @@ export class PreviewResources {
 
   private isAlive() { return !this.win.isDestroyed() && !this.contents.isDestroyed() }
 
+  private namedChild(name: string): WebFrameMain | undefined {
+    const main = this.contents.mainFrame
+    const peers = main.frames.filter(frame => frame.name === name)
+    const child = peers[0]
+    if (peers.length === 1 && !child.detached && child.parent === main) return child
+  }
+
   private frameAllowed(frame: WebFrameMain | null | undefined): boolean {
-    if (!frame || !this.active || !this.isAlive()) return false
+    const mount = this.previewMount
+    if (!frame || !this.active || !mount || mount.node === null || !this.isAlive()) return false
     try {
-      if (!this.mountName || frame.detached || frame.parent !== this.contents.mainFrame || frame.name !== this.mountName) return false
-      const peers = this.contents.mainFrame.frames.filter(f => f.name === frame.name)
-      if (peers.length !== 1 || peers[0].frameTreeNodeId !== frame.frameTreeNodeId) return false
-      if (!this.frames.has(frame.frameTreeNodeId)) {
-        if (frame.url !== 'about:srcdoc') return false
-        this.frames.clear()
-        this.frames.add(frame.frameTreeNodeId)
-      }
-      return true
+      return !frame.detached && frame.frameTreeNodeId === mount.node && frame.name === mount.name &&
+        this.namedChild(mount.name)?.frameTreeNodeId === mount.node
     } catch { return false }
   }
 
@@ -138,16 +140,27 @@ export class PreviewResources {
 
   mount(generation: string, lease: string, mount: string) {
     if (!this.active || this.active.generation !== generation || this.active.lease !== lease || !/^[a-f0-9-]{36}$/.test(mount)) throw new Error('Obsolete preview frame registration.')
-    this.mountName = `pdfmd-preview-${lease}-${mount}`
-    this.frames.clear()
+    const name = mountName(lease, mount)
+    this.previewMount = { name, node: null }
     this.grants.clear()
-    return this.mountName
+    return name
+  }
+
+  bind(generation: string, lease: string, mount: string) {
+    const current = this.previewMount
+    if (this.active?.generation !== generation || this.active?.lease !== lease ||
+        !current || current.name !== mountName(lease, mount) || current.node !== null || !this.isAlive()) {
+      throw new Error('Obsolete preview frame registration.')
+    }
+    const child = this.namedChild(current.name)
+    if (!child || (child.url !== '' && child.url !== 'about:blank')) throw new Error('Could not identify the inert preview frame.')
+    current.node = child.frameTreeNodeId
+    return true
   }
 
   unmount(generation: string, lease: string, mount: string) {
-    if (this.active?.generation === generation && this.active.lease === lease && this.mountName === `pdfmd-preview-${lease}-${mount}`) {
-      this.mountName = ''
-      this.frames.clear()
+    if (this.active?.generation === generation && this.active.lease === lease && this.previewMount?.name === mountName(lease, mount)) {
+      this.previewMount = null
       this.grants.clear()
     }
   }
@@ -157,8 +170,7 @@ export class PreviewResources {
     this.intent = ''
     this.active = null
     this.prepared = null
-    this.mountName = ''
-    this.frames.clear()
+    this.previewMount = null
     this.grants.clear()
   }
 }

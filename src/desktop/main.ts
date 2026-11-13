@@ -157,6 +157,7 @@ app.whenReady().then(async () => {
       }
       case 'activatePreview': return previews.activate(args.job, args.version, args.generation, args.lease)
       case 'mountPreview': return previews.mount(args.generation, args.lease, args.mount)
+      case 'bindPreview': return previews.bind(args.generation, args.lease, args.mount)
       case 'unmountPreview': previews.unmount(args.generation, args.lease, args.mount); return true
       case 'releasePreview': previews.release(args.generation); return true
       case 'evidence': return call(`/jobs/${id(args.job)}/evidence/${id(args.ref)}${args.view === 'raw' ? '?view=raw' : ''}`)

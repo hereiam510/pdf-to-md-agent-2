@@ -9,7 +9,7 @@ mkdirSync(profile, { recursive: true })
 app.setPath('userData', resolve(profile))
 process.on('uncaughtExceptionMonitor', error => appendFileSync(resolve(profile, 'uncaught-errors.log'), String(error.stack || error) + '\n'))
 const control = globalThis.referenceControl = { hold: false, pending: [], calls: [],
-  network: [], responses: [], transferFault: false,
+  network: [], responses: [], transferFault: false, holdMount: false, pendingMounts: [],
   settle(index, fail = false) {
     const item = this.pending.splice(index, 1)[0]
     if (fail) item.reject(new Error('Injected selected-version delivery failure'))
@@ -61,6 +61,18 @@ const register = ipcMain.handle.bind(ipcMain)
 ipcMain.handle = (channel, handler) => register(channel, async (event, action, args) => {
   control.calls.push({ action, job: args?.job, version: args?.version })
   if (['start', 'continue'].includes(action)) throw new Error('Provider execution denied in the T2 desktop fixture.')
+  if (control.holdMount && ['bindPreview', 'unmountPreview'].includes(action)) {
+    await new Promise(resolve => control.pendingMounts.push({ action, args, resolve }))
+  }
+  if (action === 'bindPreview') {
+    const name = `pdfmd-preview-${args.lease}-${args.mount}`
+    const frame = event.senderFrame.frames.find(frame => frame.name === name)
+    const row = { hook: action, ...args, name, node: frame?.frameTreeNodeId, url: frame?.url, accepted: false }
+    control.network.push(row)
+    const value = await handler(event, action, args)
+    row.accepted = true
+    return value
+  }
   const held = action === 'version' && control.hold
   const value = await handler(event, action, args)
   if (held) return new Promise((resolve, reject) => control.pending.push({ value, resolve, reject }))

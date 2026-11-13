@@ -21,15 +21,18 @@ function scene() {
     preview_transfer: { job: 'job', version: 'old', slots: [{ start: 10, end: 14, expected: 'slot', key: 'slot' }],
       resources: [{ key: 'slot', asset: 'assets/a.png', representation: 'repr', mime: 'image/png', length: png.length,
         sha256: createHash('sha256').update(png).digest('hex'), base64: png.toString('base64') }] } })
+  let nextNode = 10
   const load = (v = value(), generation = randomUUID()) => {
     host.begin(generation)
     const saved = host.prepare(v, 'job', 'old', generation)
     if (saved.preview_lease) host.activate('job', 'old', generation, saved.preview_lease)
     const mount = randomUUID()
     const name = saved.preview_lease ? host.mount(generation, saved.preview_lease, mount) : ''
-    const frame: any = { detached: false, name, frameTreeNodeId: 10,
-      url: 'about:srcdoc', parent: main }
+    const frame: any = { detached: false, name, frameTreeNodeId: nextNode++,
+      url: 'about:blank', parent: main }
     main.frames = [frame]
+    if (saved.preview_lease) host.bind(generation, saved.preview_lease, mount)
+    frame.url = '' // The first image request can precede publication of the srcdoc URL.
     return { saved, frame, url: saved.preview.match(/src="([^"]+)"/)?.[1], generation, mount }
   }
   const ask = (url: string, frame: any, extra = {}) => ({ url, frame, method: 'GET', webContentsId: 7, resourceType: 'image', ...extra })
@@ -73,6 +76,8 @@ test('new selection and same-pair retry revoke old grants and reject late activa
   s.hooks.headers({ ...s.ask(old.url, old.frame), requestHeaders: {} }, (r: any) => { headers = r.requestHeaders })
   const current = s.load()
   expect(() => s.host.activate('job', 'old', old.generation, old.saved.preview_lease)).toThrow('Obsolete')
+  expect(() => s.host.bind(old.generation, old.saved.preview_lease, old.mount)).toThrow('Obsolete')
+  s.host.unmount(old.generation, old.saved.preview_lease, old.mount)
   expect((await s.hooks.serve(new Request(old.url, { headers }))).status).toBe(403)
   s.host.release(old.generation) // Late old cleanup must not revoke the new load.
   expect(s.check(s.ask(current.url, current.frame)).cancel).toBe(false)
@@ -84,15 +89,42 @@ test('new selection and same-pair retry revoke old grants and reject late activa
 test('Return and tab remounts register a fresh frame without replacing the loaded resource table', async () => {
   const s = scene(), old = s.load(), mount = randomUUID()
   const name = s.host.mount(old.generation, old.saved.preview_lease, mount)
-  const frame = { ...old.frame, name, frameTreeNodeId: 11 }
+  const frame = { ...old.frame, name, frameTreeNodeId: 11, url: 'about:blank' }
   s.main.frames.push(frame) // The retiring frame can still exist during remount.
   expect(s.check(s.ask(old.url, old.frame)).cancel).toBe(true)
+  expect(s.check(s.ask(old.url, frame)).cancel).toBe(true)
+  expect(await s.serve(s.ask(old.url, frame))).toBe(403)
+  expect(() => s.host.bind(old.generation, old.saved.preview_lease, old.mount)).toThrow('Obsolete')
+  s.host.bind(old.generation, old.saved.preview_lease, mount)
+  frame.url = ''
   expect(s.check(s.ask(old.url, frame)).cancel).toBe(false)
+  expect(s.check(s.ask(old.url, { ...frame, frameTreeNodeId: 12 })).cancel).toBe(true)
   s.host.unmount(old.generation, old.saved.preview_lease, old.mount)
   const response = await s.serve(s.ask(old.url, frame))
   expect(Buffer.from(await response.arrayBuffer())).toEqual(s.png)
   s.host.unmount(old.generation, old.saved.preview_lease, mount)
   expect(s.check(s.ask(old.url, frame)).cancel).toBe(true)
+})
+
+test('registration requires one attached direct child at the inert URL', () => {
+  const s = scene(), { generation, saved, frame, url } = s.load(), mount = randomUUID()
+  const name = s.host.mount(generation, saved.preview_lease, mount)
+  const child = { ...frame, name, frameTreeNodeId: 11, url: 'about:blank' }
+  const bind = () => s.host.bind(generation, saved.preview_lease, mount)
+  for (const children of [[], [{ ...child, detached: true }], [{ ...child, parent: frame }],
+    [{ ...child, url: 'about:srcdoc' }], [child, { ...child, frameTreeNodeId: 12 }]]) {
+    s.main.frames = children
+    expect(bind).toThrow('Could not identify the inert preview frame')
+    expect(s.check(s.ask(url, child)).cancel).toBe(true)
+  }
+  s.main.frames = [child]
+  bind()
+  expect(s.check(s.ask(url, child)).cancel).toBe(false)
+  const replacement = { ...child, frameTreeNodeId: 13 }
+  s.main.frames = [replacement]
+  expect(bind).toThrow('Obsolete')
+  expect(s.check(s.ask(url, replacement)).cancel).toBe(true)
+  expect(s.check(s.ask(url, child)).cancel).toBe(true)
 })
 
 test('late requests after window destruction fail without accessing destroyed native objects', async () => {

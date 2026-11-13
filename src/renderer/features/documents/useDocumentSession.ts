@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { EditSession, Job, Saved } from '../../types'
 
 type Loaded = { job: string; version: string; attempt: number } & (
@@ -54,12 +54,12 @@ export function useDocumentSession(job: Job | null) {
     setSession(null)
     setAttempt(value => value + 1)
   }
-  const previewFailed = (generation: string, error: unknown) => {
+  const previewFailed = useCallback((generation: string, error: unknown) => {
     void window.workbench.invoke('releasePreview', { generation }).catch(() => {})
     setLoaded(current => current?.status === 'ready' && current.value.preview_generation === generation ? {
       ...current, value: { ...current.value, preview: '', preview_error: `Preview unavailable: ${String(error)}` }
     } : current)
-  }
+  }, [])
   return { version, saved, editing, loadError, selectVersion, beginEdit, changeBlock, finishEdit, discardEdit,
     previewKey: `${jobId}:${version}:${attempt}:${previewRevision}`, previewFailed,
     returnToDocument: () => { if (saved && !editing) setPreviewRevision(value => value + 1) },
