@@ -21,6 +21,7 @@ from pdfmd.usage_anchoring import (KIMI_PATTERN, PATTERN_DIGESTS, RECIPE, counte
 from pdfmd.usage_observation import ObservationProfile, Opportunity, UsageObserver
 from pdfmd.working_context import inspect as inspect_context
 from tests.engine.execution.test_runtime import response, tool, transport_for
+from tests.engine.execution.test_network_recovery import Clocks
 from tests.engine.transport.test_response_repairs import native
 
 
@@ -793,15 +794,15 @@ def test_observer_failure_time_cannot_exhaust_ordinary_active_budget(setup, tmp_
         root = tmp_path / str(enabled)
         shutil.copytree(store.root, root)
         local = Store(root)
-        ticks = [0.0]
-        monkeypatch.setattr("time.monotonic", lambda: ticks[0])
+        clocks = Clocks()
         def slow_counter_failure():
-            ticks[0] += 100.0  # Simulated diagnostic delay; no blocking sleep.
+            clocks.advance(100.0)  # Simulated diagnostic delay.
             raise OSError("slow observer-only counter failure")
         monkeypatch.setattr("pdfmd.usage_anchoring.counters", slow_counter_failure)
         observer = UsageObserver(local, profile=profile(job))
         seen = []
-        rt = Runtime(local, Nexus(local, lambda _: "synthetic", transport_for(local, job["id"], seen)), usage_observer=observer if enabled else None)
+        rt = Runtime(local, Nexus(local, lambda _: "synthetic", transport_for(local, job["id"], seen), clocks=clocks),
+                     usage_observer=observer if enabled else None)
         rt.run(job["id"])
         rt.close()
         current = local.get("job", job["id"])
