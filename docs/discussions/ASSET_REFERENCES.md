@@ -1225,3 +1225,28 @@ The [AR-T5-16 diagnosis](../batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5
 ### Windows device-name and byte-budget repair selected
 
 2026-11-13, Asia/Singapore. After the [draft review](../batches/R01CAL-A03-DELIVERY-01/verification.md#draft-pr-1-review-at-e57c71e), the user selected the offline AR-T5-19 and AR-T5-20 repair and a fresh fixed-revision T5-R. Verify Windows device aliases and the 180-byte boundary through save and export. Update the T5 verdict and draft PR #1 if T5-R passes. The PR stays in draft. The [existing filename contract](../design/ASSET_REFERENCES.md#readable-filenames-and-source-locators) owns the reserved-name and spelling requirements.
+
+## Next-step recommendation after the T5 closing review
+
+2026-11-13, Asia/Singapore. Advice only; nothing is selected. The [closing review](../batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-the-t5-closing-implementation-at-c7fe4c3) found the implementation complete and consistent with its selections, with no new defect. What remains is evidence and scope, not repair.
+
+1. **One more bounded live run (T5-L2), recommended.** Repeat T5-L1 exactly: physical pages 1–3, the same request, route and limits, and a fresh task. The run would answer three things:
+   - whether the T5-G1 guidance gets the visible title into the first enriched save (AR-T5-13);
+   - whether the evidence-of-absence rejections disappear;
+   - whether the task reaches a terminal report within 12 sends.
+
+   It is the only check that can close AR-T5-13, and it costs one 12-send interval. It needs the user's go-ahead for that provider interval.
+2. **Then close the T5 verdict scope.** Recommend recording the real unresolved printed label and source-led shortening as AR-8 and AR-9 limitations, in the same way as the AR-12 amendment. Neither has a suitable authorized source, and both have offline controls. Move AR-T5-14 to the Stage B source-fidelity route, because it concerns model transcription rather than asset delivery.
+3. **Then mark PR #1 ready and decide on merging.** `master` has not changed since 2026-10-31. Merging records the verified Windows delivery code as the baseline without claiming Stage B or Stage D acceptance. Merging needs the user's explicit authority.
+
+Alternative: skip T5-L2, record AR-T5-13 as an open limitation, and go straight to steps 2 and 3. This saves the provider interval but leaves the guidance change unverified with a real model.
+
+## T5 final route and merge approved
+
+2026-11-13, Asia/Singapore. The user approved merging [draft PR #1](https://github.com/hereiam510/pdf-to-md-agent-2/pull/1) and chose two parts of the [recommendation after the closing review](#next-step-recommendation-after-the-t5-closing-review). The user asked for tickets and document updates first and will assign the tickets to other models. The [final tickets](../batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-final-tickets) own the execution scope.
+
+- **T5-L2 live re-run, selected.** This is one more bounded interval with the same source pages, request, route and limits as T5-L1, on the current product revision. It checks whether the T5-G1 guidance carries the visible title into the first enriched save (AR-T5-13) and avoids the evidence-of-absence rejections. It also records whether the task reaches a terminal report within 12 sends. The user's choice authorizes this one provider interval within those limits.
+- **Verdict scope, decided.** A real unresolved printed label (AR-8) and source-led semantic shortening (AR-9) are recorded limitations, not blockers, in the same way as the AR-12 publisher-JPEG amendment. The [spec amendment](../batches/R01CAL-A03-DELIVERY-01/spec.md#status-and-authority) records the change. AR-T5-14 leaves this batch: it concerns model transcription fidelity and moves to the Stage B source-fidelity route in the [work register](../WORK_ITEMS.md#context-capability-and-delivery-work).
+- **Merge, approved.** Mark PR #1 ready and merge it into `master` after the final verdict. Use a merge commit, because the batch records cite many branch commit hashes, and squashing or rebasing would remove them from `master`'s history. Branch deletion, force-push and history rewriting stay unauthorized.
+
+The merge does not depend on how T5-L2 turns out. If AR-T5-13 persists, the verdict records it as an open finding. A new product defect at P2 or above found by T5-L2 or the verdict pauses the merge for the user. The question of requiring enriched saves stays open.

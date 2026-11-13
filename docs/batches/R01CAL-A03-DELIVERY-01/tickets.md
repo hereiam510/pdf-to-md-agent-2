@@ -28,7 +28,7 @@ The 2026-11-09 [AR-S4.4 adoption](../../discussions/ASSET_REFERENCES.md#primary-
 | [T3a](#r01cal-a03-delivery-01-t3a) | Save and export portable links under existing registered hash paths | T2's shared reference and preview contribution | Scoped contribution completed. [Implementation evidence and limits](verification.md#t3a-portable-link-save-implementation-and-verification) |
 | [T3b](#r01cal-a03-delivery-01-t3b) | Create readable, independently informative source-image deliverables | T3a's shared save path, positive T1-F06 qualification and explicit product selection of the candidate | In progress: selected 2026-11-10; the [remaining scope](#r01cal-a03-delivery-01-t3b) is on the T5 route |
 | [T4](#r01cal-a03-delivery-01-t4) | Correct source facts and synchronize assets and references atomically | T3b's enriched creation and publication path | Selected completion checks done in [T4-A to T4-C](#t4-follow-up-tickets); combined acceptance belongs to T5 |
-| [T5](#r01cal-a03-delivery-01-t5) | Establish combined save/reopen/export and declared-platform acceptance | Integrated T2, T3a, T3b and T4, with matching qualified and selected T1-F06 artifacts and invocation | [Closing tickets](#t5-closing-tickets) and [updated verdict with open criteria](verification.md#t5-verdict-update-after-the-windows-naming-repair) |
+| [T5](#r01cal-a03-delivery-01-t5) | Establish combined save/reopen/export and declared-platform acceptance | Integrated T2, T3a, T3b and T4, with matching qualified and selected T1-F06 artifacts and invocation | [Closing tickets](#t5-closing-tickets) and [updated verdict with open criteria](verification.md#t5-verdict-update-after-the-windows-naming-repair); [final tickets](#t5-final-tickets) selected 2026-11-13 |
 
 T3a addresses P2 first when authorized. T1-F06 may be selected independently. One integrator owns the overlapping document publication path across T3a, T3b and T4. A scoped repair or qualification is distinct from the combined acceptance.
 
@@ -505,6 +505,106 @@ Recommend the next work from [WORK_ITEMS selection](../../WORK_ITEMS.md#selectio
    Do not merge. Bind and monitor the PR only as the user directs.
 
 **Records.** Note the remote branch and PR link in the T5-V verification section, or in a short `## Branch publication` note if T5-V has not run yet.
+
+### T5 final tickets
+
+The user [selected](../../discussions/ASSET_REFERENCES.md#t5-final-route-and-merge-approved) the final route on 2026-11-13 after the [closing review](verification.md#review-of-the-t5-closing-implementation-at-c7fe4c3). The user approved the merge and asked for tickets before execution, which other models will carry out. Each executor reads [AGENTS.md](../../../AGENTS.md), this section, the ticket's linked basis and the [rules for every ticket](#t5-closing-tickets) in the closing tickets. Those rules still apply, with one exception: T5-M may mark PR #1 ready and merge it.
+
+| Ticket | Contribution | Depends on | Ready |
+| --- | --- | --- | --- |
+| [T5-L2](#t5-l2--live-re-run-with-the-clarified-guidance) | Check real-model title transfer and the evidence-of-absence path after T5-G1 | Committed and pushed records from this planning step | Yes |
+| [T5-V2](#t5-v2--close-the-t5-verdict) | Close the T5 and batch verdict under the amended scope | T5-L2 | After T5-L2 |
+| [T5-M](#t5-m--mark-pr-1-ready-and-merge) | Mark PR #1 ready and merge it into `master` | T5-V2 committed and pushed | After T5-V2 |
+
+**Order:** T5-L2, T5-V2, T5-M, one at a time in this checkout. Push the branch after each ticket so PR #1 carries its records. T5-L2 and T5-V2 change no product code.
+
+#### T5-L2 — Live re-run with the clarified guidance
+
+**Question:** with the [T5-G1 guidance](#t5-g1--clarify-enriched-save-guidance), does a real model carry the visible book title into `source_update` on its first enriched save? The run also records:
+
+- whether the model supplies evidence for `none` facts without a rejected save;
+- whether it reaches a terminal report within the same limits.
+
+It answers these for one model, source and request. It does not establish a reliability rate. Basis: [AR-T5-13](verification.md#ar-t5-13--standalone-images-omit-the-visible-source-title), [AR-8](spec.md#ar-8--source-grounded-naming-and-embedded-standalone-provenance) and the [T5-L1 observation](verification.md#t5-live-adoption-run).
+
+**Same as T5-L1.** Follow [T5-L1](#t5-l1--bounded-live-adoption-run) exactly for all of these:
+
+- authority: one fresh task, one Start, no Continue, replay, extension or coaching;
+- the source identity check;
+- physical pages 1–3 and the exact quoted request text;
+- route, effort, allowances and the 12-send, 1,200-second active and 1,500-second wall limits;
+- subscription-only billing and the stop-before-Start conditions;
+- preparation, monitoring, observations 1–6, reopen, export, ExifTool readback and records discipline.
+
+Do not give the converter the T5-L1 output, this ticket or any hint about titles or `source_update`. If the A03 waiting policy cannot be set identically, use the value T5-L1 recorded (the 180-second non-streaming deadline with two response repairs), or record the effective difference.
+
+**Differences from T5-L1:**
+
+- **Revision.** Use the current branch head. Its product code must equal `8ccf461`: `git diff 8ccf461 HEAD -- src` must print nothing. Record the commit and lockfile hashes.
+- **Locations.** Create new unique folders under `workspaces/`, `.local/` and `outputs/`. Do not reuse the T5-L1 store or outputs.
+- **Additional observations.**
+  - **Title.** Quote the first enriched save's `source_update`, or record that it has none. Check the source title state in the saved records and in ExifTool readback of each isolated exported image. The expected title is the one visible on pages 1 and 3, which T5-L1's Markdown transcribed.
+  - **Rejections.** Count every rejected `edit_document` call and quote each message.
+  - **Ending.** Record whether the task ended with a terminal `report` and selected delivery, or how it stopped.
+  - **AR-T5-14.** Record whether the contributor name on pages 1 and 2 is transcribed as the visible `李炳库`. This is an observation only; that finding now belongs to Stage B.
+
+**Result.** Report one of these for AR-T5-13:
+
+- **Resolved in this run:** the first enriched save carries the visible title with evidence, and the isolated images return it.
+- **Resolved after correction:** a later save in the same run carries it.
+- **Not resolved:** the title state stays `unknown` in the delivered images.
+- **Inconclusive:** no enriched save occurred.
+
+Report the rejection count and the ending separately from the AR-T5-13 result. Do not change code or guidance in this ticket. Record a new defect as the next `AR-T5-NN` finding. If it is P2 or higher, stop before T5-M and ask the user.
+
+**Records.** Add verification section `## T5 live re-run after the guidance clarification`. Update the AR-8 row of the [criterion map](verification.md#t5-criterion-evidence-map), the AR-T5-13 row in the [work register](../../WORK_ITEMS.md#context-capability-and-delivery-work), and [CURRENT_STATE](../../CURRENT_STATE.md#focus-and-resume-route). Usage evidence keeps unknown fees and upstream attempts unknown.
+
+#### T5-V2 — Close the T5 verdict
+
+**Purpose:** a final criterion verdict that applies both scope amendments in the [spec status](spec.md#status-and-authority) and the T5-L2 result. Documentation only. Basis: [T5 combined verdict](verification.md#t5-combined-verdict), [verdict update](verification.md#t5-verdict-update-after-the-windows-naming-repair), [closing review](verification.md#review-of-the-t5-closing-implementation-at-c7fe4c3) and T5-L2.
+
+**Work.**
+
+1. **Verification section.** Add `## T5 final verdict`. Restate only the criteria whose disposition changes, and link the earlier verdict for the rest.
+   - **AR-8:** apply T5-L2 for title transfer. A real unresolved printed label becomes a recorded limitation under the amendment.
+   - **AR-9:** source-led shortening becomes a recorded limitation.
+   - **AR-12:** keep the publisher JPEG limitation.
+   - **Other criteria:** Linux and macOS stay deferred under XPLAT-01.
+2. **Batch verdict.** State the result in one sentence:
+   - If T5-L2 resolved AR-T5-13 (in its first save or after correction): **accepted for the declared Windows scope with recorded limitations**.
+   - Otherwise: **accepted for the declared Windows scope with recorded limitations, with AR-T5-13 open**. Keep AR-T5-13 in the register with its revisit condition. The open choice of requiring enriched saves goes back to the user as a separate decision.
+
+   List the limitations and deferrals by link. Keep these separate from Stage B (faithful autonomous conversion) and Stage D (clean-environment and installer acceptance), which stay open.
+3. **Register and plans.**
+   - In [WORK_ITEMS](../../WORK_ITEMS.md), set the R01CAL-A03-DELIVERY-01 row to the batch verdict, with residuals and revisit conditions.
+   - Change the AR-T5-14 row to route it to Stage B source-led transcription fidelity, alongside [CTX-08](../../WORK_ITEMS.md#context-capability-and-delivery-work). It no longer belongs to this batch.
+   - Update [selection now](../../WORK_ITEMS.md#selection-now) so that this batch no longer holds provider-work priority, and say which candidates are next to compare.
+   - In [PHASE_PLAN readiness](../../PHASE_PLAN.md#readiness-and-evidence), record that explicit-version export to the declared Windows destination is evidenced for the development and folder builds. Stage D still needs clean-environment and installer acceptance, and Stage B stays open.
+4. **Tickets and resume route.** Update the T5 row in the [sequence table](#sequence-and-dependencies) and the [T5 ticket exit](#r01cal-a03-delivery-01-t5) state. Set CURRENT_STATE to T5-M.
+5. **Checks.** Run `python tools/docs/check_docs.py` and `git diff --check`, commit and push.
+
+#### T5-M — Mark PR #1 ready and merge
+
+**Authority:** the user [approved](../../discussions/ASSET_REFERENCES.md#t5-final-route-and-merge-approved) marking [PR #1](https://github.com/hereiam510/pdf-to-md-agent-2/pull/1) ready and merging it into `master` with a merge commit. Squash, rebase, force-push, branch deletion and history rewriting are not authorized.
+
+**Before merging.**
+
+1. **Clean state.** The working tree is clean and `git rev-parse HEAD` equals `git rev-parse origin/codex/r01cal-a03-delivery-01`. Run `gh pr view 1 --json headRefOid,isDraft,mergeable,baseRefName` and confirm three things: the PR head equals that commit, the base is `master`, and the state is `MERGEABLE`. If not, stop and report.
+2. **No private data.** Confirm again that `git ls-files` lists nothing under `private/`, `references/`, `.local/`, `workspaces/` or `outputs/`.
+3. **Product code.** `git diff 8ccf461 HEAD -- src tests tools pyproject.toml uv.lock package.json pnpm-lock.yaml` must print nothing. The T5-R full suites then still apply to the merged tree. If anything differs, stop: a product change after T5-R needs a new Windows run first.
+4. **Description.** Update the PR description with the T5 final verdict, its limitations and deferrals, and links to the final verification sections, pinned to the head commit. Keep the existing paragraph about the broader comparison scope.
+
+**Merge.**
+
+1. Run `gh pr ready 1`.
+2. Run `gh pr merge 1 --merge`. Do not pass `--delete-branch`, `--squash`, `--rebase` or `--admin`.
+3. Check the result:
+   - `gh pr view 1 --json state,mergeCommit` reports `MERGED`.
+   - After `git fetch origin`, the head commit is an ancestor of `origin/master` (`git merge-base --is-ancestor <head> origin/master`).
+   - `origin/master` contains the merge commit.
+4. Fast-forward the local `master` with `git checkout master` and `git pull --ff-only`, then switch back to the batch branch. Do not commit to `master`.
+
+**Records.** No repository commit follows the merge, because Git history and the PR record the merge commit. T5-V2 leaves CURRENT_STATE pointing at T5-M, with the next activity "choose the next work from WORK_ITEMS after the merge". Report the merge commit hash to the user. If the merge fails, report the error and stop; do not resolve conflicts or retry with other options.
 
 ## Coverage and integration discipline
 

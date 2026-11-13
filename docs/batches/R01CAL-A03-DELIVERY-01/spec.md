@@ -14,6 +14,13 @@ The [captured AR-S4.3 before primary-XMP adoption](20261109_1648_spec_AR_S4_3.md
 
 **T5 verdict scope amendment, 2026-11-13.** The user [decided](../../discussions/ASSET_REFERENCES.md#t5-closing-route-selected) that a publisher-source JPEG with pre-existing competing source values or legacy XMP does not block T5 acceptance. If no such authorized source is exercised, the verdict records it as an AR-12 limitation. The controlled B-lite legacy and extended-packet evidence and the real-source StandardXMP merge stand in for that case. Every other AR-12 condition is unchanged. Commit `0b46f45` retains the preceding text.
 
+**AR-8 and AR-9 verdict scope amendment, 2026-11-13.** The user [decided](../../discussions/ASSET_REFERENCES.md#t5-final-route-and-merge-approved) that two unexercised real-source cases do not block T5 acceptance. If no suitable authorized source exercises them, the verdict records them as limitations:
+
+- under AR-8, a real printed label that stays unresolved (`unknown`) after source review;
+- under AR-9, source-led evidence that an agent's shortened over-budget label preserves its meaning.
+
+The synthetic unknown-label, exact-budget and shortening controls already recorded stand in for those cases. Every other AR-8 and AR-9 condition is unchanged, including the real-model title transfer that T5-L2 checks. Commit `c7fe4c3` retains the preceding text.
+
 This is a distinct delivery outcome from the completed A03 experiment. This spec owns batch outcome, boundaries and planned acceptance; the [design](../../design/ASSET_REFERENCES.md#design-basis-and-ownership) owns technical contracts and their rationale, [local tickets](tickets.md#planning-basis-and-authority) own decomposition/dependencies/progress, and [verification](verification.md#t1-windows-helper-qualification) owns observed review/checks. T1's bounded local qualification does not select the remaining application repair, original-task mutation, provider call, Start/Continue/replay, new importer, deletion, product packaging/installation, publication or subagent work. The [local ticket policy](../../../AGENTS.md#batch-documents-and-ticket-mode) remains in force.
 
 ## Outcome, basis and preserved guarantees

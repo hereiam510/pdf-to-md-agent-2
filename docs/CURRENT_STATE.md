@@ -2,12 +2,16 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 draft PR review after the Windows naming repair.
-Resume at: [updated T5 verdict](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-verdict-update-after-the-windows-naming-repair) and [draft PR #1](https://github.com/hereiam510/pdf-to-md-agent-2/pull/1).
-Next activity: draft review. The [work register](WORK_ITEMS.md#selection-now) retains residual validation and revisit conditions.
-Instruction basis: the user's [offline repair and conditional draft update instruction](discussions/ASSET_REFERENCES.md#windows-device-name-and-byte-budget-repair-selected).
+Current focus: R01CAL-A03-DELIVERY-01 T5 final tickets.
+Resume at: the [T5 final tickets](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-final-tickets), starting with T5-L2.
+Next activity: the user assigns T5-L2, T5-V2 and T5-M to other models, in that order; each ticket updates this pointer.
+Instruction basis: the user's [2026-11-13 final route and merge approval](discussions/ASSET_REFERENCES.md#t5-final-route-and-merge-approved). It covers one bounded live re-run, the closing verdict under the AR-8 and AR-9 amendment, and a merge-commit merge of PR #1. Squash, rebase and branch deletion are not authorized.
 
 ## Return routes
+
+- Previous review: [closing review at `c7fe4c3`](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-the-t5-closing-implementation-at-c7fe4c3) and its [recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-t5-closing-review).
+
+- Previous verdict: [T5 verdict update after the Windows naming repair](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-verdict-update-after-the-windows-naming-repair) and [draft PR #1](https://github.com/hereiam510/pdf-to-md-agent-2/pull/1).
 
 - Previous review: [review of commit `0b46f45`](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-commit-0b46f45) and its [recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-ar-t5-11-review).
 
