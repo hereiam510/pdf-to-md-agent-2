@@ -8,15 +8,11 @@ import zipfile
 import pymupdf
 import pytest
 
+from tests.desktop.fixtures.workspace_hashes import workspace_hashes
 from tests.engine.execution.test_accepted_evidence_recovery import historical
 from tests.engine.execution.test_continuation import delivery
 from tests.engine.diagnostics.test_diagnostic_attribution_reasons import two_attempts, head_refusal_fixture
 from pdfmd.recovery import inspection
-
-
-def hashes(root):
-    return {p.relative_to(root).as_posix(): sha256(p.read_bytes()).hexdigest()
-            for p in root.rglob("*") if p.is_file()}
 
 
 def prepare(directory, protocol, mode):
@@ -50,7 +46,7 @@ def prepare(directory, protocol, mode):
 
 def verify(directory):
     value = json.loads((directory / "fixture.json").read_text(encoding="utf-8"))
-    before = hashes(directory / "workspace")
+    before = workspace_hashes(directory / "workspace")
     with inspection(directory / "workspace", value["job"]) as (view, _, _):
         folder = view.root / "versions" / value["version"]
         with zipfile.ZipFile(directory / "delivery.zip") as archive, pymupdf.open(value["source"]) as pdf:
@@ -69,7 +65,7 @@ def verify(directory):
             report = {"verified": True, "explicit_version": value["version"], "different_head": value["head"],
                 "source_lines": lines, "image_pixels": [image.width, image.height], "exact_member_set": sorted(expected),
                 "raw_sha256": sha256(bytes.fromhex(value["raw_hex"])).hexdigest(), "actual_network_sends": 0}
-    assert hashes(directory / "workspace") == before
+    assert workspace_hashes(directory / "workspace") == before
     report["audit_unchanged"] = True
     (directory / "source-export-audit.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
@@ -80,7 +76,7 @@ if __name__ == "__main__":
     directory = Path(path)
     directory.mkdir(parents=True, exist_ok=True)
     if action == "prepare": result = prepare(directory, *args)
-    elif action == "hash": result = hashes(directory / "workspace")
+    elif action == "hash": result = workspace_hashes(directory / "workspace")
     elif action == "verify": result = verify(directory)
     else: raise ValueError(action)
     print(json.dumps(result))

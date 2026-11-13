@@ -10,6 +10,7 @@ import httpx
 import pymupdf
 import pytest
 
+from tests.desktop.fixtures.workspace_hashes import workspace_hashes
 from tests.engine.execution.test_accepted_evidence_recovery import historical, preserved
 from tests.engine.execution.test_continuation import delivery
 from tests.engine.execution.test_runtime import tool
@@ -19,29 +20,6 @@ from pdfmd.recovery import diagnose, inspection, resolve
 from pdfmd.runtime import Runtime
 from pdfmd.schema import Route
 from pdfmd.storage import Store
-
-
-SQLITE_WALS = {"catalog.sqlite-wal", "graph.sqlite-wal"}
-SQLITE_WAL_INDEXES = {"catalog.sqlite-shm", "graph.sqlite-shm"}
-
-
-def hash_files(directory):
-    """Hash durable workspace files, including any WAL with bytes."""
-    hashes = {}
-    for path in directory.rglob("*"):
-        name = path.relative_to(directory).as_posix()
-        # SQLite regenerates these indexes from the WAL as connections come and go.
-        if name in SQLITE_WAL_INDEXES or not path.is_file():
-            continue
-        try:
-            data = path.read_bytes()
-        except FileNotFoundError:
-            if name in SQLITE_WALS:
-                continue  # SQLite closed the sidecar after enumeration.
-            raise
-        if name not in SQLITE_WALS or data:
-            hashes[name] = sha256(data).hexdigest()
-    return hashes
 
 
 def prepare(directory, protocol):
@@ -115,7 +93,7 @@ def advance(directory):
 def verify(directory):
     value = json.loads((directory / "fixture.json").read_text(encoding="utf-8"))
     job, version = value["job"], value["version"]
-    before = hash_files(directory / "workspace")
+    before = workspace_hashes(directory / "workspace")
     with inspection(directory / "workspace", job) as (view, graph, snapshot):
         assert preserved(view, job) == value["preserved"]
         for blob in value["blobs"]:
@@ -154,7 +132,7 @@ def verify(directory):
                       "exact_member_set": True, "markdown_image_refs": image_refs,
                       "raw_tail_hex": "e4", "raw_sha256": sha256(bytes.fromhex(value["raw_hex"])).hexdigest(),
                       "original_records_preserved": True, "actual_network_sends": 0}
-    assert hash_files(directory / "workspace") == before
+    assert workspace_hashes(directory / "workspace") == before
     report["audit_workspace_unchanged"] = True
     (directory / "source-export-audit.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
@@ -171,7 +149,7 @@ if __name__ == "__main__":
     elif mode == "verify":
         result = verify(directory)
     elif mode == "hash":
-        result = hash_files(directory / "workspace")
+        result = workspace_hashes(directory / "workspace")
     else:
         raise ValueError(mode)
     print(json.dumps(result))

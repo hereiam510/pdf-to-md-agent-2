@@ -9,6 +9,7 @@ import httpx
 import pymupdf
 import pytest
 
+from tests.desktop.fixtures.workspace_hashes import workspace_hashes
 from tests.engine.execution.test_continuation import delivery
 from tests.engine.diagnostics.test_task_diagnostics import freeze_prepared, seed_events
 from tests.engine.execution.test_accepted_evidence_recovery import historical
@@ -27,8 +28,12 @@ from pdfmd.tools import Dispatcher
 
 
 def hashes(directory):
-    paths = list((directory / 'workspace').rglob('*')) + [directory / 'source.pdf', directory / 'existing-delivery.zip']
-    return {p.relative_to(directory).as_posix(): sha256(p.read_bytes()).hexdigest() for p in paths if p.is_file()}
+    result = {f'workspace/{name}': digest for name, digest in workspace_hashes(directory / 'workspace').items()}
+    for name in ('source.pdf', 'existing-delivery.zip'):
+        path = directory / name
+        if path.is_file():
+            result[name] = sha256(path.read_bytes()).hexdigest()
+    return result
 
 
 def prepare(directory):

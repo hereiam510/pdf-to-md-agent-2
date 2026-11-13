@@ -1217,3 +1217,7 @@ The [AR-T5-16 diagnosis](../batches/R01CAL-A03-DELIVERY-01/verification.md#ar-t5
 ### Recovery snapshot test correction selected
 
 2026-11-13, Asia/Singapore. The user selected the offline AR-T5-17 test correction and a fresh fixed-revision Windows rerun. T5-V and the draft PR update depend on that rerun passing. The comparison should detect durable byte changes through the existing [read-only recovery boundary](../guides/EXECUTION_AND_DELIVERY.md#read-only-observation-and-evidence-identity). The prior probe showed the empty WAL and its rebuildable shared-memory index can both disappear on connection close. The repair applies that lifecycle rule to the two workspace databases in the test fixture. The [focused evidence](../batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-17) covers both the lifecycle and durable-byte controls.
+
+### Shared diagnostic snapshot check selected
+
+2026-11-13, Asia/Singapore. The user selected an offline AR-T5-18 repair that shares the existing durable-byte comparison across the recovery, attribution and task-diagnostics desktop fixtures. Task diagnostics also audits the source and existing ZIP outside its workspace. That coverage is part of the [focused verification](../batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-18). A fresh fixed-revision Windows run precedes the verdict and draft PR update.
