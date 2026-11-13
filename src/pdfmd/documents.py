@@ -874,6 +874,13 @@ class Documents:
             except (zipfile.BadZipFile, zlib.error):
                 return False
 
+        def holds_this_export(path):
+            try:
+                return verify(path)
+            except Exception:
+                # An unreadable competing destination cannot settle this export.
+                return False
+
         def verified_receipt():
             receipt = {**result, "verified": True}
             self.store.put("export", intent, job, receipt)
@@ -882,7 +889,7 @@ class Documents:
         temp = None
         try:
             if target.exists():
-                if self.store.maybe("export", intent) and verify(target):
+                if self.store.maybe("export", intent) and holds_this_export(target):
                     return verified_receipt()
                 raise Conflict("The destination exists. Choose a different filename; existing files are preserved.")
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -902,12 +909,7 @@ class Documents:
             try:
                 os.link(temp, target)
             except FileExistsError as exc:
-                try:
-                    matches = verify(target)
-                except OSError:
-                    # A directory or unreadable entry can win the destination race.
-                    matches = False
-                if matches:
+                if holds_this_export(target):
                     return verified_receipt()
                 kept, temp = temp, None  # Keep this verified preparation for a destination conflict.
                 raise Conflict(f"The destination appeared during export: {target}. Prepared work is retained as "

@@ -308,7 +308,7 @@ def test_concurrent_exports_reconcile_without_sharing_preparation(setup, tmp_pat
         assert {name: sha256(archive.read(name)).hexdigest() for name in archive.namelist()} == hashes
 
 
-@pytest.mark.parametrize("competitor", ["file", "directory", "corrupt_zip"])
+@pytest.mark.parametrize("competitor", ["file", "directory", "corrupt_zip", "encrypted_zip", "unsupported_method_zip"])
 def test_export_preserves_a_destination_that_appears_during_publication(setup, tmp_path, monkeypatch, competitor):
     from fastapi.testclient import TestClient
     from pdfmd.server import create_app
@@ -326,17 +326,28 @@ def test_export_preserves_a_destination_that_appears_during_publication(setup, t
         if target == destination:
             if competitor == "directory":
                 target.mkdir()
-            elif competitor == "corrupt_zip":
-                corrupt = bytearray(source.read_bytes())
-                # Keep the ZIP directories intact and corrupt the first DEFLATE block.
-                assert corrupt.startswith(b"PK\x03\x04")
-                name_length, extra_length = struct.unpack_from("<HH", corrupt, 26)
-                corrupt[30 + name_length + extra_length] = 7  # Reserved DEFLATE block type.
-                competing_bytes = bytes(corrupt)
+            elif competitor != "file":
+                unreadable = bytearray(source.read_bytes())
+                assert unreadable.startswith(b"PK\x03\x04")
+                if competitor == "corrupt_zip":
+                    name_length, extra_length = struct.unpack_from("<HH", unreadable, 26)
+                    unreadable[30 + name_length + extra_length] = 7  # Reserved DEFLATE block type.
+                    read_error = zlib.error
+                else:
+                    central_header = unreadable.index(b"PK\x01\x02")
+                    if competitor == "encrypted_zip":
+                        unreadable[6] |= 1  # General-purpose encryption flag.
+                        unreadable[central_header + 8] |= 1
+                        read_error = RuntimeError
+                    else:
+                        struct.pack_into("<H", unreadable, 8, 93)
+                        struct.pack_into("<H", unreadable, central_header + 10, 93)
+                        read_error = NotImplementedError
+                competing_bytes = bytes(unreadable)
                 target.write_bytes(competing_bytes)
                 with zipfile.ZipFile(target) as archive:
                     assert set(archive.namelist()) == set(hashes)
-                    with pytest.raises(zlib.error):
+                    with pytest.raises(read_error):
                         archive.read(archive.namelist()[0])
             else:
                 target.write_bytes(competing_bytes)
@@ -348,9 +359,10 @@ def test_export_preserves_a_destination_that_appears_during_publication(setup, t
             patch.setattr(os, "link", competing_link)
             response = client.post(f"/jobs/{job_id}/export", json={"version_id": version, "destination": str(destination)})
         assert response.status_code == 409, response.text
-        if competitor == "corrupt_zip":
+        if competitor != "file":
             retry = client.post(f"/jobs/{job_id}/export", json={"version_id": version, "destination": str(destination)})
             assert retry.status_code == 409, retry.text
+            assert "The destination exists" in retry.json()["error"]
 
     if competitor == "directory":
         assert destination.is_dir() and not list(destination.iterdir())
