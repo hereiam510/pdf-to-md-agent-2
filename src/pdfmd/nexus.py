@@ -598,7 +598,7 @@ class Nexus:
             request["status"] = "unknown" if incomplete else "rejected"
             failure_class = "lost_after_send" if incomplete else "rejected_reply"
             detail = ("The stream ended without a complete terminal response." if incomplete else
-                      "The stream failed validation. Original received bytes are retained; no partial tools were executed.")
+                      "The stream did not produce a complete valid reply. Original received bytes are retained; no partial tools were executed.")
         except (httpx.HTTPError, asyncio.TimeoutError) as exc:
             failure_class, send_evidence, explanation = network.classify_transport(
                 exc, route.endpoint, "response_observed" if observed["http_status"] is not None else send_evidence)
