@@ -2,12 +2,14 @@
 
 ## Focus and resume route
 
-Current focus: NET-01 network-failure handling (Stage C) before the next Stage B batch.
-Resume at: [NET-01 T8](batches/NET-01/tickets.md#t8--mark-pr-2-ready-and-merge), with [draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2). The user deferred T7b; the real-sleep case is recorded as [NET-01-RV4](batches/NET-01/verification.md#net-01-rv4--real-sleep-not-observed).
-Next activity: Push the T7 records and carry out T8 when the user explicitly asks to merge, then return to next-work selection in [WORK_ITEMS](WORK_ITEMS.md#selection-now).
-Instruction basis: [NET-01 execution authority](batches/NET-01/tickets.md#planning-basis-and-authority) and the [adopted specification](batches/NET-01/spec.md#status-and-authority).
+Current focus: next-work selection after NET-01.
+Resume at: [WORK_ITEMS selection](WORK_ITEMS.md#selection-now) and the [recommendation after the asset-delivery merge](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-merge), which still compares the Stage B and Stage D candidates.
+Next activity: The user selects the next batch. Nothing is selected.
+Instruction basis: the user's "Push and merge" request of 2026-11-14, recorded in [NET-01 T8](batches/NET-01/tickets.md#t8--mark-pr-2-ready-and-merge).
 
 ## Return routes
+
+- Previous batch: [NET-01 merge](batches/NET-01/tickets.md#t8--mark-pr-2-ready-and-merge) through [PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2), with its [combined verdict](batches/NET-01/verification.md#combined-verdict) and the deferred [real sleep check](batches/NET-01/verification.md#net-01-rv4--real-sleep-not-observed).
 
 - Previous orientation: [post-merge review](batches/R01CAL-A03-DELIVERY-01/verification.md#post-merge-review-and-orientation) and [recommendation after the merge](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-merge). The Stage B and Stage D candidates stay in [WORK_ITEMS](WORK_ITEMS.md#selection-now).
 
