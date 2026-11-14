@@ -350,7 +350,7 @@ class Dispatcher:
     def preview(self, job: str, operation: str, version_id: str, top: int = 0, width: int = 1024, height: int = 900) -> dict:
         self.documents.version(job, version_id)
         if not (0 <= top and 320 <= width <= 3000 and 200 <= height <= 3000):
-            raise ValueError("Use a nonnegative scroll offset, width 320â€“3000, and height 200â€“3000.")
+            raise ValueError("Use a nonnegative scroll offset, width 320–3000, and height 200–3000.")
         command = json.loads(os.environ.get("PDFMD_PREVIEW_LAUNCH", "null"))
         if not command:
             raise ValueError("Saved-output pixels require the desktop preview worker.")

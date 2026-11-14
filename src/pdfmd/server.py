@@ -15,8 +15,10 @@ import sqlite3
 import threading
 
 from fastapi import FastAPI, Header, HTTPException, Depends, Query
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from filelock import FileLock, Timeout
+from pydantic import BaseModel, ConfigDict, ValidationError
 import uvicorn
 
 from . import __version__
@@ -26,9 +28,39 @@ from .evidence import Evidence
 from .network import NETWORK_PAUSES, legacy_policy
 from .nexus import Nexus
 from .runtime import Runtime, committed_network_retry
-from .schema import ConflictResolutionSelection, Limits, Route
+from .schema import ConflictResolutionSelection, Edit, Limits, Route
 from .storage import Conflict, Store, uid
 from .tools import Dispatcher
+
+
+class LocalBody(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+
+class ImportBody(LocalBody):
+    path: str
+    scope: str
+    route: Route | None = None
+    limits: Limits | None = None
+
+
+class SettingsBody(LocalBody):
+    # These are patches: Engine._configure validates the merged Route/Limits.
+    route: dict | None = None
+    limits: dict | None = None
+
+
+class StartBody(SettingsBody):
+    key: str = ""
+    amendment: str = ""
+    scripts: bool = False
+    recover_compaction_request: str | None = None
+    retry_request: str | None = None
+
+
+class ExportBody(LocalBody):
+    version_id: str
+    destination: str
 
 
 class Engine:
@@ -204,10 +236,11 @@ class Engine:
 
     def resolve_conflict(self, job: str, body: dict):
         from .recovery import resolve
+        selection = ConflictResolutionSelection.model_validate(body, strict=True)
         with self.guard:
             if job in self.futures and not self.futures[job].done():
                 raise Conflict("Stop the task before local recovery.")
-            return resolve(self.store, job, body["request"], body["basis"], choice=body.get("choice", "preserve_and_replan"))
+            return resolve(self.store, job, selection.request, selection.basis, choice=selection.choice)
 
     def receive_observation(self, job: str, request: dict) -> dict | None:
         """Expose bounded receive facts, never native fragments or raw headers."""
@@ -262,8 +295,8 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
         return list(reversed(result))
 
     @app.post("/jobs")
-    def import_source(body: dict):
-        return engine.evidence.create_job(body["path"], body["scope"], body.get("route"), body.get("limits"))
+    def import_source(body: ImportBody):
+        return engine.evidence.create_job(**body.model_dump())
 
     @app.get("/jobs/{job}")
     def get_job(job: str):
@@ -354,9 +387,8 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
         return {"closed": True}
 
     @app.post("/jobs/{job}/start")
-    def start(job: str, body: dict):
-        return engine.start(job, body.get("key", ""), body.get("route"), body.get("limits"), body.get("amendment", ""), body.get("scripts", False),
-                            recover_compaction_request=body.get("recover_compaction_request"), retry_request=body.get("retry_request"))
+    def start(job: str, body: StartBody):
+        return engine.start(job, **body.model_dump())
 
     @app.get("/jobs/{job}/accepted-evidence-diagnosis")
     def accepted_evidence_diagnosis(job: str):
@@ -367,8 +399,8 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
         return engine.resolve_conflict(job, body.model_dump())
 
     @app.post("/jobs/{job}/settings")
-    def task_settings(job: str, body: dict):
-        return engine.configure(job, body.get("route"), body.get("limits"))
+    def task_settings(job: str, body: SettingsBody):
+        return engine.configure(job, **body.model_dump())
 
     @app.post("/jobs/{job}/cancel")
     def cancel(job: str):
@@ -402,17 +434,26 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
             raise ValueError("Idempotency-Key must be 1-128 ASCII letters, digits or ._:-")
         # Scoped by task: candidate/result/operation records use store-wide keys.
         operation = f"manual:{job}:{idempotency_key}" if idempotency_key else f"manual:{uid()}"
+        dispatcher = Dispatcher(engine.store)
+        arguments = json.dumps(body, ensure_ascii=False)
+        dispatcher.capture(job, operation, "edit_document", arguments)
+        try:
+            Edit.model_validate(body, strict=True)
+        except ValidationError as exc:
+            raise RequestValidationError([
+                {**error, "loc": ("body", *error["loc"])} for error in exc.errors()
+            ], body=body) from exc
         lock = FileLock(str(engine.store.root / f"task-{job}.lock"))
         try:
             with lock.acquire(timeout=0):
-                return Dispatcher(engine.store).execute(job, operation, "edit_document", json.dumps(body, ensure_ascii=False))
+                return dispatcher.execute(job, operation, "edit_document", arguments)
         except Timeout as exc:
             raise Conflict("Pause the agent before editing a saved document.") from exc
 
     @app.post("/jobs/{job}/export")
-    def export(job: str, body: dict):
-        result = engine.documents.export(job, body["version_id"], body["destination"])
-        return {**result, "asset_reference_check": engine.documents.reference_check(job, body["version_id"])}
+    def export(job: str, body: ExportBody):
+        result = engine.documents.export(job, body.version_id, body.destination)
+        return {**result, "asset_reference_check": engine.documents.reference_check(job, body.version_id)}
 
     return app
 

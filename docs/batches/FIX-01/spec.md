@@ -29,6 +29,11 @@ That authorizes this spec and its tickets, offline implementation and checks for
    - Anything else that can still reach request preparation or persistence: reject with a clear error instead of an unhandled `UnicodeEncodeError` crash.
 4. Unreachable producers need no code change; record why they are unreachable.
 
+**Corrected premise and open decision (2026-11-15).** Step 3's model-reply bullet assumed that a rejected reply enters automatic response repair. The [T3 trace](verification.md#stopped-rejected-native-replies-do-not-enter-automatic-repair) shows it does not: a rejected native reply settles as `response_rejected`, the task blocks, and the user resumes with explicit Continue. Automatic repair applies only to accepted replies (text-only replies, invalid handoffs). The implementer stopped as instructed. The user must choose:
+
+- **A. Keep the existing rejected-reply contract.** A reply carrying a lone surrogate is rejected with its native bytes preserved, the task blocks, and Continue recovers it. All other boundaries are implemented as planned. Automatic repair of rejected replies becomes a separately registered follow-up.
+- **B. Extend the contract in FIX-01.** Add bounded automatic repair for rejected replies, using the retained native or SSE evidence when no accepted reply exists. This changes the shared rejected-reply path (also used for malformed replies, R07) and needs its own design and checks.
+
 The implementer may choose the exact mechanism within this rule. A finding that the rule cannot be met without a material behavior change (for example to the stored record format, or to how source text is represented) is a stop-and-report point, not something to decide alone.
 
 ## Constraints
