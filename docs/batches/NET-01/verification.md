@@ -105,3 +105,16 @@ Standalone review on 2026-11-14 of `ae579d0..28cd1df` against the [spec](spec.md
 - `.venv\Scripts\python.exe -m pytest tests/engine --junitxml=build/net-01-t6b-engine-42f8c8e-20261114-113715.xml` passed all **1,879** engine cases in 32m 39s, with zero failures, errors or skips. The earlier Python run also included four desktop-helper cases. A separate `pytest -q tests/desktop/test_workspace_hashes.py` on the same revision passed all four. Its JUnit report is `build/net-01-t6b-desktop-helpers-42f8c8e-20261114-121021.xml`.
 - `pnpm build` passed TypeScript checking and built the development app. `pnpm test:desktop network-retry.spec.ts` passed both tests in 50.1 seconds. The loopback run verified recovery after a server restart and engine termination, the saved version reopening, and a byte-verified ZIP. Retained local evidence: `.local/test-runs/net-01-t6b-42f8c8e-20261114-113715/`. The build and test logs are `build/net-01-t6b-desktop-42f8c8e-20261114-113715-build.log` and `build/net-01-t6b-desktop-42f8c8e-20261114-113715.log`.
 - `.venv\Scripts\python.exe tools/docs/check_docs.py` passed. The final records were checked again after this write.
+
+## Review of the closeout at `b3eed35`
+
+Standalone review on 2026-11-14 of `28cd1df..b3eed35` (T6a–T6c). No code was changed.
+
+- **T6a.** The fix in `Runtime.prepare` carries the receipt's `not_before` only while the state revision equals the receipt's successor revision. In `runtime.py`, only `repair`, `tools` and `resume_pending` advance the revision, and `coordinate` and the context-update recovery keep it. So the first successor freezes at the receipt revision and always inherits the cooldown, whether it is a normal request or a compaction. Every later request, including a correction or the request after a compaction, freezes without it. The regression case failed before the fix and passes after it, as recorded in [T6a](#t6a--retry-cooldown-inheritance). The Q3 contract sentence matches the behavior.
+- **T6b.** `e9bbdb8` and `b3eed35` change only records, so the 1,879-case engine run and the Electron network tests at `42f8c8e` cover the code on the PR head. RV1 is closed.
+- **T6c.** [Draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) is open against `master` at `b3eed35`, which matches the local branch. It is mergeable and has no review yet. The repository runs no CI checks, so the evidence for the PR is the local record above. The description accurately states the problem, the changes, the offline evidence and the open items (T7, live route, RV2, RV3).
+- Rerun at `b3eed35`: `test_network_recovery.py`, `test_continuation.py` and `test_compaction_recovery.py` passed 111 of 111 (JUnit, 284 s).
+
+**Verdict.** No new findings. NET-01 is offline-accepted on the PR head. What remains before NET-01's Windows acceptance is [T7](tickets.md#t7--real-windows-sleep-and-wake-check). T7 has no prepared harness yet: a local scripted server, a fixture task and a capture of `suspended_interval`, the active-time totals and the exported result.
+
+**Disposition.** The user agreed on 2026-11-14. The harness, real runs and merge are planned as [T7a, T7b](tickets.md#t7--real-windows-sleep-and-wake-check) and [T8](tickets.md#t8--mark-pr-2-ready-and-merge).

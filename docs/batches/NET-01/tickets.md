@@ -14,6 +14,8 @@ On 2026-11-14 the user agreed with every finding of the [implementation review](
 
 The subsequent request to "review and implement" selected T6a and T6b under the same offline scope. On 2026-11-14 the user selected T6c and requested the push of `codex/net-01` and a draft PR against `master`. T7 awaits a user-selected Windows sleep test window. Live Nexus testing remains deferred.
 
+On 2026-11-14 the user agreed with the [closeout review](verification.md#review-of-the-closeout-at-b3eed35) recommendation: prepare T7 before merging, run the real sleep check, then mark PR #2 ready and merge it. The user then asked to create the tickets and implementation prompts. T7 is now split into T7a (harness and dry run, no sleep) and T7b (the real sleep runs), and T8 covers readiness and merge. Planning authorizes none of them. Each needs its own request: T7b also needs the user's sleep window, and T8 needs an explicit merge request.
+
 **Rules for every ticket.**
 
 - Start from `master` at `e60fa00` or a later commit that contains the earlier tickets, on a batch branch (for example `codex/net-01`), never on `master` itself.
@@ -40,9 +42,11 @@ The subsequent request to "review and implement" selected T6a and T6b under the 
 | [T6a](#t6a--carry-the-retry-cooldown-only-into-the-first-successor) | Fix NET-01-F09: only the first successor after Retry inherits the cooldown | T6 | Complete |
 | [T6b](#t6b--final-revision-suite-run) | Close NET-01-RV1: one complete Python suite run on the final revision | T6a | Complete |
 | [T6c](#t6c--draft-pull-request) | Draft PR for the offline-accepted batch | T6b, plus the user's publication request | Complete. [Draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) |
-| [T7](#t7--real-windows-sleep-and-wake-check) | Real sleep and wake against a local scripted server | T6b, plus a test window chosen by the user | Deferred |
+| [T7a](#t7a--sleep-test-harness-and-dry-run) | Local scripted-server harness for the two sleep cases, validated by a no-sleep dry run | T6b | Ready; needs an implementation request |
+| [T7b](#t7b--real-sleep-and-wake-runs) | Real Windows sleep during a server-requested wait and during an in-flight request | T7a, plus a sleep window chosen by the user | Blocked on T7a and the user |
+| [T8](#t8--mark-pr-2-ready-and-merge) | Mark PR #2 ready, merge it and record the merge | T7b, plus the user's merge request | Blocked; needs the user |
 
-**Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch. T6a edits `runtime.py`, its tests and the affected contract. T6b changes no code. A defect exposed by the run reopens T6a. T7 can run before or after T6c.
+**Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch. T6a edits `runtime.py`, its tests and the affected contract. T6b changes no code. A defect exposed by the run reopens T6a. T7 can run before or after T6c. T7a adds a harness and changes no application code. T7b changes no code. T8 changes only records and GitHub state.
 
 ## Shared interfaces
 
@@ -215,15 +219,62 @@ This ticket fixes classification and reporting only. It does not yet make a stra
 
 ## T7 — Real Windows sleep and wake check
 
-**Contribution.** Observe real Windows suspend and resume once against a local scripted server, with no provider calls. Basis: the real sleep case in [Acceptance](spec.md#acceptance).
+**Contribution.** Observe real Windows suspend and resume against a local scripted server, with no provider calls. Basis: the real sleep case in [Acceptance](spec.md#acceptance) and the [N5 wake rules](spec.md#n5--sleep-and-wake-windows). T7a prepares and validates the harness without sleep. T7b performs the two real runs.
 
-**Preconditions.** T6b has passed, and the user has chosen a time to put the laptop to sleep. Put the machine to sleep only in that window; the sleep and wake are the user's actions.
+**Result.** Passing T7b completes NET-01's Windows acceptance. A live Nexus check of route-specific behavior is a separate, later selection.
 
-**Work.** Two runs:
+**Limit.** The scripted server runs on the same machine and sleeps with it. The runs therefore test the engine's clocks, its waits, and a loopback connection across sleep. They do not test a remote network that drops or changes during sleep. That remains part of the later live selection.
 
-- sleep during a backoff wait;
-- sleep during an in-flight request whose scripted reply is delayed past the wake.
+### T7a — Sleep-test harness and dry run
 
-For each, record the `suspended_interval`, the active-time totals before and after, the wake behavior and the saved, reopened and exported result.
+**Contribution.** A repeatable driver that runs each sleep case through the real engine path and produces a report. It is validated by a dry run without sleep.
 
-**Result.** This completes NET-01's Windows acceptance. A live Nexus check of route-specific behavior is a separate, later selection.
+**Work.**
+
+1. Add a driver that the user can launch from the repository root. Choose its location under the [project layout](../../guides/PROJECT_LAYOUT.md#tests-and-fixtures), for example a module launched with `python -m tests.desktop.fixtures.sleep_wake`. If no existing location fits, add a row to the layout guide. It uses the real clocks (`SYSTEM_CLOCKS`), a real `Store`, `Runtime`, `Nexus` with httpx on a real loopback socket, and a synthetic PDF fixture. It makes no provider call and needs no credential beyond a fixed local test value.
+2. Script two cases on a local HTTP server:
+   - **Wait case:** the first response is HTTP 503 with `Retry-After` set to a configurable delay (default 120 seconds, below the 300-second default limit). The retry then succeeds and the task saves a version.
+   - **In-flight case:** the server accepts the request and holds the reply for a configurable delay (default 180 seconds) before a complete success reply. Cover the default streaming mode. A legacy non-streaming variant is optional.
+3. Each case prints when to put the machine to sleep and how long to sleep (at least 60 seconds). It waits until the scripted delay and the run finish, then writes a JSON report under a unique ignored run directory (`.local/test-runs/<run>/`, as in [artifact storage](../../ARTIFACT_STORAGE.md#test-executions)). The report includes:
+   - the revision, the tested case and its parameters;
+   - the `powercfg /a` output, which records whether the machine uses S3 sleep or Modern Standby;
+   - both clock readings and the boot marker at start and end;
+   - wall-clock span, `active_seconds` before and after, and every `suspended_interval` and `resumed_after_sleep` event;
+   - the attempts, with their failure classes, send evidence and `not_before` / `retry_schedule` records;
+   - the job's final status and stop reason;
+   - a reopened saved version and an exported ZIP verified against the source text and image.
+4. Add a `--dry-run` option that shortens the delays and expects no suspension. Add pass/fail evaluation in the report, so T7b does not depend on manual interpretation. Expected results for the real runs:
+   - one `suspended_interval` close to the sleep length;
+   - active-time growth close to wall span minus suspension, never including the suspension;
+   - no failed attempt caused by sleep;
+   - in the wait case, the retry is admitted on wake once the delay has passed, so the run has two attempts;
+   - in the in-flight case, the reply is accepted on the same attempt with no response-wait timeout;
+   - a verified export.
+
+**Checks.** Both dry-run cases pass on this machine and their reports are recorded. The existing engine and NET-01 tests are unaffected; run the NET-01 matrix once. `tools/docs/check_docs.py` passes.
+
+**Records.** A T7a section in verification with the commit, the commands, the dry-run report locations and their key values, and the `powercfg /a` result. Commit the harness and records on `codex/net-01`. Pushing updates draft PR #2, so it needs the user's request.
+
+### T7b — Real sleep and wake runs
+
+**Preconditions.** T7a has passed, and the user has said they are ready to sleep the machine now. Only the user puts the machine to sleep and wakes it.
+
+**Work.**
+
+1. Start the wait case. When the driver says so, the user sleeps the machine for at least 60 seconds and wakes it. Collect the report.
+2. Repeat with the in-flight case.
+3. Compare each report with the T7a expectations. If a result differs, record it as `NET-01-Fnn` with the report and stop for the user. A code fix is new implementation and needs its own request.
+
+**Records.** A T7b section in verification with both reports' key values, the sleep type, and the verdict for Windows acceptance. Update the [combined verdict](verification.md#combined-verdict) and CURRENT_STATE. Commit on `codex/net-01`. Pushing needs the user's request.
+
+## T8 — Mark PR #2 ready and merge
+
+**Preconditions.** T7b has passed, its records are committed and pushed, and the user has explicitly asked to merge. This ticket does not grant that request.
+
+**Work.**
+
+1. Confirm that the PR head equals the local commit with the T7b records, that the PR is mergeable, and that the description's open items are current: replace the T7 item with its result and keep live route behavior, RV2 and RV3.
+2. Mark [PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) ready and merge it with the repository's merge-commit method, as PR #1 was.
+3. After the merge, record the merge commit. Following PR #1's pattern, the record goes in the next working branch from the updated `master`. Record it in this ticket's row, the NET-01 and R04 rows in [WORK_ITEMS](../../WORK_ITEMS.md#runtime-and-engineering-inventory), and CURRENT_STATE, which then returns to next-work selection among the Stage B candidates.
+
+**Records.** The merge commit and date. NET-01's disposition becomes closed, with live route behavior, RV2 and RV3 kept as recorded residuals with their revisit conditions.
