@@ -2,14 +2,14 @@
 
 ## Focus and resume route
 
-Current focus: next-work selection after NET-01.
-Resume at: [WORK_ITEMS selection](WORK_ITEMS.md#selection-now) and the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01), which compares the Stage B and Stage D candidates and lists the Stage B decisions needed.
-Next activity: The user selects the next batch. Nothing is selected.
-Instruction basis: the user's standalone review request of 2026-11-14, recorded in the [NET-01 post-merge review](batches/NET-01/verification.md#post-merge-review-and-orientation).
+Current focus: fixing known bugs before Stage B, as the user prefers.
+Resume at: the [open-defect inventory before Stage B](verification/20261106_0112_WORK_REGISTER.md#open-defect-inventory-before-stage-b-2026-11-14), then the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01) for the Stage B decisions.
+Next activity: The user confirms the fix-batch scope (proposed: H02, H03, R01-SURROGATE, optionally NET-PM-01) and the R01-SURROGATE boundary. Nothing is selected.
+Instruction basis: the user's question of 2026-11-14 about unfixed bugs, stating a preference to fix them before Stage B.
 
 ## Return routes
 
-- Previous review: [NET-01 post-merge review](batches/NET-01/verification.md#post-merge-review-and-orientation), with documentation findings PM-01 to PM-03.
+- Previous review: [NET-01 post-merge review](batches/NET-01/verification.md#post-merge-review-and-orientation), with documentation findings NET-PM-01 to NET-PM-03.
 
 - Previous batch: [NET-01 merge](batches/NET-01/tickets.md#t8--mark-pr-2-ready-and-merge) through [PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2), with its [combined verdict](batches/NET-01/verification.md#combined-verdict) and the deferred [real sleep check](batches/NET-01/verification.md#net-01-rv4--real-sleep-not-observed).
 
