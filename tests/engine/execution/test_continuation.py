@@ -19,6 +19,10 @@ from tests.engine.execution.test_runtime import tool
 
 @pytest.fixture
 def delivery(tmp_path, route):
+    return build_delivery(tmp_path, route)
+
+
+def build_delivery(tmp_path, route):
     source = tmp_path / 'source.pdf'
     pdf = pymupdf.open()
     text = ['First page. Preserve 25 mg.', 'Second page. Do not omit this paragraph.']
