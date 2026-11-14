@@ -3,8 +3,8 @@
 ## Focus and resume route
 
 Current focus: NET-01 network-failure handling (Stage C) before the next Stage B batch.
-Resume at: [NET-01 T7b](batches/NET-01/tickets.md#t7b--real-sleep-and-wake-runs), with the [T7a dry-run evidence](batches/NET-01/verification.md#t7a--sleep-test-harness-and-dry-run) and [draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2).
-Next activity: T7b when the user chooses a sleep window on a Windows host with supported sleep. A separate request is needed to push the local T7a commits.
+Resume at: [NET-01 T7b](batches/NET-01/tickets.md#t7b--real-sleep-and-wake-runs), with the [T7b preflight](batches/NET-01/verification.md#t7b--real-sleep-and-wake-runs) and [draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2).
+Next activity: Run both T7b cases when a Windows host with supported sleep is available in the user's chosen window.
 Instruction basis: [NET-01 execution authority](batches/NET-01/tickets.md#planning-basis-and-authority) and the [adopted specification](batches/NET-01/spec.md#status-and-authority).
 
 ## Return routes

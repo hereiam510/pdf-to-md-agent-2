@@ -61,7 +61,7 @@ The [runtime contract](../../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-tr
 
 ### Combined verdict
 
-NET-01 passed offline closeout based on the [T6 integration](#t6--offline-integration), the [F09 repair checks](#t6a--retry-cooldown-inheritance) and the [final-revision check](#t6b--final-revision-suite-run). Real Windows sleep and wake remain with [T7](tickets.md#t7--real-windows-sleep-and-wake-check). Live route testing requires its own selection.
+NET-01 passed offline closeout based on the [T6 integration](#t6--offline-integration), the [F09 repair checks](#t6a--retry-cooldown-inheritance) and the [final-revision check](#t6b--final-revision-suite-run). Windows acceptance requires the [T7b real sleep and wake runs](#t7b--real-sleep-and-wake-runs). Live route testing requires its own selection.
 
 **Earlier T6 evidence.** The Python suite ran 1,879 cases and passed 1,852. The targeted rerun passed all 94 selected cases. JUnit identity comparison confirmed that those 94 cover all 27 earlier failures. The 61-case NET-01 matrix included Windows loopback refusal, jittered backoff during simulated suspension and the rejected-reply Continue path under both frozen policies.
 
@@ -140,3 +140,9 @@ An earlier wait dry run at `e123c29` had a harness-only false failure. The attem
 `.venv\Scripts\python.exe -m pytest tests/engine/execution/test_network_recovery.py` passed all 63 cases on `e123c29` in 68.94 s. The subsequent change through `beb46e7` touched only the standalone harness, which the matrix does not import. Local JUnit: `build/net-01-t7a-matrix-e123c29-20261114-224804.xml`. `.venv\Scripts\python.exe tools/docs/check_docs.py` and `git diff --check` passed for the final records.
 
 **Documentation impact.** The [T7b ticket](tickets.md#t7b--real-sleep-and-wake-runs) gives the launch and stopwatch instructions. The existing [fixture layout](../../guides/PROJECT_LAYOUT.md#tests-and-fixtures) covers the module and the [test execution policy](../../ARTIFACT_STORAGE.md#test-executions) covers the ignored run directories. The [N5 wake rules](spec.md#n5--sleep-and-wake-windows) and [Stage C acceptance](../../PHASE_PLAN.md#c-continue-through-ordinary-interruptions) still require actual sleep and wake.
+
+## T7b — Real sleep and wake runs
+
+On 2026-11-14, the clean `codex/net-01` checkout at `b6a790e` had the same harness, delivery fixture and application code as the T7a tested revision `beb46e7`. The preflight command `.venv\Scripts\python.exe -m tests.desktop.fixtures.sleep_wake wait --dry-run` passed. It honored the 2 s server cooldown, recorded two attempts (`transient_status` then accepted), and reopened the saved version and verified its export. Wall span was 3.193 s and active time grew from 0 to 3.177 s. The clocks detected zero suspension and wake events, and the boot markers matched. Local report: `.local/test-runs/net-01-wait-20261114T153945Z-9ne77u7w/report.json`.
+
+**Windows acceptance is pending.** Both the direct `powercfg /a` check and the command captured in the dry-run report exited 0 and reported S3 and S0 Low Power Idle (Modern Standby) unavailable because the firmware does not support them. The real server-wait and in-flight runs were not started. The preflight exposed no application defect. Resume with the [T7b commands](tickets.md#t7b--real-sleep-and-wake-runs) on a Windows host that supports sleep.

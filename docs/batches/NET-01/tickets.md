@@ -18,6 +18,8 @@ On 2026-11-14 the user agreed with the [closeout review](verification.md#review-
 
 The user subsequently authorized T7a only, including the harness, no-sleep dry runs, records and local commits. PR #2 publication and real sleep require separate requests.
 
+The user authorized the five T7a commits to be pushed to draft PR #2, then authorized T7b preflight, both sleep runs and local records. The user performs the sleep and wake actions. Publication of the T7b records and T8 require separate requests.
+
 **Rules for every ticket.**
 
 - Start from `master` at `e60fa00` or a later commit that contains the earlier tickets, on a batch branch (for example `codex/net-01`), never on `master` itself.
@@ -45,7 +47,7 @@ The user subsequently authorized T7a only, including the harness, no-sleep dry r
 | [T6b](#t6b--final-revision-suite-run) | Close NET-01-RV1: one complete Python suite run on the final revision | T6a | Complete |
 | [T6c](#t6c--draft-pull-request) | Draft PR for the offline-accepted batch | T6b, plus the user's publication request | Complete. [Draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) |
 | [T7a](#t7a--sleep-test-harness-and-dry-run) | Local scripted-server harness for the two sleep cases, validated by a no-sleep dry run | T6b | Complete ([dry-run evidence](verification.md#t7a--sleep-test-harness-and-dry-run)) |
-| [T7b](#t7b--real-sleep-and-wake-runs) | Real Windows sleep during a server-requested wait and during an in-flight request | T7a, plus a sleep window chosen by the user | Ready; needs the user's sleep window |
+| [T7b](#t7b--real-sleep-and-wake-runs) | Real Windows sleep during a server-requested wait and during an in-flight request | T7a, plus a sleep window chosen by the user | Pending a supported Windows host ([preflight](verification.md#t7b--real-sleep-and-wake-runs)) |
 | [T8](#t8--mark-pr-2-ready-and-merge) | Mark PR #2 ready, merge it and record the merge | T7b, plus the user's merge request | Blocked; needs the user |
 
 **Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch. T6a edits `runtime.py`, its tests and the affected contract. T6b changes no code. A defect exposed by the run reopens T6a. T7 can run before or after T6c. T7a adds a harness and changes no application code. T7b changes no code. T8 changes only records and GitHub state.
