@@ -2,13 +2,14 @@
 
 ## Focus and resume route
 
-Current focus: fixing known bugs before Stage B, as the user prefers.
-Resume at: the [open-defect inventory before Stage B](verification/20261106_0112_WORK_REGISTER.md#open-defect-inventory-before-stage-b-2026-11-14), then the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01) for the Stage B decisions.
-Next activity: The user confirms the fix-batch scope (proposed: H02, H03, R01-SURROGATE, optionally NET-PM-01) and the R01-SURROGATE boundary. Nothing is selected.
-Instruction basis: the user's question of 2026-11-14 about unfixed bugs, stating a preference to fix them before Stage B.
+Current focus: [FIX-01](batches/FIX-01/spec.md), fixing H02, H03, R01-SURROGATE and NET-PM-01 before Stage B.
+Resume at: [FIX-01 tickets](batches/FIX-01/tickets.md#sequence-and-dependencies) and [verification](batches/FIX-01/verification.md).
+Next activity: Delegated implementation by Codex (`gpt-6.1-sol`, `xhigh`), then main-agent review, whole-batch checks and records.
+Instruction basis: the user's 2026-11-15 request "yes, fix all four / create tickets first, then delegate to gpt-6.1-sol-extra-high to implement", recorded in the [FIX-01 spec](batches/FIX-01/spec.md#selected-outcome-and-authority).
 
 ## Return routes
 
+- Previous inventory: [open-defect inventory before Stage B](verification/20261106_0112_WORK_REGISTER.md#open-defect-inventory-before-stage-b-2026-11-14) and the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01) for the Stage B decisions.
 - Previous review: [NET-01 post-merge review](batches/NET-01/verification.md#post-merge-review-and-orientation), with documentation findings NET-PM-01 to NET-PM-03.
 
 - Previous batch: [NET-01 merge](batches/NET-01/tickets.md#t8--mark-pr-2-ready-and-merge) through [PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2), with its [combined verdict](batches/NET-01/verification.md#combined-verdict) and the deferred [real sleep check](batches/NET-01/verification.md#net-01-rv4--real-sleep-not-observed).

@@ -21,6 +21,7 @@ Read complete applicable sections, including exceptions and dependent rules. Hea
 
 | Batch | Scope and planned acceptance | Execution owner | Actual evidence and verdict |
 | --- | --- | --- | --- |
+| FIX-01 | [spec.md](batches/FIX-01/spec.md) | [tickets.md](batches/FIX-01/tickets.md) | [verification.md](batches/FIX-01/verification.md) |
 | NET-01 | [spec.md](batches/NET-01/spec.md) | [tickets.md](batches/NET-01/tickets.md) | [verification.md](batches/NET-01/verification.md) |
 | R01CAL-A03-DELIVERY-01 | [spec.md](batches/R01CAL-A03-DELIVERY-01/spec.md) | [tickets.md](batches/R01CAL-A03-DELIVERY-01/tickets.md) | [verification.md](batches/R01CAL-A03-DELIVERY-01/verification.md) |
 | R01CAL-A03 | [spec.md](batches/R01CAL-A03/spec.md) | [tickets.md](batches/R01CAL-A03/tickets.md) | [verification.md](batches/R01CAL-A03/verification.md) |
