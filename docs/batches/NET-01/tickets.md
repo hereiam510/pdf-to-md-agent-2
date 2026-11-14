@@ -20,6 +20,8 @@ The user subsequently authorized T7a only, including the harness, no-sleep dry r
 
 The user authorized the five T7a commits to be pushed to draft PR #2, then authorized T7b preflight, both sleep runs and local records. The user performs the sleep and wake actions. Publication of the T7b records and T8 require separate requests.
 
+The [T7b preflight](verification.md#t7b--real-sleep-and-wake-runs) found that this host supports no sleep state: S1–S3, hibernation and Modern Standby are all unavailable. On 2026-11-14 the user decided to "skip T7b". T7b is deferred, not passed. The real-sleep acceptance case stays unmet and is recorded as residual [NET-01-RV4](verification.md#net-01-rv4--real-sleep-not-observed). The harness stays ready for a later run. T8 no longer waits for T7b, but it still needs an explicit merge request.
+
 **Rules for every ticket.**
 
 - Start from `master` at `e60fa00` or a later commit that contains the earlier tickets, on a batch branch (for example `codex/net-01`), never on `master` itself.
@@ -47,8 +49,8 @@ The user authorized the five T7a commits to be pushed to draft PR #2, then autho
 | [T6b](#t6b--final-revision-suite-run) | Close NET-01-RV1: one complete Python suite run on the final revision | T6a | Complete |
 | [T6c](#t6c--draft-pull-request) | Draft PR for the offline-accepted batch | T6b, plus the user's publication request | Complete. [Draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) |
 | [T7a](#t7a--sleep-test-harness-and-dry-run) | Local scripted-server harness for the two sleep cases, validated by a no-sleep dry run | T6b | Complete ([dry-run evidence](verification.md#t7a--sleep-test-harness-and-dry-run)) |
-| [T7b](#t7b--real-sleep-and-wake-runs) | Real Windows sleep during a server-requested wait and during an in-flight request | T7a, plus a sleep window chosen by the user | Pending a supported Windows host ([preflight](verification.md#t7b--real-sleep-and-wake-runs)) |
-| [T8](#t8--mark-pr-2-ready-and-merge) | Mark PR #2 ready, merge it and record the merge | T7b, plus the user's merge request | Blocked; needs the user |
+| [T7b](#t7b--real-sleep-and-wake-runs) | Real Windows sleep during a server-requested wait and during an in-flight request | T7a, plus a sleep window chosen by the user | Deferred by the user; this host cannot sleep ([NET-01-RV4](verification.md#net-01-rv4--real-sleep-not-observed)) |
+| [T8](#t8--mark-pr-2-ready-and-merge) | Mark PR #2 ready, merge it and record the merge | T7a with T7b deferred, plus the user's merge request | Ready; needs the user's merge request |
 
 **Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch. T6a edits `runtime.py`, its tests and the affected contract. T6b changes no code. A defect exposed by the run reopens T6a. T7 can run before or after T6c. T7a adds a harness and changes no application code. T7b changes no code. T8 changes only records and GitHub state.
 
@@ -225,7 +227,7 @@ This ticket fixes classification and reporting only. It does not yet make a stra
 
 **Contribution.** Observe real Windows suspend and resume against a local scripted server, with no provider calls. Basis: the real sleep case in [Acceptance](spec.md#acceptance) and the [N5 wake rules](spec.md#n5--sleep-and-wake-windows). T7a prepares and validates the harness without sleep. T7b performs the two real runs.
 
-**Result.** Passing T7b completes NET-01's Windows acceptance. A live Nexus check of route-specific behavior is a separate, later selection.
+**Result.** Passing T7b completes NET-01's Windows acceptance. A live Nexus check of route-specific behavior is a separate, later selection. The user deferred T7b on 2026-11-14 because this host cannot sleep; see [NET-01-RV4](verification.md#net-01-rv4--real-sleep-not-observed).
 
 **Limit.** The scripted server runs on the same machine and sleeps with it. The runs therefore test the engine's clocks, its waits, and a loopback connection across sleep. They do not test a remote network that drops or changes during sleep. That remains part of the later live selection.
 
@@ -282,12 +284,12 @@ Wait for each sleep prompt. Time the sleep on a separate device, follow the prin
 
 ## T8 — Mark PR #2 ready and merge
 
-**Preconditions.** T7b has passed, its records are committed and pushed, and the user has explicitly asked to merge. This ticket does not grant that request.
+**Preconditions.** T7b has passed or the user has deferred it (deferred on 2026-11-14), the T7 records are committed and pushed, and the user has explicitly asked to merge. This ticket does not grant that request.
 
 **Work.**
 
-1. Confirm that the PR head equals the local commit with the T7b records, that the PR is mergeable, and that the description's open items are current: replace the T7 item with its result and keep live route behavior, RV2 and RV3.
+1. Confirm that the PR head equals the local commit with the T7 records, that the PR is mergeable, and that the description's open items are current: replace the T7 item with its result (harness ready, real sleep deferred as RV4) and keep live route behavior, RV2 and RV3.
 2. Mark [PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) ready and merge it with the repository's merge-commit method, as PR #1 was.
 3. After the merge, record the merge commit. Following PR #1's pattern, the record goes in the next working branch from the updated `master`. Record it in this ticket's row, the NET-01 and R04 rows in [WORK_ITEMS](../../WORK_ITEMS.md#runtime-and-engineering-inventory), and CURRENT_STATE, which then returns to next-work selection among the Stage B candidates.
 
-**Records.** The merge commit and date. NET-01's disposition becomes closed, with live route behavior, RV2 and RV3 kept as recorded residuals with their revisit conditions.
+**Records.** The merge commit and date. NET-01's disposition becomes closed, with live route behavior, RV2, RV3 and RV4 kept as recorded residuals with their revisit conditions.

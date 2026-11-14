@@ -76,7 +76,7 @@ The design question is which outcomes can be recovered from durable evidence, wh
 
 **Completion conditions for the selected family:** local fault/restart checks in affected protocols demonstrate reuse of completed work, continuation of eligible unfinished work, no duplicate writes/publication, preserved original requests/receipts/consumption, and effective amendments. Known safe recovery should require less manual action; unresolved side effects remain honestly blocked with useful work accessible. The app must reach a correct saved/reopened/exported result after the exercised interruption, not merely resume requests. Automatic retry, if selected, is finite, shares existing budgets, respects Stop and cannot multiply independently across SDK/proxy/app layers. Live route behavior remains separately scoped.
 
-The selected network family follows the [NET-01 acceptance cases](batches/NET-01/spec.md#acceptance), including real Windows wake in a user-selected test window. Unknown local effects and separately authorized live route behavior remain outside that family's offline coverage.
+The selected network family follows the [NET-01 acceptance cases](batches/NET-01/spec.md#acceptance), including real Windows wake in a user-selected test window. The test host supports no sleep state, so on 2026-11-14 the user deferred the real wake check. It remains an unmet case, recorded as [NET-01-RV4](batches/NET-01/verification.md#net-01-rv4--real-sleep-not-observed). Unknown local effects and separately authorized live route behavior remain outside that family's offline coverage.
 
 ## D. Make delivery usable outside the development checkout
 

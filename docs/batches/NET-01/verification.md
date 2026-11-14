@@ -61,7 +61,7 @@ The [runtime contract](../../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-tr
 
 ### Combined verdict
 
-NET-01 passed offline closeout based on the [T6 integration](#t6--offline-integration), the [F09 repair checks](#t6a--retry-cooldown-inheritance) and the [final-revision check](#t6b--final-revision-suite-run). Windows acceptance requires the [T7b real sleep and wake runs](#t7b--real-sleep-and-wake-runs). Live route testing requires its own selection.
+NET-01 passed offline closeout based on the [T6 integration](#t6--offline-integration), the [F09 repair checks](#t6a--retry-cooldown-inheritance) and the [final-revision check](#t6b--final-revision-suite-run). Windows acceptance requires the [T7b real sleep and wake runs](#t7b--real-sleep-and-wake-runs). The user deferred them on 2026-11-14, so real-sleep acceptance is unmet and recorded as [NET-01-RV4](#net-01-rv4--real-sleep-not-observed). Live route testing requires its own selection.
 
 **Earlier T6 evidence.** The Python suite ran 1,879 cases and passed 1,852. The targeted rerun passed all 94 selected cases. JUnit identity comparison confirmed that those 94 cover all 27 earlier failures. The 61-case NET-01 matrix included Windows loopback refusal, jittered backoff during simulated suspension and the rejected-reply Continue path under both frozen policies.
 
@@ -146,3 +146,17 @@ An earlier wait dry run at `e123c29` had a harness-only false failure. The attem
 On 2026-11-14, the clean `codex/net-01` checkout at `b6a790e` had the same harness, delivery fixture and application code as the T7a tested revision `beb46e7`. The preflight command `.venv\Scripts\python.exe -m tests.desktop.fixtures.sleep_wake wait --dry-run` passed. It honored the 2 s server cooldown, recorded two attempts (`transient_status` then accepted), and reopened the saved version and verified its export. Wall span was 3.193 s and active time grew from 0 to 3.177 s. The clocks detected zero suspension and wake events, and the boot markers matched. Local report: `.local/test-runs/net-01-wait-20261114T153945Z-9ne77u7w/report.json`.
 
 **Windows acceptance is pending.** Both the direct `powercfg /a` check and the command captured in the dry-run report exited 0 and reported S3 and S0 Low Power Idle (Modern Standby) unavailable because the firmware does not support them. The real server-wait and in-flight runs were not started. The preflight exposed no application defect. Resume with the [T7b commands](tickets.md#t7b--real-sleep-and-wake-runs) on a Windows host that supports sleep.
+
+**User decision.** On 2026-11-14 the user decided to "skip T7b". Neither real run took place, so the T7b result is deferred, not passed.
+
+### NET-01-RV4 — Real sleep not observed
+
+**Acceptance gap, deferred by the user.** The spec's [real Windows sleep and wake](spec.md#acceptance) case is unmet.
+
+What is covered: A17 and A19 passed with a controllable clock pair, covering suspension during a backoff wait, a tool, an in-flight streaming request and a legacy request. The T7a and preflight dry runs passed on the real Windows clocks and boot marker.
+
+What remains unobserved: whether the real clocks report an actual suspension as the rules expect, and whether the event loop, the httpx loopback connection and the cooldown wait behave correctly across a real suspend and resume.
+
+Impact: this host supports no sleep state, so runs on it cannot be affected. Any Windows host that can sleep is untested.
+
+**Revisit** when the app is used on a Windows host whose `powercfg /a` lists S3 or Modern Standby: run the [T7b commands](tickets.md#t7b--real-sleep-and-wake-runs) there. Also revisit if a sleep-related failure is reported. No code change is scheduled.
