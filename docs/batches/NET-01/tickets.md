@@ -16,6 +16,8 @@ The subsequent request to "review and implement" selected T6a and T6b under the 
 
 On 2026-11-14 the user agreed with the [closeout review](verification.md#review-of-the-closeout-at-b3eed35) recommendation: prepare T7 before merging, run the real sleep check, then mark PR #2 ready and merge it. The user then asked to create the tickets and implementation prompts. T7 is now split into T7a (harness and dry run, no sleep) and T7b (the real sleep runs), and T8 covers readiness and merge. Planning authorizes none of them. Each needs its own request: T7b also needs the user's sleep window, and T8 needs an explicit merge request.
 
+The user subsequently authorized T7a only, including the harness, no-sleep dry runs, records and local commits. PR #2 publication and real sleep require separate requests.
+
 **Rules for every ticket.**
 
 - Start from `master` at `e60fa00` or a later commit that contains the earlier tickets, on a batch branch (for example `codex/net-01`), never on `master` itself.
@@ -42,8 +44,8 @@ On 2026-11-14 the user agreed with the [closeout review](verification.md#review-
 | [T6a](#t6a--carry-the-retry-cooldown-only-into-the-first-successor) | Fix NET-01-F09: only the first successor after Retry inherits the cooldown | T6 | Complete |
 | [T6b](#t6b--final-revision-suite-run) | Close NET-01-RV1: one complete Python suite run on the final revision | T6a | Complete |
 | [T6c](#t6c--draft-pull-request) | Draft PR for the offline-accepted batch | T6b, plus the user's publication request | Complete. [Draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) |
-| [T7a](#t7a--sleep-test-harness-and-dry-run) | Local scripted-server harness for the two sleep cases, validated by a no-sleep dry run | T6b | Ready; needs an implementation request |
-| [T7b](#t7b--real-sleep-and-wake-runs) | Real Windows sleep during a server-requested wait and during an in-flight request | T7a, plus a sleep window chosen by the user | Blocked on T7a and the user |
+| [T7a](#t7a--sleep-test-harness-and-dry-run) | Local scripted-server harness for the two sleep cases, validated by a no-sleep dry run | T6b | Complete ([dry-run evidence](verification.md#t7a--sleep-test-harness-and-dry-run)) |
+| [T7b](#t7b--real-sleep-and-wake-runs) | Real Windows sleep during a server-requested wait and during an in-flight request | T7a, plus a sleep window chosen by the user | Ready; needs the user's sleep window |
 | [T8](#t8--mark-pr-2-ready-and-merge) | Mark PR #2 ready, merge it and record the merge | T7b, plus the user's merge request | Blocked; needs the user |
 
 **Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch. T6a edits `runtime.py`, its tests and the affected contract. T6b changes no code. A defect exposed by the run reopens T6a. T7 can run before or after T6c. T7a adds a harness and changes no application code. T7b changes no code. T8 changes only records and GitHub state.
@@ -258,6 +260,15 @@ This ticket fixes classification and reporting only. It does not yet make a stra
 ### T7b — Real sleep and wake runs
 
 **Preconditions.** T7a has passed, and the user has said they are ready to sleep the machine now. Only the user puts the machine to sleep and wakes it.
+
+Use a Windows host with S3 or Modern Standby available in `powercfg /a`. From the repository root, run one case at a time in an interactive terminal:
+
+```powershell
+.venv\Scripts\python.exe -m tests.desktop.fixtures.sleep_wake wait
+.venv\Scripts\python.exe -m tests.desktop.fixtures.sleep_wake in-flight
+```
+
+Wait for each sleep prompt. Time the sleep on a separate device, follow the printed minimum, and enter the measured seconds when asked after the run. In the wait case the minimum covers the remaining server cooldown. Leave the engine and loopback server running across sleep and wake.
 
 **Work.**
 

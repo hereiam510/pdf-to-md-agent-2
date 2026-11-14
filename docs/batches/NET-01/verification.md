@@ -118,3 +118,25 @@ Standalone review on 2026-11-14 of `28cd1df..b3eed35` (T6a–T6c). No code was c
 **Verdict.** No new findings. NET-01 is offline-accepted on the PR head. What remains before NET-01's Windows acceptance is [T7](tickets.md#t7--real-windows-sleep-and-wake-check). T7 has no prepared harness yet: a local scripted server, a fixture task and a capture of `suspended_interval`, the active-time totals and the exported result.
 
 **Disposition.** The user agreed on 2026-11-14. The harness, real runs and merge are planned as [T7a, T7b](tickets.md#t7--real-windows-sleep-and-wake-check) and [T8](tickets.md#t8--mark-pr-2-ready-and-merge).
+
+## T7a — Sleep-test harness and dry run
+
+The [driver](../../../tests/desktop/fixtures/sleep_wake.py) ran both cases on clean commit `beb46e7` with Windows 10 and Python 3.12.14. It uses the Windows clock pair, a real loopback HTTP socket, streamed Chat Completions fixtures and a fresh synthetic task store per case. The success reply saves a new version from the seeded source content. The harness reopens and exports that new version and verifies the two source pages, rendered image and every ZIP member. The scripted report references the seeded version, and the harness compares its document content with the new head before verifying export.
+
+```powershell
+.venv\Scripts\python.exe -m tests.desktop.fixtures.sleep_wake wait --dry-run
+.venv\Scripts\python.exe -m tests.desktop.fixtures.sleep_wake in-flight --dry-run
+```
+
+| Case | Observed timings and result | Local report |
+| --- | --- | --- |
+| Wait | The 2 s HTTP 503 cooldown was satisfied on the monotonic deadline. Two attempts on the same frozen request, with `transient_status` then accepted. Wall span 3.325 s, active time 0 → 3.311 s. Export verified. | `.local/test-runs/net-01-wait-20261114T144904Z-a7jwkyty/report.json` |
+| In flight | One accepted streaming attempt. Server held the reply for 1.003 s and engine receive took 1.241 s with `stop_cause=complete`. Wall span 2.278 s, active time 0 → 2.266 s. Export verified. | `.local/test-runs/net-01-in-flight-20261114T144913Z-7dm4qj6q/report.json` |
+
+Both reports passed, recorded zero suspension intervals and wake events, and had matching start and end boot markers. Both captured the full `powercfg /a` output with exit code 0. This host's firmware reports both **S3 and S0 Low Power Idle (Modern Standby) unavailable**. The T7b verdict remains pending on a host with supported sleep, in the user's chosen window.
+
+An earlier wait dry run at `e123c29` had a harness-only false failure. The attempt's wall timestamp appeared 0.98 ms before `due_wall`, which is a display estimate. The verdict now uses the monotonic deadline and the real wait poll. The earlier report is retained at `.local/test-runs/net-01-wait-20261114T144808Z-yxn50jgb/report.json`. An in-memory check of the final verdict logic accepted synthetic sleep timing and rejected a mismatched stopwatch duration, a late wake admission and sleep charged to response waiting. It exercised report evaluation only.
+
+`.venv\Scripts\python.exe -m pytest tests/engine/execution/test_network_recovery.py` passed all 63 cases on `e123c29` in 68.94 s. The subsequent change through `beb46e7` touched only the standalone harness, which the matrix does not import. Local JUnit: `build/net-01-t7a-matrix-e123c29-20261114-224804.xml`. `.venv\Scripts\python.exe tools/docs/check_docs.py` and `git diff --check` passed for the final records.
+
+**Documentation impact.** The [T7b ticket](tickets.md#t7b--real-sleep-and-wake-runs) gives the launch and stopwatch instructions. The existing [fixture layout](../../guides/PROJECT_LAYOUT.md#tests-and-fixtures) covers the module and the [test execution policy](../../ARTIFACT_STORAGE.md#test-executions) covers the ignored run directories. The [N5 wake rules](spec.md#n5--sleep-and-wake-windows) and [Stage C acceptance](../../PHASE_PLAN.md#c-continue-through-ordinary-interruptions) still require actual sleep and wake.
