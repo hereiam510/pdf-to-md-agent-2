@@ -177,17 +177,20 @@ def evaluate(report):
         schedules = report["retry_schedule"]
         schedule = schedules[0]["data"] if len(schedules) == 1 else {}
         cooldown = accepted.get("not_before", {})
-        due = cooldown.get("due_wall")
+        due = cooldown.get("due_monotonic")
+        gate = report["cooldown_at_wait"]
         checks["server_cooldown_honored"] = bool(due is not None and prompt and len(attempts) == len(requests) == 2
             and attempts[0].get("http_status") == 503 and attempts[0].get("failure_class") == "transient_status"
             and attempts[0].get("send_evidence") == "response_observed" and schedule.get("source") == "retry_after"
             and schedule.get("delay_seconds") == report["parameters"]["delay_seconds"]
-            and schedule.get("failed_attempt") == attempts[0]["id"] and schedule.get("due_wall") == due
-            and attempts[0]["request"] == accepted["request"] and prompt["wall"] < due <= accepted["started"]
+            and schedule.get("failed_attempt") == attempts[0]["id"] and schedule.get("due_monotonic") == due
+            and attempts[0]["request"] == accepted["request"] and gate.get("not_before") == cooldown
+            and gate["first_poll"]["monotonic"] < due <= gate["last_poll_return"]["monotonic"]
             and requests[0]["payload_sha256"] == requests[1]["payload_sha256"])
         if not dry_run:
-            checks["retry_admitted_on_wake"] = bool(due is not None and wake is not None and prompt
-                and prompt["wall"] - TIMING_TOLERANCE <= sleep_start < due <= wake
+            due_wall = cooldown.get("due_wall")
+            checks["retry_admitted_on_wake"] = bool(checks["server_cooldown_honored"] and wake is not None
+                and prompt["wall"] - TIMING_TOLERANCE <= sleep_start < due_wall <= wake + 0.1
                 and 0 <= accepted["started"] - wake <= WAKE_ADMISSION_TOLERANCE)
     else:
         released = requests[0].get("reply_released_wall") if requests else None
@@ -220,16 +223,18 @@ def run_case(case, delay, dry_run, directory, revision, powercfg):
         gate = {}
 
         def retry_sleep(seconds):
-            if case == "wait" and not gate:
+            if not gate:
                 request = store.records("request", job_id)[0]
                 gate.update(not_before=request["not_before"], retry_schedule=request["retry_schedule"])
+                gate["first_poll"] = sample(SYSTEM_CLOCKS.boot_identity)
                 remaining = gate["not_before"]["due_monotonic"] - SYSTEM_CLOCKS.monotonic()
                 script.prompt("HTTP 503 Retry-After is recorded and the engine is waiting.",
                               max(MIN_SLEEP, ceil(remaining) + TIMING_TOLERANCE))
             time.sleep(seconds)
+            gate["last_poll_return"] = sample(SYSTEM_CLOCKS.boot_identity)
 
         runtime = Runtime(store, Nexus(store, lambda _: "fixture-only", clocks=SYSTEM_CLOCKS,
-                                       retry_sleep=retry_sleep))
+                                       retry_sleep=retry_sleep if case == "wait" else None))
         server_thread = Thread(target=script.serve_forever, daemon=True)
         before = store.get("job", job_id)["active_seconds"]
         errors = []
