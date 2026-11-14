@@ -37,12 +37,12 @@ The subsequent request to "review and implement" selects T6a and T6b under the s
 | [T4](#t4--pauses-and-the-retry-action) | Pause reasons, the `retry_request` transition and cooldown carry-over | T3 | Implemented |
 | [T5](#t5--desktop-activity-recovery-and-settings) | Desktop activity, Retry or Continue, settings, and forwarding `retry_request` through the Electron bridge | T4 | Implemented |
 | [T6](#t6--integration-and-offline-acceptance) | Whole-batch offline acceptance, local-server desktop check, contract consolidation | T1–T5 | Complete |
-| [T6a](#t6a--carry-the-retry-cooldown-only-into-the-first-successor) | Fix NET-01-F09: only the first successor after Retry inherits the cooldown | T6 | In progress |
-| [T6b](#t6b--final-revision-suite-run) | Close NET-01-RV1: one complete Python suite run on the final revision | T6a | Blocked on T6a |
-| [T6c](#t6c--draft-pull-request) | Draft PR for the offline-accepted batch | T6b, plus the user's publication request | Blocked; needs the user |
+| [T6a](#t6a--carry-the-retry-cooldown-only-into-the-first-successor) | Fix NET-01-F09: only the first successor after Retry inherits the cooldown | T6 | Complete |
+| [T6b](#t6b--final-revision-suite-run) | Close NET-01-RV1: one complete Python suite run on the final revision | T6a | Complete |
+| [T6c](#t6c--draft-pull-request) | Draft PR for the offline-accepted batch | T6b, plus the user's publication request | Awaiting publication request |
 | [T7](#t7--real-windows-sleep-and-wake-check) | Real sleep and wake against a local scripted server | T6b, plus a test window chosen by the user | Deferred |
 
-**Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch. T6a edits only `runtime.py` and its tests. T6b changes no code; it reopens T6a if the run exposes a defect. T7 can run before or after T6c.
+**Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch. T6a edits `runtime.py`, its tests and the affected contract. T6b changes no code. A defect exposed by the run reopens T6a. T7 can run before or after T6c.
 
 ## Shared interfaces
 
@@ -169,7 +169,7 @@ This ticket fixes classification and reporting only. It does not yet make a stra
 
 ## T6a — Carry the retry cooldown only into the first successor
 
-**Contribution.** Fix [NET-01-F09](verification.md#review-of-the-implementation-at-28cd1df). The [Q3 contract](../../design/RUNTIME_AND_DELIVERY.md#q3-execution-recovery-and-delivery) already says the Retry successor's first admission honors the cooldown. Today, `prepare` copies the receipt's `not_before` into every request it freezes while `continuation_feedback` stays set. `Runtime.repair` keeps that feedback, so a corrected request after Retry inherits the cooldown again. Basis: [N4](spec.md#n4--pause-and-the-retry-action) and the N2 restart rules.
+**Contribution.** Fix [NET-01-F09](verification.md#review-of-the-implementation-at-28cd1df). The first successor after Retry honors the cooldown under the [Q3 contract](../../design/RUNTIME_AND_DELIVERY.md#q3-execution-recovery-and-delivery), [N4](spec.md#n4--pause-and-the-retry-action) and the N2 restart rules.
 
 **Work.**
 
@@ -184,7 +184,7 @@ This ticket fixes classification and reporting only. It does not yet make a stra
 - The first successor still respects an unexpired cooldown. A15 and A15b still pass, as does the rest of the 61-case NET-01 matrix.
 - Existing compaction-recovery and continuation tests still pass.
 
-**Records.** A T6a section in verification with the commit, commands and counts. Mark F09 as fixed there; its original description stays as written.
+**Evidence.** [T6a repair and regression results](verification.md#t6a--retry-cooldown-inheritance).
 
 ## T6b — Final-revision suite run
 
@@ -196,7 +196,7 @@ This ticket fixes classification and reporting only. It does not yet make a stra
 2. Run the desktop [network-retry spec](../../../tests/desktop/specs/network-retry.spec.ts) once on the same revision, because T6a changes the Retry successor path. Run typecheck and `tools/docs/check_docs.py`.
 3. If a case fails, record it as `NET-01-Fnn` and handle it under the defect rule. A fix in engine code reopens T6a's checks, and the suite run is repeated on the new revision.
 
-**Records.** A T6b section in verification. It names the tested commit and gives the pass, fail and skip counts and the JUnit location under `build/`. Update the [combined verdict](verification.md#combined-verdict) to cite this run in place of the earlier partial runs, keeping the earlier counts as history.
+**Evidence.** [T6b suite run, tested revision and reports](verification.md#t6b--final-revision-suite-run) and the [combined verdict](verification.md#combined-verdict).
 
 **Checks.** All engine tests pass on one named commit; the network-retry spec, typecheck and the docs check pass on the same commit.
 

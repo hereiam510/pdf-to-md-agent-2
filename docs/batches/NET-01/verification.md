@@ -61,11 +61,13 @@ The [runtime contract](../../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-tr
 
 ### Combined verdict
 
-T6 passed on the combined offline evidence. The complete Python suite ran 1,879 cases and passed 1,852. The targeted rerun passed all 94 selected cases. JUnit identity comparison confirmed that those 94 cover all 27 earlier failures. The final 61-case NET-01 matrix included the separately exercised Windows loopback refusal, jittered backoff during simulated suspension and the rejected-reply Continue path under both frozen policies.
+NET-01 passed offline closeout based on the [T6 integration](#t6--offline-integration), the [F09 repair checks](#t6a--retry-cooldown-inheritance) and the [final-revision check](#t6b--final-revision-suite-run). Real Windows sleep and wake remain with [T7](tickets.md#t7--real-windows-sleep-and-wake-check). Live route testing requires its own selection.
 
-The complete desktop run passed 113 of 118 cases. All five earlier failures passed their focused reruns covering diagnostics, streaming and task settings. The final development build also passed the NET-01 desktop wake/cooldown and loopback termination/export tests. The full desktop run used a 240-second Playwright timeout after earlier fixture timeouts. The application's deadlines stayed the same.
+**Earlier T6 evidence.** The Python suite ran 1,879 cases and passed 1,852. The targeted rerun passed all 94 selected cases. JUnit identity comparison confirmed that those 94 cover all 27 earlier failures. The 61-case NET-01 matrix included Windows loopback refusal, jittered backoff during simulated suspension and the rejected-reply Continue path under both frozen policies.
 
-TypeScript checking, the development build, the frozen-engine startup/TLS/XMP smoke checks and repository documentation checks passed. The local logs under `build/net-01-*.log` retain the whole-run results and reruns. Suite coverage comes from the full runs plus targeted checks of corrections, with no single all-green whole-suite run on the final revision. Real Windows sleep and wake remain with [T7](tickets.md#t7--real-windows-sleep-and-wake-check). Live route testing requires its own selection.
+The earlier complete desktop run passed 113 of 118 cases. All five earlier failures passed their focused reruns covering diagnostics, streaming and task settings. The development build also passed the NET-01 desktop wake/cooldown and loopback termination/export tests. The full desktop run used a 240-second Playwright timeout after earlier fixture timeouts. The application's deadlines stayed the same.
+
+TypeScript checking, the development build, the frozen-engine startup/TLS/XMP smoke checks and repository documentation checks passed at T6. The local logs under `build/net-01-*.log` retain the whole-run results and reruns.
 
 ## Review of the implementation at `28cd1df`
 
@@ -84,4 +86,22 @@ Standalone review on 2026-11-14 of `ae579d0..28cd1df` against the [spec](spec.md
 
 **Next step.** Run the full suite at the final revision (RV1) and record the result. Fix F09 within NET-01 scope with its check. Then prepare the PR. [T7](tickets.md#t7--real-windows-sleep-and-wake-check) still needs a user-chosen window. RV2 and RV3 stay recorded here without a scheduled remedy.
 
-**Disposition.** On 2026-11-14 the user agreed with all four findings. F09 and RV1 are planned as [T6a](tickets.md#t6a--carry-the-retry-cooldown-only-into-the-first-successor) and [T6b](tickets.md#t6b--final-revision-suite-run), and the PR as [T6c](tickets.md#t6c--draft-pull-request). RV2 and RV3 keep the revisit conditions above.
+**Disposition.** On 2026-11-14 the user agreed with all four findings. See [T6a for F09](#t6a--retry-cooldown-inheritance), [T6b for RV1](#t6b--final-revision-suite-run) and [T6c](tickets.md#t6c--draft-pull-request) for publication. RV2 and RV3 keep the revisit conditions above.
+
+## T6a — Retry cooldown inheritance
+
+**NET-01-F09 fixed at `42f8c8e`.** The continuation receipt already stores the first successor's revision. `Runtime.prepare` carries over its `not_before` when that revision matches the request being frozen. Normal response repair, compaction repair and successful compaction advance the revision. They can still carry the original continuation message into new input. Nexus enforces the first successor's cooldown at admission, and Runtime retains the existing limit on response corrections.
+
+- The two `test_retry_cooldown_applies_only_to_first_successor` cases failed with the added tests against the original runtime (`b67edf3`, `pytest -q tests/engine/execution/test_network_recovery.py -k cooldown_applies_only`). Both correction requests inherited the old `not_before`. Local JUnit: `build/net-01-t6a-before-20261114-113458.xml`.
+- With the fix, both cases admit the first successor only after the renewed cooldown following a simulated restart. They reopen an accepted text-only successor with a changed or missing boot marker. Re-entry admits the correction immediately with no inherited `not_before`, keeps the Retry note, and preserves the original request, successor and receipt. Each case reopens and exports the saved two-page synthetic document and verifies the source text, image and ZIP member bytes.
+- `pytest -q` on `tests/engine/execution/test_network_recovery.py`, `tests/engine/execution/test_continuation.py` and `tests/engine/context/test_compaction_recovery.py` passed 111 cases, with zero failures or skips. That includes the 61 existing NET-01 cases and two new regressions. Local JUnit: `build/net-01-t6a-focused-20261114-113534.xml`.
+
+**Documentation impact.** The [Q3 contract](../../design/RUNTIME_AND_DELIVERY.md#q3-execution-recovery-and-delivery) now states where cooldown inheritance ends. [N4](spec.md#n4--pause-and-the-retry-action) already binds the delay to the first successor's admission. The [execution guide](../../guides/EXECUTION_AND_DELIVERY.md#implemented-continuation-boundaries) still describes the receipt transition and feedback used by both request kinds. The README Retry instructions still apply. Stage C's remaining acceptance and the work register's selection stay governed by their existing conditions.
+
+## T6b — Final-revision suite run
+
+**NET-01-RV1 closed.** The checks below ran on the clean implementation revision `42f8c8e`.
+
+- `.venv\Scripts\python.exe -m pytest tests/engine --junitxml=build/net-01-t6b-engine-42f8c8e-20261114-113715.xml` passed all **1,879** engine cases in 32m 39s, with zero failures, errors or skips. The earlier Python run also included four desktop-helper cases. A separate `pytest -q tests/desktop/test_workspace_hashes.py` on the same revision passed all four. Its JUnit report is `build/net-01-t6b-desktop-helpers-42f8c8e-20261114-121021.xml`.
+- `pnpm build` passed TypeScript checking and built the development app. `pnpm test:desktop network-retry.spec.ts` passed both tests in 50.1 seconds. The loopback run verified recovery after a server restart and engine termination, the saved version reopening, and a byte-verified ZIP. Retained local evidence: `.local/test-runs/net-01-t6b-42f8c8e-20261114-113715/`. The build and test logs are `build/net-01-t6b-desktop-42f8c8e-20261114-113715-build.log` and `build/net-01-t6b-desktop-42f8c8e-20261114-113715.log`.
+- `.venv\Scripts\python.exe tools/docs/check_docs.py` passed. The final records were checked again after this write.
