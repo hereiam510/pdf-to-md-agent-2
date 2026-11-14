@@ -2,13 +2,14 @@
 
 ## Focus and resume route
 
-Current focus: [FIX-01](batches/FIX-01/spec.md), fixing H02, H03, R01-SURROGATE and NET-PM-01 before Stage B.
-Resume at: [FIX-01 T3](batches/FIX-01/tickets.md#t3--r01-surrogate-trace-and-rejection-boundary) and [implementation/check evidence](batches/FIX-01/verification.md#implementation-under-decision-a).
-Next activity: Main-agent review of the uncommitted T3 implementation, then full engine and desktop checks and records.
-Instruction basis: the user's 2026-11-15 FIX-01 request, their T3 choice "A: block, user Continues" in the [FIX-01 spec](batches/FIX-01/spec.md#r01-surrogate-rule-agreed-2026-11-14), and the subsequent T3-only assignment requiring offline targeted checks and uncommitted delivery for coordinator review.
+Current focus: next-work selection for Stage B, after FIX-01.
+Resume at: the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01), which lists the Stage B decisions (source and class, scope, fresh task, route and budget), and [WORK_ITEMS selection](WORK_ITEMS.md#selection-now).
+Next activity: The user decides whether to push `codex/fix-01` (it also carries the NET-01 closeout records) and open a PR, and selects the Stage B batch. Nothing is selected.
+Instruction basis: the user's 2026-11-15 FIX-01 request and T3 decision, completed in the [FIX-01 combined verdict](batches/FIX-01/verification.md#combined-verdict).
 
 ## Return routes
 
+- Previous batch: [FIX-01 combined verdict](batches/FIX-01/verification.md#combined-verdict), committed locally on `codex/fix-01`, not pushed.
 - Previous inventory: [open-defect inventory before Stage B](verification/20261106_0112_WORK_REGISTER.md#open-defect-inventory-before-stage-b-2026-11-14) and the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01) for the Stage B decisions.
 - Previous review: [NET-01 post-merge review](batches/NET-01/verification.md#post-merge-review-and-orientation), with documentation findings NET-PM-01 to NET-PM-03.
 
