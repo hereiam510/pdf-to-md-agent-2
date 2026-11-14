@@ -4,7 +4,7 @@
 
 ## Planning basis and authority
 
-The [spec](spec.md#selected-outcome-and-authority) owns scope, authority and acceptance. Ticket mode is local. The user asked for implementation to be delegated to Codex CLI with model `gpt-6.1-sol` at reasoning effort `xhigh`, in a `workspace-write` sandbox with no interactive approvals, working directly in this checkout on `codex/fix-01`. The main agent owns the assignment, review, integration, the whole-batch checks and the records. The implementer may commit locally on `codex/fix-01`; it may not push, open a PR, merge, change global settings, read `private/` or call a provider.
+The [spec](spec.md#selected-outcome-and-authority) owns scope, authority and acceptance. Ticket mode is local. The user asked for implementation to be delegated to Codex CLI with model `gpt-6.1-sol` at reasoning effort `xhigh`, in a `workspace-write` sandbox with no interactive approvals, working directly in this checkout on `codex/fix-01`. The main agent owns the assignment, review, integration, the whole-batch checks and the records. The implementer leaves its changes uncommitted for review; the main agent commits them on `codex/fix-01`. The implementer may not push, open a PR, merge, change global settings, read `private/` or call a provider.
 
 ## Sequence and dependencies
 
@@ -14,7 +14,7 @@ The [spec](spec.md#selected-outcome-and-authority) owns scope, authority and acc
 | [T2](#t2--h03-local-api-input-validation) | — | Codex | `src/pdfmd/server.py`, new or existing server tests |
 | [T3](#t3--r01-surrogate-trace-and-rejection-boundary) | — | Codex | The trace result decides; expected `src/pdfmd/` extraction, reply-validation or storage code and their tests |
 | [T4](#t4--net-pm-01-readme-routes) | — | Codex | `README.md` |
-| [T5](#t5--integration-and-whole-batch-checks) | T1–T4 | Codex runs; main agent reviews and reruns as needed | Records only |
+| [T5](#t5--integration-and-whole-batch-checks) | T1–T4 | Main agent (Codex runs the targeted tests for T1–T4 and `pnpm build`) | Records only |
 | [T6](#t6--review-and-records) | T5 | Main agent | `docs/` owners |
 
 T1–T4 are independent. One implementer does them in order, so no file has two writers.
