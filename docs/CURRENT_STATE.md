@@ -3,8 +3,8 @@
 ## Focus and resume route
 
 Current focus: NET-01 network-failure handling (Stage C) before the next Stage B batch.
-Resume at: [NET-01 offline closeout](batches/NET-01/verification.md#combined-verdict).
-Next activity: [T6c](batches/NET-01/tickets.md#t6c--draft-pull-request) when the user requests publication, or [T7](batches/NET-01/tickets.md#t7--real-windows-sleep-and-wake-check) when the user chooses a Windows sleep test window.
+Resume at: [NET-01 closeout tickets](batches/NET-01/tickets.md#sequence-and-dependencies) and [draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2).
+Next activity: [T7](batches/NET-01/tickets.md#t7--real-windows-sleep-and-wake-check) when the user chooses a Windows sleep test window.
 Instruction basis: [NET-01 execution authority](batches/NET-01/tickets.md#planning-basis-and-authority) and the [adopted specification](batches/NET-01/spec.md#status-and-authority).
 
 ## Return routes

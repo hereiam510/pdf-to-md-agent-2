@@ -12,7 +12,7 @@ The user authorized implementation of T1–T6 on 2026-11-14, with offline checks
 
 On 2026-11-14 the user agreed with every finding of the [implementation review](verification.md#review-of-the-implementation-at-28cd1df) and asked to "Confirm and plan tickets". That added the closeout tickets T6a–T6c. RV2 and RV3 stay recorded in verification and get no ticket.
 
-The subsequent request to "review and implement" selects T6a and T6b under the same offline scope. T6c awaits a publication request. T7 awaits a user-selected Windows sleep test window. Live Nexus testing remains deferred.
+The subsequent request to "review and implement" selected T6a and T6b under the same offline scope. On 2026-11-14 the user selected T6c and requested the push of `codex/net-01` and a draft PR against `master`. T7 awaits a user-selected Windows sleep test window. Live Nexus testing remains deferred.
 
 **Rules for every ticket.**
 
@@ -39,7 +39,7 @@ The subsequent request to "review and implement" selects T6a and T6b under the s
 | [T6](#t6--integration-and-offline-acceptance) | Whole-batch offline acceptance, local-server desktop check, contract consolidation | T1–T5 | Complete |
 | [T6a](#t6a--carry-the-retry-cooldown-only-into-the-first-successor) | Fix NET-01-F09: only the first successor after Retry inherits the cooldown | T6 | Complete |
 | [T6b](#t6b--final-revision-suite-run) | Close NET-01-RV1: one complete Python suite run on the final revision | T6a | Complete |
-| [T6c](#t6c--draft-pull-request) | Draft PR for the offline-accepted batch | T6b, plus the user's publication request | Awaiting publication request |
+| [T6c](#t6c--draft-pull-request) | Draft PR for the offline-accepted batch | T6b, plus the user's publication request | Complete. [Draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) |
 | [T7](#t7--real-windows-sleep-and-wake-check) | Real sleep and wake against a local scripted server | T6b, plus a test window chosen by the user | Deferred |
 
 **Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch. T6a edits `runtime.py`, its tests and the affected contract. T6b changes no code. A defect exposed by the run reopens T6a. T7 can run before or after T6c.
