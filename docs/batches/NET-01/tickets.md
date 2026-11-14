@@ -10,6 +10,10 @@ Revised the same day after a review of the plan: T5 now includes the Electron br
 
 The user authorized implementation of T1–T6 on 2026-11-14, with offline checks only. T7 and live Nexus testing are deferred. Preserve unrelated changes and commit the NET-01 records before implementation.
 
+On 2026-11-14 the user agreed with every finding of the [implementation review](verification.md#review-of-the-implementation-at-28cd1df) and asked to "Confirm and plan tickets". That added the closeout tickets T6a–T6c. RV2 and RV3 stay recorded in verification and get no ticket.
+
+The subsequent request to "review and implement" selects T6a and T6b under the same offline scope. T6c awaits a publication request. T7 awaits a user-selected Windows sleep test window. Live Nexus testing remains deferred.
+
 **Rules for every ticket.**
 
 - Start from `master` at `e60fa00` or a later commit that contains the earlier tickets, on a batch branch (for example `codex/net-01`), never on `master` itself.
@@ -33,9 +37,12 @@ The user authorized implementation of T1–T6 on 2026-11-14, with offline checks
 | [T4](#t4--pauses-and-the-retry-action) | Pause reasons, the `retry_request` transition and cooldown carry-over | T3 | Implemented |
 | [T5](#t5--desktop-activity-recovery-and-settings) | Desktop activity, Retry or Continue, settings, and forwarding `retry_request` through the Electron bridge | T4 | Implemented |
 | [T6](#t6--integration-and-offline-acceptance) | Whole-batch offline acceptance, local-server desktop check, contract consolidation | T1–T5 | Complete |
-| [T7](#t7--real-windows-sleep-and-wake-check) | Real sleep and wake against a local scripted server | T6, plus a test window chosen by the user | Deferred |
+| [T6a](#t6a--carry-the-retry-cooldown-only-into-the-first-successor) | Fix NET-01-F09: only the first successor after Retry inherits the cooldown | T6 | In progress |
+| [T6b](#t6b--final-revision-suite-run) | Close NET-01-RV1: one complete Python suite run on the final revision | T6a | Blocked on T6a |
+| [T6c](#t6c--draft-pull-request) | Draft PR for the offline-accepted batch | T6b, plus the user's publication request | Blocked; needs the user |
+| [T7](#t7--real-windows-sleep-and-wake-check) | Real sleep and wake against a local scripted server | T6b, plus a test window chosen by the user | Deferred |
 
-**Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch.
+**Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch. T6a edits only `runtime.py` and its tests. T6b changes no code; it reopens T6a if the run exposes a defect. T7 can run before or after T6c.
 
 ## Shared interfaces
 
@@ -160,11 +167,57 @@ This ticket fixes classification and reporting only. It does not yet make a stra
 
 **Checks.** As listed; every A-case is linked to its observed result.
 
+## T6a — Carry the retry cooldown only into the first successor
+
+**Contribution.** Fix [NET-01-F09](verification.md#review-of-the-implementation-at-28cd1df). The [Q3 contract](../../design/RUNTIME_AND_DELIVERY.md#q3-execution-recovery-and-delivery) already says the Retry successor's first admission honors the cooldown. Today, `prepare` copies the receipt's `not_before` into every request it freezes while `continuation_feedback` stays set. `Runtime.repair` keeps that feedback, so a corrected request after Retry inherits the cooldown again. Basis: [N4](spec.md#n4--pause-and-the-retry-action) and the N2 restart rules.
+
+**Work.**
+
+1. Pass the receipt's `not_before` only when freezing the first successor of that Retry. Later requests in the same continuation, such as a response correction or a compaction, freeze without it. The implementer chooses how to tell them apart, for example by the successor already having an admitted attempt, or by recording the cooldown's consumer in the request. Do not change the frozen original, the receipt or the existing repair-count rule.
+2. Add a sentence to the runtime contract's Q3 section saying that later requests do not inherit the cooldown, if the current wording leaves that open.
+
+**Files.** `src/pdfmd/runtime.py`, `tests/engine/execution/test_network_recovery.py`, and the runtime contract if step 2 applies.
+
+**Checks.**
+
+- New regression case: after a Retry whose cooldown has passed, the successor reply has no tool call, so a correction request is frozen. Simulate a boot-marker change, and separately a missing marker, before the correction freezes. The correction request has no `not_before` and is admitted without waiting.
+- The first successor still respects an unexpired cooldown. A15 and A15b still pass, as does the rest of the 61-case NET-01 matrix.
+- Existing compaction-recovery and continuation tests still pass.
+
+**Records.** A T6a section in verification with the commit, commands and counts. Mark F09 as fixed there; its original description stays as written.
+
+## T6b — Final-revision suite run
+
+**Contribution.** Close [NET-01-RV1](verification.md#review-of-the-implementation-at-28cd1df). Give the batch one complete all-green Python suite run on the revision that will be proposed for merge.
+
+**Work.**
+
+1. On a clean tree at T6a's final commit, run `.venv\Scripts\python.exe -m pytest tests/engine` with a JUnit report.
+2. Run the desktop [network-retry spec](../../../tests/desktop/specs/network-retry.spec.ts) once on the same revision, because T6a changes the Retry successor path. Run typecheck and `tools/docs/check_docs.py`.
+3. If a case fails, record it as `NET-01-Fnn` and handle it under the defect rule. A fix in engine code reopens T6a's checks, and the suite run is repeated on the new revision.
+
+**Records.** A T6b section in verification. It names the tested commit and gives the pass, fail and skip counts and the JUnit location under `build/`. Update the [combined verdict](verification.md#combined-verdict) to cite this run in place of the earlier partial runs, keeping the earlier counts as history.
+
+**Checks.** All engine tests pass on one named commit; the network-retry spec, typecheck and the docs check pass on the same commit.
+
+## T6c — Draft pull request
+
+**Contribution.** Put the offline-accepted batch up for review on GitHub, under the project's [delivery setting](../../../AGENTS.md#batch-documents-and-ticket-mode).
+
+**Preconditions.** T6b has passed, and the user has asked for the push and the PR. This ticket grants neither.
+
+**Work.**
+
+1. Push `codex/net-01` and open a draft PR against `master`. The description states the problem (NET-01 with R04), what now works, the offline evidence with links to verification, and what remains open: T7, live route behavior, RV2 and RV3.
+2. Keep the PR in draft until T7 passes, unless the user decides to merge the offline-accepted work before it. Readiness and merge each need their own request.
+
+**Records.** The PR link and state in this ticket's row and in CURRENT_STATE.
+
 ## T7 — Real Windows sleep and wake check
 
 **Contribution.** Observe real Windows suspend and resume once against a local scripted server, with no provider calls. Basis: the real sleep case in [Acceptance](spec.md#acceptance).
 
-**Preconditions.** T6 has passed, and the user has chosen a time to put the laptop to sleep. Put the machine to sleep only in that window; the sleep and wake are the user's actions.
+**Preconditions.** T6b has passed, and the user has chosen a time to put the laptop to sleep. Put the machine to sleep only in that window; the sleep and wake are the user's actions.
 
 **Work.** Two runs:
 
