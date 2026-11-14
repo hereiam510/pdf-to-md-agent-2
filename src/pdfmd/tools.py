@@ -12,7 +12,7 @@ import time
 from .documents import Documents
 from .evidence import Evidence
 from .schema import Edit, pointer
-from .storage import Conflict, Store, encode
+from .storage import Conflict, Store, encode, require_unicode
 
 
 def object_schema(properties: dict, required=()) -> dict:
@@ -171,6 +171,7 @@ class Dispatcher:
             arguments = json.loads(raw_arguments)
             if not isinstance(arguments, dict):
                 raise ValueError("Tool arguments must be one complete JSON object.")
+            require_unicode(arguments, "tool arguments")
             result = self.dispatch(job, operation, name, arguments, digest, candidate["ref"])
             if is_edit:
                 saved = self.store.get("operation", operation, job=job)
@@ -317,6 +318,7 @@ class Dispatcher:
         if code != 0 or not (directory / "result.json").exists():
             return {"error": "OCR did not produce a complete result.", "exit_code": code, "logs": logs, "image_ref": image["ref"]}
         result = json.loads((directory / "result.json").read_bytes())
+        require_unicode(result, f"OCR page {page}")
         ref = self.store.blob(job, "evidence", {"ocr": result, "image": image, "logs": logs,
                                                "warnings": ["OCR is derived evidence. Compare uncertain text with source pixels."],
                                                "coverage": {"page": page, "region": image["region"], "languages": languages}},
@@ -324,6 +326,7 @@ class Dispatcher:
         return self.evidence.read(job, ref["ref"], view=view)
 
     def script(self, job: str, operation: str, code: str, timeout_seconds: int = 120) -> dict:
+        require_unicode(code, "script code")
         if not 1 <= timeout_seconds <= 3600:
             raise ValueError("Script timeout must be between 1 and 3600 seconds.")
         executable = os.environ.get("PDFMD_SCRIPT_PYTHON") or sys.executable
@@ -340,6 +343,7 @@ class Dispatcher:
         logs = {path.stem: self.store.blob(job, "process_log", path.read_bytes(), {"operation": operation})["ref"] for path in (stdout, stderr)}
         outputs = []
         for path in directory.rglob("*"):
+            require_unicode(str(path), "script output path")
             if path.is_file() and path not in {script, source, stdout, stderr}:
                 record = self.store.blob(job, "script_output", path.read_bytes(), {"operation": operation, "filename": str(path.relative_to(directory))})
                 outputs.append({"ref": record["ref"], "file": str(path.relative_to(directory)), "bytes": record["bytes"]})

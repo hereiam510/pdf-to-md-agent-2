@@ -39,6 +39,8 @@ Follow the [agreed rule](spec.md#r01-surrogate-rule-agreed-2026-11-14). First tr
 
 **Done when** the [R01-SURROGATE acceptance](spec.md#acceptance) holds.
 
+Implementation under decision A is delivered uncommitted for main-agent review; [T3 verification](verification.md#implementation-under-decision-a) owns producer boundaries, targeted checks, failures/reruns and limits. T5/T6 remain with the main agent.
+
 ## T4 — NET-PM-01: README routes
 
 Apply the [NET-PM-01 finding](../NET-01/verification.md#post-merge-review-and-orientation). In `README.md`, replace each pointer to CURRENT_STATE for implementation facts (PDF rotation/CMYK/SMask/JPX cases, document-access verification limits, review limits) with a link to the section that actually holds the fact. Find it by searching `docs/design/`, `docs/guides/` and `docs/history/IMPLEMENTATION_HISTORY.md`. Correct the build paragraph: `release/` currently holds only the folder build `win-unpacked`, and no installer has been built since the source changes; say how to build one instead of naming a missing file. Keep the README short. Do not change other owners except to fix a link that README needs.

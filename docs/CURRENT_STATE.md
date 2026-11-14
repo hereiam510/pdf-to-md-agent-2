@@ -3,9 +3,9 @@
 ## Focus and resume route
 
 Current focus: [FIX-01](batches/FIX-01/spec.md), fixing H02, H03, R01-SURROGATE and NET-PM-01 before Stage B.
-Resume at: [FIX-01 tickets](batches/FIX-01/tickets.md#sequence-and-dependencies) and [verification](batches/FIX-01/verification.md).
-Next activity: Codex implements T3 under decision A (block, user Continues); then main-agent review, full engine and desktop checks and records.
-Instruction basis: the user's 2026-11-15 FIX-01 request and their T3 choice "A: block, user Continues", both recorded in the [FIX-01 spec](batches/FIX-01/spec.md#r01-surrogate-rule-agreed-2026-11-14).
+Resume at: [FIX-01 T3](batches/FIX-01/tickets.md#t3--r01-surrogate-trace-and-rejection-boundary) and [implementation/check evidence](batches/FIX-01/verification.md#implementation-under-decision-a).
+Next activity: Main-agent review of the uncommitted T3 implementation, then full engine and desktop checks and records.
+Instruction basis: the user's 2026-11-15 FIX-01 request, their T3 choice "A: block, user Continues" in the [FIX-01 spec](batches/FIX-01/spec.md#r01-surrogate-rule-agreed-2026-11-14), and the subsequent T3-only assignment requiring offline targeted checks and uncommitted delivery for coordinator review.
 
 ## Return routes
 

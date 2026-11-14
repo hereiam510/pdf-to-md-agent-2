@@ -14,7 +14,7 @@ import socket
 import sqlite3
 import threading
 
-from fastapi import FastAPI, Header, HTTPException, Depends, Query
+from fastapi import FastAPI, Header, HTTPException, Depends, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from filelock import FileLock, Timeout
@@ -29,7 +29,7 @@ from .network import NETWORK_PAUSES, legacy_policy
 from .nexus import Nexus
 from .runtime import Runtime, committed_network_retry
 from .schema import ConflictResolutionSelection, Edit, Limits, Route
-from .storage import Conflict, Store, uid
+from .storage import Conflict, Store, require_unicode, uid
 from .tools import Dispatcher
 
 
@@ -78,6 +78,7 @@ class Engine:
     def _configure(self, job: str, route: dict | None, limits: dict | None,
                    *, starting: bool = False, amendment: str = "") -> dict:
         """Caller holds the task lock; validate and record settings atomically."""
+        require_unicode({"job": job, "route": route, "limits": limits, "amendment": amendment}, "task settings")
         with self.store.transaction() as db:
             current = self.store.get_tx(db, "job", job)
             if current is None:
@@ -123,6 +124,7 @@ class Engine:
         return current
 
     def configure(self, job: str, route: dict | None = None, limits: dict | None = None):
+        require_unicode({"job": job, "route": route, "limits": limits}, "task settings")
         with self.guard:
             lock = FileLock(str(self.store.root / f"task-{job}.lock"))
             try:
@@ -134,6 +136,9 @@ class Engine:
     def start(self, job: str, key: str, route: dict | None = None, limits: dict | None = None,
               amendment: str = "", scripts: bool = False, recover_compaction_request: str | None = None,
               retry_request: str | None = None):
+        require_unicode({"job": job, "key": key, "route": route, "limits": limits, "amendment": amendment,
+                         "recover_compaction_request": recover_compaction_request,
+                         "retry_request": retry_request}, "task start")
         with self.guard:
             future = self.futures.get(job)
             if future and not future.done():
@@ -236,6 +241,7 @@ class Engine:
 
     def resolve_conflict(self, job: str, body: dict):
         from .recovery import resolve
+        require_unicode({"job": job, "selection": body}, "conflict resolution")
         selection = ConflictResolutionSelection.model_validate(body, strict=True)
         with self.guard:
             if job in self.futures and not self.futures[job].done():
@@ -273,8 +279,16 @@ def create_app(root: Path, token: str, *, transport=None) -> FastAPI:
         if not authorization or not hmac.compare_digest(authorization, f"Bearer {token}"):
             raise HTTPException(401, "Unauthorized local client.")
 
+    async def valid_input(request: Request):
+        if request.method == "POST":
+            try:
+                body = await request.json()
+            except ValueError:
+                return  # FastAPI handles missing/malformed JSON.
+            require_unicode(body, "request body")
+
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan,
-                  dependencies=[Depends(authorize)])
+                  dependencies=[Depends(authorize), Depends(valid_input)])
     app.state.engine = engine
 
     @app.exception_handler(ValueError)

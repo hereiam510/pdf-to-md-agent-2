@@ -13,8 +13,37 @@ from typing import Any, Iterator
 from uuid import uuid4
 
 
+class InvalidUnicode(ValueError):
+    """Text cannot be represented as Unicode scalars; originals stay untouched."""
+
+
+def require_unicode(value: Any, location: str = "input") -> None:
+    """Reject lone surrogates in decoded JSON, including object keys."""
+    if isinstance(value, os.PathLike):
+        value = os.fspath(value)
+    if isinstance(value, str):
+        try:
+            value.encode("utf-8", "strict")
+        except UnicodeEncodeError as exc:
+            raise InvalidUnicode(
+                f"Lone surrogate U+{ord(value[exc.start]):04X} at {location}, character offset {exc.start} "
+                "(zero-based). Inspect the original source and supply valid Unicode; no characters were changed."
+            ) from exc
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            require_unicode(key, f"{location} object key")
+            require_unicode(item, f"{location}[{ascii(key)}]")
+    elif isinstance(value, (list, tuple)):
+        for index, item in enumerate(value):
+            require_unicode(item, f"{location}[{index}]")
+
+
 def encode(value: Any) -> bytes:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    try:
+        return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    except UnicodeEncodeError:
+        require_unicode(value, "JSON")
+        raise
 
 
 def uid() -> str:
@@ -40,6 +69,7 @@ class Conflict(ValueError):
 
 class Store:
     def __init__(self, root: str | Path):
+        require_unicode(root, "store path")
         self._connections = local()
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
@@ -107,6 +137,7 @@ class Store:
 
     @staticmethod
     def get_tx(db: sqlite3.Connection, kind: str, key: str, *, job: str | None = None) -> dict | None:
+        require_unicode({"kind": kind, "key": key, "job": job}, "record identity")
         row = db.execute("SELECT job,data FROM records WHERE kind=? AND id=?", (kind, key)).fetchone()
         if row is not None and job is not None and row[0] != job:
             raise ValueError(f"Inconsistent {kind} ownership for this task: {key}")
@@ -114,11 +145,13 @@ class Store:
 
     @staticmethod
     def put_tx(db: sqlite3.Connection, kind: str, key: str, job: str, value: dict) -> None:
+        require_unicode({"kind": kind, "key": key, "job": job}, "record identity")
         db.execute("""INSERT INTO records VALUES(?,?,?,?,?)
             ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data""",
                    (kind, key, job, encode(value).decode(), time.time()))
 
     def get(self, kind: str, key: str, *, job: str | None = None) -> dict:
+        require_unicode({"kind": kind, "key": key, "job": job}, "record identity")
         with self._db() as db:
             row = db.execute("SELECT job,data FROM records WHERE kind=? AND id=?", (kind, key)).fetchone()
         if row is None or (job is not None and row[0] != job):
@@ -134,6 +167,7 @@ class Store:
             self.put_tx(db, kind, key, job, value)
 
     def records(self, kind: str, job: str | None = None) -> list[dict]:
+        require_unicode({"kind": kind, "job": job}, "record identity")
         with self._db() as db:
             if job is None:
                 rows = db.execute("SELECT data FROM records WHERE kind=? ORDER BY created", (kind,)).fetchall()
@@ -166,6 +200,8 @@ class Store:
     def stage_blob(self, job: str, kind: str, data: bytes | Any, meta: dict | None = None,
                    *, key: str | None = None) -> dict:
         """Write immutable object bytes before the caller's catalog transaction."""
+        require_unicode({"job": job, "kind": kind, "key": key}, "blob identity")
+        require_unicode(meta, "blob metadata")
         raw = data if isinstance(data, bytes) else encode(data)
         digest = sha256(raw).hexdigest()
         target = self.root / "objects" / digest
@@ -215,6 +251,9 @@ class Store:
     def blob_from_file(self, job: str, kind: str, path: Path, meta: dict | None = None,
                        *, key: str | None = None, expected_sha256: str | None = None) -> dict:
         """Register a file in chunks, checking any SHA-256 established by the caller."""
+        require_unicode(path, "blob file path")
+        require_unicode({"job": job, "kind": kind, "key": key}, "blob identity")
+        require_unicode(meta, "blob metadata")
         digest, size = file_digest(path)
         if expected_sha256 is not None and digest != expected_sha256:
             raise ValueError("The source file does not match the expected SHA-256.")
@@ -280,7 +319,9 @@ class Store:
         return data
 
     def json(self, ref: str, job: str) -> Any:
-        return json.loads(self.bytes(ref, job))
+        value = json.loads(self.bytes(ref, job))
+        require_unicode(value, f"evidence {ref}")
+        return value
 
     @contextmanager
     def read_snapshot(self):
@@ -391,6 +432,7 @@ class Store:
             self.event_tx(db, job, kind, data)
 
     def event_tx(self, db: sqlite3.Connection, job: str, kind: str, data: dict) -> None:
+        require_unicode({"job": job, "kind": kind}, "event identity")
         db.execute("INSERT INTO events(job,type,data,created) VALUES(?,?,?,?)",
                    (job, kind, encode(data).decode(), time.time()))
 
@@ -409,11 +451,13 @@ class Store:
 
     def event_summary(self, job: str) -> dict:
         """Small poll indicator, not a change cursor or a task snapshot."""
+        require_unicode(job, "event task identity")
         with self._db() as db:
             count, latest = db.execute("SELECT count(*),max(seq) FROM events WHERE job=?", (job,)).fetchone()
         return {"count": count, "latest_seq": latest}
 
     def events(self, job: str, after: int = 0, limit: int = 200) -> list[dict]:
+        require_unicode(job, "event task identity")
         with self._db() as db:
             rows = db.execute("SELECT * FROM events WHERE job=? AND seq>? ORDER BY seq LIMIT ?",
                               (job, after, limit)).fetchall()

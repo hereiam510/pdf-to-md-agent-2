@@ -80,6 +80,73 @@ Useful attempted code/test copies are retained in ignored `.local/fix-01-t3-inve
 
 **Question for the coordinator/user:** may FIX-01 extend the rejected-native-reply contract to bounded automatic repair using retained native/SSE evidence when `accepted_ref` is absent, or should the surrogate rule retain the existing blocked/explicit-Continue behavior? No such choice was made here. Source/guide behavior owners remain unchanged for T3 because no T3 implementation is delivered.
 
+### Implementation under decision A
+
+Continued offline on the clean `codex/fix-01` tree at `896886d`, under the user's decision A and T3-only assignment. The producer trace and stop report above retain their original investigation status; this implementation answers that historical stop. No automatic repair of rejected replies was added. No stored format or source representation changed; no dependency, global setting, provider call, reads of `private/`, `references/` or `workspaces/`, branch, commit or publication was involved. Checks use synthetic stores in ignored `.local/`. Changes remain uncommitted for coordinator review.
+
+The saved investigation's T3 hunks were reused after inspection, excluding its old T1/T2/server-route changes. The first selective `git apply` failed on the scratch patch's CRLF line endings and changed no source; a local LF copy applied the selected hunks, with current server/tool guards adapted separately. The three saved test files were reused with all three known fixture corrections: discovered filenames exclude stdout/stderr logs, raw JSON requests declare Content-Type, and estimation includes the model identity. The sixteen reply controls now assert decision A.
+
+| Reachable producer | Implemented boundary and preserved result |
+| --- | --- |
+| PDF extraction | `evidence.py:Evidence.inspect` checks raw page characters before any alternate PyMuPDF representation can substitute U+FFFD, then checks selected fields/metadata. Error names the one-based physical page and zero-based extracted-character offset; source PDF bytes stay unchanged and rendering remains usable. |
+| OCR JSON | `tools.py:Dispatcher.ocr` checks decoded result fields before derived-evidence publication. Error names page, field and offset. Original result.json and complete process logs remain retained. Recognition itself is mocked in the new control. |
+| Decoded script/tool JSON | `storage.py:Store.json` checks immediately after decoding, including later candidate reuse. `Evidence.read` propagates invalid-Unicode rejection instead of treating the escaped JSON as plain text. Exact full/range raw byte access remains available; scripts still require explicit process opt-in. |
+| Decoded tool arguments | `tools.py:Dispatcher.execute` retains the argument-string candidate, then checks decoded keys/values before dispatch and settles a failed receipt. Reusing that rejected candidate cannot bypass the check. Direct script code and document edits are also checked before writes. |
+| Native model replies | `nexus.py:parse_reply` checks decoded native fields and separately decoded tool JSON; `streaming.py:StreamDecoder` checks each decoded event before assembly. Both protocols, streaming and non-streaming: reject with native/SSE bytes preserved, no accepted reply or tool execution, `response_rejected` and blocked task; reopening alone sends nothing. Existing `Engine.start` explicit Continue succeeds, preserves the failed request/evidence and consumed attempts, and saves/reopens/exports exact emoji/CJK text. Streaming failures retain the existing generic safe message and fixed `unicode` diagnostic field. |
+| User/API and direct inputs | `server.py` checks authenticated decoded POST bodies before schema/domain handling; lone-surrogate bodies return the existing 400 envelope with field/offset. Direct import, settings/start, conflict resolution and document-edit entry points check before writes. Rejected API mutations leave the existing job/objects unchanged and a subsequent valid settings action succeeds. |
+| Filenames/paths | Source/import, export, Store root/file-registration and discovered script paths are checked without renaming. The Windows wide-filename control keeps the original lone-surrogate filename and bytes plus complete logs while rejecting metadata publication. |
+| Request/persistence fallback | `storage.py:encode` turns strict UTF-8 encoding failure into `InvalidUnicode` (`ValueError`) with field/offset. Request-freeze metadata, record/event identities and blob metadata are checked before publication/staging. `asset_catalog.py:record_json` shares the same canonical encoder, retaining its exact format and existing XML-forbidden-scalar escapes. Valid non-BMP values persist and reopen exactly. |
+
+Changed source files: `src/pdfmd/{storage,evidence,tools,nexus,streaming,server,documents,asset_catalog}.py`. Added tests: `tests/engine/documents/test_unicode_sources.py`, `tests/engine/execution/test_unicode_inputs.py`, and `tests/engine/transport/test_unicode_replies.py`. The tests cover all traced producers, atomic rejection, raw/candidate/log preservation, candidate reuse, the real opted-in script/Windows filename paths, valid JSON surrogate pairs, and explicit Continue with saved/reopened/exported output.
+
+**Commands and observed results.** All pytest invocations below set process-local `$env:PYTHONPATH = (Resolve-Path .local/fix-01-test-support).Path` first, reusing the supplied mode-0700 workaround, inherited by test child processes. Each basetemp is a new ignored local run. No full engine or desktop suite was run.
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/engine/documents/test_unicode_sources.py tests/engine/execution/test_unicode_inputs.py tests/engine/transport/test_unicode_replies.py -q -o addopts=--import-mode=importlib --basetemp=.local/fix-01-t3-b -o cache_dir=.local/fix-01-pytest-cache-c --tb=short
+```
+
+**33 passed, 4 failed in 23.01 s.** The four streaming-text controls incorrectly expected a field/offset in the existing generic stream-failure message. They already observed rejection. Corrected them to assert the retained fixed `unicode` diagnostic; the non-streaming/nested-argument cases still check the detailed message. No stream-error disclosure contract was changed.
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/engine/documents/test_unicode_sources.py tests/engine/execution/test_unicode_inputs.py tests/engine/transport/test_unicode_replies.py -q -o addopts=--import-mode=importlib --basetemp=.local/fix-01-t3-c -o cache_dir=.local/fix-01-pytest-cache-c --tb=short
+```
+
+**43 passed, 0 failed in 28.28 s**, after adding direct persistence/key/path controls. Review then identified retained-candidate decoding as another route; validation moved into `Store.json`, with an explicit no-fallback rule in `Evidence.read` and one additional candidate-reuse control. Final-code reruns follow.
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/engine/documents/test_documents.py tests/engine/documents/test_pdf_delivery.py tests/engine/documents/test_document_access.py tests/engine/documents/test_version_publication.py tests/engine/documents/test_enriched_save.py tests/engine/execution/test_security.py tests/engine/execution/test_api_validation.py tests/engine/execution/test_task_settings.py -q -o addopts=--import-mode=importlib --basetemp=.local/fix-01-t3-d -o cache_dir=.local/fix-01-pytest-cache-c --tb=short
+```
+
+**150 passed, 0 failed in 108.55 s**, before the final retained-JSON guard; this selection is included again in the final-code run below.
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/engine/execution/test_runtime.py tests/engine/execution/test_continuation.py tests/engine/execution/test_malformed_settlement.py tests/engine/execution/test_acceptance_settlement.py tests/engine/execution/test_accepted_evidence_recovery.py tests/engine/transport/test_request_estimation.py tests/engine/transport/test_response_repairs.py tests/engine/transport/test_streaming_parser.py tests/engine/transport/test_stream_contract.py tests/engine/transport/test_streaming_delivery.py tests/engine/transport/test_stream_storage.py tests/engine/transport/test_stream_acceptance_storage.py tests/engine/transport/test_stream_item_semantics.py tests/engine/transport/test_stream_item_persistence.py tests/engine/transport/test_stream_terminal.py -q -o addopts=--import-mode=importlib --basetemp=.local/fix-01-t3-e -o cache_dir=.local/fix-01-pytest-cache-c --tb=short
+```
+
+**792 passed, 0 failed in 791.73 s (13:11)**. This process imported modules before the final retained-JSON guard; run `h` repeats the selection on final code.
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/engine/documents/test_unicode_sources.py tests/engine/execution/test_unicode_inputs.py tests/engine/transport/test_unicode_replies.py tests/engine/documents/test_documents.py tests/engine/documents/test_pdf_delivery.py tests/engine/documents/test_document_access.py tests/engine/documents/test_version_publication.py tests/engine/documents/test_enriched_save.py tests/engine/execution/test_security.py tests/engine/execution/test_api_validation.py tests/engine/execution/test_task_settings.py -q -o addopts=--import-mode=importlib --basetemp=.local/fix-01-t3-f -o cache_dir=.local/fix-01-pytest-cache-c --tb=short
+```
+
+**194 passed, 0 failed in 194.36 s**, including all **44** T3 controls and the earlier 150-case regression selection. A final direct-settings guard was then moved ahead of task-lock file creation and its no-lock-write assertion added; the affected input/API/settings checks are rerun below.
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/engine/execution/test_unicode_inputs.py tests/engine/execution/test_api_validation.py tests/engine/execution/test_task_settings.py -q -o addopts=--import-mode=importlib --basetemp=.local/fix-01-t3-g -o cache_dir=.local/fix-01-pytest-cache-c --tb=short
+```
+
+**73 passed, 0 failed in 52.28 s**, including the direct-settings no-lock-write assertion.
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/engine/execution/test_runtime.py tests/engine/execution/test_continuation.py tests/engine/execution/test_malformed_settlement.py tests/engine/execution/test_acceptance_settlement.py tests/engine/execution/test_accepted_evidence_recovery.py tests/engine/transport/test_request_estimation.py tests/engine/transport/test_response_repairs.py tests/engine/transport/test_streaming_parser.py tests/engine/transport/test_stream_contract.py tests/engine/transport/test_streaming_delivery.py tests/engine/transport/test_stream_storage.py tests/engine/transport/test_stream_acceptance_storage.py tests/engine/transport/test_stream_item_semantics.py tests/engine/transport/test_stream_item_persistence.py tests/engine/transport/test_stream_terminal.py -q -o addopts=--import-mode=importlib --basetemp=.local/fix-01-t3-h -o cache_dir=.local/fix-01-pytest-cache-c --tb=short
+```
+
+**792 passed, 0 failed in 705.39 s (11:45)** on final code. Across runs `f` and `h`, **986 distinct targeted cases** passed, including all 44 new T3 controls; run `g` repeats the 73 cases affected by the final direct-settings placement/assertion. No failing application assertion remains in these selections.
+
+`pnpm build`: **passed**, TypeScript and all three electron-vite bundles. `.venv/Scripts/python.exe tools/docs/check_docs.py`: **passed** before the final ticket/continuation pointers (147 Markdown files, 8,484 local links/destinations, 503 bundled source files, zero errors), and **passed again** after those updates (147 files, **8,485** links/destinations, 503 bundled sources, **zero errors**). `git diff --check`: **passed** during implementation and after the final records/navigation updates. A repository-only Python comparison (`.venv/Scripts/python.exe -`, using `git show HEAD:docs/batches/FIX-01/verification.md` and the current file) also **passed**: the complete T5/combined-verdict tail is identical after newline normalization.
+
+**Documentation impact and limits.** Updated the declared PDF/runtime design owners and the integration guide with the validity boundary, offset meaning, preservation rules and decision-A behavior. Checked affected current explanations by producer/contract names; no other owner needs an in-scope behavior correction. T3's ticket and CURRENT_STATE route to coordinator review. Work selection and phase outcomes have not changed, so WORK_ITEMS/PHASE_PLAN remain unchanged. The guard rejects malformed source-derived text; it does not certify extraction/OCR quality or source fidelity. Synthetic local transport fixtures establish mechanics without provider calls; real-route behavior, whole-engine/desktop integration and combined acceptance remain for the coordinator. T5 and the combined verdict are unchanged. T3 implementation and targeted verification are ready for review, uncommitted.
+
 ## T4 — NET-PM-01
 
 Updated `README.md` only: PDF case/limit claims point to the PDF acceptance table; precise document-access verification and real-model limits point to the Stage B implementation-history section; review scope/limits point to the recorded review. CURRENT_STATE is described only as interaction focus and resume navigation. The build paragraph describes the existing older `release/win-unpacked` folder app and gives `tools/build/build-windows.ps1 -Installer` to create an installer, without claiming an absent installer exists.

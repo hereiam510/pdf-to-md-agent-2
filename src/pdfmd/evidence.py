@@ -12,7 +12,7 @@ from typing import Any
 import pymupdf
 
 from .schema import Limits, Route, pointer
-from .storage import Store, encode, uid
+from .storage import InvalidUnicode, Store, encode, require_unicode, uid
 
 
 # MuPDF is not thread-safe. Never share a live Document across callers.
@@ -35,6 +35,7 @@ class Evidence:
         self.store = store
 
     def create_job(self, path: str, scope: str, route: dict | None = None, limits: dict | None = None) -> dict:
+        require_unicode({"path": path, "scope": scope, "route": route, "limits": limits}, "import")
         route = Route.model_validate(route).model_dump() if route else None
         limits = Limits.model_validate(limits or {}).model_dump()
         if not scope.strip():
@@ -75,7 +76,15 @@ class Evidence:
                         "rotation_matrix": list(page.rotation_matrix), "derotation_matrix": list(page.derotation_matrix),
                         "images": jsonable(page.get_images(full=True))}
                 if mode != "metadata":
-                    item["content"] = jsonable(page.get_text(mode, sort=False))
+                    # Other PyMuPDF representations replace orphaned surrogates.
+                    # Check the raw characters first, before that information is lost.
+                    raw = page.get_text("rawdict", sort=False)
+                    characters = "".join(char["c"] for block in raw["blocks"] if block["type"] == 0
+                                         for line in block["lines"] for span in line["spans"]
+                                         for char in span["chars"])
+                    require_unicode(characters, f"PDF page {number} extracted characters")
+                    item["content"] = jsonable(raw if mode == "rawdict" else page.get_text(mode, sort=False))
+                require_unicode(item, f"PDF page {number}")
                 output.append(item)
         data = {"pages": output, "mode": mode,
                 "warnings": ["Text extraction and image metadata do not certify reading order or source fidelity.",
@@ -120,6 +129,8 @@ class Evidence:
             return {**identity, **self.index_result(result, record["bytes"])}
         try:
             data = self.store.json(ref, job)
+        except InvalidUnicode:
+            raise  # Invalid decoded JSON must not fall back to its escaped text.
         except (ValueError, UnicodeDecodeError):
             data = self.store.bytes(ref, job).decode("utf-8", errors="strict")
         if view == "index":
