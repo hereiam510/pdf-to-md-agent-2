@@ -163,3 +163,19 @@ The retry-then-pause direction, the attempt limits, the diagnostic boundary and 
   - A live Nexus check of route-specific behavior is a separate, later selection.
 
 The planned offline acceptance above also gains these cases: a duplicate Retry click, an accepted reply saved immediately before a crash, a TLS certificate failure, a `Retry-After` longer than the allowed wait, and a sleep that outlasts a server-requested delay. Recovery is checked through the saved, reopened and exported output, with no duplicated local effects and no reset of consumption.
+
+## Next-step recommendation after NET-01
+
+2026-11-14, Asia/Singapore. Advice only; nothing is selected. It updates the [earlier recommendation after the asset-delivery merge](ASSET_REFERENCES.md#next-step-recommendation-after-the-merge), whose comparison still holds. The [post-merge review](../batches/NET-01/verification.md#post-merge-review-and-orientation) confirmed the merged tree and recorded PM-01 to PM-03.
+
+1. **Recommended: discuss and specify a Stage B source-led conversion batch.** The user placed network handling "before entering stage B", and NET-01 is merged, so that precondition is met. Stage B's real-source evidence remains narrow. One fresh bounded task on the merged build can test complete-section delivery ([R01CAL-A01](../WORK_ITEMS.md#context-capability-and-delivery-work)), name and attribution fidelity (AR-T5-14), a meaningful source class (CTX-08) and, where the source has them, figures (FD-01) and the AR-8/AR-9/AR-12 revisit cases. Work offline first. The decisions needed from the user:
+   - **Source and class.** Which authorized PDF, and whether native, scanned or mixed. A section with named contributors and at least one figure covers the most open questions per request.
+   - **Scope.** A complete section large enough to reach the outside-scope classification obstruction R01CAL-A01 recorded, but bounded in cost.
+   - **Fresh task or reassessed Task B.** Recommended: a fresh task. The prepared Task B was frozen on a 2026-11-06 build, before asset delivery and before NET-01's retry policy, so a frozen Task B would not exercise either.
+   - **Route, limits and budget.** The model alias, a finite request and active-time allowance, and failure or no-progress exits. The new default of three attempts per request applies. Any retry observed in this run is incidental live evidence, not the separately selected live route check.
+   - The open choice on requiring enriched saves can wait for this run's evidence.
+2. **Small and independent: repair PM-01 (and optionally PM-03).** A README correction of a few lines. It can ride on the closeout branch before the next batch.
+3. **Alternative: Stage D clean-environment and installer check** (DIST-01 with R08, R14 and R01-PACK). Choose it first if using the app outside the development checkout is the immediate need. The current folder build predates NET-01 and no current installer exists, so it starts with a fresh build.
+4. **Not now.** Numerical calibration (R01-CAL, CTX-02) still needs a candidate, an independent evaluation and a numerical gate. R03 local-process recovery has no demonstrated blocker yet. RV4 waits for a sleep-capable Windows host.
+
+**Delivery of the records.** The closeout and review commits are local on `codex/net-01-closeout` ([PM-02](../batches/NET-01/verification.md#post-merge-review-and-orientation)). They can become the base of the next batch branch, as after PR #1, or go up as a small records PR if `master` should be current sooner.

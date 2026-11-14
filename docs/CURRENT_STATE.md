@@ -3,11 +3,13 @@
 ## Focus and resume route
 
 Current focus: next-work selection after NET-01.
-Resume at: [WORK_ITEMS selection](WORK_ITEMS.md#selection-now) and the [recommendation after the asset-delivery merge](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-merge), which still compares the Stage B and Stage D candidates.
+Resume at: [WORK_ITEMS selection](WORK_ITEMS.md#selection-now) and the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01), which compares the Stage B and Stage D candidates and lists the Stage B decisions needed.
 Next activity: The user selects the next batch. Nothing is selected.
-Instruction basis: the user's "Push and merge" request of 2026-11-14, recorded in [NET-01 T8](batches/NET-01/tickets.md#t8--mark-pr-2-ready-and-merge).
+Instruction basis: the user's standalone review request of 2026-11-14, recorded in the [NET-01 post-merge review](batches/NET-01/verification.md#post-merge-review-and-orientation).
 
 ## Return routes
+
+- Previous review: [NET-01 post-merge review](batches/NET-01/verification.md#post-merge-review-and-orientation), with documentation findings PM-01 to PM-03.
 
 - Previous batch: [NET-01 merge](batches/NET-01/tickets.md#t8--mark-pr-2-ready-and-merge) through [PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2), with its [combined verdict](batches/NET-01/verification.md#combined-verdict) and the deferred [real sleep check](batches/NET-01/verification.md#net-01-rv4--real-sleep-not-observed).
 
