@@ -551,3 +551,71 @@ def test_retry_receipt_cooldown_and_current_policy(delivery, tmp_path, automatic
         assert attempt["not_before"] == receipt["not_before"]
         assert successor["not_before"]["satisfied_by"] == attempt["id"]
     check_delivery(store, job, version, image, source, tmp_path / "retry.zip")
+
+
+@pytest.mark.parametrize("boot", ["new-boot", None], ids=["reboot", "missing-marker"])
+def test_retry_cooldown_applies_only_to_first_successor(delivery, tmp_path, boot):
+    store, job, version, image, source = delivery
+    job_id = job["id"]
+    store.update_job(job_id, limits={**job["limits"], "automatic_retry": False})
+    clock = Clocks()
+    failed = runtime(store, lambda _: httpx.Response(429, headers={"Retry-After": "10"}), clock)
+    try:
+        failed.run(job_id)
+        original = failed.pending_request(job_id)
+        assert store.get("job", job_id)["stop_reason"] == "network_retry_disabled"
+        clock.advance(10)
+        resume_pending = failed.resume_pending
+
+        def interrupt_after_receipt(*args, **kwargs):
+            assert resume_pending(*args, **kwargs)["continuation_feedback"]
+            raise Interrupted
+
+        failed.resume_pending = interrupt_after_receipt
+        with pytest.raises(Interrupted):
+            failed.run(job_id, retry_request=original["id"])
+        receipt_key = f"continuation:{original['id']}"
+        receipt = store.json(receipt_key, job_id)
+    finally:
+        failed.close()
+
+    successor_clock = Clocks(boot="successor-boot", process="successor", interrupt=1)
+
+    def text_only(_):
+        assert successor_clock.uptime == 11  # The first admission enforced the renewed cooldown.
+        return httpx.Response(200, json=native("chat_completions", text="The draft is ready."))
+
+    successor_run = runtime(Store(store.root), text_only, successor_clock)
+
+    def interrupt_before_repair(*_):
+        raise Interrupted
+
+    successor_run.repair = interrupt_before_repair
+    try:
+        with pytest.raises(Interrupted):
+            successor_run.run(job_id)
+        successor = successor_run.pending_request(job_id)
+        assert successor["accepted_ref"] and len(successor["attempts"]) == 1
+        assert successor["not_before"]["satisfied_by"] == successor["attempts"][0]
+    finally:
+        successor_run.close()
+
+    def corrected(request):
+        assert b"The user chose Retry after a network failure" in request.content
+        return final(version)
+
+    correction_clock = Clocks(boot=boot, process="correction", interrupt=1)
+    correction_run = runtime(Store(store.root), corrected, correction_clock)
+    try:
+        correction_run.run(job_id)
+    finally:
+        correction_run.close()
+
+    old, first, correction = store.records("request", job_id)
+    assert old == original and first == successor
+    assert store.json(receipt_key, job_id) == receipt
+    assert correction_clock.uptime == 1
+    assert "not_before" not in correction
+    assert correction["status"] == "accepted" and len(correction["attempts"]) == 1
+    assert store.get("job", job_id)["attempts"] == 3
+    check_delivery(store, job, version, image, source, tmp_path / "corrected.zip")

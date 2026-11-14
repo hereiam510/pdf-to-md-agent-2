@@ -166,7 +166,9 @@ class Runtime:
                     raise StopRun("response_repair_exhausted", f"Automatic {kind} correction limit reached. Saved work, candidates and replies remain available. Continue does not reset this correction episode.")
                 def freeze(payload, meta, kind):
                     feedback = self.store.json(state["continuation_feedback"], job["id"]) if state.get("continuation_feedback") else {}
-                    cooldown = {"not_before": feedback["not_before"]} if feedback.get("not_before") else {}
+                    # Repairs and compaction can retain the feedback after advancing the revision.
+                    cooldown = ({"not_before": feedback["not_before"]}
+                                if feedback.get("revision") == state["revision"] and feedback.get("not_before") else {})
                     return self.nexus.freeze(job["id"], key, payload, kind, {**meta, "repairs": repairs,
                         **({"context_snapshot": context_snapshot(job, state)} if kind == "normal" else {})},
                         **cooldown)
