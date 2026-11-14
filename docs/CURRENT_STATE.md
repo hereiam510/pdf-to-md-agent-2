@@ -4,8 +4,8 @@
 
 Current focus: [FIX-01](batches/FIX-01/spec.md), fixing H02, H03, R01-SURROGATE and NET-PM-01 before Stage B.
 Resume at: [FIX-01 tickets](batches/FIX-01/tickets.md#sequence-and-dependencies) and [verification](batches/FIX-01/verification.md).
-Next activity: Delegated implementation by Codex (`gpt-6.1-sol`, `xhigh`), then main-agent review, whole-batch checks and records.
-Instruction basis: the user's 2026-11-15 request "yes, fix all four / create tickets first, then delegate to gpt-6.1-sol-extra-high to implement", recorded in the [FIX-01 spec](batches/FIX-01/spec.md#selected-outcome-and-authority).
+Next activity: Codex implements T3 under decision A (block, user Continues); then main-agent review, full engine and desktop checks and records.
+Instruction basis: the user's 2026-11-15 FIX-01 request and their T3 choice "A: block, user Continues", both recorded in the [FIX-01 spec](batches/FIX-01/spec.md#r01-surrogate-rule-agreed-2026-11-14).
 
 ## Return routes
 
