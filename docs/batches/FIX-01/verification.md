@@ -157,10 +157,33 @@ Checked each changed destination's section body against its link description. `G
 
 **Documentation impact.** README's changed links were checked against their actual section content, and current local API behavior is explained in the integration guide. The named spec/tickets and WORK_ITEMS/PHASE_PLAN selection basis were reconciled with this assignment; no work-selection or phase outcome was changed. CURRENT_STATE, ticket integration/review ownership and other T6 records remain for the coordinator. T3's unresolved contract question is retained in its section above; it is not silently described as implemented in any owner.
 
+## Review of the delegated implementation
+
+2026-11-15, main agent. Codex CLI 0.169.0 ran with model `gpt-6.1-sol`, `model_reasoning_effort="xhigh"`, the `workspace-write` sandbox and `approval_policy="never"`, in two assignments: T1–T4 (stopping at T3's contract question), then T3 under decision A. Prompts, event streams and final messages are retained under ignored `.local/agent-runs/fix-01-*`. The main agent read both diffs and committed them as `2d833b5` (T1, T2, T4 and the T3 trace) and `0103aa1` (T3).
+
+- **T2 against the desktop.** The typed bodies forbid extra fields. `src/desktop/main.ts` sends exactly `path`/`scope` on import, `version_id`/`destination` on export, `route`/`limits` on settings, and `key`, `route`, `limits`, `amendment`, `scripts`, `recover_compaction_request`, `retry_request` on start (undefined values are dropped by JSON serialization). These match the declared fields.
+- **T3 against the rule.** Model replies use the existing rejected-reply path, no character is replaced or dropped, and the boundaries match the trace. The rejected-reply contract text in the runtime design now states the surrogate case.
+- **T3 cost.** `Evidence.inspect` now also runs PyMuPDF `rawdict` extraction, because other modes replace a lone surrogate with U+FFFD before it can be seen. On a synthetic 100-page text PDF (55 lines of about 95 characters per page), extraction per page rose from about 2.1 to 8.2 ms for `text`, 2.2 to 8.5 ms for `blocks` and 2.7 to 9.1 ms for `dict` (best of three). About 6 ms per page, or about 2 s for a 290-page whole inspection, is accepted against model latency. Revisit if inspection latency is observed in a real task.
+- **Sandbox limits.** Inside Codex's sandbox, pytest's mode-0700 temporary directories were inaccessible and Playwright could not spawn workers (`EPERM`). The implementer's targeted runs used a test-process-only `mkdir` workaround; no application code depends on it. T5 below runs without the workaround, outside the sandbox.
+
 ## T5 — Integration
 
-Pending.
+Run by the main agent on clean commit `0103aa1`, outside the Codex sandbox, with no test workarounds. No provider was called.
+
+- `.venv\Scripts\python.exe -m pytest tests/engine -q -p no:cacheprovider --junitxml=build/fix-01-engine-0103aa1.xml`: **1,956 passed**, 0 failed, 0 errors, 0 skipped in 2,153 s. NET-01's final run had 1,879 cases; the difference is FIX-01's new tests. Log: `build/fix-01-engine-0103aa1.log`.
+- `pnpm build`: passed (TypeScript and all electron-vite bundles). Log: `build/fix-01-build-0103aa1.log`.
+- `pnpm test:desktop` (complete suite, one worker, the configured 120 s timeout): **118 passed** in 27.0 min, with no failures or reruns. This includes import, start, settings, edit, export, conflict resolution, continuation and the workbench delivery chain through the new typed API bodies and the Unicode checks. Log: `build/fix-01-desktop-0103aa1.log`.
+- `.venv\Scripts\python.exe tools/docs/check_docs.py` and `git diff --check`: passed after these records.
+
+An earlier full engine run at `2d833b5` was stopped before completion, because T3 was about to change the same modules; it supplies no result.
 
 ## Combined verdict
 
-Pending.
+**FIX-01 is accepted offline.** Each item meets its [acceptance](spec.md#acceptance):
+
+- **H02:** corrected message, test added, no remaining mojibake ([T1](#t1--h02)).
+- **H03:** missing or wrongly typed fields return a field-naming 4xx on every changed route; valid desktop requests pass end to end ([T2](#t2--h03), T5 desktop run).
+- **R01-SURROGATE:** every traced producer rejects at its earliest boundary without altering characters. Model replies follow decision A (blocked, explicit Continue recovers), proven in both protocols with and without streaming. Valid non-BMP text passes through save, reopen and export ([T3](#implementation-under-decision-a)).
+- **NET-PM-01:** README pointers lead to the owners that hold the facts, and the build paragraph is accurate ([T4](#t4--net-pm-01)).
+
+Limits: no real source PDF with a lone surrogate was available; the controls use synthetic ToUnicode maps, OCR JSON and replies. PDF inspection costs about 6 ms more per page ([review](#review-of-the-delegated-implementation)). Automatic repair of rejected replies is out of scope as [REPLY-AUTO-01](../../WORK_ITEMS.md#runtime-and-engineering-inventory). The work is committed locally on `codex/fix-01`; pushing and a PR need the user's request.

@@ -61,6 +61,10 @@ git diff --check
 
 The full engine suite took about 33 minutes at NET-01. Record the revision, counts, failures and reruns in [verification](verification.md#t5--integration). A failure caused by this batch is fixed within scope; an unrelated pre-existing failure is recorded, not fixed.
 
+## Progress
+
+T1–T4 implemented by Codex and committed as `2d833b5` and `0103aa1`; T5 run on `0103aa1`; T6 completed with the [combined verdict](verification.md#combined-verdict). All tickets are accepted. Nothing is pushed.
+
 ## T6 — Review and records
 
 The main agent reviews the diff against the spec, reruns checks where needed, and records the verdict in [verification](verification.md). It updates the H02, H03 and R01-SURROGATE rows in [WORK_ITEMS](../../WORK_ITEMS.md), the NET-PM-01 status, [CURRENT_STATE](../../CURRENT_STATE.md), the [batch catalogue](../../INDEX.md#batch-documents) and any guide or design text whose behavior changed (for example the local API or input-validity rules).
