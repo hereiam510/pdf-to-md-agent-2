@@ -37,7 +37,7 @@ test('Stop with new instructions, failed-request Continue, restart and export pr
         functionCall('edit_document', { base_version: savedVersion, expected_head: savedVersion, claim: 'partial',
           operations: [{ kind: 'delete', id: 'p2' }, { kind: 'delete', id: 'figure' }] }, 'obsolete-edit')]
     } else if (payloads.length === 5) {
-      res.writeHead(502); res.end('Local failure fixture'); return
+      res.writeHead(401); res.end('Local failure fixture'); return
     } else {
       calls = [functionCall('report', { state: 'complete', version_id: savedVersion, message: 'Both source pages and the image are preserved.' }, 'done')]
     }
@@ -111,7 +111,7 @@ test('Stop with new instructions, failed-request Continue, restart and export pr
       workspace, source, destination, job.id, savedVersion], { windowsHide: true, encoding: 'utf-8' }))
     expect(verification).toMatchObject({ source_pages: 2, blocks: 3, assets: 1, claim: 'complete', verified: true })
     await fs.writeFile(join(directory, 'verification.json'), JSON.stringify({ ...verification, requests: payloads.length,
-      skipped_call: JSON.parse(skipped.content), pipeline: 'save -> Stop -> amend -> skip obsolete edit -> HTTP 502 -> Continue -> complete -> restart -> export' }, null, 2))
+      skipped_call: JSON.parse(skipped.content), pipeline: 'save -> Stop -> amend -> skip obsolete edit -> HTTP 401 -> Continue -> complete -> restart -> export' }, null, 2))
     await fs.writeFile(join(directory, 'fixture-payloads.json'), JSON.stringify(payloads, null, 2))
     expect(payloads).toHaveLength(6)
   } finally {

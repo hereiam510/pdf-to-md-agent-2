@@ -14,6 +14,7 @@ from .context import Context, HandoffRejected
 from .context_updates import ContextUpdates
 from .context_revisions import ContextRevisions
 from .nexus import Nexus, StopRun, instruction_basis
+from .network import NETWORK_PAUSES, retry_available
 from .storage import Conflict, Store, encode
 from .tools import Dispatcher, UnknownEffect
 from .working_context import inspect as inspect_working_context, snapshot as context_snapshot
@@ -66,7 +67,7 @@ class Runtime:
         self.usage_trial = usage_trial
         if usage_trial is not None:
             usage_trial.bind(nexus)
-        self.active_time = ActiveTime(store)
+        self.active_time = ActiveTime(store, nexus.clocks)
         self.nexus.active_time = self.active_time
         self.dispatcher = Dispatcher(store, scripts=scripts)
         self.dispatcher.active_time = self.active_time
@@ -164,8 +165,13 @@ class Runtime:
                 if repairs.get(kind, {}).get("count", 0) > job["limits"].get("max_response_repairs", 2):
                     raise StopRun("response_repair_exhausted", f"Automatic {kind} correction limit reached. Saved work, candidates and replies remain available. Continue does not reset this correction episode.")
                 def freeze(payload, meta, kind):
+                    feedback = self.store.json(state["continuation_feedback"], job["id"]) if state.get("continuation_feedback") else {}
+                    # Repairs and compaction can retain the feedback after advancing the revision.
+                    cooldown = ({"not_before": feedback["not_before"]}
+                                if feedback.get("revision") == state["revision"] and feedback.get("not_before") else {})
                     return self.nexus.freeze(job["id"], key, payload, kind, {**meta, "repairs": repairs,
-                        **({"context_snapshot": context_snapshot(job, state)} if kind == "normal" else {})})
+                        **({"context_snapshot": context_snapshot(job, state)} if kind == "normal" else {})},
+                        **cooldown)
                 try:
                     request = freeze(payload, meta, kind)
                 except StopRun as exc:
@@ -311,15 +317,6 @@ class Runtime:
     def accepted_locally(self, request: dict) -> bool:
         return bool(request.get("accepted_ref") or self.store.maybe("blob", f"accepted:{request['id']}"))
 
-    def compaction_recovery(self, job: str) -> dict | None:
-        """Offer an explicit choice only for the current unresolved compaction."""
-        request = self.pending_request(job)
-        if (request and request["kind"] == "compaction" and request["status"] == "unknown"
-                and not self.accepted_locally(request)
-                and self.store.maybe("blob", f"continuation:{request['id']}") is None):
-            return {"request": request["id"]}
-        return None
-
     def validate_compaction_recovery(self, job: str, selected: str) -> None:
         """Validate before changing settings; a stale click grants no new choice."""
         request = self.pending_request(job)
@@ -334,9 +331,47 @@ class Runtime:
             return  # The same committed choice may still need its graph projection.
         if request["status"] != "unknown" or receipt:
             raise Conflict("Only an unresolved unknown compaction can receive this recovery choice.")
+        if request.get("failure", {}).get("reason") in NETWORK_PAUSES | {"retry_scheduled"}:
+            raise Conflict("Use the pending network recovery action for this compaction.")
+
+    def network_recovery(self, job: str, request: dict | None = None) -> dict | None:
+        request = request or self.pending_request(job)
+        if not request or self.accepted_locally(request):
+            return None
+        failure = request.get("failure", {})
+        reason = failure.get("reason")
+        if reason not in NETWORK_PAUSES | {"provider_configuration_error"}:
+            return None
+        remaining = self.nexus.deadline_remaining(request, "not_before")
+        cooldown = request.get("not_before")
+        return {"request": request["id"], "class": failure.get("class"), "reason": reason,
+                "attempts_used": len(request["attempts"]),
+                "max_attempts": request.get("replay_policy", {}).get("max_attempts_per_request", 1),
+                "action": "continue" if reason == "provider_configuration_error" else "retry",
+                "not_before": cooldown, "retry_remaining_seconds": remaining,
+                "retry_available_at": retry_available(cooldown) if remaining > 0 else None}
+
+    def validate_network_retry(self, job: str, selected: str) -> bool:
+        """Return false for a consumed choice after the graph already advanced."""
+        if not isinstance(selected, str) or not selected:
+            raise Conflict("Select the current failed request before retrying.")
+        request = self.pending_request(job)
+        receipt = self.store.maybe("blob", f"continuation:{selected}")
+        if committed_network_retry(self.store, job, selected, receipt=receipt):
+            return bool(request and request["id"] == selected)
+        if not request or request["id"] != selected:
+            raise Conflict("The selected request is no longer pending. Refresh the task before retrying.")
+        if self.accepted_locally(request):
+            return True
+        recovery = self.network_recovery(job, request)
+        if not recovery or recovery["action"] != "retry" or receipt:
+            raise Conflict("Only a paused retryable request can receive this Retry choice.")
+        if recovery["retry_remaining_seconds"] > 0:
+            raise Conflict(f"Retry available at {recovery['retry_available_at']}.")
+        return True
 
     def resume_pending(self, state: State, *, continue_failed: bool,
-                       recover_compaction_request: str | None = None) -> dict | None:
+                       recover_compaction_request: str | None = None, retry_request: str | None = None) -> dict | None:
         """Persist a chosen new-request transition before changing the graph checkpoint."""
         job = self.store.get("job", state["job"])
         key = state.get("pending") or f"{job['id']}:{state['seq']}:{state['revision']}"
@@ -344,20 +379,26 @@ class Runtime:
             return None
         ref = f"continuation:{key}"
         receipt = self.store.maybe("blob", ref)
+        request = self.nexus.reconcile(job["id"], key)
+        if request["accepted_ref"] or job["cancel_requested"]:
+            return None
         if receipt is None:
-            request = self.nexus.reconcile(job["id"], key)
             # A locally accepted reply always wins. The explicit compaction choice
             # creates a successor; it never changes this request's replay gate.
-            if request["accepted_ref"] or job["cancel_requested"]:
-                return None
             unsent_amended = (request["status"] == "prepared" and not request["attempts"]
                               and request["instruction_basis"] != instruction_basis(job))
-            failed = request["status"] in {"http_error", "rejected"} and continue_failed
+            reason = request.get("failure", {}).get("reason")
+            failed = (request["status"] in {"http_error", "rejected"} and continue_failed
+                      and reason not in NETWORK_PAUSES | {"retry_scheduled"})
             recover_compaction = (recover_compaction_request == key and request["kind"] == "compaction"
                                   and request["status"] == "unknown")
-            if not (unsent_amended or failed or recover_compaction):
+            network_retry = retry_request == key
+            if not (unsent_amended or failed or recover_compaction or network_retry):
                 return None
-            message = ("The user explicitly chose a new continuation after this unknown compaction. "
+            message = ("The user chose Retry after a network failure. No reply or tools from the failed request were applied. "
+                       "Use the current task state and instructions to continue."
+                       if network_retry else
+                       "The user explicitly chose a new continuation after this unknown compaction. "
                        "No handoff or tools from the unknown response were applied. The original request, payload and attempts remain unchanged. "
                        "Upstream completion and cost are unknown; a new request may duplicate upstream computation."
                        if recover_compaction else
@@ -366,10 +407,13 @@ class Runtime:
                        "The user chose Continue after a failed or rejected request. No tools from that response were executed. "
                        "The original request and response records remain available. HTTP failure does not establish remote cancellation or known cost. "
                        "Follow the latest user instructions and choose how to continue or repair the submission.")
-            choice = ({"authorization": {"kind": "human_compaction_recovery", "request": key},
-                       "payload_ref": request["payload_ref"]} if recover_compaction else {})
+            choice = ({"authorization": {"kind": "human_network_retry" if network_retry else "human_compaction_recovery", "request": key},
+                       "payload_ref": request["payload_ref"]} if network_retry or recover_compaction else {})
+            if request.get("not_before") and not request["not_before"].get("satisfied_by"):
+                choice["not_before"] = request["not_before"]
             self.store.blob(job["id"], "request_continuation", {"request": key, "status": request["status"],
-                            "reason": "explicit_compaction_recovery" if recover_compaction else
+                            "reason": "explicit_network_retry" if network_retry else
+                                      "explicit_compaction_recovery" if recover_compaction else
                                       "new_instructions" if unsent_amended else request.get("failure", {}).get("reason", request["status"]),
                             "message": message, "diagnostic": request.get("failure", {}).get("message"), "response_ref": request.get("response_ref"),
                             "attempts": list(request["attempts"]), "revision": state["revision"] + 1, **choice}, key=ref)
@@ -380,19 +424,22 @@ class Runtime:
                 "continuation_feedback": ref}
 
     def run(self, job: str, lock: FileLock | None = None, *, continue_failed: bool = False,
-            recover_compaction_request: str | None = None) -> None:
+            recover_compaction_request: str | None = None, retry_request: str | None = None) -> None:
         if lock is None:
             lock = FileLock(str(self.store.root / f"task-{job}.lock"))
             try:
                 lock.acquire(timeout=0)
             except Timeout as exc:
                 raise StopRun("already_running", "This task already has an active executor.") from exc
-        if recover_compaction_request is not None:
-            try:
+        try:
+            if recover_compaction_request is not None:
                 self.validate_compaction_recovery(job, recover_compaction_request)
-            except BaseException:
+            if retry_request is not None and not self.validate_network_retry(job, retry_request):
                 lock.release()
-                raise
+                return
+        except BaseException:
+            lock.release()
+            raise
         config = {"configurable": {"thread_id": job}, "recursion_limit": 1_000_000}
         try:
             # A committed local choice owns its projection before any reconcile(K).
@@ -402,7 +449,7 @@ class Runtime:
             snapshot = self.graph.get_state(config)
             if snapshot.next:
                 continuation = self.resume_pending(dict(snapshot.values), continue_failed=continue_failed,
-                                                   recover_compaction_request=recover_compaction_request)
+                                                   recover_compaction_request=recover_compaction_request, retry_request=retry_request)
                 if continuation:
                     # Supported state update: complete this transition as the model node and route to prepare.
                     self.graph.update_state(config, continuation, as_node="model")
@@ -435,3 +482,9 @@ class Runtime:
 
     def close(self):
         self.connection.close()
+
+
+def committed_network_retry(store: Store, job: str, selected: str, *, receipt=None) -> bool:
+    receipt = receipt or store.maybe("blob", f"continuation:{selected}")
+    return bool(receipt and receipt["job"] == job
+                and store.json(receipt["ref"], job).get("reason") == "explicit_network_retry")

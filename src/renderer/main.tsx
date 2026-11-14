@@ -6,15 +6,18 @@ import { AssetReferenceStatus } from './features/documents/AssetReferenceStatus'
 import { SavedPreview } from './features/documents/SavedPreview'
 import { TaskSettings } from './features/settings/TaskSettings'
 import { initialWaitPolicy, WaitingSettings } from './features/settings/WaitingSettings'
+import { RetrySettings } from './features/settings/RetrySettings'
 import { ReceiveProgress } from './features/receive/ReceiveProgress'
 import { ConflictRecovery } from './features/recovery/ConflictRecovery'
+import { retryDisplay } from './features/recovery/retryDisplay'
 import { TaskDiagnostics } from './features/diagnostics/TaskDiagnostics'
 import './style.css'
 
 const api = window.workbench.invoke
 const statusNames: Record<string, string> = { ready: 'Ready to convert', running: 'Working', completed: 'Completed', paused: 'Paused', waiting: 'Needs your input', blocked: 'Needs attention', cancelled: 'Stopped', interrupted: 'Interrupted' }
 const defaults: Route = { endpoint: '', model: '', protocol: 'chat_completions', context_tokens: 131072, output_tokens: 8192, image_tokens: 4096, vision: false, timeout_seconds: 180, wait_policy: initialWaitPolicy, parameters: {} }
-const defaultLimits: Limits = { max_requests: 80, max_active_seconds: 7200, replay_unknown: false, max_attempts_per_request: 1, max_response_repairs: 2 }
+const defaultLimits: Limits = { max_requests: 80, max_active_seconds: 7200, automatic_retry: true,
+  max_attempts_per_request: 3, max_server_wait_seconds: 300, max_response_repairs: 2 }
 
 function Icon({ name, size = 20 }: { name: 'plus' | 'file' | 'settings' | 'arrow' | 'download' | 'stop' | 'close' | 'book'; size?: number }) {
   const paths = { plus: 'M12 5v14M5 12h14', file: 'M14 3H5v18h14V8l-5-5ZM14 3v5h5M8 12h8M8 16h6', settings: 'M4 7h16M4 17h16M8 4v6M16 14v6', arrow: 'm9 5 7 7-7 7', download: 'M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5', stop: 'M6 6h12v12H6Z', close: 'm6 6 12 12M18 6 6 18', book: 'M12 5c-4-3-9-2-9-2v16s5-1 9 2c4-3 9-2 9-2V3s-5-1-9 2Zm0 0v16' }
@@ -57,8 +60,8 @@ function Connection({ initial, close, onSave }: { initial: Settings; close: () =
     <details><summary>Optional recovery and model parameters</summary><p className="hint">Limits remain in force after resume. An interrupted request can have unknown upstream usage.</p>
       <label>Automatic response corrections<input type="number" min="0" value={limits.max_response_repairs} onChange={e => setLimits(l => ({ ...l, max_response_repairs: Number(e.target.value) }))} /></label>
       <p className="hint">Correct text-only continuations or invalid handoffs before asking for attention. Corrections use the task's request budget. Zero disables them.</p>
-      <label className="check"><input type="checkbox" checked={limits.replay_unknown} onChange={e => setLimits(l => ({ ...l, replay_unknown: e.target.checked, max_attempts_per_request: e.target.checked ? 2 : 1 }))} />Allow bounded replay after an unknown outcome</label>
-      {limits.replay_unknown && <label>Maximum attempts per request<input type="number" min="1" max="10" value={limits.max_attempts_per_request} onChange={e => setLimits(l => ({ ...l, max_attempts_per_request: Number(e.target.value) }))} /></label>}
+      <RetrySettings value={{ automatic_retry: limits.automatic_retry ?? true, max_attempts_per_request: limits.max_attempts_per_request,
+        max_server_wait_seconds: limits.max_server_wait_seconds ?? 300 }} onChange={value => setLimits(l => ({ ...l, ...value }))} />
       <label>Additional native parameters (JSON)<textarea rows={3} value={parameters} onChange={e => setParameters(e.target.value)} /></label>
     </details>
     {error && <p className="error" role="alert">{error}</p>}
@@ -150,14 +153,17 @@ function App() {
   const recoveryObservation = JSON.stringify([job?.status, running, job?.head, job?.cancel_requested, job?.attempts,
     job?.requests?.map(request => [request.id, request.status, request.attempts])])
   const recoveryRequest = !running ? job?.compaction_recovery?.request : undefined
+  const networkRecovery = !running ? job?.network_recovery : null
+  const retryRequest = networkRecovery?.action === 'retry' ? networkRecovery.request : undefined
+  const retryAvailableAt = retryRequest ? networkRecovery?.retry_available_at : null
   const latestCapacity = job?.requests?.at(-1)?.capacity
   const latestRequest = job?.requests?.at(-1)
   const unmeasuredIntervals = (job?.active_time_gaps?.length || 0) + (job?.active_since != null && !running ? 1 : 0)
-  const continueTask = (recover_compaction_request?: string) => {
+  const continueTask = (recovery: { recover_compaction_request?: string; retry_request?: string } = {}) => {
     if (!ready || !settingsLoaded || settings.credentialState === 'failed') return
     if (!settings.hasKey || !settings.route?.model) { setSettingsOpen(true); return }
     void act(async () => {
-      await api('start', { job: active, amendment, scripts, recover_compaction_request })
+      await api('start', { job: active, amendment, scripts, ...recovery })
       setAmendment('')
     })
   }
@@ -212,14 +218,17 @@ function App() {
           </section>
         </div>
         <section className="agent-panel"><div className="agent-header"><div><span className={`agent-indicator ${running ? 'working' : ''}`} /><strong>Conversion agent</strong><span className="muted small">{job?.route?.model || settings.route?.model || 'Connect Nexus to begin'}</span></div><button className="text-button" onClick={() => setActivityOpen(!activityOpen)}>{activityOpen ? 'Hide activity and diagnostics' : 'View activity and diagnostics'} <span className="event-count">{job?.event_summary?.count || 0}</span></button></div>
-          {job?.last_message && <div className="agent-message">{job.last_message}</div>}
+          {running && latestRequest?.retry_schedule ? <div className="agent-message" role="status">
+            {retryDisplay(latestRequest.retry_schedule)} · Attempt {latestRequest.retry_schedule.next_attempt} of {latestRequest.retry_schedule.max_attempts}
+          </div> : job?.last_message && <div className="agent-message">{job.last_message}</div>}
           {job?.diagnostic_limitations?.map(text => <p className="hint" key={text}>{text}</p>)}
           {latestRequest?.receive && <ReceiveProgress receive={latestRequest.receive} status={latestRequest.status} running={running} />}
           {activityOpen && job?.id === active && <TaskDiagnostics key={`diagnostics:${job.id}`} job={job.id} latest={job.event_summary?.latest_seq ?? null} observation={recoveryObservation} />}
           <div className="agent-controls"><textarea aria-label="Instructions or reply" rows={2} placeholder={job?.status === 'waiting' ? 'Reply to the agent…' : 'Add an instruction or correction for the next step…'} value={amendment} onChange={e => setAmendment(e.target.value)} disabled={running} />
-            {running ? <button className="stop-button" disabled={job?.cancel_requested || busy} onClick={() => act(() => api('cancel', { job: active }))}><Icon name="stop" size={16} />{job?.cancel_requested ? 'Stopping…' : 'Stop'}</button> : <button className="primary" disabled={busy || !ready || !settingsLoaded || settings.credentialState === 'failed' || Boolean(editing)} onClick={() => continueTask()}>{job?.attempts ? 'Continue' : 'Start conversion'}<Icon name="arrow" size={16} /></button>}
+            {running ? <button className="stop-button" disabled={job?.cancel_requested || busy} onClick={() => act(() => api('cancel', { job: active }))}><Icon name="stop" size={16} />{job?.cancel_requested ? 'Stopping…' : 'Stop'}</button> : <button className="primary" disabled={busy || !ready || !settingsLoaded || settings.credentialState === 'failed' || Boolean(editing) || Boolean(retryAvailableAt)} onClick={() => continueTask({ retry_request: retryRequest })}>{retryRequest ? 'Retry' : job?.attempts ? 'Continue' : 'Start conversion'}<Icon name="arrow" size={16} /></button>}
           </div>
-          {recoveryRequest && <div className="agent-meta"><p className="hint">The interrupted context organization has no accepted reply. Resume permits one replacement for that request, then continues the task. It may repeat upstream work. Saved content and recorded usage stay intact.</p><button className="text-button accent" disabled={busy || !ready || !settingsLoaded || settings.credentialState === 'failed' || Boolean(editing)} onClick={() => continueTask(recoveryRequest)}>Resume context organization</button></div>}
+          {retryAvailableAt && <p className="hint">Retry available at {retryAvailableAt}</p>}
+          {recoveryRequest && <div className="agent-meta"><p className="hint">The interrupted context organization has no accepted reply. Resume permits one replacement for that request, then continues the task. It may repeat upstream work. Saved content and recorded usage stay intact.</p><button className="text-button accent" disabled={busy || !ready || !settingsLoaded || settings.credentialState === 'failed' || Boolean(editing)} onClick={() => continueTask({ recover_compaction_request: recoveryRequest })}>Resume context organization</button></div>}
           {job && <ConflictRecovery key={job.id} job={job.id} running={running} observation={recoveryObservation} refresh={() => refresh.current()}
             viewEvidence={(ref, raw) => { void act(async () => { setEvidence(await api('evidence', { job: active, ref, view: raw ? 'raw' : 'full' })); setTab('evidence') }) }} />}
           <div className="agent-meta"><span>{job?.attempts || 0} / {job?.limits.max_requests || defaultLimits.max_requests} model requests{latestCapacity ? ` · Estimated input ${latestCapacity.input_estimate.toLocaleString()} / ${(latestCapacity.capacity - latestCapacity.output_reserve).toLocaleString()}` : ''}</span><label className="check"><input type="checkbox" checked={scripts} onChange={e => setScripts(e.target.checked)} disabled={running} />Enable trusted task scripts</label></div>

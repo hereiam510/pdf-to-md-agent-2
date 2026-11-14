@@ -1,15 +1,21 @@
 """Elapsed-time decisions; transport bytes never imply generation progress."""
 from __future__ import annotations
 
+from .clocks import SYSTEM_CLOCKS
 from .schema import Route
 
 
 class RequestWait:
-    def __init__(self, route: Route):
+    def __init__(self, route: Route, *, clock=None):
         self.policy = route.wait_policy
         self.total = self.policy.total_seconds if self.policy else route.timeout_seconds
+        self.clock = clock or SYSTEM_CLOCKS.working
+        self.started = self.clock()
         self.first_progress: float | None = None
         self.last_progress: float | None = None
+
+    def elapsed(self) -> float:
+        return max(0.0, self.clock() - self.started)
 
     def boundary(self) -> tuple[float, str]:
         deadlines = []

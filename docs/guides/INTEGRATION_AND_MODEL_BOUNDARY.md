@@ -576,6 +576,8 @@ Generic 500/502, context overflow, HTTP payload size, authentication failure, in
 <a id="provider-diagnostics-and-preservation"></a>
 ### Provider diagnostics and the native-preservation boundary
 
+NET-01 records HTTP headers' status and relative cooldown before attempting to read an error body. The optional body read accepts JSON with identity encoding, retains only a recognized type/code or a fixed availability value, and discards the bytes. A failed read leaves the header-based failure class intact. See [shared transport behavior](../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-transport-behavior) for retry eligibility, privacy and wait bounds.
+
 The old client shared a fixed `error.type`/`error.code` allowlist across HTTP and in-band service errors. It checked decoded labels for credential text before audit or exception exposure. Raw-string replacement alone was insufficient because JSON escapes could conceal credential text until decoding. The filter excluded free-form messages, unknown labels, params, arbitrary headers and URLs. Unrecognized HTTP errors retained a status-only fallback.
 
 The client withheld raw HTTP error bodies, in-band service-error frames, raw SSE heartbeat comments and unparseable, unframed or non-native provider fragments. It kept safe byte counts, SHA-256 hashes and fixed withholding reasons where recorded. Safe status, allowlisted labels, timing and validated `Retry-After` remained separate diagnostic metadata. These records did not prove remote generation, cancellation or settlement.

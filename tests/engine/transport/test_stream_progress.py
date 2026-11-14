@@ -41,7 +41,8 @@ def frozen_stream(setup, protocol, body, clock, *, policy=None):
     job = protocol_job(store, initial, protocol)
     route = {**job["route"], "wait_policy": policy or {
         "first_progress_seconds": 600, "idle_progress_seconds": 300, "total_seconds": None}}
-    store.update_job(job["id"], route=Route.model_validate(route).model_dump())
+    store.update_job(job["id"], route=Route.model_validate(route).model_dump(),
+                     limits={**job["limits"], "automatic_retry": False})
     seen = []
     def handle(request):
         seen.append({"payload": json.loads(request.content), "timeout": request.extensions["timeout"]})
@@ -110,7 +111,7 @@ def test_only_timely_generation_can_extend_wait_and_late_event_cannot_revive(set
     store, job, nexus, request, _ = frozen_stream(setup, protocol, body, clock, policy=policy)
     with pytest.raises(StopRun) as failure:
         nexus.send(job["id"], request["id"])
-    assert failure.value.reason == "unknown_outcome"
+    assert failure.value.reason == "network_retry_disabled"
     attempt = store.records("attempt", job["id"])[0]
     expected = "total_deadline" if kind == "total" else "progress_idle_timeout" if kind in {"idle", "late_terminal"} else "first_progress_timeout"
     assert attempt["transport"]["stop_cause"] == expected and body.closed
@@ -150,7 +151,7 @@ def test_partial_failed_and_disconnected_streams_never_execute(setup, protocol, 
     store, job, nexus, request, _ = frozen_stream(setup, protocol, body, clock)
     with pytest.raises(StopRun) as stopped:
         nexus.send(job["id"], request["id"])
-    assert stopped.value.reason == ("response_rejected" if failure_mode == "error" else "unknown_outcome")
+    assert stopped.value.reason == ("response_rejected" if failure_mode == "error" else "network_retry_disabled")
     current = store.get("request", request["id"])
     assert current["accepted_ref"] is None and not store.records("operation", job["id"])
     assert store.bytes(current["stream_ref"], job["id"]) == b"".join(b for _, b in chunks)

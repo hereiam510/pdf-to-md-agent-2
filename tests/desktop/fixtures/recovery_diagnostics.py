@@ -58,7 +58,8 @@ def advance(directory):
         resolve(store, job, value["request"], first["basis"])
     # This isolated fixture explicitly starts a new synthetic request. The old
     # Stop remains preserved in its receipt; the fixture clears its current gate.
-    store.update_job(job, cancel_requested=False)
+    current = store.get("job", job)
+    store.update_job(job, cancel_requested=False, limits={**current["limits"], "automatic_retry": False})
     sent = []
     def timeout(request):
         sent.append(str(request.url))

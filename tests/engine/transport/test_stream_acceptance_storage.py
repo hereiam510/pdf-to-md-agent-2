@@ -33,6 +33,8 @@ def test_corrupt_acceptance_stage_cannot_publish_or_rewrite_unknown_attempt(setu
     nexus = Nexus(store, lambda _: "synthetic-only", httpx.MockTransport(respond), clock=clock)
     request = nexus.freeze(job["id"], "same-request-staged-provenance",
         make_payload(route, "Synthetic preservation fixture.", [], []), "normal", {})
+    request["replay_policy"] = {"replay_unknown": True, "max_attempts_per_request": 2}
+    store.put("request", request["id"], job["id"], request)
     frozen = store.bytes(request["payload_ref"], job["id"])
     with pytest.raises(StopRun, match="Remote completion and usage are unknown"):
         nexus.send(job["id"], request["id"])

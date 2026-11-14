@@ -80,7 +80,7 @@ def test_allowance_change_retains_consumption_and_frozen_input(setup, protocol):
 def test_frozen_replay_policy_does_not_follow_later_task_values(setup, protocol, allow_replay):
     store, initial = setup
     job = protocol_job(store, initial, protocol)
-    job = store.update_job(job["id"], limits={**job["limits"], "replay_unknown": allow_replay,
+    job = store.update_job(job["id"], limits={**job["limits"], "automatic_retry": allow_replay,
                                             "max_attempts_per_request": 2 if allow_replay else 1})
     sent = []
     def unknown(request):
@@ -91,13 +91,13 @@ def test_frozen_replay_policy_does_not_follow_later_task_values(setup, protocol,
     with pytest.raises(StopRun):
         nexus.send(job["id"], frozen["id"])
     store.update_job(job["id"], limits={**job["limits"], "max_requests": 100,
-                                       "replay_unknown": True, "max_attempts_per_request": 3})
+                                       "automatic_retry": True, "max_attempts_per_request": 3})
     if allow_replay:
         with pytest.raises(StopRun):
             nexus.send(job["id"], frozen["id"])
     with pytest.raises(StopRun) as stopped:
         nexus.send(job["id"], frozen["id"])
-    assert stopped.value.reason == "unknown_outcome"
+    assert stopped.value.reason == ("network_retry_exhausted" if allow_replay else "network_retry_disabled")
     assert len(sent) == (2 if allow_replay else 1)
     assert store.get("job", job["id"])["attempts"] == len(sent)
 
@@ -107,7 +107,7 @@ def test_frozen_replay_policy_does_not_follow_later_task_values(setup, protocol,
 def test_deadline_change_is_only_used_by_newly_frozen_requests(setup, protocol, kind):
     store, initial = setup
     job = protocol_job(store, initial, protocol)
-    job = store.update_job(job["id"], active_seconds=17, amendments=["Preserve the source units."])
+    job = store.update_job(job["id"], active_seconds=17, limits={**job["limits"], "automatic_retry": False}, amendments=["Preserve the source units."])
     sent = []
 
     def reply(request):
@@ -145,17 +145,19 @@ def test_deadline_change_is_only_used_by_newly_frozen_requests(setup, protocol, 
         # A new deadline does not reopen the unknown request's exhausted replay gate.
         with pytest.raises(StopRun) as stopped:
             nexus.send(job["id"], unknown["id"])
-        assert stopped.value.reason == "unknown_outcome" and len(sent) == 1
+        assert stopped.value.reason == "network_retry_disabled" and len(sent) == 1
         assert store.get("request", unknown["id"]) == unknown
         nexus.send(job["id"], prepared["id"])
         assert sent[-1]["payload"] == old_payloads[prepared["id"]]
-        assert sent[-1]["timeout"]["read"] == prepared["route"]["timeout_seconds"] == 180
+        assert sent[-1]["timeout"]["read"] is None
+        assert sent[-1]["timeout"]["write"] == prepared["route"]["timeout_seconds"] == 180
         newly_frozen = nexus.freeze(job["id"], "new-request", {"new": "input"}, kind, {})
         assert newly_frozen["route"] == updated["route"]
         assert newly_frozen["instruction_basis"] == prepared["instruction_basis"]
         assert newly_frozen["replay_policy"] == prepared["replay_policy"]
         nexus.send(job["id"], newly_frozen["id"])
-        assert sent[-1]["timeout"]["read"] == 600
+        assert sent[-1]["timeout"]["read"] is None
+        assert sent[-1]["timeout"]["write"] == 600
         assert sent[-1]["timeout"]["connect"] == 30
         assert store.get("job", job["id"])["attempts"] == len(sent) == 3
         assert store.get("job", job["id"])["active_seconds"] == 17
@@ -196,7 +198,7 @@ def test_settings_are_atomic_and_do_not_relax_recovery_or_protocol(setup, protoc
                               ({"model": "another-model"}, {}), ({"vision": False}, {}),
                               ({"parameters": {"temperature": 0.4}}, {}),
                               ({"context_tokens": 131072}, {"max_requests": 90, "replay_unknown": True}),
-                              ({}, {"max_attempts_per_request": 3}), ({}, {"max_response_repairs": 9})]:
+                              ({}, {"max_response_repairs": 9})]:
             with pytest.raises(Conflict):
                 engine.configure(job["id"], route={"timeout_seconds": 600, **route}, limits=limits)
             assert store.get("job", job["id"]) == job

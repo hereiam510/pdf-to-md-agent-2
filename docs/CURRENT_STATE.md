@@ -2,12 +2,16 @@
 
 ## Focus and resume route
 
-Current focus: R01CAL-A03-DELIVERY-01 T5 final tickets.
-Resume at: [T5-M — Mark PR #1 ready and merge](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-m--mark-pr-1-ready-and-merge) using the [T5 final verdict](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-final-verdict).
-Next activity: await the user's T5-M assignment. Choose the next work from [WORK_ITEMS](WORK_ITEMS.md#selection-now) after the merge.
-Instruction basis: the user's 2026-11-14 T5-V2 instruction covers the verdict, checks, commit and push, then stops before T5-M. The [2026-11-13 final route and merge approval](discussions/ASSET_REFERENCES.md#t5-final-route-and-merge-approved) records the amended scope and the approved merge method for the separate ticket.
+Current focus: NET-01 network-failure handling (Stage C) before the next Stage B batch.
+Resume at: [NET-01 T8](batches/NET-01/tickets.md#t8--mark-pr-2-ready-and-merge), with [draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2). The user deferred T7b; the real-sleep case is recorded as [NET-01-RV4](batches/NET-01/verification.md#net-01-rv4--real-sleep-not-observed).
+Next activity: Push the T7 records and carry out T8 when the user explicitly asks to merge, then return to next-work selection in [WORK_ITEMS](WORK_ITEMS.md#selection-now).
+Instruction basis: [NET-01 execution authority](batches/NET-01/tickets.md#planning-basis-and-authority) and the [adopted specification](batches/NET-01/spec.md#status-and-authority).
 
 ## Return routes
+
+- Previous orientation: [post-merge review](batches/R01CAL-A03-DELIVERY-01/verification.md#post-merge-review-and-orientation) and [recommendation after the merge](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-merge). The Stage B and Stage D candidates stay in [WORK_ITEMS](WORK_ITEMS.md#selection-now).
+
+- Previous batch: [T5 final verdict](batches/R01CAL-A03-DELIVERY-01/verification.md#t5-final-verdict), merged through [T5-M](batches/R01CAL-A03-DELIVERY-01/tickets.md#t5-m--mark-pr-1-ready-and-merge) and [PR #1](https://github.com/hereiam510/pdf-to-md-agent-2/pull/1).
 
 - Previous review: [closing review at `c7fe4c3`](batches/R01CAL-A03-DELIVERY-01/verification.md#review-of-the-t5-closing-implementation-at-c7fe4c3) and its [recommendation](discussions/ASSET_REFERENCES.md#next-step-recommendation-after-the-t5-closing-review).
 

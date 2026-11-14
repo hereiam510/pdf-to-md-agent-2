@@ -4,7 +4,7 @@ import asyncio
 import httpx
 from contextlib import contextmanager
 
-import pdfmd.active_time as module
+from pdfmd.clocks import Clocks
 from pdfmd.active_time import ActiveTime
 from pdfmd.nexus import Nexus
 from pdfmd.runtime import Runtime
@@ -26,8 +26,7 @@ def test_monotonic_accounting_survives_wall_jumps_and_checkpoint_retry(setup, mo
     store, job = setup
     store.update_job(job["id"], active_seconds=17)
     clock = Clock()
-    monkeypatch.setattr(module, "time", clock)
-    meter = ActiveTime(store)
+    meter = ActiveTime(store, Clocks(clock))
     meter.start(job["id"])
     clock.mono += 5
     clock.wall -= 10000
@@ -54,8 +53,7 @@ def test_monotonic_accounting_survives_wall_jumps_and_checkpoint_retry(setup, mo
 def test_crash_tail_is_distinct_from_known_time_and_restart_is_atomic(setup, monkeypatch):
     store, job = setup
     clock = Clock()
-    monkeypatch.setattr(module, "time", clock)
-    first = ActiveTime(store)
+    first = ActiveTime(store, Clocks(clock))
     first.start(job["id"])
     clock.mono += 12
     clock.wall += 12
@@ -63,7 +61,7 @@ def test_crash_tail_is_distinct_from_known_time_and_restart_is_atomic(setup, mon
     # No close: a process dies after its last durable checkpoint.
     clock.wall += 10000
     clock.mono += 10000
-    second = ActiveTime(store)
+    second = ActiveTime(store, Clocks(clock))
     original = store.put_tx
     def fault(db, kind, *args):
         original(db, kind, *args)
@@ -89,8 +87,7 @@ def test_crash_tail_is_distinct_from_known_time_and_restart_is_atomic(setup, mon
 def test_checkpoint_database_wait_is_retained_in_the_unmeasured_tail(setup, monkeypatch):
     store, job = setup
     clock = Clock()
-    monkeypatch.setattr(module, "time", clock)
-    meter = ActiveTime(store)
+    meter = ActiveTime(store, Clocks(clock))
     meter.start(job["id"])
     clock.mono += 5
     clock.wall += 5
@@ -108,7 +105,7 @@ def test_checkpoint_database_wait_is_retained_in_the_unmeasured_tail(setup, monk
     # A crash here must not silently lose the time spent persisting that sample.
     current = store.get("job", job["id"])
     assert current["active_seconds"] == 5 and current["active_since"] == observed
-    restarted = ActiveTime(store)
+    restarted = ActiveTime(store, Clocks(clock))
     restarted.start(job["id"])
     gap = store.records("active_time_gap", job["id"])[0]
     assert gap["wall_span_seconds"] == 3 and gap["active_seconds"] is None
@@ -121,14 +118,13 @@ def test_http_wait_uses_monotonic_budget_and_keeps_unknown_attempt(setup, monkey
     job = protocol_job(store, job, protocol)
     store.update_job(job["id"], active_seconds=17, limits={**job["limits"], "max_active_seconds": 19})
     clock = Clock()
-    monkeypatch.setattr(module, "time", clock)
     sent = []
     async def wait(request):
         sent.append(request.content)
         clock.mono += 2
         clock.wall -= 10000
         await asyncio.Future()
-    runtime = Runtime(store, Nexus(store, lambda _: "fixture", httpx.MockTransport(wait)))
+    runtime = Runtime(store, Nexus(store, lambda _: "fixture", httpx.MockTransport(wait), clocks=Clocks(clock)))
     try:
         runtime.run(job["id"])
     finally:

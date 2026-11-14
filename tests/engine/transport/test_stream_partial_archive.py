@@ -37,7 +37,7 @@ def test_partial_stop_or_disconnect_preserves_raw_without_claiming_reconstructio
     frozen = store.bytes(request["payload_ref"], job["id"])
     with pytest.raises(StopRun) as failure:
         nexus.send(job["id"], request["id"])
-    assert failure.value.reason == ("cancelled" if stop else "unknown_outcome")
+    assert failure.value.reason == ("cancelled" if stop else "network_retry_disabled")
     attempt = retained_attempt(store, job, request)
     assert attempt["remote_cancelled"] is None and body.closed
     raw = store.get("blob", attempt["stream_ref"])
@@ -107,7 +107,7 @@ def test_complete_protocol_corruption_is_rejected_before_acceptance_staging(setu
         pytest.fail("Corrupt unaccepted evidence must not resend on reopen")
     with pytest.raises(StopRun) as stopped:
         Nexus(Store(store.root), forbidden).send(job["id"], request["id"])
-    assert stopped.value.reason == "unknown_outcome"
+    assert stopped.value.reason == "network_retry_disabled"
 
 
 @pytest.mark.parametrize("protocol", PROTOCOLS)

@@ -33,7 +33,8 @@ const labels: Record<string, string> = {
   eligible: 'Local recovery is available', resolved: 'Local recovery decision saved',
 }
 const text = (value?: string) => value ? labels[value] ?? value : 'Not established'
-const usage = (value: unknown, state?: string) => state === 'unavailable' || value === undefined ? 'unavailable'
+const usage = (value: unknown, state?: string) => state === 'not_sent' ? 'no inference (connection failed before sending)'
+  : state === 'unavailable' || value === undefined ? 'unavailable'
   : state === 'unknown' || value === null ? 'unknown' : JSON.stringify(value)
 
 export function ConflictRecovery({ job, running, observation = '', refresh, viewEvidence }: {

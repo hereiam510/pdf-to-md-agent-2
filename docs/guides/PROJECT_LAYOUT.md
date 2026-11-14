@@ -28,6 +28,7 @@ The engine remains a small flat package so its existing imports, lifecycle and p
 | --- | --- | --- |
 | Task service, orchestration and dispatch | `server.py`, `runtime.py`, `tools.py`, `active_time.py` | [Execution and delivery](EXECUTION_AND_DELIVERY.md), [runtime contract](../design/RUNTIME_AND_DELIVERY.md) |
 | Native requests, receive and accounting | `nexus.py`, `streaming.py`, `waiting.py`, `usage.py`, `request_estimation.py` | [Streaming contract](../design/STREAMING_RECEIVE.md), [integration](INTEGRATION_AND_MODEL_BOUNDARY.md) |
+| Network retry policy, deadlines and clock domains | `network.py`, `clocks.py`, consumed by `nexus.py`, `waiting.py` and `active_time.py` | [Runtime transport](../design/RUNTIME_AND_DELIVERY.md#shared-limits-and-transport-behavior), [clock implementation](EXECUTION_AND_DELIVERY.md#implemented-task-settings-and-active-time) |
 | Offline fixed-payload calibration evaluation | `calibration.py` | [Study/corpus commands and semantics](CONTEXT_AND_EVIDENCE.md#offline-calibration-evaluator); developer-only explicit invocation, no runtime profile activation |
 | Offline bounded usage-anchoring coordinator | `usage_trial.py`, shared `anchor_basis.py` | [Coordinator mechanism](CONTEXT_AND_EVIDENCE.md#offline-usage-anchoring-coordinator); explicit mock-only injection, no application enrollment entry point |
 | Opt-in usage observation and shadow pricing | `usage_observation.py`, `usage_anchoring.py` | [Observer mechanism](CONTEXT_AND_EVIDENCE.md#observation-only-usage-anchoring); no admission or trial authority |

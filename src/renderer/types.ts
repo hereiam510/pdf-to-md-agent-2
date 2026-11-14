@@ -4,7 +4,8 @@ export type Route = {
   context_tokens: number; output_tokens: number; image_tokens: number | null; vision: boolean;
   timeout_seconds: number; wait_policy?: WaitPolicy | null; parameters: Record<string, unknown>
 }
-export type Limits = { max_requests: number; max_active_seconds: number; replay_unknown: boolean; max_attempts_per_request: number; max_response_repairs: number }
+export type Limits = { max_requests: number; max_active_seconds: number; replay_unknown?: boolean; automatic_retry?: boolean;
+  max_attempts_per_request: number; max_server_wait_seconds?: number; max_response_repairs: number }
 export type Settings = { route?: Route; limits?: Limits; hasKey?: boolean; encryptionAvailable?: boolean; remember?: boolean;
   revision?: number; credentialState?: 'ready' | 'failed'; error?: string }
 export type ReceiveObservation = {
@@ -14,6 +15,7 @@ export type ReceiveObservation = {
   event_count?: number; progress_count?: number; protocol_complete?: boolean; terminal_event?: string | null;
   diagnostic?: { category: string; field: string; stage: string; ordinal: number | null }
 }
+export type RetrySchedule = { due_wall: number; next_attempt: number; max_attempts: number; failure_class: string; detail?: string }
 export type Job = {
   id: string; name: string; scope: string; status: string; page_count: number; head: string | null; delivery: string | null;
   last_message: string; attempts: number; active_seconds: number; limits: Limits; route: Route | null; running?: boolean;
@@ -21,9 +23,11 @@ export type Job = {
   active_time_gaps?: { id: string; from_wall: number; observed_wall: number; wall_span_seconds: number; active_seconds: null }[];
   cancel_requested: boolean; stop_reason: string | null; content_claim: string;
   compaction_recovery?: { request: string } | null;
+  network_recovery?: { request: string; class: string; reason: string; attempts_used: number; max_attempts: number;
+    action: 'retry' | 'continue'; not_before: { due_wall: number } | null; retry_remaining_seconds: number; retry_available_at: string | null } | null;
   diagnostic_limitations?: string[];
   versions?: { id: string; title: string; claim: string }[];
-  requests?: { id: string; kind: string; status: string; diagnostic_status?: string; reason?: string; attempts?: number; receive?: ReceiveObservation | null; capacity?: { input_estimate: number; capacity: number; output_reserve: number } }[];
+  requests?: { id: string; kind: string; status: string; diagnostic_status?: string; reason?: string; attempts?: number; receive?: ReceiveObservation | null; retry_schedule?: RetrySchedule | null; capacity?: { input_estimate: number; capacity: number; output_reserve: number } }[];
   event_summary?: { count: number; latest_seq: number | null };
   evidence?: { ref: string; kind: string; bytes: number; meta: Record<string, unknown> }[]
 }
@@ -69,7 +73,7 @@ export type DiagnosticDetail = {
   boundary?: string;
   publication?: { pointer: unknown; staging_ref: string | null; meaning: string };
   frozen_preparation?: { kind: unknown; payload_ref: unknown; route: unknown; meta: unknown; instruction_basis: unknown; replay_policy: unknown };
-  attempts?: ({ id: string; record: unknown; receive_record: unknown; usage_state: 'unknown' | 'reported'; time_meaning: string; status?: never; reason?: never }
+  attempts?: ({ id: string; record: unknown; receive_record: unknown; usage_state: 'not_sent' | 'unknown' | 'reported'; time_meaning: string; status?: never; reason?: never }
     | { id: string; status: 'unavailable'; reason: string; record?: never; usage_state?: never })[];
   raw_usage?: { ref: string; attempt: string; usage: unknown; meaning: string; ordinal?: number;
     validation?: { status: 'unknown' | 'partial' | 'complete'; reason: string | null; usage: unknown } }[];

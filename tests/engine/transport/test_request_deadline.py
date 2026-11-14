@@ -46,7 +46,8 @@ class Body(httpx.AsyncByteStream):
 def frozen(setup, protocol, transport, *, deadline=180, clock=None):
     store, initial = setup
     job = protocol_job(store, initial, protocol)
-    store.update_job(job["id"], route={**job["route"], "timeout_seconds": deadline})
+    store.update_job(job["id"], route={**job["route"], "timeout_seconds": deadline},
+                     limits={**job["limits"], "automatic_retry": False})
     job = store.get("job", job["id"])
     nexus = Nexus(store, lambda _: "do-not-record-this-credential", transport, **({"clock": clock} if clock else {}))
     payload = make_payload(Route.model_validate(job["route"]), "Offline fixture.", [], [])
@@ -61,7 +62,7 @@ def test_headers_and_partial_body_survive_read_timeout_without_executing_or_repl
     original = store.bytes(request["payload_ref"], job["id"])
     with pytest.raises(StopRun, match="Remote|remote|Upstream|upstream") as stopped:
         nexus.send(job["id"], request["id"])
-    assert stopped.value.reason == "unknown_outcome"
+    assert stopped.value.reason == "network_retry_disabled"
     attempt = store.records("attempt", job["id"])[0]
     assert attempt["http_status"] == 200
     observed = attempt["transport"]
@@ -99,14 +100,14 @@ def test_later_complete_reply_uses_frozen_deadline_not_latest_task_value(setup, 
     else:
         with pytest.raises(StopRun) as stopped:
             nexus.send(job["id"], request["id"])
-        assert stopped.value.reason == "unknown_outcome"
+        assert stopped.value.reason == "network_retry_disabled"
     attempt = store.records("attempt", job["id"])[0]
     observation = attempt["transport"]
     assert observation["deadline_seconds"] == deadline and observation["elapsed_seconds"] == 181
     assert observation["connect_timeout_seconds"] == 30
     assert observation["stop_cause"] == ("complete" if finishes else "request_deadline")
     assert observation["body_complete"] is finishes and body.closed
-    assert observed_timeouts == [{"connect": 30, "read": deadline, "write": deadline, "pool": deadline}]
+    assert observed_timeouts == [{"connect": 30, "read": None, "write": deadline, "pool": deadline}]
     assert attempt["status"] == ("accepted" if finishes else "unknown")
 
 
@@ -117,7 +118,7 @@ def test_incoming_body_does_not_restart_total_deadline(setup, protocol):
     store, job, nexus, request = frozen(setup, protocol, httpx.MockTransport(lambda _: httpx.Response(200, stream=body)), deadline=600, clock=clock)
     with pytest.raises(StopRun) as stopped:
         nexus.send(job["id"], request["id"])
-    assert stopped.value.reason == "unknown_outcome"
+    assert stopped.value.reason == "network_retry_disabled"
     observed = store.records("attempt", job["id"])[0]["transport"]
     assert observed["stop_cause"] == "request_deadline" and observed["elapsed_seconds"] == 601
     assert observed["first_body_elapsed_seconds"] == 200 and observed["last_body_elapsed_seconds"] == 601
@@ -143,7 +144,7 @@ def test_completed_late_response_cannot_skip_deadline_but_keeps_complete_bytes(s
                                        deadline=1 if real_clock else 180, clock=clock)
     with pytest.raises(StopRun) as stopped:
         nexus.send(job["id"], request["id"])
-    assert stopped.value.reason == "unknown_outcome"
+    assert stopped.value.reason == "network_retry_disabled"
     attempt = store.records("attempt", job["id"])[0]
     observation = attempt["transport"]
     assert observation["stop_cause"] == "request_deadline" and observation["body_complete"]
@@ -168,7 +169,7 @@ def test_gateway_status_is_known_without_reading_or_archiving_its_error_body(set
     store, job, nexus, request = frozen(setup, protocol, httpx.MockTransport(lambda _: httpx.Response(502, stream=body)), deadline=600)
     with pytest.raises(StopRun) as stopped:
         nexus.send(job["id"], request["id"])
-    assert stopped.value.reason == "provider_error"
+    assert stopped.value.reason == "network_retry_disabled"
     attempt = store.records("attempt", job["id"])[0]
     assert attempt["http_status"] == 502 and attempt["status"] == "http_error"
     assert attempt["transport"]["stop_cause"] == "http_error"
