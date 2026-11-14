@@ -5,10 +5,11 @@ import argparse
 from datetime import datetime, timezone
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from math import ceil
+from math import ceil, isfinite
 from pathlib import Path
 import json
 import subprocess
+import sys
 from tempfile import mkdtemp
 from threading import Event, Thread
 import time
@@ -29,6 +30,7 @@ ENDPOINT_PATH = "/v1/chat/completions"
 MIN_SLEEP = 60
 TIMING_TOLERANCE = 2
 WAKE_ADMISSION_TOLERANCE = 5
+STOPWATCH_TOLERANCE = 10
 DRY_DELAYS = {"wait": 2, "in-flight": 1}
 REAL_DELAYS = {"wait": 120, "in-flight": 180}
 
@@ -105,7 +107,7 @@ class LoopbackScript(ThreadingHTTPServer):
     def prompt(self, boundary, minimum):
         self.sleep_prompt = {"wall": SYSTEM_CLOCKS.wall(), "minimum_sleep_seconds": minimum}
         instruction = ("Dry run. Keep the machine awake." if self.dry_run else
-                       f"Put the machine to Sleep now. Wake it after at least {minimum} seconds, timed separately.")
+                       f"Put the machine to Sleep now. Time the sleep separately and wake it after at least {minimum} seconds.")
         print(f"{boundary} {instruction}", flush=True)
 
 
@@ -162,9 +164,12 @@ def evaluate(report):
     if dry_run:
         checks["no_suspension"] = not intervals and not wake_events and abs(clock_gap) < TIMING_TOLERANCE
     else:
+        timed = report["stopwatch_sleep_seconds"]
         checks["single_measured_suspension"] = bool(prompt and len(intervals) == len(wake_events) == 1
-            and wake_events[0]["data"] == intervals[0] and abs(clock_gap - suspended) <= TIMING_TOLERANCE
+            and intervals[0]["duration_seconds"] >= 2 and wake_events[0]["data"] == intervals[0]
+            and abs(clock_gap - suspended) <= TIMING_TOLERANCE
             and suspended >= prompt["minimum_sleep_seconds"] - TIMING_TOLERANCE)
+        checks["suspension_matches_stopwatch"] = timed is not None and abs(timed - suspended) <= STOPWATCH_TOLERANCE
 
     wake = intervals[0]["detected_wall"] if len(intervals) == 1 else None
     sleep_start = wake - suspended if wake is not None else None  # Approximate, bounded by checkpoint cadence.
@@ -184,11 +189,19 @@ def evaluate(report):
             checks["retry_admitted_on_wake"] = bool(due is not None and wake is not None and prompt
                 and prompt["wall"] - TIMING_TOLERANCE <= sleep_start < due <= wake
                 and 0 <= accepted["started"] - wake <= WAKE_ADMISSION_TOLERANCE)
-    elif not dry_run:
+    else:
         released = requests[0].get("reply_released_wall") if requests else None
-        checks["suspended_with_reply_pending"] = bool(released is not None and wake is not None and prompt
-            and prompt["wall"] - TIMING_TOLERANCE <= sleep_start < released
-            and wake <= released + TIMING_TOLERANCE)
+        receive_elapsed = transport.get("receive_elapsed_seconds")
+        if released is not None:
+            server_wait = released - requests[0]["received_wall"]
+            report["timing"]["server_wait_seconds"] = server_wait
+            report["timing"]["engine_receive_seconds"] = receive_elapsed
+        checks["response_wait_excludes_suspension"] = bool(released is not None and receive_elapsed is not None
+            and abs(receive_elapsed - (server_wait - suspended)) <= TIMING_TOLERANCE)
+        if not dry_run:
+            checks["suspended_with_reply_pending"] = bool(released is not None and wake is not None and prompt
+                and prompt["wall"] - TIMING_TOLERANCE <= sleep_start < released
+                and wake <= released + TIMING_TOLERANCE)
     return {"passed": all(checks.values()) and not report["errors"], "checks": checks}
 
 
@@ -254,8 +267,15 @@ def run_case(case, delay, dry_run, directory, revision, powercfg):
               "attempts": store.records("attempt", job_id), "requests": store.records("request", job_id),
               "job": {field: final[field] for field in ("id", "status", "stop_reason", "attempts", "head", "delivery")},
               "delivery": delivery, "errors": errors}
-    report["verdict"] = evaluate(report)
     return report
+
+
+def read_stopwatch():
+    try:
+        seconds = float(input("Enter the sleep duration measured on your stopwatch, in seconds: "))
+    except (EOFError, ValueError, KeyboardInterrupt):
+        return None
+    return seconds if isfinite(seconds) and seconds > 0 else None
 
 
 def main():
@@ -266,6 +286,8 @@ def main():
     args = parser.parse_args()
     if not SYSTEM_CLOCKS.windows:
         parser.error("The harness uses the Windows working and interrupt clocks.")
+    if sys.flags.optimize:
+        parser.error("Run without Python optimization so the shared delivery assertions are enabled.")
     delay = args.delay_seconds
     if delay is None:
         delay = (DRY_DELAYS if args.dry_run else REAL_DELAYS)[args.case]
@@ -281,6 +303,9 @@ def main():
     path = directory / "report.json"
     print(f"Report: {path}", flush=True)
     report = run_case(args.case, delay, args.dry_run, directory, revision, powercfg)
+    report["stopwatch_sleep_seconds"] = (read_stopwatch()
+                                         if not args.dry_run and report["suspended_intervals"] else None)
+    report["verdict"] = evaluate(report)
     path.write_text(json.dumps(report, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
     print(f"{'PASS' if report['verdict']['passed'] else 'FAIL'}: {path}", flush=True)
     return 0 if report["verdict"]["passed"] else 1
