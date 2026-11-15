@@ -4,7 +4,7 @@
 
 Current focus: CAPFB-01, the offline investigation of GYN-T3-01, accepted offline.
 Resume at: the [CAPFB-01 combined verdict](batches/CAPFB-01/verification.md#combined-verdict) and its [investigation findings](batches/CAPFB-01/verification.md#investigation-findings); GYN-01's [GYN-PR-02](batches/GYN-01/verification.md#gyn-pr-02--figure-assets-are-below-the-sources-raster-resolution-without-originals) (figure resolution) remains open.
-Next activity: the user chooses among a live check of the new capacity wording, the FD-01 resolution discussion, and delivery of `codex/capfb-01` and draft PR #4. Nothing is selected.
+Next activity: review and merge of [PR #5](https://github.com/hereiam510/pdf-to-md-agent-2/pull/5) ([delivery record](batches/CAPFB-01/tickets.md#progress)); then the user chooses between a live check of the new capacity wording and the FD-01 resolution discussion. Nothing else is selected.
 Instruction basis: the user's 2026-11-15 "ok, use gpt-6.1-sol-xhigh to implement", with longer runs and more runs allowed if needed.
 
 ## Return routes
