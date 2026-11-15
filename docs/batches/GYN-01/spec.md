@@ -2,7 +2,7 @@
 
 ## Status and authority
 
-Updated 2026-11-15 (Asia/Hong_Kong). The [T1 and publication instruction](../../discussions/SOURCE_CONVERSION.md#t1-preparation-and-draft-pr-selected-2026-11-15) authorizes fresh-task preparation, task-local settings, synthetic English OCR prewarming and draft-PR publication. Stop before Start; no model call or live interval is selected. The [local tickets](tickets.md#dependency-and-execution-overview) own execution and [verification](verification.md) owns checks and acceptance. Earlier documentation selections retain their dated scope in the discussion.
+Updated 2026-11-15 (Asia/Hong_Kong). The [T2/T3 instruction](../../discussions/SOURCE_CONVERSION.md#t2-and-t3-selected-2026-11-15) authorizes one bounded interval on the prepared task, source-led review and reopen/export, and updating draft PR #4. The agreed settings and exits below remain unchanged. No Continue, extension, replacement task or merge is selected. [Tickets](tickets.md) own progress; [verification](verification.md#t2-and-t3-execution) owns results.
 
 ## Outcome and decision basis
 

@@ -4,7 +4,7 @@
 
 2026-11-15 (Asia/Singapore). After the [FIX-01 post-merge review](../batches/FIX-01/verification.md#post-merge-review-and-orientation), the user asked to discuss Stage B. This file owns the discussion of the next source-led conversion batch toward the [Stage B outcome](../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources). It builds on the [recommendation after NET-01](NETWORK_RECOVERY.md#next-step-recommendation-after-net-01). [WORK_ITEMS](../WORK_ITEMS.md#selection-now) keeps selection.
 
-The initial discussion and later specification/ticket work remain in the dated selections below. The latest [T1 and publication selection](#t1-preparation-and-draft-pr-selected-2026-11-15) authorizes preparation and a draft PR; the live interval remains unselected.
+The initial discussion and later specification/ticket work remain in the dated selections below. The latest [T2/T3 selection](#t2-and-t3-selected-2026-11-15) authorizes the bounded interval, source review, reopen/export and draft-PR update. [The result and next decision](../batches/GYN-01/verification.md#combined-assessment-and-continuation) own continuation; no further interval is selected.
 
 ## What the earlier runs already show
 
@@ -141,3 +141,7 @@ The user accepted a GYN-01 branch with separate commits and requested comment on
 ## T1 preparation and draft PR selected (2026-11-15)
 
 2026-11-15 (Asia/Hong_Kong). The user agreed to publish the records through a draft PR and explicitly selected GYN-01 T1: create the isolated fresh task, apply and verify the agreed settings, prewarm English OCR, and report readiness/blockers without starting the live run. The selected prewarming includes the ordinary worker's language-data download. T2/T3 execution and merging remain unselected. [Ticket progress](../batches/GYN-01/tickets.md#dependency-and-execution-overview) and [T1 evidence](../batches/GYN-01/verification.md#t1-preparation-and-publication) own execution and results.
+
+## T2 and T3 selected (2026-11-15)
+
+The user authorized T2 and T3 on the prepared task: 45 sends, 3,600 active seconds, 4,500 wall seconds, one Start, no Continue or extension; source-led review, reopen/export and updating draft PR #4 are included. This supersedes the earlier preparation-only boundary. No replacement task, repair run or merge is selected. [Execution evidence](../batches/GYN-01/verification.md#t2-and-t3-execution) owns the outcome.

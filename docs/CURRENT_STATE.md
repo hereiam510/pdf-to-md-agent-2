@@ -2,10 +2,10 @@
 
 ## Focus and resume route
 
-Current focus: GYN-01 T1 readiness and draft-PR delivery.
-Resume at: [T1 evidence and handoff](batches/GYN-01/verification.md#t1-preparation-and-publication), then [T2's operator checklist](batches/GYN-01/tickets.md#gyn-01-t2--execute-the-single-bounded-interval) and the [finite interval](batches/GYN-01/spec.md#agreed-route-and-finite-interval).
-Next activity: review readiness, then T2/T3 when authorized; reuse the prepared task and recheck its bindings before Start.
-Instruction basis: the user's 2026-11-15 [T1 and draft-PR selection](discussions/SOURCE_CONVERSION.md#t1-preparation-and-draft-pr-selected-2026-11-15), explicitly stopping before the live run.
+Current focus: GYN-01 bounded-run assessment and draft-PR delivery.
+Resume at: [Combined assessment](batches/GYN-01/verification.md#combined-assessment-and-continuation), then [GYN-T3-01](batches/GYN-01/verification.md#gyn-t3-01--unfinished-final-self-check).
+Next activity: decide whether to investigate the unfinished self-check offline before proposing a remedy; the live interval is closed and no further execution is selected.
+Instruction basis: the user's 2026-11-15 [T2/T3 selection](discussions/SOURCE_CONVERSION.md#t2-and-t3-selected-2026-11-15), including source-led review, reopen/export and updating draft PR #4, with one Start and no Continue or extension.
 
 ## Return routes
 
