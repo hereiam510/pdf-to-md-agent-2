@@ -186,4 +186,26 @@ An earlier full engine run at `2d833b5` was stopped before completion, because T
 - **R01-SURROGATE:** every traced producer rejects at its earliest boundary without altering characters. Model replies follow decision A (blocked, explicit Continue recovers), proven in both protocols with and without streaming. Valid non-BMP text passes through save, reopen and export ([T3](#implementation-under-decision-a)).
 - **NET-PM-01:** README pointers lead to the owners that hold the facts, and the build paragraph is accurate ([T4](#t4--net-pm-01)).
 
-Limits: no real source PDF with a lone surrogate was available; the controls use synthetic ToUnicode maps, OCR JSON and replies. PDF inspection costs about 6 ms more per page ([review](#review-of-the-delegated-implementation)). Automatic repair of rejected replies is out of scope as [REPLY-AUTO-01](../../WORK_ITEMS.md#runtime-and-engineering-inventory). The work is on `codex/fix-01`, in [PR #3](https://github.com/hereiam510/pdf-to-md-agent-2/pull/3); merging needs the user's request.
+Limits: no real source PDF with a lone surrogate was available; the controls use synthetic ToUnicode maps, OCR JSON and replies. PDF inspection costs about 6 ms more per page ([review](#review-of-the-delegated-implementation)). Automatic repair of rejected replies is out of scope as [REPLY-AUTO-01](../../WORK_ITEMS.md#runtime-and-engineering-inventory). Delivery through [PR #3](https://github.com/hereiam510/pdf-to-md-agent-2/pull/3) is recorded in the [ticket progress](tickets.md#progress).
+
+## Post-merge review and orientation
+
+2026-11-15 (Asia/Singapore). Standalone review requested by the user ("review and suggest next steps") on `codex/fix-01-closeout` at `0417061`. No product code, build or provider interval was run.
+
+**Merge result.** `master` equals `origin/master` at merge commit `b722341`. `git diff --name-only 0103aa1 0417061` lists only files under `docs/`, so the [T5 suites](#t5--integration) on `0103aa1` apply to the merged tree. A repeat engine run was started and stopped before completion, because it would only repeat T5 on the same code. It supplies no result. `tools/docs/check_docs.py` passed with no errors (147 Markdown files). Every local batch branch, including `codex/net-01-closeout` and `codex/fix-01`, is an ancestor of `master`.
+
+**Findings.**
+
+- **FIX-PM-01 — the combined verdict still said merging was pending.** P3 records. The closeout commit updated the ticket progress, CURRENT_STATE and WORK_ITEMS but not the last sentence of the [combined verdict](#combined-verdict). Corrected here with a link to the ticket progress.
+- **FIX-PM-02 — closeout records are local only.** As with NET-PM-02, `0417061` and this review are not pushed. Until they are, GitHub's `master` shows PR #3 as "not merged" in CURRENT_STATE and the ticket progress.
+- **NET-PM-03 still applies and is growing.** CURRENT_STATE now has about 70 return-route bullets. The same accumulation affects the [WORK_ITEMS selection paragraph](../../WORK_ITEMS.md#selection-now), which now retells NET-01 and FIX-01 history in one paragraph of about 400 words and contains the phrase "NET-PM-03 (unselected) (growing return-route list)". Still unselected.
+
+**Residuals carried forward.** [REPLY-AUTO-01](../../WORK_ITEMS.md#runtime-and-engineering-inventory) (rejected replies block until Continue) revisits on a Stage B run that blocks on one. The 6 ms per page inspection cost revisits if latency shows in a real task. `release/win-unpacked` (2026-11-13) predates NET-01 and FIX-01, so any packaged check starts with a fresh build (DIST-01). UA-01-DEFAULTS remains the only small open defect, and it sits on a path that is disabled by default.
+
+**Next step.** The [recommendation after NET-01](../../discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01) still holds. FIX-01 completed the user's "fix known bugs first" precondition. Recommended: discuss and specify one fresh, bounded Stage B source-led task, offline first. Its four decisions are unchanged: source and class, scope, a fresh task, and route and budget. Facts that inform the source choice, from a local read of `references/` (page text length and image count sampled with PyMuPDF; no content claims):
+
+- `gynecology/source.pdf`: 21 pages, native text layer, figures on some pages. The prepared [Task B](../../discussions/REQUEST_CAPACITY.md) covered printed pages 1–3 with Figures 1.1–1.3, frozen on a 2026-11-06 build.
+- `news-writing/source.pdf`: 290 pages, one image per page and a thin text layer (Task A's source, JBIG2 page images).
+- `nursing/source.pdf`: 14 pages, native text with two images per page (historical Nursing closeout).
+
+A fresh task on the gynecology section, extended to a complete section long enough to reach R01CAL-A01's outside-scope classification point, covers native text, figures (FD-01) and attribution text (AR-T5-14) in one run. A mixed or scanned class (CTX-08) would need a news-writing section as a separate choice. Nothing is selected.
