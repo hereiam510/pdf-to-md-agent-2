@@ -14,4 +14,5 @@ T2 is skipped if T1 finds no wording defect; T3 then records the investigation r
 
 ## Progress
 
-Planned.
+- **T1, T2:** done by Codex CLI 0.169.0 (`gpt-6.1-sol`, `model_reasoning_effort="xhigh"`, Codex's configured sandbox, approval `never`) in one run of assignment `CAPFB-01-IMPL`, session `01a1df07-b014-7513-beaf-ccfa48944e2d`. T1 supported a wording defect, so T2 was carried out. The prompt, event stream, final report, store copies and `investigation.json` are retained under ignored `.local/agent-runs/capfb-01/`.
+- **T3:** reviewed and re-tested by the main agent; see [verification](verification.md#combined-verdict).
