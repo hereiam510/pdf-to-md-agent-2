@@ -232,3 +232,51 @@ The source-led review found no substantive discrepancy and does not establish wh
 | A8 | All application attempts/usage and separate setup evidence retained; monetary fees and upstream internals remain unknown. No comparative reliability, causal or cost-saving conclusion. |
 
 **Document impact and checks.** Tickets own completed T2/T3 work; the spec/discussion preserve authority, WORK_ITEMS records the reached completion-gap investigation trigger, and CURRENT_STATE routes to the next decision. INDEX, README, product contracts and PHASE_PLAN remain unchanged: no owner moved, behavior changed or phase outcome closed. The repository documentation/link check passed (151 Markdown files, 8,667 links/destinations, zero errors), as did the Git whitespace check. The delivery record remains draft PR #4. No product/test/lockfile or private source/runtime/output is included in the commit.
+
+## Post-run review
+
+2026-11-15 (Asia/Singapore). Standalone review requested by the user ("t1-T3 implemented. please review and suggest next steps") at `9cc9ee3` on `codex/gyn-01`, which is the head of [draft PR #4](https://github.com/hereiam510/pdf-to-md-agent-2/pull/4) (open, mergeable, no checks or comments). No model request, task operation, build or suite ran. The task catalog was copied to session scratch storage and queried there. Retained request inputs and candidates were read from the task store's `objects/` without modification, and exported PNG dimensions were read with PyMuPDF.
+
+**Confirmed.** The T1 bindings, the single interval, 22 attempts (20 normal, 2 compactions), the partial report and the selected version `e920d956…` match the store. The exported figure dimensions match the stated 200-dpi region renders. The [A1–A8 assessment](#a1a8-assessment) is consistent with the evidence, apart from the two qualifications below.
+
+### GYN-PR-01 — the final stop coincides with near-zero reported capacity
+
+**P2 lead for GYN-T3-01; supported correlation, cause unproven.** Each normal request carries the app's `Working context feedback` (`src/pdfmd/working_context.py`). Its `remaining` value (capacity minus input estimate and the 8,192 output reserve) fell over the last three requests:
+
+| Request | Input estimate | `remaining` | Agent action |
+| --- | --- | --- | --- |
+| `17:19` | 119,600 | 3,280 | `edit_document` saved `e920d956…` as `partial` with the gap "Final saved-version check after diagram-association repairs remains pending." |
+| `18:20` | 121,739 | 1,141 | `read_document` of one block only (`/content/blocks`, range 9–10) |
+| `19:21` | 122,844 | **36** | `report(partial)`: "the final saved-version fidelity check after those repairs is still pending" |
+
+That input also retained 16 native images. The feedback note says "nothing is released automatically", and the system guidance (`src/pdfmd/context.py`) says only that "history pressure retains eligibility for compaction". Neither tells the agent that the app compacts history itself when the next request would exceed capacity, as it did twice in this run.
+
+**Counter-evidence.** Earlier, at `remaining` 7,518 (request `2:2`) and 5,708 (`12:13`), the agent kept working and the app compacted automatically. So low capacity alone did not stop the agent. The final stop came at the lowest value of the run, after the agent had already saved a partial version and limited its reads. [GYN-T3-01](#gyn-t3-01--unfinished-final-self-check) states that the retained records explain no stop. This trace adds a specific context-pressure lead; it does not prove the cause.
+
+**Investigation target (offline, no provider call).** (1) Compare the feedback and guidance wording with the actual compaction trigger, and decide whether an agent can tell that low `remaining` is not a reason to stop. (2) Check whether [Task A's partial stop](../../verification/20261106_1408_R01CAL_TASK_A.md#finding-recommendation-and-deferrals) (R01CAL-A01) shows the same final-feedback pattern. (3) Only if both support it, propose a bounded guidance/feedback change with offline tests and a separately authorized live confirmation.
+
+### GYN-PR-02 — figure assets are below the source's raster resolution, without originals
+
+**P2 fidelity gap against the product goal; contract-compliant.** The agent rendered all eight figures as 200-dpi page regions. For the raster figures, the source images are placed at about 300 ppi (Figs 1.3, 1.7) and about 909 ppi (the p4 monochrome raster):
+
+| Figure | Native image | Rendered size in the delivered asset | Linear ratio |
+| --- | --- | --- | --- |
+| 1.3 (four FISH panels) | 497 × 457/458 each | about 331 px wide each (asset 701 × 901) | about 0.67 |
+| 1.7 (six photos) | 1040/1041 × 740–748 each | about 694 px wide each (asset 1418 × 1700) | about 0.67 |
+| 1.4 (p4 raster) | 4833 × 4536 | asset 1104 × 1218 | about 0.22 |
+
+No `extract_image` call occurred, so the version and ZIP carry no original image streams (`originals={}`). The [PDF contract](../../design/PDF_EVIDENCE.md#pdf-coordinates-and-image-delivery) lets the agent choose region renders and sets no resampling rule, so this is not a contract violation, and the T3 review records the representation limit. However, A4's "pass" for these figures holds at print appearance only. The delivered micrographs keep about 44% of the source pixels, and nothing in the package lets a reader recover them. This falls short of the project's "faithful source images" aim and FD-01's "preserve source appearance" for reuse at higher zoom.
+
+Remedy families (none selected): give the agent the native image ppi in inspection or render feedback so it can choose a matching DPI; attach overlapping native originals to a region render's provenance; or define a minimum DPI for regions that contain rasters. This needs a product decision, recorded under FD-01 in WORK_ITEMS.
+
+### GYN-PR-03 — records order
+
+P3. "Combined assessment and continuation" sits between the T1 section and the T2/T3 section it summarizes, so a reader meets the verdict before its evidence. A move would fix this; no meaning changes.
+
+### Next-step guidance
+
+1. **Recommended: an offline investigation of GYN-T3-01 using GYN-PR-01's three targets.** It is small, needs no provider call, and decides whether a guidance or feedback change is supported. It may also explain R01CAL-A01.
+2. **Discuss GYN-PR-02's remedy** as a product choice for FD-01. It can be specified together with any GYN-PR-01 change or on its own.
+3. **PR #4:** the records describe a closed interval. Marking it ready and merging the records brings `master` up to date (including the FIX-01 closeout, FIX-PM-02). GYN-01 stays open at its verdict. Merging needs the user's request.
+
+No repair, Continue, new interval or Git operation is selected by this review.

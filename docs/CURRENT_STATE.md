@@ -2,10 +2,10 @@
 
 ## Focus and resume route
 
-Current focus: GYN-01 bounded-run assessment and draft-PR delivery.
-Resume at: [Combined assessment](batches/GYN-01/verification.md#combined-assessment-and-continuation), then [GYN-T3-01](batches/GYN-01/verification.md#gyn-t3-01--unfinished-final-self-check).
-Next activity: decide whether to investigate the unfinished self-check offline before proposing a remedy; the live interval is closed and no further execution is selected.
-Instruction basis: the user's 2026-11-15 [T2/T3 selection](discussions/SOURCE_CONVERSION.md#t2-and-t3-selected-2026-11-15), including source-led review, reopen/export and updating draft PR #4, with one Start and no Continue or extension.
+Current focus: GYN-01 post-run review.
+Resume at: the [post-run review](batches/GYN-01/verification.md#post-run-review), with [GYN-PR-01](batches/GYN-01/verification.md#gyn-pr-01--the-final-stop-coincides-with-near-zero-reported-capacity) (capacity lead for the partial stop) and [GYN-PR-02](batches/GYN-01/verification.md#gyn-pr-02--figure-assets-are-below-the-sources-raster-resolution-without-originals) (figure resolution), after the [combined assessment](batches/GYN-01/verification.md#combined-assessment-and-continuation).
+Next activity: the user chooses among the offline GYN-T3-01 investigation, the FD-01 resolution discussion and merging draft PR #4. Nothing is selected; the live interval is closed.
+Instruction basis: the user's 2026-11-15 request to review T1–T3 and suggest next steps, after the [T2/T3 selection](discussions/SOURCE_CONVERSION.md#t2-and-t3-selected-2026-11-15).
 
 ## Return routes
 
