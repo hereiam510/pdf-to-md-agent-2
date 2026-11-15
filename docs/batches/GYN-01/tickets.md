@@ -2,7 +2,7 @@
 
 ## Authority and ownership
 
-Updated 2026-11-15 (Asia/Hong_Kong) under the [documentation-correction instruction](../../discussions/SOURCE_CONVERSION.md#documentation-corrections-selected-2026-11-15). The [spec authority boundary](spec.md#status-and-authority) applies: this round changes documents only. The checklists below describe later execution. A later instruction can select one ticket or the sequence; advance through satisfied dependencies within that instruction without routine reconfirmation.
+Updated 2026-11-15 (Asia/Hong_Kong) under the [T1 and publication instruction](../../discussions/SOURCE_CONVERSION.md#t1-preparation-and-draft-pr-selected-2026-11-15). T1 and draft-PR publication are selected under the [spec authority boundary](spec.md#status-and-authority). T2/T3 remain planned; preparation stops before Start.
 
 The [spec](spec.md) owns requirements and limits, this file owns tasks/progress, and [verification](verification.md) owns actual evidence and the combined verdict. The main agent is the operator, source reviewer and single document integrator; the app's converter produces content during T2. No auxiliary-agent assignment is made. Use the project's [local ticket policy](../../../AGENTS.md#batch-documents-and-ticket-mode).
 
@@ -10,7 +10,7 @@ The [spec](spec.md) owns requirements and limits, this file owns tasks/progress,
 
 | Ticket | Contribution and criteria | Dependency / execution gate | Progress |
 | --- | --- | --- | --- |
-| [GYN-01-T1](#gyn-01-t1--prepare-and-bind-the-fresh-task) | Prepare an attributable task and controls: [A1](spec.md#a1), [A6](spec.md#a6), [A7](spec.md#a7), [A8](spec.md#a8) | Preparation authorization | Planned; not started |
+| [GYN-01-T1](#gyn-01-t1--prepare-and-bind-the-fresh-task) | Prepare an attributable task and controls: [A1](spec.md#a1), [A6](spec.md#a6), [A7](spec.md#a7), [A8](spec.md#a8) | Preparation authorization | Complete; [readiness and handoff](verification.md#t1-preparation-and-publication) |
 | [GYN-01-T2](#gyn-01-t2--execute-the-single-bounded-interval) | Conduct the finite interval and preserve evidence: [A1](spec.md#a1), [A5](spec.md#a5), [A6](spec.md#a6), [A8](spec.md#a8) | Current T1 readiness and live-run authorization | Planned; not started |
 | [GYN-01-T3](#gyn-01-t3--verify-the-source-and-delivery-and-assess-the-batch) | Source/delivery review and whole-spec assessment: [A1–A8](spec.md#planned-acceptance) | Settled T2 evidence and review/reopen/export authorization | Planned; not started |
 
@@ -66,4 +66,4 @@ Keep actual evidence in [verification](verification.md) and link it from the pro
 
 ## Planning closeout and resume
 
-The existing three tickets include the supported corrections and selected OCR preparation condition; no separate software-repair ticket is justified by the review. [Documentation correction verification](verification.md#documentation-correction-review) owns this amendment's result. T1 is the first operational ticket when preparation is authorized; its planned work has not been performed by this document update.
+The existing three tickets include the supported corrections and selected OCR preparation condition; no separate software-repair ticket was needed. [Documentation correction verification](verification.md#documentation-correction-review) preserves the planning result. Resume execution from the [T1 handoff](verification.md#t1-preparation-and-publication), using the existing prepared task; T2/T3 remain unstarted. [Draft PR #4](https://github.com/hereiam510/pdf-to-md-agent-2/pull/4) is the delivery owner for these records and later authorized results.

@@ -2,7 +2,7 @@
 
 ## Status and authority
 
-Updated 2026-11-15 (Asia/Hong_Kong) under the [documentation-correction instruction](../../discussions/SOURCE_CONVERSION.md#documentation-corrections-selected-2026-11-15). It selects the supported review corrections, planned English OCR prewarming and shorter operator steps. Current authority is **documentation only**: no application-task creation, settings change, OCR download, provider call, run, code repair or publication. Future execution follows the [local tickets](tickets.md#dependency-and-execution-overview); an instruction may cover successive tickets without routine reconfirmation. [Verification](verification.md) owns actual checks and acceptance. The discussion preserves the earlier spec/ticket selections.
+Updated 2026-11-15 (Asia/Hong_Kong). The [T1 and publication instruction](../../discussions/SOURCE_CONVERSION.md#t1-preparation-and-draft-pr-selected-2026-11-15) authorizes fresh-task preparation, task-local settings, synthetic English OCR prewarming and draft-PR publication. Stop before Start; no model call or live interval is selected. The [local tickets](tickets.md#dependency-and-execution-overview) own execution and [verification](verification.md) owns checks and acceptance. Earlier documentation selections retain their dated scope in the discussion.
 
 ## Outcome and decision basis
 
@@ -116,4 +116,4 @@ Retain the original PDF, request inputs, attempts, successful-body native/stream
 
 A bounded partial/failed run is evidence, not completion of the selected outcome. Preserve it and identify the responsible capability/unknown before selecting any follow-up. No automatic repair, rerun, budget extension or second source follows. This scope does not close general Stage B, whole-chapter/table/captionless coverage, large-map repeatability, numerical calibration or Stage D installation.
 
-Source/scope/route/budget and OCR setup conditions are selected. The [tickets](tickets.md#dependency-and-execution-overview) own sequencing/progress; [verification](verification.md#documentation-correction-review) owns this amendment's checks and remaining operational limits.
+Source/scope/route/budget and OCR setup conditions are selected. The [tickets](tickets.md#dependency-and-execution-overview) own sequencing/progress; [verification](verification.md#combined-assessment-and-continuation) owns actual readiness, checks and acceptance.

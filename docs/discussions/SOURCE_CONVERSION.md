@@ -4,7 +4,7 @@
 
 2026-11-15 (Asia/Singapore). After the [FIX-01 post-merge review](../batches/FIX-01/verification.md#post-merge-review-and-orientation), the user asked to discuss Stage B. This file owns the discussion of the next source-led conversion batch toward the [Stage B outcome](../PHASE_PLAN.md#b-establish-complete-autonomous-conversion-on-actual-sources). It builds on the [recommendation after NET-01](NETWORK_RECOVERY.md#next-step-recommendation-after-net-01). [WORK_ITEMS](../WORK_ITEMS.md#selection-now) keeps selection.
 
-The initial discussion and later specification/ticket work remain in the dated selections below. The latest [local Git selection](#local-git-checkpoints-selected-2026-11-15) checkpoints the corrected plan and records the follow-up review; operational execution remains unstarted.
+The initial discussion and later specification/ticket work remain in the dated selections below. The latest [T1 and publication selection](#t1-preparation-and-draft-pr-selected-2026-11-15) authorizes preparation and a draft PR; the live interval remains unselected.
 
 ## What the earlier runs already show
 
@@ -137,3 +137,7 @@ The existing [T1–T3 tickets](../batches/GYN-01/tickets.md#dependency-and-execu
 ## Local Git checkpoints selected (2026-11-15)
 
 The user accepted a GYN-01 branch with separate commits and requested comment on the follow-up review. This selects local Git checkpoints separating the inherited FIX-01 review from GYN-01 planning. [The follow-up assessment and checkpoint record](../batches/GYN-01/verification.md#follow-up-review-and-local-git-checkpoints) own the review qualification, actual Git actions and checks. T1 preparation and remote publication remain unselected.
+
+## T1 preparation and draft PR selected (2026-11-15)
+
+2026-11-15 (Asia/Hong_Kong). The user agreed to publish the records through a draft PR and explicitly selected GYN-01 T1: create the isolated fresh task, apply and verify the agreed settings, prewarm English OCR, and report readiness/blockers without starting the live run. The selected prewarming includes the ordinary worker's language-data download. T2/T3 execution and merging remain unselected. [Ticket progress](../batches/GYN-01/tickets.md#dependency-and-execution-overview) and [T1 evidence](../batches/GYN-01/verification.md#t1-preparation-and-publication) own execution and results.

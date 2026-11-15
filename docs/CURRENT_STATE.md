@@ -2,10 +2,10 @@
 
 ## Focus and resume route
 
-Current focus: GYN-01 follow-up review and local Git checkpoints.
-Resume at: [review and checkpoint record](batches/GYN-01/verification.md#follow-up-review-and-local-git-checkpoints), then [T1's operator checklist](batches/GYN-01/tickets.md#gyn-01-t1--prepare-and-bind-the-fresh-task) and the [preparation conditions](batches/GYN-01/spec.md#preparation-before-an-authorized-start).
-Next activity: T1 operational preparation when authorized; the current request ends with local commits and review comment.
-Instruction basis: the user's 2026-11-15 [branch and separate-commit selection](discussions/SOURCE_CONVERSION.md#local-git-checkpoints-selected-2026-11-15), preserving the earlier no-task/no-run boundary.
+Current focus: GYN-01 T1 readiness and draft-PR delivery.
+Resume at: [T1 evidence and handoff](batches/GYN-01/verification.md#t1-preparation-and-publication), then [T2's operator checklist](batches/GYN-01/tickets.md#gyn-01-t2--execute-the-single-bounded-interval) and the [finite interval](batches/GYN-01/spec.md#agreed-route-and-finite-interval).
+Next activity: review readiness, then T2/T3 when authorized; reuse the prepared task and recheck its bindings before Start.
+Instruction basis: the user's 2026-11-15 [T1 and draft-PR selection](discussions/SOURCE_CONVERSION.md#t1-preparation-and-draft-pr-selected-2026-11-15), explicitly stopping before the live run.
 
 ## Return routes
 
