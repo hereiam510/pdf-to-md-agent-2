@@ -2,10 +2,10 @@
 
 ## Focus and resume route
 
-Current focus: next-work selection for Stage B, after FIX-01.
-Resume at: the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01), which lists the Stage B decisions (source and class, scope, fresh task, route and budget), and [WORK_ITEMS selection](WORK_ITEMS.md#selection-now).
-Next activity: the user selects the Stage B batch. Nothing is selected.
-Instruction basis: the user's 2026-11-15 FIX-01 request and T3 decision, completed in the [FIX-01 combined verdict](batches/FIX-01/verification.md#combined-verdict).
+Current focus: GYN-01 follow-up review and local Git checkpoints.
+Resume at: [review and checkpoint record](batches/GYN-01/verification.md#follow-up-review-and-local-git-checkpoints), then [T1's operator checklist](batches/GYN-01/tickets.md#gyn-01-t1--prepare-and-bind-the-fresh-task) and the [preparation conditions](batches/GYN-01/spec.md#preparation-before-an-authorized-start).
+Next activity: T1 operational preparation when authorized; the current request ends with local commits and review comment.
+Instruction basis: the user's 2026-11-15 [branch and separate-commit selection](discussions/SOURCE_CONVERSION.md#local-git-checkpoints-selected-2026-11-15), preserving the earlier no-task/no-run boundary.
 
 ## Return routes
 
