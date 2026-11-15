@@ -2,13 +2,14 @@
 
 ## Focus and resume route
 
-Current focus: GYN-01 bounded-run assessment and draft-PR delivery.
-Resume at: [Combined assessment](batches/GYN-01/verification.md#combined-assessment-and-continuation), then [GYN-T3-01](batches/GYN-01/verification.md#gyn-t3-01--unfinished-final-self-check).
-Next activity: decide whether to investigate the unfinished self-check offline before proposing a remedy; the live interval is closed and no further execution is selected.
-Instruction basis: the user's 2026-11-15 [T2/T3 selection](discussions/SOURCE_CONVERSION.md#t2-and-t3-selected-2026-11-15), including source-led review, reopen/export and updating draft PR #4, with one Start and no Continue or extension.
+Current focus: CAPFB-01, the offline investigation of GYN-T3-01, accepted offline.
+Resume at: the [CAPFB-01 combined verdict](batches/CAPFB-01/verification.md#combined-verdict) and its [investigation findings](batches/CAPFB-01/verification.md#investigation-findings); GYN-01's [GYN-PR-02](batches/GYN-01/verification.md#gyn-pr-02--figure-assets-are-below-the-sources-raster-resolution-without-originals) (figure resolution) remains open.
+Next activity: review and merge of [PR #5](https://github.com/hereiam510/pdf-to-md-agent-2/pull/5) ([delivery record](batches/CAPFB-01/tickets.md#progress)); then the user chooses between a live check of the new capacity wording and the FD-01 resolution discussion. Nothing else is selected.
+Instruction basis: the user's 2026-11-15 "ok, use gpt-6.1-sol-xhigh to implement", with longer runs and more runs allowed if needed.
 
 ## Return routes
 
+- Previous review: [GYN-01 post-run review](batches/GYN-01/verification.md#post-run-review).
 - Previous batch: [FIX-01 combined verdict](batches/FIX-01/verification.md#combined-verdict), merged through [PR #3](https://github.com/hereiam510/pdf-to-md-agent-2/pull/3) as `b722341` ([record](batches/FIX-01/tickets.md#progress)).
 - Previous inventory: [open-defect inventory before Stage B](verification/20261106_0112_WORK_REGISTER.md#open-defect-inventory-before-stage-b-2026-11-14) and the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01) for the Stage B decisions.
 - Previous review: [NET-01 post-merge review](batches/NET-01/verification.md#post-merge-review-and-orientation), with documentation findings NET-PM-01 to NET-PM-03.

@@ -5,14 +5,86 @@ import json
 import pytest
 
 from pdfmd.context import Context, estimate
-from pdfmd.nexus import Nexus
+from pdfmd.context_updates import ContextUpdates
+from pdfmd.nexus import Nexus, StopRun
 from pdfmd.schema import Route
 from pdfmd.storage import encode
 from pdfmd.tools import Dispatcher
 from pdfmd.working_context import inspect, inventory, snapshot, summarize, with_feedback
-from tests.engine.context.test_context_admission import protocol_job, settle, state_for
+from tests.engine.context.test_context_admission import protocol_job, settle, state_for, synthetic_text
 from tests.engine.execution.test_runtime import tool
 from tests.engine.documents.test_working_evidence_delivery import feedback
+
+
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+@pytest.mark.parametrize("headroom", [32, 100000])
+def test_capacity_guidance_and_feedback_keep_headroom_meaning(setup, protocol, headroom):
+    store, original = setup
+    job = protocol_job(store, original, protocol)
+    settle(store, job, "pixels", tool("render_page", {"page": 1, "dpi": 72}, "pixels"))
+    context = Context(store, Dispatcher(store))
+    state = state_for(job, ["pixels"])
+    before = deepcopy(state)
+    initial = feedback(context.normal(job, state)[0])
+    limit = initial["input_estimate"] + job["route"]["output_tokens"] + headroom
+    job = {**job, "route": {**job["route"], "context_tokens": limit}}
+    payload, capacity = context.normal(job, state)
+    summary = feedback(payload)
+    system = payload["messages"][0]["content"] if protocol == "chat_completions" else payload["instructions"]
+    for text in (summary["note"], system):
+        assert "not a stopping condition or a reason to report partial" in text
+        assert "after possible deferral of oversized unpinned bodies" in text
+        assert "history compaction automatically when feasible; otherwise it blocks with a diagnostic" in text
+        assert "saved work and requested scope remain" in text.lower()
+        assert "nothing is released automatically" not in text
+    assert "remaining is estimated input headroom after the output reserve, not a task budget" in system
+    assert "inspect_context lists exact refs and only previews changes" in summary["note"]
+    assert set(summary) == {"head", "representations", "document_reads", "note", "input_estimate",
+                            "output_reserve", "remaining", "native_images", "estimate_kind", "feedback_estimate"}
+    assert summary["head"] == job["head"]
+    assert summary["representations"] == initial["representations"]
+    assert summary["document_reads"] == initial["document_reads"]
+    actual = estimate(payload, Route.model_validate(job["route"]))
+    assert actual["input_estimate"] <= summary["input_estimate"] <= actual["input_estimate"] + 16
+    assert summary["output_reserve"] == job["route"]["output_tokens"]
+    assert summary["remaining"] == limit - summary["output_reserve"] - summary["input_estimate"]
+    assert abs(summary["remaining"] - headroom) <= 16
+    assert summary["native_images"] == actual["images"] == 1
+    assert summary["estimate_kind"] == "local_request_proxy_not_provider_usage"
+    assert summary["feedback_estimate"] == "self_inclusive_upper_reservation"
+    assert capacity["fits"] and capacity["projection"]["deferred"] == []
+    assert state == before
+
+
+@pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
+def test_capacity_guidance_matches_automatic_compaction_and_pinned_block(setup, protocol):
+    store, original = setup
+    job = protocol_job(store, original, protocol)
+    refs = [store.blob(job["id"], "evidence", {"text": synthetic_text(label, 40000)})["ref"]
+            for label in ("capacity-a", "capacity-b")]
+    settle(store, job, "reads", *[tool("read_evidence", {"ref": ref}, str(i)) for i, ref in enumerate(refs)])
+    state = state_for(job, ["reads"])
+    before = deepcopy(state)
+    originals = {ref: store.bytes(ref, job["id"]) for ref in refs}
+    context = Context(store, Dispatcher(store))
+    updates = ContextUpdates(context)
+    _, capacity = context.normal(job, state)
+    assert not capacity["fits"] and capacity["projection"]["deferred"] == []
+    assert context.required(job, state)["fits"]
+    _, meta, kind = updates.continuation(job, state)
+    assert kind == "compaction" and meta["capacity"]["fits"]
+    assert meta["covered"] == ["reads"]
+    assert state == before
+    # Pins cannot be silently released to make the automatic path available.
+    pinned = {**state, "pinned": refs}
+    required = context.required(job, pinned)
+    assert not required["fits"] and not required["proved_excess"]
+    with pytest.raises(StopRun) as failure:
+        updates.continuation(job, pinned)
+    assert failure.value.reason == "necessary_estimate_uncertain"
+    assert pinned["pinned"] == refs and pinned["history"] == before["history"]
+    assert {ref: store.bytes(ref, job["id"]) for ref in refs} == originals
+    assert store.get("job", job["id"])["attempts"] == 0
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "responses"])
