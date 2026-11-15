@@ -63,7 +63,7 @@ The full engine suite took about 33 minutes at NET-01. Record the revision, coun
 
 ## Progress
 
-T1–T4 implemented by Codex and committed as `2d833b5` and `0103aa1`; T5 run on `0103aa1`; T6 completed with the [combined verdict](verification.md#combined-verdict). All tickets are accepted. Nothing is pushed.
+T1–T4 implemented by Codex and committed as `2d833b5` and `0103aa1`; T5 run on `0103aa1`; T6 completed with the [combined verdict](verification.md#combined-verdict). All tickets are accepted. On 2026-11-15, at the user's request ("Push and open PR"), `codex/fix-01` was pushed and [PR #3](https://github.com/hereiam510/pdf-to-md-agent-2/pull/3) opened against `master`. It is open and mergeable, with no CI checks configured. Merging needs the user's request.
 
 ## T6 — Review and records
 

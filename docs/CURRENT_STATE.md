@@ -4,12 +4,12 @@
 
 Current focus: next-work selection for Stage B, after FIX-01.
 Resume at: the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01), which lists the Stage B decisions (source and class, scope, fresh task, route and budget), and [WORK_ITEMS selection](WORK_ITEMS.md#selection-now).
-Next activity: The user decides whether to push `codex/fix-01` (it also carries the NET-01 closeout records) and open a PR, and selects the Stage B batch. Nothing is selected.
+Next activity: The user reviews [PR #3](https://github.com/hereiam510/pdf-to-md-agent-2/pull/3) and decides on the merge, and selects the Stage B batch. Nothing is selected.
 Instruction basis: the user's 2026-11-15 FIX-01 request and T3 decision, completed in the [FIX-01 combined verdict](batches/FIX-01/verification.md#combined-verdict).
 
 ## Return routes
 
-- Previous batch: [FIX-01 combined verdict](batches/FIX-01/verification.md#combined-verdict), committed locally on `codex/fix-01`, not pushed.
+- Previous batch: [FIX-01 combined verdict](batches/FIX-01/verification.md#combined-verdict), in [PR #3](https://github.com/hereiam510/pdf-to-md-agent-2/pull/3), not merged.
 - Previous inventory: [open-defect inventory before Stage B](verification/20261106_0112_WORK_REGISTER.md#open-defect-inventory-before-stage-b-2026-11-14) and the [recommendation after NET-01](discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01) for the Stage B decisions.
 - Previous review: [NET-01 post-merge review](batches/NET-01/verification.md#post-merge-review-and-orientation), with documentation findings NET-PM-01 to NET-PM-03.
 
