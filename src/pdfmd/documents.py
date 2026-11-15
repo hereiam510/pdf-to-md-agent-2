@@ -12,7 +12,7 @@ import zlib
 import base64
 
 from .schema import Block, CandidateRef, Document, Edit, OccurrenceFacts, Page, pointer
-from .storage import Conflict, Store, encode, file_digest, uid
+from .storage import Conflict, Store, encode, file_digest, require_unicode, uid
 from .asset_references import (POLICY, ReferenceError, analyze, assess, asset_uri, bind_preview, classify, dependencies,
                                display_mime, parser, rewrite, safe_fragment)
 from .asset_catalog import (FactError, check_pointers, default_source, enrich_object as enrich, page_patch, printed_info, provenance_record,
@@ -224,6 +224,7 @@ class Documents:
 
     def edit(self, job_id: str, operation: str, arguments: dict, args_hash: str, candidate_ref: str,
              *, release_on_failure: bool = True) -> dict:
+        require_unicode(arguments, "document edit")
         previous = self._edit_receipt(self.store.maybe("operation", operation), args_hash)
         if previous is not None:
             return previous
@@ -864,6 +865,7 @@ class Documents:
         return "\n\n".join(pieces) + ("\n" if pieces else "")
 
     def export(self, job: str, version: str, destination: str) -> dict:
+        require_unicode(destination, "export destination")
         _, expected = self._verified_version(job, version)
         record = self.store.get("version", version, job=job)
         target = Path(destination).resolve()

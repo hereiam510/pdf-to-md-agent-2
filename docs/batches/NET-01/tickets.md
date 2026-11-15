@@ -22,6 +22,8 @@ The user authorized the five T7a commits to be pushed to draft PR #2, then autho
 
 The [T7b preflight](verification.md#t7b--real-sleep-and-wake-runs) found that this host supports no sleep state: S1–S3, hibernation and Modern Standby are all unavailable. On 2026-11-14 the user decided to "skip T7b". T7b is deferred, not passed. The real-sleep acceptance case stays unmet and is recorded as residual [NET-01-RV4](verification.md#net-01-rv4--real-sleep-not-observed). The harness stays ready for a later run. T8 no longer waits for T7b, but it still needs an explicit merge request.
 
+On 2026-11-14 the user asked to "Push and merge". That authorized committing the deferral records, pushing `codex/net-01`, marking PR #2 ready, merging it with a merge commit and recording the merge on a new branch.
+
 **Rules for every ticket.**
 
 - Start from `master` at `e60fa00` or a later commit that contains the earlier tickets, on a batch branch (for example `codex/net-01`), never on `master` itself.
@@ -50,7 +52,7 @@ The [T7b preflight](verification.md#t7b--real-sleep-and-wake-runs) found that th
 | [T6c](#t6c--draft-pull-request) | Draft PR for the offline-accepted batch | T6b, plus the user's publication request | Complete. [Draft PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) |
 | [T7a](#t7a--sleep-test-harness-and-dry-run) | Local scripted-server harness for the two sleep cases, validated by a no-sleep dry run | T6b | Complete ([dry-run evidence](verification.md#t7a--sleep-test-harness-and-dry-run)) |
 | [T7b](#t7b--real-sleep-and-wake-runs) | Real Windows sleep during a server-requested wait and during an in-flight request | T7a, plus a sleep window chosen by the user | Deferred by the user; this host cannot sleep ([NET-01-RV4](verification.md#net-01-rv4--real-sleep-not-observed)) |
-| [T8](#t8--mark-pr-2-ready-and-merge) | Mark PR #2 ready, merge it and record the merge | T7a with T7b deferred, plus the user's merge request | Ready; needs the user's merge request |
+| [T8](#t8--mark-pr-2-ready-and-merge) | Mark PR #2 ready, merge it and record the merge | T7a with T7b deferred, plus the user's merge request | [Merged as `2b9b86c`](#t8--mark-pr-2-ready-and-merge) on 2026-11-14 |
 
 **Order and writers.** T1 and T2 touch different files and can run in either order or side by side. T2, T3 and T4 all edit `nexus.py` and must run one at a time with one writer. T3 also edits `waiting.py`. T4 edits `runtime.py` and `server.py`. T5 edits the renderer and the Electron bridge (`src/desktop/main.ts`). T6 integrates the whole batch. T6a edits `runtime.py`, its tests and the affected contract. T6b changes no code. A defect exposed by the run reopens T6a. T7 can run before or after T6c. T7a adds a harness and changes no application code. T7b changes no code. T8 changes only records and GitHub state.
 
@@ -293,3 +295,5 @@ Wait for each sleep prompt. Time the sleep on a separate device, follow the prin
 3. After the merge, record the merge commit. Following PR #1's pattern, the record goes in the next working branch from the updated `master`. Record it in this ticket's row, the NET-01 and R04 rows in [WORK_ITEMS](../../WORK_ITEMS.md#runtime-and-engineering-inventory), and CURRENT_STATE, which then returns to next-work selection among the Stage B candidates.
 
 **Records.** The merge commit and date. NET-01's disposition becomes closed, with live route behavior, RV2, RV3 and RV4 kept as recorded residuals with their revisit conditions.
+
+**Result.** The deferral records were committed as `be0d495` and pushed. The PR's open items were updated for T7 and RV4. GitHub reported the PR as mergeable and clean, with no CI checks. [PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) was marked ready and merged at head `be0d495` as merge commit `2b9b86c` on 2026-11-14 (15:44 UTC). The branch `codex/net-01` was kept. This record is on `codex/net-01-closeout`, created from the updated `master`.

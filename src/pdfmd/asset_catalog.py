@@ -14,6 +14,7 @@ import math
 import re
 
 from .asset_naming import EXTENSIONS
+from .storage import encode
 
 SELECTED_XMP_SHA256 = "74c30f2be61aec0de6baacabb89ec2c73f45b2acddfcb272914c2ea78220d6a2"
 DIAGNOSTIC_PURPOSE = "saved-output diagnostic preview"
@@ -219,8 +220,7 @@ def provenance_record(*, occurrence_id: str, representation_id: str, source: dic
 
 def record_json(record: dict) -> str:
     """Sorted keys, no insignificant whitespace, UTF-8; JSON-escape XML-forbidden scalars."""
-    text = json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
-    text.encode("utf-8", "strict")  # rejects unpaired surrogates
+    text = encode(record).decode("utf-8")
     return text.replace("\ufffe", "\\ufffe").replace("\uffff", "\\uffff")
 
 

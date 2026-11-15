@@ -14,7 +14,7 @@ import httpx
 from .clocks import SYSTEM_CLOCKS
 from . import network
 from .schema import Limits, Route
-from .storage import Conflict, Store, encode, uid
+from .storage import Conflict, Store, encode, require_unicode, uid
 from .streaming import StreamDecoder, StreamError, validate_response_item_state
 from .waiting import RequestWait
 from .usage import interpret_usage
@@ -53,6 +53,7 @@ def _parse_reply(protocol: str, raw: bytes) -> dict:
     def finite(_):
         raise ValueError("Non-finite JSON numbers are not supported.")
     value = json.loads(raw, object_pairs_hook=unique_object, parse_constant=finite)
+    require_unicode(value, "native reply")
     if not isinstance(value, dict):
         raise ValueError("The native response must be an object.")
     calls = []
@@ -133,6 +134,7 @@ def _parse_reply(protocol: str, raw: bytes) -> dict:
         if not isinstance(call["arguments"], str) or not isinstance(call["name"], str) or not call["name"]:
             raise ValueError("Tool names and complete argument strings are required.")
         arguments = json.loads(call["arguments"], object_pairs_hook=unique_object, parse_constant=finite)
+        require_unicode(arguments, "reply tool arguments")
         if not isinstance(arguments, dict):
             raise ValueError("Tool arguments must be a complete JSON object.")
     if not calls and not any(text.strip() for text in texts):
@@ -175,6 +177,7 @@ class Nexus:
         if old:
             # Re-entry never rebuilds or alters a frozen request.
             return old
+        require_unicode({"kind": kind, "meta": meta, "not_before": not_before}, "request preparation")
         current = self.store.get("job", job)
         route = current["route"]
         if meta.get("capacity", {}).get("anchor"):

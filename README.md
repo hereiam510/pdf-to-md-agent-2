@@ -27,7 +27,7 @@ New requests can retry temporary network failures automatically. The connection 
 
 For an existing task, use **Task limits** while it is stopped to adjust its total request and active-time allowances, capacity, response waiting and retry settings. Newly prepared requests use the updated capacity, waiting and retry settings. Frozen requests keep their saved input and policy. Saving settings sends nothing. Recorded active time and unmeasured crash intervals appear separately. See [the settings and time contract](docs/design/RUNTIME_AND_DELIVERY.md#existing-task-settings-and-active-time-accounting).
 
-Source tools use a common unrotated page-coordinate frame for extraction, rendering and OCR regions. Image delivery separates display assets from retained original image/mask streams; saved versions and ZIPs include provenance and the originals associated with their selected images. See [the PDF contract](docs/design/PDF_EVIDENCE.md#pdf-coordinates-and-image-delivery) and CURRENT_STATE for the tested rotation, CMYK, SMask and JPX cases and remaining limits. These source changes require the development launcher until a new Windows distribution is built.
+Source tools use a common unrotated page-coordinate frame for extraction, rendering and OCR regions. Image delivery separates display assets from retained original image/mask streams; saved versions and ZIPs include provenance and the originals associated with their selected images. See [the PDF contract](docs/design/PDF_EVIDENCE.md#pdf-coordinates-and-image-delivery) and [PDF acceptance evidence](docs/design/PDF_EVIDENCE.md#acceptance-and-evidence-correspondence) for the tested rotation, CMYK, SMask and JPX cases and remaining limits. Use the development launcher until a current Windows distribution is built.
 
 To build and run the Windows folder app:
 
@@ -38,17 +38,17 @@ To build and run the Windows folder app:
 
 The folder app includes its Python engine. The build script's `-Installer` option creates an NSIS installer. Building an installer does not install it. The Windows build is unsigned. Local Tesseract OCR downloads requested language data on first use and caches it in the workspace.
 
-For the current local build, double-click `Start Workbench.cmd` to open the saved Nexus test workspace. The installer is `release/PDF Markdown Workbench Setup 0.1.0.exe`. An installed copy uses its own user-data directory by default; it does not automatically import this checkout's private files or task store.
+The existing `release/win-unpacked` folder app predates the current source changes; `Start Workbench.cmd` opens that build with the saved test workspace. No current installer has been built. Run `tools/build/build-windows.ps1 -Installer` to create one under `release/`. An installed copy uses its own user-data directory by default; it does not automatically import this checkout's private files or task store.
 
 The authorized local `references/` and `private/` copies are ignored. They are not part of the app or public source distribution. Do not commit credentials, task stores or conversion outputs.
 
-The development engine supports exact-version document indexes and field/range reads. Normal agent inputs include working-evidence/capacity feedback; optional `inspect_context` lists the frozen input and previews explicitly chosen policy changes. Smaller reads do not automatically remove earlier full content. See [the access and feedback contract](docs/design/DOCUMENT_MODEL.md#exact-saved-document-and-evidence-access) and CURRENT_STATE for local verification and real-model limits.
+The development engine supports exact-version document indexes and field/range reads. Normal agent inputs include working-evidence/capacity feedback; optional `inspect_context` lists the frozen input and previews explicitly chosen policy changes. Smaller reads do not automatically remove earlier full content. See [the access and feedback contract](docs/design/DOCUMENT_MODEL.md#exact-saved-document-and-evidence-access) and [precise-access verification and real-model limits](docs/history/IMPLEMENTATION_HISTORY.md#stage-b-complete-nursing-input).
 
 The saved-version view reports asset-reference incompleteness separately from the agent's content claim and ZIP byte verification. Historical omissions remain inspectable and exactly exportable. **Return to document** restores the loaded snapshot after image viewing or a blocked navigation. The [reference and preview implementation](docs/guides/DOCUMENT_ENGINE.md#shared-asset-reference-interpretation-and-selected-version-view) explains snapshot-scoped resources and selection guards. The [preview contract](docs/design/ASSET_REFERENCES.md#preview-binding-and-return-behavior) preserves full selected bytes and sandbox isolation. The [Windows verification](docs/batches/R01CAL-A03-DELIVERY-01/verification.md#t5-r-windows-rerun-after-the-windows-naming-repair) records the tested builds and the [shared-original repair](docs/batches/R01CAL-A03-DELIVERY-01/verification.md#t5-offline-repair-for-ar-t5-16).
 
 ## Start here
 
-Read [the working agreement](AGENTS.md), then **[the document catalogue](docs/INDEX.md)**. It provides topic routes and a complete categorized inventory. Use [CURRENT_STATE](docs/CURRENT_STATE.md) for actual implementation/verification and the next decision, [the phase plan](docs/PHASE_PLAN.md#delivery-route) for product outcomes, and [the handoff](docs/CURRENT_STATE.md#focus-and-resume-route) for source/check boundaries. Historical run permissions are not present execution authority.
+Read [the working agreement](AGENTS.md), then **[the document catalogue](docs/INDEX.md)** for topic owners and verification. Use [CURRENT_STATE](docs/CURRENT_STATE.md#focus-and-resume-route) for interaction focus and the resume route, and [the phase plan](docs/PHASE_PLAN.md#delivery-route) for product outcomes. Historical run permissions are not present execution authority.
 
 The catalogue leads directly to current streaming receive, document editing, context coordination, recovery and diagnostic designs, their reasons and original decision/discussion entries, applicable verification and preserved editions. [CONTRACTS](docs/INDEX.md#initial-contract-basis) is the shared-rule navigator; [DEVELOPMENT_GUIDE](docs/DEVELOPMENT_GUIDE.md) routes deeper engineering explanations.
 
@@ -69,7 +69,7 @@ With a working Python 3.9+ interpreter, run the following from this repository (
     python tools/docs/check_docs.py
     python tools/docs/source_lookup.py EVT-1166
 
-The first command checks documentation/image links, local source hashes and point/detail coverage. The second reads a bundled source without accessing an external export. They do not test an agent implementation or certify semantic completeness. [Current state](docs/CURRENT_STATE.md) records the actual review and its limits.
+The first command checks documentation/image links, local source hashes and point/detail coverage. The second reads a bundled source without accessing an external export. They do not test an agent implementation or certify semantic completeness. The [recorded review](docs/history/IMPLEMENTATION_HISTORY.md#review-follow-up-progress) states its checked scope and limits.
 
 Application checks:
 

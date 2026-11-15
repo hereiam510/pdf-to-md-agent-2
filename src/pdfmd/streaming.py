@@ -11,6 +11,7 @@ import codecs
 from copy import deepcopy
 from dataclasses import dataclass
 import json
+from .storage import InvalidUnicode, require_unicode
 from .usage import Usage, interpret_usage, accounting_fields
 
 
@@ -207,6 +208,10 @@ class StreamDecoder:
                 raise
             raise StreamError("The stream contains malformed JSON data.") from exc
         value = _mapping(value)
+        try:
+            require_unicode(value, "stream event")
+        except InvalidUnicode as exc:
+            raise StreamError(str(exc), field="unicode") from exc
         if event == "error" or value.get("type") == "error" or value.get("error"):
             self.terminal = "error"
             raise StreamError("The provider reported an error inside the stream.", category="provider_error", field="event")

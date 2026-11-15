@@ -160,3 +160,17 @@ What remains unobserved: whether the real clocks report an actual suspension as 
 Impact: this host supports no sleep state, so runs on it cannot be affected. Any Windows host that can sleep is untested.
 
 **Revisit** when the app is used on a Windows host whose `powercfg /a` lists S3 or Modern Standby: run the [T7b commands](tickets.md#t7b--real-sleep-and-wake-runs) there. Also revisit if a sleep-related failure is reported. No code change is scheduled.
+
+## Post-merge review and orientation
+
+2026-11-14 (Asia/Singapore). Standalone review requested by the user after [T8](tickets.md#t8--mark-pr-2-ready-and-merge). No product code, suite, build or provider interval was run.
+
+**Merge result.** [PR #2](https://github.com/hereiam510/pdf-to-md-agent-2/pull/2) is `MERGED` at 2026-11-14T15:44:59Z as merge commit `2b9b86c5dc7f45ba942eb0b1e8fff1583469dc1b`, with head `be0d495d82f6afba17213f233424fb3bac1600bb`. Local `master` equals `origin/master` at the merge commit, and `git diff be0d495 2b9b86c` is empty, so the [T6b suites](#t6b--final-revision-suite-run) at `42f8c8e` and the later record-only commits apply to the merged tree. `git ls-files` lists nothing under `private/`, `references/`, `.local/`, `workspaces/` or `outputs/`. All earlier local batch branches (`codex/cred-03`, `codex/docs-progressive-disclosure`, `codex/project-organization`, `codex/r01cal-a03-delivery-01`, `codex/net-01`) are ancestors of `master`.
+
+**Findings (records only; nothing was fixed).**
+
+- **NET-PM-01 — README routes to content CURRENT_STATE no longer holds.** P3 documentation. Repaired in [FIX-01 T4](../FIX-01/verification.md#t4--net-pm-01). README sends readers to CURRENT_STATE for the tested rotation, CMYK, SMask and JPX cases, for local verification and real-model limits of document access, and for "the actual review and its limits". Since the [progressive-disclosure reorganization](../DOC-FLOW-01/verification.md#combined-acceptance), CURRENT_STATE owns only focus and resume routes; those facts live in the [PDF contract](../../design/PDF_EVIDENCE.md) and [implementation history](../../history/IMPLEMENTATION_HISTORY.md). README also names `release/PDF Markdown Workbench Setup 0.1.0.exe`, which is absent; `release/` holds only the folder build `win-unpacked` dated 2026-11-13, which predates the NET-01 merge.
+- **NET-PM-02 — closeout records are local only.** The T8 record (`70328f7`) and this review are on `codex/net-01-closeout`, which has not been pushed. Following PR #1's pattern they ride with the next working branch. Until then `master` on GitHub still shows NET-01 as awaiting merge in CURRENT_STATE and WORK_ITEMS.
+- **NET-PM-03 — CURRENT_STATE return routes keep growing.** P3 documentation. The return-route list has about 50 entries tracing every T1–T5 step of the asset-delivery batch. Each links a valid owner, but the list is becoming the second transcript that the [ownership decision](../../decisions/DOCUMENTATION.md#progressive-disclosure-and-interaction-continuation-2026-11-07) avoids; the [batch catalogue](../../INDEX.md#batch-documents) already routes to closed batches. A possible remedy keeps the last few return routes and the open-topic links and relies on the catalogue for the rest. Not selected.
+
+**Next step.** The recommendation is recorded as [advice after NET-01](../../discussions/NETWORK_RECOVERY.md#next-step-recommendation-after-net-01); nothing is selected.
