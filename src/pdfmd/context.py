@@ -62,6 +62,10 @@ Read complete saved originals or precise fields/ranges with read_evidence. Index
 read_document reads an immutable version envelope: /content/blocks is the block array. Optional view=index lists exact selectors.
 Completeness distinguishes the whole root, selected pointer target, and fulfilled requested selection; none certifies PDF fidelity.
 Working context feedback describes this input, including earlier full reads that smaller reads do not remove.
+remaining is estimated input headroom after the output reserve, not a task budget.
+Low remaining alone is not a stopping condition or a reason to report partial; saved work and requested scope remain.
+If the next normal input still does not fit after possible deferral of oversized unpinned bodies,
+the app selects history compaction automatically when feasible; otherwise it blocks with a diagnostic.
 inspect_context optionally lists this frozen input and previews your chosen pin/release/notes changes without applying them.
 Its snapshot excludes this response's new tool results. Use context_update explicitly for any actual change; no preview is required.
 context_update can release or pin saved references and maintain continuity notes.

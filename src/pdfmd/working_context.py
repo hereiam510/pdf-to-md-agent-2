@@ -126,7 +126,11 @@ def summarize(rows: list[dict], head: str | None) -> dict:
                                "selection": sum(row["representation"] == "selection" for row in docs),
                                "index": sum(row["representation"] == "index" for row in docs),
                                "body_utf8_bytes": sum(row["body_utf8_bytes"] for row in docs)},
-            "note": "This input only. Smaller reads do not remove older bodies. inspect_context lists exact refs and optional hypothetical changes; nothing is released automatically."}
+            "note": "This input only. Smaller reads do not remove older bodies. inspect_context lists exact refs and only previews changes. "
+                    "Low remaining is estimated input headroom, not a stopping condition or a reason to report partial. "
+                    "If the next normal input still does not fit after possible deferral of oversized unpinned bodies, "
+                    "the app selects history compaction automatically when feasible; otherwise it blocks with a diagnostic. "
+                    "Saved work and requested scope remain."}
 
 
 def with_feedback(route: Route, system: str, messages: list[dict], tools: list[dict], head: str | None) -> dict:
